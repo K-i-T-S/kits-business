@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api } from '../utils/supabaseClient';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import { toast } from 'sonner@2.0.3';
+import { api, supabase } from '../utils/supabaseClient';
 
 interface Product {
   id: string;
@@ -28,7 +30,7 @@ interface CostEntry {
   quantity: number;
 }
 
-interface Sale {
+export interface Sale {
   id: string;
   date: string;
   items: SaleItem[];
@@ -102,14 +104,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
 
-  // Load data from backend
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -134,17 +132,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Failed to load data:', error);
+      toast.error('Failed to load data', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Watch Supabase auth and only load data when a session exists
+  useEffect(() => {
+    let isMounted = true;
+
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      setHasSession(!!session);
+      if (session) {
+        loadData();
+      }
+    };
+
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(!!session);
+      if (session) {
+        loadData();
+      } else {
+        setProducts([]);
+        setSales([]);
+        setCustomers([]);
+        setEmployees([]);
+        setCurrentEmployee(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [loadData]);
 
   const addProduct = async (product: Product) => {
     try {
       const { product: newProduct } = await api.post('/products', product);
       setProducts([...products, newProduct]);
+      toast.success('Product added', { description: newProduct.name });
+      return newProduct;
     } catch (error) {
       console.error('Failed to add product:', error);
+      toast.error('Failed to add product', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
@@ -153,8 +193,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const { product } = await api.put(`/products/${id}`, updatedProduct);
       setProducts(products.map(p => p.id === id ? product : p));
+      toast.success('Product updated', { description: product.name });
+      return product;
     } catch (error) {
       console.error('Failed to update product:', error);
+      toast.error('Failed to update product', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
@@ -163,8 +208,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       await api.delete(`/products/${id}`);
       setProducts(products.filter(p => p.id !== id));
+      toast.success('Product deleted');
     } catch (error) {
       console.error('Failed to delete product:', error);
+      toast.error('Failed to delete product', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
@@ -193,8 +242,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const { customers: updatedCustomers } = await api.get('/customers');
         setCustomers(updatedCustomers);
       }
+      toast.success('Sale recorded', {
+        description: `Total ${newSale.total.toFixed(2)}`,
+      });
+      return newSale;
     } catch (error) {
       console.error('Failed to add sale:', error);
+      toast.error('Failed to record sale', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
@@ -203,8 +259,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const { customer: newCustomer } = await api.post('/customers', customer);
       setCustomers([...customers, newCustomer]);
+      toast.success('Customer added', { description: newCustomer.name });
+      return newCustomer;
     } catch (error) {
       console.error('Failed to add customer:', error);
+      toast.error('Failed to add customer', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
@@ -213,8 +274,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const { customer } = await api.put(`/customers/${id}`, updatedCustomer);
       setCustomers(customers.map(c => c.id === id ? customer : c));
+      toast.success('Customer updated', { description: customer.name });
+      return customer;
     } catch (error) {
       console.error('Failed to update customer:', error);
+      toast.error('Failed to update customer', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
@@ -230,11 +296,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       
       setEmployees([...employees, newEmployee]);
+      toast.success('Employee created', {
+        description: `Temp password: ${tempPassword}`,
+      });
+      return newEmployee;
       
       // In a real app, you'd send the password to the employee via email
-      alert(`Employee created! Temporary password: ${tempPassword}\nPlease share this with the employee securely.`);
     } catch (error) {
       console.error('Failed to add employee:', error);
+      toast.error('Failed to add employee', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
@@ -243,8 +315,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const { employee } = await api.put(`/employees/${id}`, updatedEmployee);
       setEmployees(employees.map(e => e.id === id ? employee : e));
+      toast.success('Employee updated', { description: employee.name });
+      return employee;
     } catch (error) {
       console.error('Failed to update employee:', error);
+      toast.error('Failed to update employee', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
@@ -253,13 +330,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const { product } = await api.post(`/products/${productId}/variants/${variantId}/stock`, { quantity });
       setProducts(products.map(p => p.id === productId ? product : p));
+      toast.success('Stock updated');
+      return product;
     } catch (error) {
       console.error('Failed to update stock:', error);
+      toast.error('Failed to update stock', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
       throw error;
     }
   };
 
-  if (loading) {
+  if (loading && hasSession) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

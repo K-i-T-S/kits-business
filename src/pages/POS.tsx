@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Barcode, Minus, Plus, Trash2, CreditCard, DollarSign, Receipt, User } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
+import type { Sale } from '../context/AppContext';
+import { toast } from 'sonner@2.0.3';
 
 interface CartItem {
   productId: string;
@@ -31,6 +33,12 @@ export default function POS() {
     if (product) {
       // For simplicity, add first variant
       const variant = product.variants[0];
+      if (!variant) {
+        toast.error('Product missing variants', {
+          description: 'Please configure at least one variant before selling.',
+        });
+        return;
+      }
       
       if (variant.stock > 0) {
         const existingItem = cart.find(
@@ -60,21 +68,27 @@ export default function POS() {
         }
         setBarcode('');
       } else {
-        alert('Product out of stock!');
+        toast.error('Product out of stock', {
+          description: `${product.name} has no remaining inventory.`,
+        });
       }
     } else {
-      alert('Product not found!');
+      toast.error('Product not found', {
+        description: `No product found for barcode ${barcode || 'entered value'}.`,
+      });
     }
   };
 
   const updateQuantity = (index: number, change: number) => {
     const newCart = [...cart];
-    const newQuantity = newCart[index].quantity + change;
+    const target = newCart[index];
+    if (!target) return;
+    const newQuantity = target.quantity + change;
     
     if (newQuantity <= 0) {
       newCart.splice(index, 1);
     } else {
-      newCart[index].quantity = newQuantity;
+      target.quantity = newQuantity;
     }
     
     setCart(newCart);
@@ -92,9 +106,11 @@ export default function POS() {
     return calculateSubtotal(); // Can add tax or discounts here
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cart.length === 0) {
-      alert('Cart is empty!');
+      toast.error('Cart is empty', {
+        description: 'Scan or add at least one product before completing a sale.',
+      });
       return;
     }
 
@@ -113,27 +129,36 @@ export default function POS() {
       total: calculateTotal(),
       paymentMethod,
       employeeId: currentEmployee?.id || '',
-      customerId: selectedCustomer || undefined
-    };
+      ...(selectedCustomer ? { customerId: selectedCustomer } : {})
+    } satisfies Sale;
 
-    addSale(sale);
+    try {
+      await addSale(sale);
 
-    // Update customer purchase history
-    if (selectedCustomer) {
-      const customer = customers.find(c => c.id === selectedCustomer);
-      if (customer) {
-        updateCustomer(selectedCustomer, {
-          totalPurchases: customer.totalPurchases + sale.total,
-          lastPurchaseDate: new Date().toISOString()
-        });
+      // Update customer purchase history
+      if (selectedCustomer) {
+        const customer = customers.find(c => c.id === selectedCustomer);
+        if (customer) {
+          await updateCustomer(selectedCustomer, {
+            totalPurchases: customer.totalPurchases + sale.total,
+            lastPurchaseDate: new Date().toISOString()
+          });
+        }
       }
+  
+      setLastSale(sale);
+      setShowReceipt(true);
+      setCart([]);
+      setBarcode('');
+      setSelectedCustomer('');
+      toast.success('Sale completed', {
+        description: `Total ${sale.total.toFixed(2)} charged via ${paymentMethod}.`,
+      });
+    } catch (error) {
+      toast.error('Failed to complete sale', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred.',
+      });
     }
-
-    setLastSale(sale);
-    setShowReceipt(true);
-    setCart([]);
-    setBarcode('');
-    setSelectedCustomer('');
   };
 
   const closeReceipt = () => {

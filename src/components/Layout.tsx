@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Package, ShoppingCart, Users, UserCircle, BarChart3, LogOut, ShoppingCart as Logo } from 'lucide-react';
 import { supabase } from '../utils/supabaseClient';

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, Package, Users, ShoppingCart, TrendingUp, BarChart3, Shield } from 'lucide-react';
+import { toast } from 'sonner@2.0.3';
 import { supabase } from '../utils/supabaseClient';
 
 interface LoginProps {
@@ -44,6 +45,7 @@ export default function Login({ onLogin }: LoginProps) {
 
         if (signInError) throw signInError;
         
+        toast.success('Account created');
         onLogin();
       } else {
         // Sign in with Supabase
@@ -54,11 +56,14 @@ export default function Login({ onLogin }: LoginProps) {
 
         if (signInError) throw signInError;
         
+        toast.success('Welcome back');
         onLogin();
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-      setError(err.message || 'Authentication failed');
+      const message = err?.message || 'Authentication failed';
+      setError(message);
+      toast.error('Authentication failed', { description: message });
     } finally {
       setLoading(false);
     }

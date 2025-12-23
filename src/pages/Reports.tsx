@@ -3,6 +3,7 @@ import { Calendar, TrendingUp, DollarSign, Package, Users, BarChart3, Download }
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner@2.0.3';
 
 export default function Reports() {
   const { products, sales, customers, employees } = useApp();
@@ -122,25 +123,107 @@ export default function Reports() {
   const dailySales = getDailySales();
 
   // Cost shifts
-  const costShifts = products.map(product => {
-    return product.variants.map(variant => {
-      if (variant.costHistory.length < 2) return null;
-      
-      const recent = variant.costHistory[variant.costHistory.length - 1];
-      const previous = variant.costHistory[variant.costHistory.length - 2];
-      const change = ((recent.cost - previous.cost) / previous.cost) * 100;
-      
-      return {
-        product: product.name,
-        variant: Object.values(variant.attributes).join(' - '),
-        previousCost: previous.cost,
-        currentCost: recent.cost,
-        change: change
-      };
-    }).filter(Boolean);
-  }).flat().filter(Boolean);
+  const costShifts = products
+    .map(product =>
+      product.variants
+        .map(variant => {
+          const historyLength = variant.costHistory.length;
+          if (historyLength < 2) return null;
+          const previous = variant.costHistory[historyLength - 2];
+          const recent = variant.costHistory[historyLength - 1];
+          if (!previous || !recent) return null;
+          const change = ((recent.cost - previous.cost) / previous.cost) * 100;
+
+          return {
+            product: product.name,
+            variant: Object.values(variant.attributes).join(' - '),
+            previousCost: previous.cost,
+            currentCost: recent.cost,
+            change,
+          };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    )
+    .flat();
 
   const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+
+  const escapeCsv = (value: string | number | null | undefined) => {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (/[",\n]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const handleExport = () => {
+    if (filteredSales.length === 0) {
+      toast.info('No data to export', {
+        description: 'Try selecting a wider date range.',
+      });
+      return;
+    }
+
+    const employeeLookup = new Map(employees.map(emp => [emp.id, emp.name]));
+    const customerLookup = new Map(customers.map(c => [c.id, c.name]));
+
+    const rows = filteredSales.flatMap(sale => {
+      const saleDate = new Date(sale.date).toLocaleString();
+      const employeeName = employeeLookup.get(sale.employeeId) ?? 'Unknown';
+      const customerName = sale.customerId ? (customerLookup.get(sale.customerId) ?? 'Guest') : 'Guest';
+
+      return sale.items.map(item => {
+        const revenue = item.price * item.quantity;
+        const profit = (item.price - item.cost) * item.quantity;
+        return [
+          sale.id,
+          saleDate,
+          employeeName,
+          customerName,
+          sale.paymentMethod,
+          item.productName,
+          item.quantity,
+          item.price.toFixed(2),
+          item.cost.toFixed(2),
+          revenue.toFixed(2),
+          profit.toFixed(2),
+        ];
+      });
+    });
+
+    const header = [
+      'Sale ID',
+      'Date',
+      'Employee',
+      'Customer',
+      'Payment Method',
+      'Product',
+      'Quantity',
+      'Unit Price',
+      'Unit Cost',
+      'Revenue',
+      'Profit',
+    ];
+
+    const csvContent = [header, ...rows]
+      .map(row => row.map(escapeCsv).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `reports-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success('Reports exported', {
+      description: `Downloaded ${rows.length} row${rows.length === 1 ? '' : 's'}.`,
+    });
+  };
 
   return (
     <Layout>
@@ -162,7 +245,10 @@ export default function Reports() {
               <option value="month">Last 30 Days</option>
               <option value="all">All Time</option>
             </select>
-            <button className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+            <button
+              onClick={handleExport}
+              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
               <Download className="w-5 h-5" />
               <span>Export</span>
             </button>

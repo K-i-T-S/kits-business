@@ -2,7 +2,7 @@ import { Hono } from 'npm:hono';
 import { cors } from 'npm:hono/cors';
 import { logger } from 'npm:hono/logger';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import * as kv from './kv_store.tsx';
+import * as kv from './kv_store.ts';
 
 const app = new Hono();
 
@@ -10,13 +10,13 @@ const app = new Hono();
 app.use('*', cors());
 app.use('*', logger(console.log));
 
-// Initialize Supabase client
+// Initialize Supabase client (service role for server-side ops)
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-// Helper function to verify user
+// Helper function to verify user from Authorization header
 async function verifyUser(request: Request) {
   const accessToken = request.headers.get('Authorization')?.split(' ')[1];
   if (!accessToken) {
@@ -33,7 +33,6 @@ async function verifyUser(request: Request) {
 // Authentication Routes
 // ======================
 
-// Sign up
 app.post('/make-server-210e7672/auth/signup', async (c) => {
   try {
     const { email, password, name, role = 'cashier', commission = 3 } = await c.req.json();
@@ -42,7 +41,7 @@ app.post('/make-server-210e7672/auth/signup', async (c) => {
       email,
       password,
       user_metadata: { name, role, commission },
-      email_confirm: true // Auto-confirm since email server isn't configured
+      email_confirm: true
     });
 
     if (error) {
@@ -50,7 +49,6 @@ app.post('/make-server-210e7672/auth/signup', async (c) => {
       return c.json({ error: error.message }, 400);
     }
 
-    // Create employee record
     const employee = {
       id: data.user.id,
       name,
@@ -70,7 +68,6 @@ app.post('/make-server-210e7672/auth/signup', async (c) => {
   }
 });
 
-// Get current session
 app.get('/make-server-210e7672/auth/session', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -91,7 +88,6 @@ app.get('/make-server-210e7672/auth/session', async (c) => {
 // Product Routes
 // ======================
 
-// Get all products
 app.get('/make-server-210e7672/products', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -107,7 +103,6 @@ app.get('/make-server-210e7672/products', async (c) => {
   }
 });
 
-// Create product
 app.post('/make-server-210e7672/products', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -129,7 +124,6 @@ app.post('/make-server-210e7672/products', async (c) => {
   }
 });
 
-// Update product
 app.put('/make-server-210e7672/products/:id', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -160,7 +154,6 @@ app.put('/make-server-210e7672/products/:id', async (c) => {
   }
 });
 
-// Delete product
 app.delete('/make-server-210e7672/products/:id', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -178,7 +171,6 @@ app.delete('/make-server-210e7672/products/:id', async (c) => {
   }
 });
 
-// Update stock
 app.post('/make-server-210e7672/products/:productId/variants/:variantId/stock', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -219,7 +211,6 @@ app.post('/make-server-210e7672/products/:productId/variants/:variantId/stock', 
 // Sales Routes
 // ======================
 
-// Get all sales
 app.get('/make-server-210e7672/sales', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -235,7 +226,6 @@ app.get('/make-server-210e7672/sales', async (c) => {
   }
 });
 
-// Create sale
 app.post('/make-server-210e7672/sales', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -248,7 +238,6 @@ app.post('/make-server-210e7672/sales', async (c) => {
     sale.date = new Date().toISOString();
     sale.employeeId = user.id;
 
-    // Update stock for each item
     for (const item of sale.items) {
       const product = await kv.get(`product:${item.productId}`);
       if (product) {
@@ -266,14 +255,12 @@ app.post('/make-server-210e7672/sales', async (c) => {
       }
     }
 
-    // Update employee sales
     const employee = await kv.get(`employee:${user.id}`);
     if (employee) {
       employee.totalSales = (employee.totalSales || 0) + sale.total;
       await kv.set(`employee:${user.id}`, employee);
     }
 
-    // Update customer if applicable
     if (sale.customerId) {
       const customer = await kv.get(`customer:${sale.customerId}`);
       if (customer) {
@@ -296,7 +283,6 @@ app.post('/make-server-210e7672/sales', async (c) => {
 // Customer Routes
 // ======================
 
-// Get all customers
 app.get('/make-server-210e7672/customers', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -312,7 +298,6 @@ app.get('/make-server-210e7672/customers', async (c) => {
   }
 });
 
-// Create customer
 app.post('/make-server-210e7672/customers', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -333,7 +318,6 @@ app.post('/make-server-210e7672/customers', async (c) => {
   }
 });
 
-// Update customer
 app.put('/make-server-210e7672/customers/:id', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -368,7 +352,6 @@ app.put('/make-server-210e7672/customers/:id', async (c) => {
 // Employee Routes
 // ======================
 
-// Get all employees
 app.get('/make-server-210e7672/employees', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -384,7 +367,6 @@ app.get('/make-server-210e7672/employees', async (c) => {
   }
 });
 
-// Create employee (requires admin)
 app.post('/make-server-210e7672/employees', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -394,7 +376,6 @@ app.post('/make-server-210e7672/employees', async (c) => {
 
     const { name, email, role, commission, password } = await c.req.json();
 
-    // Create user in Supabase Auth
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -407,7 +388,6 @@ app.post('/make-server-210e7672/employees', async (c) => {
       return c.json({ error: error.message }, 400);
     }
 
-    // Create employee record
     const employee = {
       id: data.user.id,
       name,
@@ -428,7 +408,6 @@ app.post('/make-server-210e7672/employees', async (c) => {
   }
 });
 
-// Update employee
 app.put('/make-server-210e7672/employees/:id', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
@@ -465,13 +444,11 @@ app.put('/make-server-210e7672/employees/:id', async (c) => {
 
 app.post('/make-server-210e7672/init-demo', async (c) => {
   try {
-    // Check if already initialized
     const existing = await kv.get('demo:initialized');
     if (existing) {
       return c.json({ message: 'Demo data already initialized' });
     }
 
-    // Create demo products
     const demoProducts = [
       {
         id: '1',
@@ -485,10 +462,10 @@ app.post('/make-server-210e7672/init-demo', async (c) => {
           {
             id: '1-1',
             attributes: { size: '250g', type: 'Arabica' },
-            cost: 8.50,
+            cost: 8.5,
             costHistory: [
-              { date: '2024-01-15', cost: 8.00, quantity: 100 },
-              { date: '2024-06-20', cost: 8.50, quantity: 150 }
+              { date: '2024-01-15', cost: 8.0, quantity: 100 },
+              { date: '2024-06-20', cost: 8.5, quantity: 150 }
             ],
             price: 15.99,
             stock: 45,
@@ -497,10 +474,10 @@ app.post('/make-server-210e7672/init-demo', async (c) => {
           {
             id: '1-2',
             attributes: { size: '500g', type: 'Arabica' },
-            cost: 15.00,
+            cost: 15.0,
             costHistory: [
-              { date: '2024-01-15', cost: 14.50, quantity: 80 },
-              { date: '2024-06-20', cost: 15.00, quantity: 120 }
+              { date: '2024-01-15', cost: 14.5, quantity: 80 },
+              { date: '2024-06-20', cost: 15.0, quantity: 120 }
             ],
             price: 28.99,
             stock: 32,
@@ -522,10 +499,10 @@ app.post('/make-server-210e7672/init-demo', async (c) => {
           {
             id: '2-1',
             attributes: { size: '100g', type: 'Sencha' },
-            cost: 6.00,
+            cost: 6.0,
             costHistory: [
-              { date: '2024-02-10', cost: 5.80, quantity: 60 },
-              { date: '2024-08-15', cost: 6.00, quantity: 90 }
+              { date: '2024-02-10', cost: 5.8, quantity: 60 },
+              { date: '2024-08-15', cost: 6.0, quantity: 90 }
             ],
             price: 11.99,
             stock: 28,
@@ -541,14 +518,13 @@ app.post('/make-server-210e7672/init-demo', async (c) => {
       await kv.set(`product:${product.id}`, product);
     }
 
-    // Create demo customers
     const demoCustomers = [
       {
         id: '1',
         name: 'John Smith',
         phone: '+1234567890',
         debtBalance: 0,
-        totalPurchases: 485.50,
+        totalPurchases: 485.5,
         lastPurchaseDate: '2024-12-20',
         createdAt: new Date().toISOString()
       },
@@ -556,7 +532,7 @@ app.post('/make-server-210e7672/init-demo', async (c) => {
         id: '2',
         name: 'Sarah Johnson',
         phone: '+1234567891',
-        debtBalance: 25.00,
+        debtBalance: 25.0,
         totalPurchases: 1250.75,
         lastPurchaseDate: '2024-12-18',
         createdAt: new Date().toISOString()

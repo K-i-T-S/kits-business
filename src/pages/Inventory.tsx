@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Plus, Search, Edit, Trash2, Package, TrendingUp, AlertTriangle, Upload, Download } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
@@ -146,7 +146,7 @@ export default function Inventory() {
                   const isExpanded = selectedProduct === product.id;
 
                   return (
-                    <>
+                    <Fragment key={product.id}>
                       <tr key={product.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <div>
@@ -247,22 +247,24 @@ export default function Inventory() {
                               })}
                               
                               {/* Cost History */}
-                              <div className="bg-white rounded-lg p-4">
-                                <p className="text-gray-700 mb-2">Cost History:</p>
-                                <div className="space-y-1">
-                                  {product.variants[0].costHistory.map((entry, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm">
-                                      <span className="text-gray-600">{new Date(entry.date).toLocaleDateString()}</span>
-                                      <span className="text-gray-900">${entry.cost.toFixed(2)} ({entry.quantity} units)</span>
-                                    </div>
-                                  ))}
+                              {product.variants[0]?.costHistory?.length ? (
+                                <div className="bg-white rounded-lg p-4">
+                                  <p className="text-gray-700 mb-2">Cost History:</p>
+                                  <div className="space-y-1">
+                                    {product.variants[0].costHistory.map((entry, idx) => (
+                                      <div key={idx} className="flex justify-between text-sm">
+                                        <span className="text-gray-600">{new Date(entry.date).toLocaleDateString()}</span>
+                                        <span className="text-gray-900">${entry.cost.toFixed(2)} ({entry.quantity} units)</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
+                              ) : null}
                             </div>
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

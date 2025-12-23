@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Upload } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { toast } from 'sonner@2.0.3';
 
 interface ImportInventoryModalProps {
   onClose: () => void;
@@ -13,14 +14,20 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
   const [adjustmentValue, setAdjustmentValue] = useState('0');
   const [importData, setImportData] = useState('');
 
-  const handleImport = (e: React.FormEvent) => {
+  const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Parse CSV-like data (simplified example)
     // Format: barcode,quantity,cost
     const lines = importData.trim().split('\n');
     
-    lines.forEach(line => {
+    const results = {
+      created: 0,
+      updated: 0,
+      failed: 0,
+    };
+
+    await Promise.all(lines.map(async line => {
       const [barcode, quantity, newCost] = line.split(',').map(s => s.trim());
       
       if (!barcode || !quantity) return;
@@ -30,7 +37,9 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
       if (product) {
         // Update existing product
         const variant = product.variants[0];
-        const calculatedCost = calculateNewCost(variant.cost, newCost ? parseFloat(newCost) : variant.cost);
+        if (!variant) return;
+        const baseCost = newCost ? parseFloat(newCost) : variant.cost;
+        const calculatedCost = calculateNewCost(variant.cost, baseCost);
         
         // Update cost history
         const updatedVariants = product.variants.map(v => ({
@@ -46,8 +55,9 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
           ]
         }));
 
-        updateProduct(product.id, { variants: updatedVariants });
-        updateStock(product.id, variant.id, parseInt(quantity));
+        await updateProduct(product.id, { variants: updatedVariants });
+        await updateStock(product.id, variant.id, parseInt(quantity));
+        results.updated += 1;
       } else {
         // Create new product (simplified - would need more data in real scenario)
         const newProduct = {
@@ -75,11 +85,14 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
             }
           ]
         };
-        addProduct(newProduct);
+        await addProduct(newProduct);
+        results.created += 1;
       }
-    });
+    }));
 
-    alert('Import completed successfully!');
+    toast.success('Import completed', {
+      description: `${results.updated} updated, ${results.created} created.`,
+    });
     onClose();
   };
 

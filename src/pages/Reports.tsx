@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, TrendingUp, DollarSign, Package, Users, BarChart3, Download } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, Package, Users, BarChart3, Download, Sparkles } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -225,227 +225,289 @@ export default function Reports() {
     });
   };
 
+  const formatCurrency = (value: number) =>
+    value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+  const statCards = [
+    {
+      title: 'Total revenue',
+      value: formatCurrency(totalRevenue),
+      helper: `${totalTransactions} transactions`,
+      accent: 'from-indigo-600/95 via-indigo-500/85 to-sky-400/80',
+      icon: DollarSign,
+    },
+    {
+      title: 'Total profit',
+      value: formatCurrency(totalProfit),
+      helper: `${totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0}% margin`,
+      accent: 'from-emerald-500/95 via-emerald-400/85 to-lime-400/80',
+      icon: TrendingUp,
+    },
+    {
+      title: 'Avg transaction',
+      value: formatCurrency(avgTransactionValue),
+      helper: 'per sale',
+      accent: 'from-amber-500/95 via-amber-400/85 to-orange-400/80',
+      icon: BarChart3,
+    },
+    {
+      title: 'Active customers',
+      value: customers.length.toLocaleString(),
+      helper: 'total registered',
+      accent: 'from-purple-500/95 via-purple-400/85 to-pink-400/80',
+      icon: Users,
+    },
+  ];
+
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-gray-900">Reports & Analytics</h1>
-            <p className="text-gray-600">Comprehensive business insights and metrics</p>
+      <div className="space-y-10">
+        <section className="glass-panel relative overflow-hidden p-6 md:p-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-rose-400/15 blur-[90px]" />
+          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-indigo-200/30" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="stat-chip bg-white/10 text-white/80">Intelligence lab</p>
+              <h1 className="mt-3 text-3xl font-semibold text-slate-900">Reports & analytics</h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Monitor revenue, profit, inventory velocity, and cashier performance. Use these charts
+                to guide purchasing decisions and improve daily operations.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 rounded-3xl border border-white/60 bg-white/80 p-5 text-sm text-slate-600 shadow-lg shadow-slate-900/5">
+              <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Date range</label>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="rounded-2xl border border-slate-200 bg-white/90 py-2.5 px-4 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="today">Today</option>
+                <option value="week">Last 7 Days</option>
+                <option value="month">Last 30 Days</option>
+                <option value="all">All Time</option>
+              </select>
+              <button
+                onClick={handleExport}
+                className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+              >
+                <Download className="h-4 w-4" />
+                Export data
+              </button>
+            </div>
           </div>
-          <div className="flex space-x-3">
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+        </section>
+
+        <section className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((card) => (
+            <div
+              key={card.title}
+              className={`tilt-hover rounded-3xl border border-white/10 bg-gradient-to-br ${card.accent} p-5 text-white shadow-lg shadow-slate-900/15`}
             >
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last 30 Days</option>
-              <option value="all">All Time</option>
-            </select>
-            <button
-              onClick={handleExport}
-              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <Download className="w-5 h-5" />
-              <span>Export</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600">Total Revenue</p>
-              <DollarSign className="w-5 h-5 text-green-500" />
+              <div className="flex items-center gap-2 text-white/80">
+                <card.icon className="h-4 w-4" />
+                <p className="text-xs uppercase tracking-[0.25em]">{card.title}</p>
+              </div>
+              <p className="mt-3 text-2xl font-semibold">{card.value}</p>
+              <p className="text-sm text-white/80">{card.helper}</p>
             </div>
-            <p className="text-gray-900 mb-1">${totalRevenue.toFixed(2)}</p>
-            <p className="text-gray-500 text-sm">{totalTransactions} transactions</p>
-          </div>
+          ))}
+        </section>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600">Total Profit</p>
-              <TrendingUp className="w-5 h-5 text-indigo-500" />
+        <section className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Revenue pulse</p>
+                <h2 className="text-lg font-semibold text-slate-900">Sales trend (last 7 days)</h2>
+              </div>
+              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Auto-refreshes</span>
             </div>
-            <p className="text-gray-900 mb-1">${totalProfit.toFixed(2)}</p>
-            <p className="text-gray-500 text-sm">
-              {totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0}% margin
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600">Avg Transaction</p>
-              <BarChart3 className="w-5 h-5 text-orange-500" />
-            </div>
-            <p className="text-gray-900 mb-1">${avgTransactionValue.toFixed(2)}</p>
-            <p className="text-gray-500 text-sm">per sale</p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600">Active Customers</p>
-              <Users className="w-5 h-5 text-purple-500" />
-            </div>
-            <p className="text-gray-900 mb-1">{customers.length}</p>
-            <p className="text-gray-500 text-sm">total registered</p>
-          </div>
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Daily Sales Trend */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Sales Trend (Last 7 Days)</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={dailySales}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={2} name="Revenue" />
-                <Line type="monotone" dataKey="profit" stroke="#10B981" strokeWidth={2} name="Profit" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Top Products */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Top Products by Revenue</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topProducts}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="revenue" fill="#4F46E5" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Payment Methods */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Payment Methods Distribution</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={paymentMethods}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {paymentMethods.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Employee Performance */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Employee Performance</h2>
-            {employeeSales.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={employeeSales}>
+            <div className="mt-4 h-[260px] sm:h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dailySales}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Bar dataKey="sales" fill="#10B981" name="Sales ($)" />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={2} name="Revenue" />
+                  <Line type="monotone" dataKey="profit" stroke="#10B981" strokeWidth={2} name="Profit" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Merch velocity</p>
+                <h2 className="text-lg font-semibold text-slate-900">Top products by revenue</h2>
+              </div>
+              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Sync with PLU</span>
+            </div>
+            <div className="mt-4 h-[260px] sm:h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topProducts}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="revenue" fill="#4F46E5" />
                 </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-gray-500">
-                No sales data available for this period
-              </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Detailed Tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Products Table */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Top Products Details</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-gray-200">
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Tender mix</p>
+                <h2 className="text-lg font-semibold text-slate-900">Payment method distribution</h2>
+              </div>
+              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Customize copy</span>
+            </div>
+            <div className="mt-4 h-[260px] sm:h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={paymentMethods}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {paymentMethods.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">People power</p>
+                <h2 className="text-lg font-semibold text-slate-900">Employee performance</h2>
+              </div>
+              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Use for coaching</span>
+            </div>
+            <div className="mt-4 h-[260px] sm:h-[320px]">
+              {employeeSales.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={employeeSales}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="sales" fill="#10B981" name="Sales ($)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                  No sales data available for this period
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Product intelligence</p>
+                <h2 className="text-lg font-semibold text-slate-900">Top products details</h2>
+              </div>
+              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Kits insights</span>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
                   <tr>
-                    <th className="text-left py-2 text-gray-600 text-sm">Product</th>
-                    <th className="text-right py-2 text-gray-600 text-sm">Qty Sold</th>
-                    <th className="text-right py-2 text-gray-600 text-sm">Revenue</th>
-                    <th className="text-right py-2 text-gray-600 text-sm">Profit</th>
+                    <th className="px-4 py-3">Product</th>
+                    <th className="px-4 py-3 text-right">Qty sold</th>
+                    <th className="px-4 py-3 text-right">Revenue</th>
+                    <th className="px-4 py-3 text-right">Profit</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100 bg-white/85">
                   {topProducts.map((product, index) => (
-                    <tr key={index} className="border-b border-gray-100 last:border-0">
-                      <td className="py-3 text-gray-900">{product.name}</td>
-                      <td className="py-3 text-gray-700 text-right">{product.quantity}</td>
-                      <td className="py-3 text-gray-900 text-right">${product.revenue.toFixed(2)}</td>
-                      <td className="py-3 text-green-600 text-right">${product.profit.toFixed(2)}</td>
+                    <tr key={index}>
+                      <td className="px-4 py-3 text-slate-900">{product.name}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{product.quantity}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                        {formatCurrency(product.revenue)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-emerald-600">
+                        {formatCurrency(product.profit)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {topProducts.length === 0 && (
-                <p className="text-center py-8 text-gray-500">No sales data</p>
+                <p className="py-8 text-center text-sm text-slate-500">No sales data</p>
               )}
             </div>
           </div>
 
-          {/* Cost Shifts */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Recent Cost Shifts</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-gray-200">
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Cost intelligence</p>
+                <h2 className="text-lg font-semibold text-slate-900">Recent cost shifts</h2>
+              </div>
+              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Audit ready</span>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
                   <tr>
-                    <th className="text-left py-2 text-gray-600 text-sm">Product</th>
-                    <th className="text-right py-2 text-gray-600 text-sm">Previous</th>
-                    <th className="text-right py-2 text-gray-600 text-sm">Current</th>
-                    <th className="text-right py-2 text-gray-600 text-sm">Change</th>
+                    <th className="px-4 py-3">Product</th>
+                    <th className="px-4 py-3 text-right">Previous</th>
+                    <th className="px-4 py-3 text-right">Current</th>
+                    <th className="px-4 py-3 text-right">Change</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100 bg-white/85">
                   {costShifts.slice(0, 5).map((shift: any, index) => (
-                    <tr key={index} className="border-b border-gray-100 last:border-0">
-                      <td className="py-3">
-                        <p className="text-gray-900 text-sm">{shift.product}</p>
-                        <p className="text-gray-500 text-xs">{shift.variant}</p>
+                    <tr key={index}>
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-slate-900">{shift.product}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{shift.variant}</p>
                       </td>
-                      <td className="py-3 text-gray-700 text-right text-sm">
-                        ${shift.previousCost.toFixed(2)}
+                      <td className="px-4 py-3 text-right text-slate-600">
+                        {formatCurrency(shift.previousCost)}
                       </td>
-                      <td className="py-3 text-gray-900 text-right text-sm">
-                        ${shift.currentCost.toFixed(2)}
+                      <td className="px-4 py-3 text-right text-slate-900">
+                        {formatCurrency(shift.currentCost)}
                       </td>
-                      <td className={`py-3 text-right text-sm ${
-                        shift.change > 0 ? 'text-red-600' : 'text-green-600'
-                      }`}>
-                        {shift.change > 0 ? '+' : ''}{shift.change.toFixed(1)}%
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={
+                            shift.currentCost > shift.previousCost ? 'text-rose-500' : 'text-emerald-600'
+                          }
+                        >
+                          {shift.currentCost > shift.previousCost ? '+' : '-'}
+                          {formatCurrency(Math.abs(shift.currentCost - shift.previousCost))}
+                        </span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {costShifts.length === 0 && (
-                <p className="text-center py-8 text-gray-500">No cost changes recorded</p>
+                <p className="py-8 text-center text-sm text-slate-500">No recent changes</p>
               )}
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </Layout>
   );

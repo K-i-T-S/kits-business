@@ -1,5 +1,13 @@
-import { useState } from 'react';
-import { Plus, Search, Phone, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  DollarSign,
+  Phone,
+  Plus,
+  Search,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 
@@ -9,9 +17,14 @@ export default function Customers() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '' });
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.phone.includes(searchQuery)
+  const filteredCustomers = useMemo(
+    () =>
+      customers.filter(
+        (customer) =>
+          customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          customer.phone.includes(searchQuery),
+      ),
+    [customers, searchQuery],
   );
 
   const handleAddCustomer = (e: React.FormEvent) => {
@@ -41,187 +54,245 @@ export default function Customers() {
   const totalDebt = customers.reduce((sum, c) => sum + c.debtBalance, 0);
   const totalRevenue = customers.reduce((sum, c) => sum + c.totalPurchases, 0);
 
+  const formatCurrency = (value: number) =>
+    value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+  const statCards = [
+    {
+      title: 'Active profiles',
+      value: customers.length.toLocaleString(),
+      helper: 'Customers in your database',
+      accent: 'from-indigo-500/95 via-indigo-400/85 to-sky-400/80',
+    },
+    {
+      title: 'Lifetime revenue',
+      value: formatCurrency(totalRevenue),
+      helper: 'All-time purchases',
+      accent: 'from-emerald-500/95 via-emerald-400/85 to-lime-400/80',
+    },
+    {
+      title: 'Outstanding debt',
+      value: formatCurrency(totalDebt),
+      helper: 'Balance awaiting collection',
+      accent: 'from-amber-500/95 via-amber-400/85 to-orange-400/80',
+    },
+    {
+      title: 'Accounts with debt',
+      value: customers.filter((c) => c.debtBalance > 0).length.toLocaleString(),
+      helper: 'Priority follow-ups',
+      accent: 'from-rose-500/95 via-rose-400/85 to-pink-400/80',
+    },
+  ];
+
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-gray-900">Customer Management</h1>
-            <p className="text-gray-600">Track customers, purchases, and debt balances</p>
+      <div className="space-y-10">
+        {/* Hero */}
+        <section className="glass-panel relative overflow-hidden p-6 md:p-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/15 via-transparent to-rose-400/20 blur-[90px]" />
+          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 text-indigo-200/30" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="stat-chip bg-white/10 text-white/80">Customer success</p>
+              <h1 className="mt-4 text-3xl font-semibold text-slate-900">
+                Build loyalty with every sale.
+              </h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Track purchases, manage outstanding balances, and keep contact details ready for
+                fast support—online or at the counter.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+            >
+              <Plus className="h-5 w-5" />
+              Add customer
+            </button>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Add Customer</span>
-          </button>
-        </div>
+        </section>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-600 mb-1">Total Customers</p>
-            <p className="text-gray-900">{customers.length}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-600 mb-1">Total Revenue</p>
-            <p className="text-gray-900">${totalRevenue.toFixed(2)}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-600 mb-1">Outstanding Debt</p>
-            <p className="text-orange-600">${totalDebt.toFixed(2)}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-600 mb-1">Customers w/ Debt</p>
-            <p className="text-gray-900">{customers.filter(c => c.debtBalance > 0).length}</p>
-          </div>
-        </div>
+        <section className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((card) => (
+            <div
+              key={card.title}
+              className={`tilt-hover rounded-3xl border border-white/10 bg-gradient-to-br ${card.accent} p-5 text-white shadow-lg shadow-slate-900/15`}
+            >
+              <p className="text-xs uppercase tracking-[0.25em] text-white/70">{card.title}</p>
+              <p className="mt-3 text-2xl font-semibold">{card.value}</p>
+              <p className="text-sm text-white/80">{card.helper}</p>
+            </div>
+          ))}
+        </section>
 
         {/* Search */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <section className="glass-panel p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Directory</p>
+              <h2 className="text-lg font-semibold text-slate-900">Find the right customer fast</h2>
+            </div>
+            <p className="text-xs uppercase tracking-[0.35em] text-slate-400">
+              Kits-ready workflow
+            </p>
+          </div>
+          <div className="mt-4 relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by name or phone..."
+              placeholder="Search by name or phone number…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              className="w-full rounded-2xl border border-slate-200 bg-white/85 py-3 pl-12 pr-4 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
             />
           </div>
-        </div>
+        </section>
 
         {/* Customers List */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <section className="glass-panel overflow-hidden p-0">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-gray-600">Customer</th>
-                  <th className="px-6 py-3 text-left text-gray-600">Phone</th>
-                  <th className="px-6 py-3 text-left text-gray-600">Total Purchases</th>
-                  <th className="px-6 py-3 text-left text-gray-600">Debt Balance</th>
-                  <th className="px-6 py-3 text-left text-gray-600">Last Purchase</th>
-                  <th className="px-6 py-3 text-left text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                          <span className="text-indigo-600">
-                            {customer.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <p className="text-gray-900">{customer.name}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-700">{customer.phone}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <TrendingUp className="w-4 h-4 text-green-500" />
-                        <span className="text-gray-700">${customer.totalPurchases.toFixed(2)}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {customer.debtBalance > 0 ? (
-                        <div className="flex items-center space-x-2">
-                          <AlertCircle className="w-4 h-4 text-orange-500" />
-                          <span className="text-orange-600">${customer.debtBalance.toFixed(2)}</span>
-                        </div>
-                      ) : (
-                        <span className="text-green-600">$0.00</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-gray-700 text-sm">
-                      {customer.lastPurchaseDate
-                        ? new Date(customer.lastPurchaseDate).toLocaleDateString()
-                        : 'Never'}
-                    </td>
-                    <td className="px-6 py-4">
-                      {customer.debtBalance > 0 && (
-                        <button
-                          onClick={() => {
-                            const amount = prompt(`Enter payment amount (Max: $${customer.debtBalance.toFixed(2)}):`);
-                            if (amount) {
-                              handlePayDebt(customer.id, parseFloat(amount));
-                            }
-                          }}
-                          className="flex items-center space-x-1 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm"
-                        >
-                          <DollarSign className="w-4 h-4" />
-                          <span>Pay Debt</span>
-                        </button>
-                      )}
-                    </td>
+            <div className="min-w-[720px]">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
+                  <tr>
+                    <th className="px-6 py-4">Customer</th>
+                    <th className="px-6 py-4">Phone</th>
+                    <th className="px-6 py-4">Total purchases</th>
+                    <th className="px-6 py-4">Debt balance</th>
+                    <th className="hidden sm:table-cell px-6 py-4">Last purchase</th>
+                    <th className="px-6 py-4">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white/85">
+                  {filteredCustomers.map((customer) => (
+                    <tr key={customer.id} className="transition hover:bg-slate-50/70">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-600">
+                            {customer.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900">{customer.name}</p>
+                            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                              Customer profile
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <Phone className="h-4 w-4 text-slate-400" />
+                          <span className="text-sm">{customer.phone}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <TrendingUp className="h-4 w-4 text-emerald-500" />
+                          <span className="text-sm">{formatCurrency(customer.totalPurchases)}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {customer.debtBalance > 0 ? (
+                          <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                            <AlertCircle className="h-4 w-4" />
+                            {formatCurrency(customer.debtBalance)}
+                          </div>
+                        ) : (
+                          <span className="text-xs font-semibold text-emerald-600">
+                            {formatCurrency(0)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="hidden sm:table-cell px-6 py-4 text-xs text-slate-500">
+                        {customer.lastPurchaseDate
+                          ? new Date(customer.lastPurchaseDate).toLocaleDateString()
+                          : 'Never'}
+                      </td>
+                      <td className="px-6 py-4">
+                        {customer.debtBalance > 0 && (
+                          <button
+                            onClick={() => {
+                              const amount = prompt(`Enter payment amount (Max: ${formatCurrency(customer.debtBalance)}):`);
+                              if (amount) {
+                                const parsedAmount = parseFloat(amount);
+                                if (!isNaN(parsedAmount)) {
+                                  handlePayDebt(customer.id, parsedAmount);
+                                }
+                              }
+                            }}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                            Pay debt
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-
           {filteredCustomers.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No customers found</p>
+            <div className="p-10 text-center text-sm text-slate-500">
+              No customers found. Reset filters and try again.
             </div>
           )}
-        </div>
-      </div>
+        </section>
 
-      {/* Add Customer Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-gray-900 mb-4">Add New Customer</h2>
-            <form onSubmit={handleAddCustomer} className="space-y-4">
+        {/* Add Customer Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+            <div className="glass-panel w-full max-w-md space-y-4 p-6">
               <div>
-                <label className="block text-gray-700 mb-2">Customer Name</label>
-                <input
-                  type="text"
-                  value={newCustomer.name}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  required
-                />
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">New loyalty profile</p>
+                <h2 className="text-xl font-semibold text-slate-900">Add customer</h2>
+                <p className="text-sm text-slate-500">
+                  Save customer details to speed up service, warranties, and follow-ups.
+                </p>
               </div>
-              <div>
-                <label className="block text-gray-700 mb-2">Phone Number</label>
-                <input
-                  type="tel"
-                  value={newCustomer.phone}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  required
-                />
-              </div>
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                  Add Customer
-                </button>
-              </div>
-            </form>
+              <form onSubmit={handleAddCustomer} className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-slate-600">Customer name</label>
+                  <input
+                    type="text"
+                    value={newCustomer.name}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-slate-600">Phone number</label>
+                  <input
+                    type="tel"
+                    value={newCustomer.phone}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+                  >
+                    Save customer
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </Layout>
   );
 }

@@ -1,5 +1,14 @@
-import { useState } from 'react';
-import { Plus, Search, Shield, Mail, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  Plus,
+  Search,
+  Shield,
+  Mail,
+  DollarSign,
+  TrendingUp,
+  Clock,
+  Sparkles,
+} from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 
@@ -11,13 +20,51 @@ export default function Employees() {
     name: '',
     email: '',
     role: 'cashier' as 'admin' | 'manager' | 'cashier',
-    commission: 3
+    commission: 3,
   });
 
-  const filteredEmployees = employees.filter(employee =>
-    employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEmployees = useMemo(
+    () =>
+      employees.filter(
+        (employee) =>
+          employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          employee.email.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [employees, searchQuery],
   );
+
+  const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+
+  const formatCurrency = (value: number) =>
+    value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+  const statCards = [
+    {
+      title: 'Team members',
+      value: employees.length.toLocaleString(),
+      helper: 'Add your staffing target here',
+      accent: 'from-indigo-500/95 via-indigo-400/85 to-sky-400/80',
+    },
+    {
+      title: 'Leadership coverage',
+      value: employees.filter((e) => e.role !== 'cashier').length.toLocaleString(),
+      helper: 'Admins + managers online',
+      accent: 'from-purple-500/95 via-purple-400/85 to-pink-400/80',
+    },
+    {
+      title: 'Gross revenue handled',
+      value: formatCurrency(totalRevenue),
+      helper: 'All-time sales recorded',
+      accent: 'from-emerald-500/95 via-emerald-400/85 to-lime-400/80',
+    },
+    {
+      title: 'Avg revenue / teammate',
+      value:
+        employees.length > 0 ? formatCurrency(totalRevenue / employees.length) : formatCurrency(0),
+      helper: 'Use this to track productivity',
+      accent: 'from-amber-500/95 via-amber-400/85 to-orange-400/80',
+    },
+  ];
 
   const handleAddEmployee = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,132 +103,137 @@ export default function Employees() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-gray-900">Employee Management</h1>
-            <p className="text-gray-600">Manage staff, roles, and track performance</p>
+      <div className="space-y-10">
+        <section className="glass-panel relative overflow-hidden p-6 md:p-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-sky-300/15 blur-[90px]" />
+          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-indigo-200/30" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="stat-chip bg-white/10 text-white/80">People operations</p>
+              <h1 className="mt-3 text-3xl font-semibold text-slate-900">
+                Build a legendary frontline team.
+              </h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Manage roles, commissions, and performance so your team can deliver fast, friendly
+                service—whether you’re selling hardware, software, or POS setups.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25"
+            >
+              <Plus className="h-5 w-5" />
+              Add teammate
+            </button>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Add Employee</span>
-          </button>
-        </div>
+        </section>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-600 mb-1">Total Employees</p>
-            <p className="text-gray-900">{employees.length}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-600 mb-1">Admins</p>
-            <p className="text-gray-900">{employees.filter(e => e.role === 'admin').length}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-600 mb-1">Managers</p>
-            <p className="text-gray-900">{employees.filter(e => e.role === 'manager').length}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-600 mb-1">Cashiers</p>
-            <p className="text-gray-900">{employees.filter(e => e.role === 'cashier').length}</p>
-          </div>
-        </div>
+        <section className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((card) => (
+            <div
+              key={card.title}
+              className={`tilt-hover rounded-3xl border border-white/10 bg-gradient-to-br ${card.accent} p-5 text-white shadow-lg shadow-slate-900/15`}
+            >
+              <p className="text-xs uppercase tracking-[0.25em] text-white/70">{card.title}</p>
+              <p className="mt-3 text-2xl font-semibold">{card.value}</p>
+              <p className="text-sm text-white/80">{card.helper}</p>
+            </div>
+          ))}
+        </section>
 
-        {/* Search */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <section className="glass-panel p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Directory</p>
+              <h2 className="text-lg font-semibold text-slate-900">Filter by name or email</h2>
+            </div>
+            <p className="text-xs uppercase tracking-[0.35em] text-slate-400">
+              Kits team directory
+            </p>
+          </div>
+          <div className="mt-4 relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Search by name, email, or role…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              className="w-full rounded-2xl border border-slate-200 bg-white/85 py-3 pl-12 pr-4 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
             />
           </div>
-        </div>
+        </section>
 
         {/* Employees List */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
           {filteredEmployees.map((employee) => {
             const stats = calculateEmployeeStats(employee.id);
 
             return (
-              <div key={employee.id} className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <span className="text-indigo-600 text-lg">
-                        {employee.name.charAt(0).toUpperCase()}
-                      </span>
+              <article key={employee.id} className="glass-panel p-5 sm:p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-2 sm:space-x-3">
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-lg font-semibold text-indigo-600">
+                      {employee.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <h3 className="text-gray-900">{employee.name}</h3>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <p className="text-gray-600 text-sm">{employee.email}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base font-semibold text-slate-900">{employee.name}</h3>
+                      <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                        <Mail className="h-4 w-4 text-slate-400" />
+                        <p className="truncate">{employee.email}</p>
                       </div>
                     </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm ${getRoleBadgeColor(employee.role)}`}>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getRoleBadgeColor(employee.role)}`}>
                     {employee.role.charAt(0).toUpperCase() + employee.role.slice(1)}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <TrendingUp className="w-4 h-4 text-green-500" />
-                      <p className="text-gray-600 text-sm">Total Sales</p>
-                    </div>
-                    <p className="text-gray-900">${stats.totalRevenue.toFixed(2)}</p>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-slate-50/90 p-3">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Total sales</p>
+                    <p className="text-lg font-semibold text-slate-900">{formatCurrency(stats.totalRevenue)}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <DollarSign className="w-4 h-4 text-indigo-500" />
-                      <p className="text-gray-600 text-sm">Commission</p>
-                    </div>
-                    <p className="text-gray-900">${stats.commission.toFixed(2)}</p>
+                  <div className="rounded-2xl bg-slate-50/90 p-3">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Commission</p>
+                    <p className="text-lg font-semibold text-slate-900">{formatCurrency(stats.commission)}</p>
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Transactions</span>
-                    <span className="text-gray-900">{stats.totalSalesCount}</span>
+                <div className="mt-4 grid gap-2 rounded-2xl border border-slate-100 bg-white/80 p-3 text-xs text-slate-500">
+                  <div className="flex justify-between">
+                    <span>Transactions</span>
+                    <span className="font-semibold text-slate-900">{stats.totalSalesCount}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Commission Rate</span>
-                    <span className="text-gray-900">{employee.commission}%</span>
+                  <div className="flex justify-between">
+                    <span>Commission rate</span>
+                    <span className="font-semibold text-slate-900">{employee.commission}%</span>
                   </div>
                   {stats.totalSalesCount > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Avg per Transaction</span>
-                      <span className="text-gray-900">
-                        ${(stats.totalRevenue / stats.totalSalesCount).toFixed(2)}
+                    <div className="flex justify-between">
+                      <span>Avg per transaction</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatCurrency(stats.totalRevenue / stats.totalSalesCount)}
                       </span>
                     </div>
                   )}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <button className="w-full py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-                    View Performance Report
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                    Performance snapshot
+                  </div>
+                  <button className="rounded-2xl border border-indigo-100 px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50">
+                    View performance report
                   </button>
                 </div>
-              </div>
+              </article>
             );
           })}
-        </div>
+        </section>
 
         {filteredEmployees.length === 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <p className="text-gray-600">No employees found</p>
+          <div className="bg-white rounded-xl shadow-sm p-8 sm:p-12 text-center">
+            <p className="text-sm sm:text-base text-gray-600">No employees found</p>
           </div>
         )}
       </div>
@@ -189,35 +241,35 @@ export default function Employees() {
       {/* Add Employee Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-gray-900 mb-4">Add New Employee</h2>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg sm:text-xl text-gray-900 mb-4 font-semibold">Add New Employee</h2>
             <form onSubmit={handleAddEmployee} className="space-y-4">
               <div>
-                <label className="block text-gray-700 mb-2">Full Name</label>
+                <label className="block text-sm sm:text-base text-gray-700 mb-2">Full Name</label>
                 <input
                   type="text"
                   value={newEmployee.name}
                   onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   required
                 />
               </div>
               <div>
-                <label className="block text-gray-700 mb-2">Email</label>
+                <label className="block text-sm sm:text-base text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
                   value={newEmployee.email}
                   onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   required
                 />
               </div>
               <div>
-                <label className="block text-gray-700 mb-2">Role</label>
+                <label className="block text-sm sm:text-base text-gray-700 mb-2">Role</label>
                 <select
                   value={newEmployee.role}
                   onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value as any })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
                 >
                   <option value="cashier">Cashier</option>
                   <option value="manager">Manager</option>
@@ -225,7 +277,7 @@ export default function Employees() {
                 </select>
               </div>
               <div>
-                <label className="block text-gray-700 mb-2">Commission Rate (%)</label>
+                <label className="block text-sm sm:text-base text-gray-700 mb-2">Commission Rate (%)</label>
                 <input
                   type="number"
                   min="0"
@@ -233,7 +285,7 @@ export default function Employees() {
                   step="0.5"
                   value={newEmployee.commission}
                   onChange={(e) => setNewEmployee({ ...newEmployee, commission: parseFloat(e.target.value) })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   required
                 />
               </div>
@@ -241,13 +293,13 @@ export default function Employees() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="flex-1 px-4 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm sm:text-base"
                 >
                   Add Employee
                 </button>

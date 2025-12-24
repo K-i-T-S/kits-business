@@ -1,7 +1,20 @@
 import { useState } from 'react';
-import { CheckCircle, Package, Users, ShoppingCart, TrendingUp, BarChart3, Shield } from 'lucide-react';
+import {
+  CheckCircle,
+  Package,
+  Users,
+  ShoppingCart,
+  TrendingUp,
+  BarChart3,
+  Shield,
+  Sparkles,
+  Mail,
+  MessageCircle,
+  Instagram,
+} from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import { supabase } from '../utils/supabaseClient';
+import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
 
 interface LoginProps {
   onLogin: () => void;
@@ -14,6 +27,7 @@ export default function Login({ onLogin }: LoginProps) {
   const [businessName, setBusinessName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [logoError, setLogoError] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,117 +117,195 @@ export default function Login({ onLogin }: LoginProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex">
-      {/* Left Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            {/* Logo */}
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-xl mb-4">
-                <ShoppingCart className="w-8 h-8 text-white" />
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
+      <div className="pointer-events-none blur-blob top-10 left-10 bg-indigo-500/40" aria-hidden="true" />
+      <div className="pointer-events-none blur-blob bottom-12 right-0 bg-orange-400/30" aria-hidden="true" />
+      <div className="relative flex min-h-screen flex-col lg:flex-row">
+        <section className="flex w-full flex-col justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 px-6 py-10 text-slate-900 lg:w-1/2 lg:px-16">
+          <div className="mx-auto w-full max-w-md space-y-8">
+            <div className="text-center">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-900/5">
+                {!logoError ? (
+                  <img
+                    src="/logo.png"
+                    alt={`${BRAND.name} logo`}
+                    className="h-10 w-10 object-contain"
+                    onError={() => setLogoError(true)}
+                  />
+                ) : (
+                  <ShoppingCart className="h-8 w-8 text-indigo-600" />
+                )}
               </div>
-              <h1 className="text-indigo-600">KITS-POS</h1>
-              <p className="text-gray-600">All-in-One Business Terminal</p>
+              <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Sign in to</p>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-900">{BRAND.name}</h1>
+              <p className="text-sm text-slate-500">{BRAND.tagline}</p>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignup && (
+            <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-xl shadow-slate-900/5">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                {isSignup ? 'Create account' : 'Welcome back'}
+              </p>
+              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                {isSignup && (
+                  <div>
+                    <label className="text-sm font-semibold text-slate-600">Business name</label>
+                    <input
+                      type="text"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                      placeholder={BRAND.name}
+                      required={isSignup}
+                    />
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-gray-700 mb-2">Business Name</label>
+                  <label className="text-sm font-semibold text-slate-600">Email</label>
                   <input
-                    type="text"
-                    value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                    placeholder="Enter your business name"
-                    required={isSignup}
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                    placeholder="your@email.com"
+                    required
                   />
                 </div>
-              )}
 
-              <div>
-                <label className="block text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  placeholder="your@email.com"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 mb-2">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Please wait...' : (isSignup ? 'Create Account' : 'Sign In')}
-              </button>
-            </form>
-
-            {/* Toggle */}
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => setIsSignup(!isSignup)}
-                className="text-indigo-600 hover:underline"
-              >
-                {isSignup ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Side - Features */}
-      <div className="hidden lg:flex lg:w-1/2 bg-indigo-600 p-12 flex-col justify-center">
-        <div className="max-w-xl">
-          <h2 className="text-white mb-4">Transform Your Business Operations</h2>
-          <p className="text-indigo-100 mb-12">
-            Streamline inventory, sales, and team management with our comprehensive POS system
-          </p>
-
-          <div className="space-y-6">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-start space-x-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center">
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
                 <div>
-                  <h3 className="text-white mb-1">{feature.title}</h3>
-                  <p className="text-indigo-200 text-sm">{feature.description}</p>
+                  <label className="text-sm font-semibold text-slate-600">Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                    placeholder="••••••••"
+                    required
+                  />
                 </div>
-              </div>
-            ))}
-          </div>
 
-          <div className="mt-12 pt-8 border-t border-indigo-500">
-            <div className="flex items-center space-x-2 text-indigo-100">
-              <CheckCircle className="w-5 h-5" />
-              <span>Trusted by 5,000+ businesses worldwide</span>
+                {error && (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-600">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="tilt-hover w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? 'Please wait…' : isSignup ? 'Create account' : 'Sign in'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsSignup(!isSignup)}
+                  className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-indigo-600 hover:bg-slate-50"
+                >
+                  {isSignup ? 'Already have an account? Sign in' : "Need an account? Create one"}
+                </button>
+              </form>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white/70 p-4 text-center text-xs text-slate-500">
+              <p className="font-semibold text-slate-700">Need help onboarding?</p>
+              <div className="mt-1 flex items-center justify-center gap-4">
+                <a
+                  href={`https://wa.me/${BRAND.supportWhatsApp.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 transition"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  {BRAND.supportWhatsApp}
+                </a>
+                <span className="text-slate-400">•</span>
+                <a
+                  href={`https://instagram.com/${BRAND.supportInstagram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 transition"
+                >
+                  <Instagram className="h-3 w-3" />
+                  {BRAND.supportInstagram}
+                </a>
+              </div>
+              <div className="mt-1">
+                <a
+                  href={`mailto:${BRAND.supportEmail}`}
+                  className="flex items-center justify-center gap-1 text-indigo-600 hover:text-indigo-700 transition"
+                >
+                  <Mail className="h-3 w-3" />
+                  {BRAND.supportEmail}
+                </a>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        <section className="relative hidden w-full items-center justify-center overflow-hidden bg-slate-950 px-10 py-14 text-white lg:flex lg:w-1/2">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/70 via-indigo-700/70 to-slate-900/80" />
+          <Sparkles className="absolute right-10 top-10 h-28 w-28 text-white/20" />
+          <div className="relative z-10 flex w-full max-w-lg flex-col gap-10">
+            <div>
+              <p className="stat-chip bg-white/10 text-white/70">Kits Solutions</p>
+              <h2 className="mt-5 text-3xl font-semibold">
+                Hardware, software, POS, and custom development—under one roof.
+              </h2>
+              <p className="mt-3 text-sm text-white/70">
+                {BRAND.tagline}. Reach us on{' '}
+                <a
+                  href={`https://wa.me/${BRAND.supportWhatsApp.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-white/90 hover:text-white transition"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  WhatsApp
+                </a>
+                {' '}or{' '}
+                <a
+                  href={`https://instagram.com/${BRAND.supportInstagram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-white/90 hover:text-white transition"
+                >
+                  <Instagram className="h-3 w-3" />
+                  Instagram
+                </a>
+                .
+              </p>
+            </div>
+
+            <div className="space-y-5">
+              {features.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="flex items-start gap-4 rounded-3xl border border-white/10 bg-white/5 p-4"
+                >
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/10">
+                    <feature.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold">{feature.title}</h3>
+                    <p className="text-xs text-white/70">{feature.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-3xl border border-white/15 bg-white/5 p-4 text-sm text-white/70">
+              <div className="flex items-center gap-2 text-white">
+                <CheckCircle className="h-4 w-4" />
+                <span>On-site support, training, and reliable after-sales service.</span>
+              </div>
+              <p className="mt-2 text-xs uppercase tracking-[0.35em] text-white/60">
+                Kits - Khoder's IT Solutions
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

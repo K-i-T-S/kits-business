@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -7,7 +7,7 @@ interface AddProductModalProps {
 }
 
 export default function AddProductModal({ onClose }: AddProductModalProps) {
-  const { addProduct } = useApp();
+  const { addProduct, setModalOpen } = useApp();
   const [formData, setFormData] = useState({
     name: '',
     barcode: '',
@@ -22,6 +22,11 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
     stock: '',
     reorderLevel: ''
   });
+
+  useEffect(() => {
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [setModalOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

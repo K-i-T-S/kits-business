@@ -30,7 +30,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentEmployee } = useApp();
+  const { currentEmployee, isModalOpen } = useApp();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [logoError, setLogoError] = useState(false);
@@ -218,9 +218,9 @@ export default function Layout({ children }: LayoutProps) {
           />
           <div className="relative flex min-h-screen flex-col">
             <header
-              className={`sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur-xl transition-all ${
+              className={`sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur-xl transition-all duration-300 ease-in-out ${
                 scrollY > 12 ? 'shadow-lg shadow-slate-900/5' : ''
-              }`}
+              } ${isModalOpen ? '-translate-y-full' : 'translate-y-0'}`}
             >
               <div className="flex items-center justify-between px-4 py-3 sm:px-8">
                 <div className="flex items-center gap-3">

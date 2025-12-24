@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Upload } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { toast } from 'sonner@2.0.3';
@@ -8,11 +8,16 @@ interface ImportInventoryModalProps {
 }
 
 export default function ImportInventoryModal({ onClose }: ImportInventoryModalProps) {
-  const { products, addProduct, updateProduct, updateStock } = useApp();
+  const { products, addProduct, updateProduct, updateStock, setModalOpen } = useApp();
   const [supplier, setSupplier] = useState('');
   const [costAdjustment, setCostAdjustment] = useState('fixed');
   const [adjustmentValue, setAdjustmentValue] = useState('0');
   const [importData, setImportData] = useState('');
+
+  useEffect(() => {
+    setModalOpen(true);
+    return () => setModalOpen(false);
+  }, [setModalOpen]);
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();

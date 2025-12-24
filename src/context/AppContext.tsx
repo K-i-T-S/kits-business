@@ -84,6 +84,8 @@ interface AppContextType {
   customers: Customer[];
   employees: Employee[];
   currentEmployee: Employee | null;
+  isModalOpen: boolean;
+  setModalOpen: (open: boolean) => void;
   addProduct: (product: Product) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
@@ -104,6 +106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
@@ -359,6 +362,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       customers,
       employees,
       currentEmployee,
+      isModalOpen,
+      setModalOpen: setIsModalOpen,
       addProduct,
       updateProduct,
       deleteProduct,

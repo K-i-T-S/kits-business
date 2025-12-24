@@ -168,227 +168,246 @@ export default function POS() {
 
   return (
     <Layout>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Side - Product Search & Cart */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Barcode Scanner */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Scan Product</h2>
-            <form onSubmit={handleBarcodeSubmit} className="flex space-x-3">
-              <div className="flex-1 relative">
-                <Barcode className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={barcode}
-                  onChange={(e) => setBarcode(e.target.value)}
-                  placeholder="Scan or enter barcode..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  autoFocus
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Add
-              </button>
-            </form>
+      <div className="space-y-10">
+        <section className="glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Point of sale</p>
+            <h1 className="mt-2 text-3xl font-semibold text-slate-900">Live sales cockpit</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+              Run fast, touch-friendly checkouts with barcode search, loyalty linking, and smart
+              receipt handling. Replace this copy with your in-store experience promise.
+            </p>
           </div>
-
-          {/* Cart */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Shopping Cart</h2>
-            
-            {cart.length === 0 ? (
-              <div className="text-center py-12">
-                <Receipt className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">Cart is empty</p>
-                <p className="text-gray-500 text-sm">Scan a product to get started</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {cart.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <p className="text-gray-900">{item.productName}</p>
-                      <p className="text-gray-500 text-sm">{item.variantAttributes}</p>
-                      <p className="text-gray-700">${item.price.toFixed(2)}</p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => updateQuantity(index, -1)}
-                        className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-12 text-center text-gray-900">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(index, 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <p className="text-gray-900 w-24 text-right">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </p>
-
-                    <button
-                      onClick={() => removeItem(index)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="rounded-3xl border border-white/50 bg-white/70 px-6 py-4 text-right text-xs uppercase tracking-[0.3em] text-slate-500">
+            Operator: <span className="text-base font-semibold text-slate-900">{currentEmployee?.name}</span>
           </div>
-        </div>
+        </section>
 
-        {/* Right Side - Checkout */}
-        <div className="space-y-6">
-          {/* Customer Selection */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Customer (Optional)</h2>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <select
-                value={selectedCustomer}
-                onChange={(e) => setSelectedCustomer(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                <option value="">Walk-in Customer</option>
-                {customers.map(customer => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name} ({customer.phone})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            <section className="glass-panel p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Scanner lane</p>
+                  <h2 className="text-lg font-semibold text-slate-900">Scan or enter barcode</h2>
+                </div>
+              </div>
+              <form onSubmit={handleBarcodeSubmit} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <div className="flex-1 relative">
+                  <Barcode className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    placeholder="Scan or enter barcode..."
+                    className="w-full rounded-2xl border border-slate-200 bg-white/80 py-3 pl-12 pr-4 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+                >
+                  Add
+                </button>
+              </form>
+            </section>
 
-          {/* Payment Method */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Payment Method</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setPaymentMethod('cash')}
-                className={`p-4 rounded-lg border-2 transition-colors ${
-                  paymentMethod === 'cash'
-                    ? 'border-indigo-600 bg-indigo-50'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                <DollarSign className={`w-8 h-8 mx-auto mb-2 ${
-                  paymentMethod === 'cash' ? 'text-indigo-600' : 'text-gray-400'
-                }`} />
-                <p className={paymentMethod === 'cash' ? 'text-indigo-600' : 'text-gray-700'}>
-                  Cash
+            <section className="glass-panel p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Basket</p>
+                  <h2 className="text-lg font-semibold text-slate-900">Shopping cart</h2>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Ready to convert {cart.length} item{cart.length !== 1 ? 's' : ''}
                 </p>
-              </button>
-              <button
-                onClick={() => setPaymentMethod('card')}
-                className={`p-4 rounded-lg border-2 transition-colors ${
-                  paymentMethod === 'card'
-                    ? 'border-indigo-600 bg-indigo-50'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                <CreditCard className={`w-8 h-8 mx-auto mb-2 ${
-                  paymentMethod === 'card' ? 'text-indigo-600' : 'text-gray-400'
-                }`} />
-                <p className={paymentMethod === 'card' ? 'text-indigo-600' : 'text-gray-700'}>
-                  Card
-                </p>
-              </button>
-            </div>
+              </div>
+              {cart.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10 text-center text-slate-400">
+                  <Receipt className="h-12 w-12" />
+                  <p className="text-sm">Cart is empty</p>
+                  <p className="text-xs uppercase tracking-[0.3em]">Scan a product to get started</p>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {cart.map((item, index) => (
+                    <div key={index} className="flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white/90 p-4 sm:flex-row sm:items-center">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">{item.productName}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                          {item.variantAttributes}
+                        </p>
+                        <p className="text-sm text-slate-500">${item.price.toFixed(2)}</p>
+                      </div>
+                      
+                      <div className="flex flex-col items-center gap-2 sm:flex-row">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateQuantity(index, -1)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                          >
+                            <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                          </button>
+                          <span className="w-12 text-center text-sm font-semibold text-slate-900">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(index, 1)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                          >
+                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end">
+                        <p className="text-sm font-semibold text-slate-900">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </p>
+                        <button
+                          onClick={() => removeItem(index)}
+                          className="mt-2 rounded-full border border-rose-100 bg-rose-50/50 p-2 text-rose-600 hover:bg-rose-50"
+                        >
+                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
 
-          {/* Summary */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Summary</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
-                <span className="text-gray-900">${calculateSubtotal().toFixed(2)}</span>
+          <div className="space-y-6">
+            <section className="glass-panel p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Customer</p>
+              <h2 className="text-lg font-semibold text-slate-900">Attach loyalty profile</h2>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <select
+                  value={selectedCustomer}
+                  onChange={(e) => setSelectedCustomer(e.target.value)}
+                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white/80 py-3 pl-12 pr-10 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                >
+                  <option value="">Walk-in Customer</option>
+                  {customers.map(customer => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.name} ({customer.phone})
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax</span>
-                <span className="text-gray-900">$0.00</span>
-              </div>
-              <div className="border-t border-gray-200 pt-3 flex justify-between">
-                <span className="text-gray-900">Total</span>
-                <span className="text-gray-900">${calculateTotal().toFixed(2)}</span>
-              </div>
-            </div>
+            </section>
 
-            <button
-              onClick={handleCheckout}
-              disabled={cart.length === 0}
-              className="w-full mt-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              Complete Sale
-            </button>
+            <section className="glass-panel p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Tender</p>
+              <h2 className="text-lg font-semibold text-slate-900">Payment method</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setPaymentMethod('cash')}
+                  className={`p-3 sm:p-4 rounded-lg border-2 transition-colors ${
+                    paymentMethod === 'cash'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-600'
+                      : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                  }`}
+                >
+                  <DollarSign className={`mx-auto mb-2 h-8 w-8 ${
+                    paymentMethod === 'cash' ? 'text-emerald-600' : 'text-slate-300'
+                  }`} />
+                  <p className="text-sm font-semibold">Cash</p>
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('card')}
+                  className={`p-3 sm:p-4 rounded-lg border-2 transition-colors ${
+                    paymentMethod === 'card'
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
+                      : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                  }`}
+                >
+                  <CreditCard className={`mx-auto mb-2 h-8 w-8 ${
+                    paymentMethod === 'card' ? 'text-indigo-600' : 'text-slate-300'
+                  }`} />
+                  <p className="text-sm font-semibold">Card</p>
+                </button>
+              </div>
+            </section>
+
+            <section className="glass-panel p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Totals</p>
+              <h2 className="text-lg font-semibold text-slate-900">Summary</h2>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span>Subtotal</span>
+                  <span className="text-slate-900">${calculateSubtotal().toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-500">
+                  <span>Tax</span>
+                  <span className="text-slate-900">$0.00</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-base font-semibold text-slate-900">
+                  <span>Total</span>
+                  <span>${calculateTotal().toFixed(2)}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCheckout}
+                disabled={cart.length === 0}
+                className="mt-6 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-lime-400 py-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Complete sale
+              </button>
+            </section>
           </div>
         </div>
       </div>
 
       {/* Receipt Modal */}
       {showReceipt && lastSale && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-8">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Receipt className="w-8 h-8 text-green-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+          <div className="glass-panel max-h-[90vh] w-full max-w-md overflow-y-auto p-6">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                <Receipt className="h-8 w-8 text-emerald-600" />
               </div>
-              <h2 className="text-gray-900 mb-2">Sale Complete!</h2>
-              <p className="text-gray-600">Receipt #{lastSale.id}</p>
+              <h2 className="text-xl font-semibold text-slate-900">Sale complete</h2>
+              <p className="text-sm text-slate-500">Receipt #{lastSale.id}</p>
             </div>
 
-            <div className="space-y-3 mb-6 border-t border-b border-gray-200 py-4">
+            <div className="mt-6 space-y-3 rounded-2xl border border-slate-100 bg-white/80 px-4 py-3 text-sm">
               {lastSale.items.map((item: any, index: number) => (
-                <div key={index} className="flex justify-between">
-                  <span className="text-gray-700">
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-slate-600">
                     {item.productName} x{item.quantity}
                   </span>
-                  <span className="text-gray-900">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </span>
+                  <span className="font-semibold text-slate-900">${(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
 
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total</span>
-                <span className="text-gray-900">${lastSale.total.toFixed(2)}</span>
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Total</span>
+                <span className="font-semibold text-slate-900">${lastSale.total.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Payment Method</span>
-                <span className="text-gray-900 capitalize">{lastSale.paymentMethod}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Payment</span>
+                <span className="capitalize text-slate-900">{lastSale.paymentMethod}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Date</span>
-                <span className="text-gray-900">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Date</span>
+                <span className="text-slate-900">
                   {new Date(lastSale.date).toLocaleString()}
                 </span>
               </div>
             </div>
 
-            <div className="flex space-x-3">
-              <button
-                onClick={closeReceipt}
-                className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                New Sale
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button onClick={closeReceipt} className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30">
+                New sale
               </button>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
+              <button onClick={() => window.print()} className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 Print
               </button>
             </div>

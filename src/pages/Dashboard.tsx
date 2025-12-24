@@ -1,32 +1,45 @@
 import { Link } from 'react-router-dom';
-import { Package, ShoppingCart, Users, UserCircle, TrendingUp, AlertTriangle, DollarSign, BarChart3 } from 'lucide-react';
+import {
+  Package,
+  ShoppingCart,
+  Users,
+  UserCircle,
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
+  BarChart3,
+  Sparkles,
+} from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 
 export default function Dashboard() {
   const { products, sales, customers, currentEmployee } = useApp();
 
-  // Calculate metrics
   const totalProducts = products.reduce((acc, p) => acc + p.variants.length, 0);
-  const totalStock = products.reduce((acc, p) => 
-    acc + p.variants.reduce((sum, v) => sum + v.stock, 0), 0
+  const totalStock = products.reduce(
+    (acc, p) => acc + p.variants.reduce((sum, v) => sum + v.stock, 0),
+    0,
   );
-  const lowStockItems = products.reduce((acc, p) => 
-    acc + p.variants.filter(v => v.stock <= v.reorderLevel).length, 0
+  const lowStockItems = products.reduce(
+    (acc, p) => acc + p.variants.filter((v) => v.stock <= v.reorderLevel).length,
+    0,
   );
-  
-  const todaySales = sales.filter(s => {
+
+  const todaySales = sales.filter((s) => {
     const today = new Date().toDateString();
     return new Date(s.date).toDateString() === today;
   });
-  
+
   const todayRevenue = todaySales.reduce((acc, s) => acc + s.total, 0);
-  const todayProfit = todaySales.reduce((acc, s) => 
-    acc + s.items.reduce((sum, item) => sum + ((item.price - item.cost) * item.quantity), 0), 0
+  const todayProfit = todaySales.reduce(
+    (acc, s) =>
+      acc + s.items.reduce((sum, item) => sum + (item.price - item.cost) * item.quantity, 0),
+    0,
   );
 
   const totalCustomers = customers.length;
-  const customersWithDebt = customers.filter(c => c.debtBalance > 0).length;
+  const customersWithDebt = customers.filter((c) => c.debtBalance > 0).length;
 
   const quickStats = [
     {
@@ -34,129 +47,161 @@ export default function Dashboard() {
       value: totalProducts,
       subtitle: `${totalStock} units in stock`,
       icon: Package,
-      color: 'bg-blue-500',
-      link: '/inventory'
+      accent: 'from-blue-500/75 to-cyan-400/50',
+      link: '/inventory',
     },
     {
       title: "Today's Sales",
       value: `$${todayRevenue.toFixed(2)}`,
       subtitle: `${todaySales.length} transactions`,
       icon: ShoppingCart,
-      color: 'bg-green-500',
-      link: '/pos'
+      accent: 'from-emerald-500/70 to-lime-400/50',
+      link: '/pos',
     },
     {
       title: 'Customers',
       value: totalCustomers,
       subtitle: `${customersWithDebt} with debt`,
       icon: Users,
-      color: 'bg-purple-500',
-      link: '/customers'
+      accent: 'from-purple-500/70 to-pink-400/50',
+      link: '/customers',
     },
     {
       title: "Today's Profit",
       value: `$${todayProfit.toFixed(2)}`,
       subtitle: `${((todayProfit / todayRevenue) * 100 || 0).toFixed(1)}% margin`,
       icon: TrendingUp,
-      color: 'bg-orange-500',
-      link: '/reports'
-    }
+      accent: 'from-amber-500/70 to-orange-400/50',
+      link: '/reports',
+    },
   ];
 
   const quickActions = [
-    { title: 'New Sale', icon: ShoppingCart, link: '/pos', color: 'bg-green-600' },
-    { title: 'Add Product', icon: Package, link: '/inventory', color: 'bg-blue-600' },
-    { title: 'View Reports', icon: BarChart3, link: '/reports', color: 'bg-purple-600' },
-    { title: 'Manage Employees', icon: UserCircle, link: '/employees', color: 'bg-indigo-600' }
+    { title: 'New Sale', icon: ShoppingCart, link: '/pos', accent: 'from-green-500 to-emerald-400' },
+    { title: 'Add Product', icon: Package, link: '/inventory', accent: 'from-blue-600 to-indigo-500' },
+    { title: 'View Reports', icon: BarChart3, link: '/reports', accent: 'from-purple-600 to-fuchsia-500' },
+    { title: 'Manage Team', icon: UserCircle, link: '/employees', accent: 'from-slate-700 to-slate-500' },
   ];
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-gray-900">Welcome back, {currentEmployee?.name}</h1>
-            <p className="text-gray-600">Here's what's happening with your business today</p>
-          </div>
-          <div className="text-right">
-            <p className="text-gray-600">Today</p>
-            <p className="text-gray-900">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {quickStats.map((stat, index) => (
-            <Link key={index} to={stat.link} className="group">
-              <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-600 mb-1">{stat.title}</p>
-                    <p className="text-gray-900 mb-1">{stat.value}</p>
-                    <p className="text-gray-500 text-sm">{stat.subtitle}</p>
-                  </div>
-                  <div className={`${stat.color} w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <stat.icon className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Alerts */}
-        {lowStockItems > 0 && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start space-x-3">
-            <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+      <div className="space-y-10">
+        <section className="hero-gradient glass-panel relative overflow-hidden p-6 sm:p-8 text-white">
+          <Sparkles className="pointer-events-none absolute right-8 top-6 h-16 w-16 text-white/20" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-orange-900">Low Stock Alert</p>
-              <p className="text-orange-700 text-sm">
-                {lowStockItems} product variant{lowStockItems > 1 ? 's' : ''} running low on stock. 
-                <Link to="/inventory" className="underline ml-1">View inventory</Link>
+              <p className="stat-chip bg-white/10 text-white/80">Executive command</p>
+              <h1 className="mt-3 text-3xl font-semibold">
+                Welcome back, {currentEmployee?.name ?? 'Operator'}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-white/80">
+                Swap this paragraph with your daily leadership note or operations creed. Everything
+                here is optimized for touch, so you can run the business from anywhere.
+              </p>
+            </div>
+            <div className="rounded-3xl border border-white/25 bg-white/10 px-6 py-4 text-center text-white/90">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Today</p>
+              <p className="text-lg font-semibold">
+                {new Date().toLocaleDateString(undefined, {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                })}
               </p>
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {quickStats.map((stat) => (
+            <Link
+              key={stat.title}
+              to={stat.link}
+              className="tilt-hover rounded-3xl border border-slate-100 bg-white/90 p-5 shadow-lg shadow-slate-900/5"
+            >
+              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${stat.accent}`}>
+                <stat.icon className="h-5 w-5 text-white" />
+              </div>
+              <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">{stat.title}</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</p>
+              <p className="text-sm text-slate-500">{stat.subtitle}</p>
+            </Link>
+          ))}
+        </section>
+
+        {lowStockItems > 0 && (
+          <section className="glass-panel border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-5">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-3 text-amber-600">
+                <AlertTriangle className="h-5 w-5" />
+                <p className="text-sm font-semibold uppercase tracking-[0.2em]">
+                  Low stock detected
+                </p>
+              </div>
+              <p className="text-sm text-slate-700">
+                {lowStockItems} variant{lowStockItems > 1 ? 's are' : ' is'} approaching the reorder
+                threshold.{' '}
+                <Link to="/inventory" className="text-amber-700 underline">
+                  Review inventory
+                </Link>
+              </p>
+            </div>
+          </section>
         )}
 
-        {/* Quick Actions */}
-        <div>
-          <h2 className="text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
+        <section>
+          <h2 className="text-sm uppercase tracking-[0.3em] text-slate-500">Operator shortcuts</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {quickActions.map((action) => (
               <Link
-                key={index}
+                key={action.title}
                 to={action.link}
-                className={`${action.color} text-white rounded-xl p-6 hover:opacity-90 transition-opacity flex flex-col items-center justify-center text-center space-y-3`}
+                className={`tilt-hover flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br ${action.accent} px-6 py-6 text-white shadow-xl shadow-slate-900/20`}
               >
-                <action.icon className="w-8 h-8" />
-                <span>{action.title}</span>
+                <action.icon className="h-7 w-7" />
+                <span className="mt-3 text-base font-semibold">{action.title}</span>
+                <span className="text-xs uppercase tracking-[0.3em] text-white/60">
+                  Tap to open
+                </span>
               </Link>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Sales */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-gray-900">Recent Sales</h2>
-              <Link to="/reports" className="text-indigo-600 hover:underline text-sm">View all</Link>
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Live feed</p>
+                <h3 className="text-xl font-semibold text-slate-900">Recent Sales</h3>
+              </div>
+              <Link to="/reports" className="text-sm font-medium text-indigo-600">
+                View all
+              </Link>
             </div>
             {todaySales.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No sales today yet</p>
+              <div className="flex flex-col items-center justify-center py-10 text-center text-slate-500">
+                <DollarSign className="h-8 w-8 text-slate-300" />
+                <p className="mt-3 text-sm">No sales yet—keep the scanners ready.</p>
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="mt-6 space-y-4">
                 {todaySales.slice(0, 5).map((sale) => (
-                  <div key={sale.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                  <div
+                    key={sale.id}
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/70 px-4 py-3"
+                  >
                     <div>
-                      <p className="text-gray-900">Sale #{sale.id}</p>
-                      <p className="text-gray-500 text-sm">{new Date(sale.date).toLocaleTimeString()}</p>
+                      <p className="text-sm font-medium text-slate-900">Sale #{sale.id}</p>
+                      <p className="text-xs text-slate-500">
+                        {new Date(sale.date).toLocaleTimeString()}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-gray-900">${sale.total.toFixed(2)}</p>
-                      <p className="text-gray-500 text-sm capitalize">{sale.paymentMethod}</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        ${sale.total.toFixed(2)}
+                      </p>
+                      <p className="text-xs capitalize text-slate-500">{sale.paymentMethod}</p>
                     </div>
                   </div>
                 ))}
@@ -164,27 +209,37 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Top Products */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-gray-900">Inventory Overview</h2>
-              <Link to="/inventory" className="text-indigo-600 hover:underline text-sm">Manage</Link>
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Stock pulse</p>
+                <h3 className="text-xl font-semibold text-slate-900">Inventory Overview</h3>
+              </div>
+              <Link to="/inventory" className="text-sm font-medium text-indigo-600">
+                Manage
+              </Link>
             </div>
-            <div className="space-y-3">
+            <div className="mt-6 space-y-4">
               {products.slice(0, 5).map((product) => {
-                const totalStock = product.variants.reduce((sum, v) => sum + v.stock, 0);
-                const isLowStock = product.variants.some(v => v.stock <= v.reorderLevel);
-                
+                const total = product.variants.reduce((sum, v) => sum + v.stock, 0);
+                const isLowStock = product.variants.some((v) => v.stock <= v.reorderLevel);
                 return (
-                  <div key={product.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                    <div className="flex-1">
-                      <p className="text-gray-900">{product.name}</p>
-                      <p className="text-gray-500 text-sm">{product.sku}</p>
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/70 px-4 py-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">{product.name}</p>
+                      <p className="text-xs text-slate-500">{product.sku}</p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {isLowStock && <AlertTriangle className="w-4 h-4 text-orange-500" />}
-                      <span className={`text-sm ${isLowStock ? 'text-orange-600' : 'text-gray-600'}`}>
-                        {totalStock} units
+                    <div className="flex items-center gap-2">
+                      {isLowStock && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+                      <span
+                        className={`text-xs font-semibold ${
+                          isLowStock ? 'text-amber-600' : 'text-slate-600'
+                        }`}
+                      >
+                        {total} units
                       </span>
                     </div>
                   </div>
@@ -192,7 +247,7 @@ export default function Dashboard() {
               })}
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </Layout>
   );

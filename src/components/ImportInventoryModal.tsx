@@ -115,39 +115,39 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 my-8">
+      <div className="hero-gradient rounded-xl shadow-xl max-w-2xl w-full p-6 my-8 text-white">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-gray-900">Import Inventory</h2>
-            <p className="text-gray-600 text-sm">Bulk import products with automatic cost calculations</p>
+            <h2 className="text-white">Import Inventory</h2>
+            <p className="text-white/80 text-sm">Bulk import products with automatic cost calculations</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-white" />
           </button>
         </div>
 
         <form onSubmit={handleImport} className="space-y-6">
           {/* Import Settings */}
           <div>
-            <h3 className="text-gray-900 mb-3">Import Settings</h3>
+            <h3 className="text-white mb-3">Import Settings</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-700 mb-2">Supplier Name</label>
+                <label className="block text-white/80 mb-2">Supplier Name</label>
                 <input
                   type="text"
                   value={supplier}
                   onChange={(e) => setSupplier(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                   placeholder="Supplier name"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-2">Cost Adjustment Method</label>
+                <label className="block text-white/80 mb-2">Cost Adjustment Method</label>
                 <select
                   value={costAdjustment}
                   onChange={(e) => setCostAdjustment(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white"
                 >
                   <option value="fixed">Fixed Amount</option>
                   <option value="percentage">Percentage</option>
@@ -157,7 +157,7 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
 
               {(costAdjustment === 'fixed' || costAdjustment === 'percentage') && (
                 <div className="col-span-2">
-                  <label className="block text-gray-700 mb-2">
+                  <label className="block text-white/80 mb-2">
                     Adjustment Value {costAdjustment === 'percentage' ? '(%)' : '($)'}
                   </label>
                   <input
@@ -165,7 +165,7 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
                     step="0.01"
                     value={adjustmentValue}
                     onChange={(e) => setAdjustmentValue(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                   />
                 </div>
               )}
@@ -174,14 +174,14 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
 
           {/* Import Data */}
           <div>
-            <label className="block text-gray-700 mb-2">Import Data</label>
-            <p className="text-gray-600 text-sm mb-2">
+            <label className="block text-white/80 mb-2">Import Data</label>
+            <p className="text-white/60 text-sm mb-2">
               Enter data in CSV format: barcode, quantity, cost (one per line)
             </p>
             <textarea
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 font-mono text-sm"
+              className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 font-mono text-sm text-white placeholder-white/50"
               rows={10}
               placeholder="1234567890123, 50, 8.50
 1234567890124, 30, 6.00
@@ -191,27 +191,27 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
           </div>
 
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="text-blue-900 mb-2">How it works:</h4>
-            <ul className="text-blue-800 text-sm space-y-1 list-disc list-inside">
-              <li>Existing products will have stock added and cost history updated</li>
-              <li>New products will be created automatically</li>
-              <li>Cost adjustments are applied based on selected method</li>
-              <li>Median and average costs are tracked in history</li>
-            </ul>
+          <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4">
+            <p className="text-blue-300 text-sm font-medium">Preview</p>
+            <div className="mt-2 space-y-1 text-xs text-blue-200">
+              <p>• Products will be matched by barcode</p>
+              <p>• Existing products: stock will be updated</p>
+              <p>• New products: will be created automatically</p>
+              <p>• Cost calculations use selected adjustment method</p>
+            </div>
           </div>
 
           <div className="flex space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 border border-white/30 rounded-lg hover:bg-white/20 transition-colors text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+              className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2"
             >
               <Upload className="w-5 h-5" />
               <span>Import Inventory</span>

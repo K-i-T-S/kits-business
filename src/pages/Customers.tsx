@@ -88,16 +88,15 @@ export default function Customers() {
     <Layout>
       <div className="space-y-10">
         {/* Hero */}
-        <section className="glass-panel relative overflow-hidden p-6 md:p-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/15 via-transparent to-rose-400/20 blur-[90px]" />
-          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 text-indigo-200/30" />
+        <section className="hero-gradient glass-panel relative overflow-hidden p-6 md:p-8 text-white">
+          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <p className="stat-chip bg-white/10 text-white/80">Customer success</p>
-              <h1 className="mt-4 text-3xl font-semibold text-slate-900">
+              <h1 className="mt-4 text-3xl font-semibold text-white">
                 Build loyalty with every sale.
               </h1>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-white/80">
                 Track purchases, manage outstanding balances, and keep contact details ready for
                 fast support—online or at the counter.
               </p>
@@ -127,34 +126,34 @@ export default function Customers() {
         </section>
 
         {/* Search */}
-        <section className="glass-panel p-6">
+        <section className="hero-gradient glass-panel p-6 text-white">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Directory</p>
-              <h2 className="text-lg font-semibold text-slate-900">Find the right customer fast</h2>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Directory</p>
+              <h2 className="text-lg font-semibold text-white">Find the right customer fast</h2>
             </div>
-            <p className="text-xs uppercase tracking-[0.35em] text-slate-400">
+            <p className="text-xs uppercase tracking-[0.35em] text-white/70">
               Kits-ready workflow
             </p>
           </div>
           <div className="mt-4 relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
             <input
               type="text"
               placeholder="Search by name or phone number…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white/85 py-3 pl-12 pr-4 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
             />
           </div>
         </section>
 
         {/* Customers List */}
-        <section className="glass-panel overflow-hidden p-0">
+        <section className="hero-gradient glass-panel overflow-hidden p-0 text-white">
           <div className="overflow-x-auto">
             <div className="min-w-[720px]">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
+              <table className="w-full text-left text-sm text-white/80">
+                <thead className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white/60">
                   <tr>
                     <th className="px-6 py-4">Customer</th>
                     <th className="px-6 py-4">Phone</th>
@@ -164,47 +163,47 @@ export default function Customers() {
                     <th className="px-6 py-4">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white/85">
+                <tbody className="divide-y divide-white/20 bg-white/10">
                   {filteredCustomers.map((customer) => (
-                    <tr key={customer.id} className="transition hover:bg-slate-50/70">
+                    <tr key={customer.id} className="transition hover:bg-white/20">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-600">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-sm font-semibold text-white">
                             {customer.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium text-slate-900">{customer.name}</p>
-                            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                            <p className="font-medium text-white">{customer.name}</p>
+                            <p className="text-xs uppercase tracking-[0.25em] text-white/60">
                               Customer profile
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <Phone className="h-4 w-4 text-slate-400" />
+                        <div className="flex items-center gap-2 text-white/80">
+                          <Phone className="h-4 w-4 text-white/60" />
                           <span className="text-sm">{customer.phone}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <TrendingUp className="h-4 w-4 text-emerald-500" />
+                        <div className="flex items-center gap-2 text-white/80">
+                          <TrendingUp className="h-4 w-4 text-emerald-400" />
                           <span className="text-sm">{formatCurrency(customer.totalPurchases)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         {customer.debtBalance > 0 ? (
-                          <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                          <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/30 px-3 py-1 text-xs font-semibold text-amber-200">
                             <AlertCircle className="h-4 w-4" />
                             {formatCurrency(customer.debtBalance)}
                           </div>
                         ) : (
-                          <span className="text-xs font-semibold text-emerald-600">
+                          <span className="text-xs font-semibold text-emerald-300">
                             {formatCurrency(0)}
                           </span>
                         )}
                       </td>
-                      <td className="hidden sm:table-cell px-6 py-4 text-xs text-slate-500">
+                      <td className="hidden sm:table-cell px-6 py-4 text-xs text-white/60">
                         {customer.lastPurchaseDate
                           ? new Date(customer.lastPurchaseDate).toLocaleDateString()
                           : 'Never'}
@@ -244,32 +243,32 @@ export default function Customers() {
         {/* Add Customer Modal */}
         {showAddModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-            <div className="glass-panel w-full max-w-md space-y-4 p-6">
+            <div className="hero-gradient glass-panel w-full max-w-md space-y-4 p-6 text-white">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">New loyalty profile</p>
-                <h2 className="text-xl font-semibold text-slate-900">Add customer</h2>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">New loyalty profile</p>
+                <h2 className="text-xl font-semibold text-white">Add customer</h2>
+                <p className="text-sm text-white/80">
                   Save customer details to speed up service, warranties, and follow-ups.
                 </p>
               </div>
               <form onSubmit={handleAddCustomer} className="space-y-4">
                 <div>
-                  <label className="text-sm font-semibold text-slate-600">Customer name</label>
+                  <label className="text-sm font-semibold text-white/80">Customer name</label>
                   <input
                     type="text"
                     value={newCustomer.name}
                     onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none"
+                    className="mt-2 w-full rounded-2xl border border-white/30 bg-white/20 px-4 py-3 text-sm text-white placeholder-white/50 focus:border-white/50 focus:outline-none"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-slate-600">Phone number</label>
+                  <label className="text-sm font-semibold text-white/80">Phone number</label>
                   <input
                     type="tel"
                     value={newCustomer.phone}
                     onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none"
+                    className="mt-2 w-full rounded-2xl border border-white/30 bg-white/20 px-4 py-3 text-sm text-white placeholder-white/50 focus:border-white/50 focus:outline-none"
                     required
                   />
                 </div>
@@ -277,7 +276,7 @@ export default function Customers() {
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                    className="flex-1 rounded-2xl border border-white/30 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/20"
                   >
                     Cancel
                   </button>

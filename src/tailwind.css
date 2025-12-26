@@ -59,15 +59,15 @@ html {
 }
 
 .hero-gradient {
-  background: radial-gradient(circle at 5% 0%, rgba(255, 255, 255, 0.35), transparent 45%),
-    radial-gradient(circle at 100% 0%, rgba(44, 61, 227, 0.35), transparent 45%),
+  background: radial-gradient(circle at 5% 0%, rgba(255, 255, 255, 0.25), transparent 45%),
+    radial-gradient(circle at 100% 0%, rgba(44, 61, 227, 0.25), transparent 45%),
     linear-gradient(
       135deg,
-      rgba(13, 17, 38, 0.96) 0%,
-      rgba(39, 32, 102, 0.94) 45%,
-      rgba(47, 29, 82, 0.92) 100%
-    );
-  color: #f8faff;
+      rgba(13, 17, 38, 1) 0%,
+      rgba(39, 32, 102, 0.98) 45%,
+      rgba(47, 29, 82, 0.97) 100%
+    ) !important;
+  color: #f8faff !important;
 }
 
 .glass-panel {

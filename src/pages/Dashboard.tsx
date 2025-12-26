@@ -117,14 +117,14 @@ export default function Dashboard() {
             <Link
               key={stat.title}
               to={stat.link}
-              className="tilt-hover rounded-3xl border border-slate-100 bg-white/90 p-5 shadow-lg shadow-slate-900/5"
+              className="hero-gradient tilt-hover rounded-3xl border border-white/30 p-5 shadow-lg shadow-slate-900/5 text-white"
             >
               <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${stat.accent}`}>
                 <stat.icon className="h-5 w-5 text-white" />
               </div>
-              <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">{stat.title}</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</p>
-              <p className="text-sm text-slate-500">{stat.subtitle}</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.2em] text-white/70">{stat.title}</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{stat.value}</p>
+              <p className="text-sm text-white/80">{stat.subtitle}</p>
             </Link>
           ))}
         </section>
@@ -169,19 +169,19 @@ export default function Dashboard() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="glass-panel p-6">
+          <div className="hero-gradient glass-panel p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Live feed</p>
-                <h3 className="text-xl font-semibold text-slate-900">Recent Sales</h3>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Live feed</p>
+                <h3 className="text-xl font-semibold text-white">Recent Sales</h3>
               </div>
-              <Link to="/reports" className="text-sm font-medium text-indigo-600">
+              <Link to="/reports" className="text-sm font-medium text-white/90">
                 View all
               </Link>
             </div>
             {todaySales.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center text-slate-500">
-                <DollarSign className="h-8 w-8 text-slate-300" />
+              <div className="flex flex-col items-center justify-center py-10 text-center text-white/60">
+                <DollarSign className="h-8 w-8 text-white/40" />
                 <p className="mt-3 text-sm">No sales yet—keep the scanners ready.</p>
               </div>
             ) : (
@@ -189,19 +189,19 @@ export default function Dashboard() {
                 {todaySales.slice(0, 5).map((sale) => (
                   <div
                     key={sale.id}
-                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/70 px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 px-4 py-3"
                   >
                     <div>
-                      <p className="text-sm font-medium text-slate-900">Sale #{sale.id}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-sm font-medium text-white">Sale #{sale.id}</p>
+                      <p className="text-xs text-white/70">
                         {new Date(sale.date).toLocaleTimeString()}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-white">
                         ${sale.total.toFixed(2)}
                       </p>
-                      <p className="text-xs capitalize text-slate-500">{sale.paymentMethod}</p>
+                      <p className="text-xs capitalize text-white/70">{sale.paymentMethod}</p>
                     </div>
                   </div>
                 ))}
@@ -209,13 +209,13 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="glass-panel p-6">
+          <div className="hero-gradient glass-panel p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Stock pulse</p>
-                <h3 className="text-xl font-semibold text-slate-900">Inventory Overview</h3>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Stock pulse</p>
+                <h3 className="text-xl font-semibold text-white">Inventory Overview</h3>
               </div>
-              <Link to="/inventory" className="text-sm font-medium text-indigo-600">
+              <Link to="/inventory" className="text-sm font-medium text-white/90">
                 Manage
               </Link>
             </div>
@@ -226,17 +226,17 @@ export default function Dashboard() {
                 return (
                   <div
                     key={product.id}
-                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/70 px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 px-4 py-3"
                   >
                     <div>
-                      <p className="text-sm font-medium text-slate-900">{product.name}</p>
-                      <p className="text-xs text-slate-500">{product.sku}</p>
+                      <p className="text-sm font-medium text-white">{product.name}</p>
+                      <p className="text-xs text-white/70">{product.sku}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {isLowStock && <AlertTriangle className="h-4 w-4 text-amber-500" />}
                       <span
                         className={`text-xs font-semibold ${
-                          isLowStock ? 'text-amber-600' : 'text-slate-600'
+                          isLowStock ? 'text-amber-300' : 'text-white/80'
                         }`}
                       >
                         {total} units

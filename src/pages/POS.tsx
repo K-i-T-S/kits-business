@@ -169,38 +169,38 @@ export default function POS() {
   return (
     <Layout>
       <div className="space-y-10">
-        <section className="glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
+        <section className="hero-gradient glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between text-white">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Point of sale</p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900">Live sales cockpit</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/80">Point of sale</p>
+            <h1 className="mt-2 text-3xl font-semibold text-white">Live sales cockpit</h1>
+            <p className="mt-2 max-w-2xl text-sm text-white/80">
               Run fast, touch-friendly checkouts with barcode search, loyalty linking, and smart
               receipt handling. Replace this copy with your in-store experience promise.
             </p>
           </div>
-          <div className="rounded-3xl border border-white/50 bg-white/70 px-6 py-4 text-right text-xs uppercase tracking-[0.3em] text-slate-500">
-            Operator: <span className="text-base font-semibold text-slate-900">{currentEmployee?.name}</span>
+          <div className="rounded-3xl border border-white/50 bg-white/20 px-6 py-4 text-right text-xs uppercase tracking-[0.3em] text-white/80">
+            Operator: <span className="text-base font-semibold text-white">{currentEmployee?.name}</span>
           </div>
         </section>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <section className="glass-panel p-6">
+            <section className="hero-gradient glass-panel p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Scanner lane</p>
-                  <h2 className="text-lg font-semibold text-slate-900">Scan or enter barcode</h2>
+                  <p className="text-xs uppercase tracking-[0.3em] text-white/70">Scanner lane</p>
+                  <h2 className="text-lg font-semibold text-white">Scan or enter barcode</h2>
                 </div>
               </div>
               <form onSubmit={handleBarcodeSubmit} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <div className="flex-1 relative">
-                  <Barcode className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <Barcode className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
                   <input
                     type="text"
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
                     placeholder="Scan or enter barcode..."
-                    className="w-full rounded-2xl border border-slate-200 bg-white/80 py-3 pl-12 pr-4 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
                     autoFocus
                   />
                 </div>
@@ -213,18 +213,18 @@ export default function POS() {
               </form>
             </section>
 
-            <section className="glass-panel p-6">
+            <section className="hero-gradient glass-panel p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Basket</p>
-                  <h2 className="text-lg font-semibold text-slate-900">Shopping cart</h2>
+                  <p className="text-xs uppercase tracking-[0.3em] text-white/70">Basket</p>
+                  <h2 className="text-lg font-semibold text-white">Shopping cart</h2>
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-white/80">
                   Ready to convert {cart.length} item{cart.length !== 1 ? 's' : ''}
                 </p>
               </div>
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10 text-center text-slate-400">
+                <div className="flex flex-col items-center gap-2 py-10 text-center text-white/60">
                   <Receipt className="h-12 w-12" />
                   <p className="text-sm">Cart is empty</p>
                   <p className="text-xs uppercase tracking-[0.3em]">Scan a product to get started</p>
@@ -232,29 +232,29 @@ export default function POS() {
               ) : (
                 <div className="mt-4 space-y-3">
                   {cart.map((item, index) => (
-                    <div key={index} className="flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white/90 p-4 sm:flex-row sm:items-center">
+                    <div key={index} className="flex flex-col gap-3 rounded-3xl border border-white/30 bg-white/10 p-4 sm:flex-row sm:items-center">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">{item.productName}</p>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        <p className="text-sm font-semibold text-white">{item.productName}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">
                           {item.variantAttributes}
                         </p>
-                        <p className="text-sm text-slate-500">${item.price.toFixed(2)}</p>
+                        <p className="text-sm text-white/80">${item.price.toFixed(2)}</p>
                       </div>
                       
                       <div className="flex flex-col items-center gap-2 sm:flex-row">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => updateQuantity(index, -1)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white/80 hover:bg-white/30"
                           >
                             <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
-                          <span className="w-12 text-center text-sm font-semibold text-slate-900">
+                          <span className="w-12 text-center text-sm font-semibold text-white">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(index, 1)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white/80 hover:bg-white/30"
                           >
                             <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
@@ -262,12 +262,12 @@ export default function POS() {
                       </div>
 
                       <div className="flex items-center justify-between sm:flex-col sm:items-end">
-                        <p className="text-sm font-semibold text-slate-900">
+                        <p className="text-sm font-semibold text-white">
                           ${(item.price * item.quantity).toFixed(2)}
                         </p>
                         <button
                           onClick={() => removeItem(index)}
-                          className="mt-2 rounded-full border border-rose-100 bg-rose-50/50 p-2 text-rose-600 hover:bg-rose-50"
+                          className="mt-2 rounded-full border border-rose-200/50 bg-rose-500/20 p-2 text-rose-300 hover:bg-rose-500/30"
                         >
                           <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
@@ -280,15 +280,15 @@ export default function POS() {
           </div>
 
           <div className="space-y-6">
-            <section className="glass-panel p-6">
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Customer</p>
-              <h2 className="text-lg font-semibold text-slate-900">Attach loyalty profile</h2>
+            <section className="hero-gradient glass-panel p-6 text-white">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Customer</p>
+              <h2 className="text-lg font-semibold text-white">Attach loyalty profile</h2>
               <div className="relative">
-                <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
                 <select
                   value={selectedCustomer}
                   onChange={(e) => setSelectedCustomer(e.target.value)}
-                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white/80 py-3 pl-12 pr-10 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                  className="w-full appearance-none rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-10 text-sm text-white shadow-inner focus:border-white/50 focus:outline-none"
                 >
                   <option value="">Walk-in Customer</option>
                   {customers.map(customer => (
@@ -300,20 +300,20 @@ export default function POS() {
               </div>
             </section>
 
-            <section className="glass-panel p-6">
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Tender</p>
-              <h2 className="text-lg font-semibold text-slate-900">Payment method</h2>
+            <section className="hero-gradient glass-panel p-6 text-white">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Tender</p>
+              <h2 className="text-lg font-semibold text-white">Payment method</h2>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setPaymentMethod('cash')}
                   className={`p-3 sm:p-4 rounded-lg border-2 transition-colors ${
                     paymentMethod === 'cash'
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-600'
-                      : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                      ? 'border-emerald-400 bg-emerald-500/20 text-emerald-300'
+                      : 'border-white/30 text-white/80 hover:border-white/50'
                   }`}
                 >
                   <DollarSign className={`mx-auto mb-2 h-8 w-8 ${
-                    paymentMethod === 'cash' ? 'text-emerald-600' : 'text-slate-300'
+                    paymentMethod === 'cash' ? 'text-emerald-300' : 'text-white/60'
                   }`} />
                   <p className="text-sm font-semibold">Cash</p>
                 </button>
@@ -321,31 +321,31 @@ export default function POS() {
                   onClick={() => setPaymentMethod('card')}
                   className={`p-3 sm:p-4 rounded-lg border-2 transition-colors ${
                     paymentMethod === 'card'
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
-                      : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                      ? 'border-indigo-400 bg-indigo-500/20 text-indigo-300'
+                      : 'border-white/30 text-white/80 hover:border-white/50'
                   }`}
                 >
                   <CreditCard className={`mx-auto mb-2 h-8 w-8 ${
-                    paymentMethod === 'card' ? 'text-indigo-600' : 'text-slate-300'
+                    paymentMethod === 'card' ? 'text-indigo-300' : 'text-white/60'
                   }`} />
                   <p className="text-sm font-semibold">Card</p>
                 </button>
               </div>
             </section>
 
-            <section className="glass-panel p-6">
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Totals</p>
-              <h2 className="text-lg font-semibold text-slate-900">Summary</h2>
+            <section className="hero-gradient glass-panel p-6 text-white">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Totals</p>
+              <h2 className="text-lg font-semibold text-white">Summary</h2>
               <div className="mt-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between text-slate-500">
+                <div className="flex items-center justify-between text-white/80">
                   <span>Subtotal</span>
-                  <span className="text-slate-900">${calculateSubtotal().toFixed(2)}</span>
+                  <span className="text-white">${calculateSubtotal().toFixed(2)}</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-500">
+                <div className="flex items-center justify-between text-white/80">
                   <span>Tax</span>
-                  <span className="text-slate-900">$0.00</span>
+                  <span className="text-white">$0.00</span>
                 </div>
-                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-base font-semibold text-slate-900">
+                <div className="flex items-center justify-between border-t border-white/30 pt-3 text-base font-semibold text-white">
                   <span>Total</span>
                   <span>${calculateTotal().toFixed(2)}</span>
                 </div>
@@ -371,33 +371,33 @@ export default function POS() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
                 <Receipt className="h-8 w-8 text-emerald-600" />
               </div>
-              <h2 className="text-xl font-semibold text-slate-900">Sale complete</h2>
-              <p className="text-sm text-slate-500">Receipt #{lastSale.id}</p>
+              <h2 className="text-xl font-semibold text-white">Sale complete</h2>
+              <p className="text-sm text-white/80">Receipt #{lastSale.id}</p>
             </div>
 
-            <div className="mt-6 space-y-3 rounded-2xl border border-slate-100 bg-white/80 px-4 py-3 text-sm">
+            <div className="mt-6 space-y-3 rounded-2xl border border-white/30 bg-white/20 px-4 py-3 text-sm">
               {lastSale.items.map((item: any, index: number) => (
                 <div key={index} className="flex items-center justify-between">
-                  <span className="text-slate-600">
+                  <span className="text-white/80">
                     {item.productName} x{item.quantity}
                   </span>
-                  <span className="font-semibold text-slate-900">${(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-semibold text-white">${(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
 
             <div className="mt-4 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Total</span>
-                <span className="font-semibold text-slate-900">${lastSale.total.toFixed(2)}</span>
+                <span className="text-white/60">Total</span>
+                <span className="font-semibold text-white">${lastSale.total.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Payment</span>
-                <span className="capitalize text-slate-900">{lastSale.paymentMethod}</span>
+                <span className="text-white/60">Payment</span>
+                <span className="capitalize text-white">{lastSale.paymentMethod}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Date</span>
-                <span className="text-slate-900">
+                <span className="text-white/60">Date</span>
+                <span className="text-white">
                   {new Date(lastSale.date).toLocaleString()}
                 </span>
               </div>
@@ -407,7 +407,7 @@ export default function POS() {
               <button onClick={closeReceipt} className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30">
                 New sale
               </button>
-              <button onClick={() => window.print()} className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <button onClick={() => window.print()} className="flex-1 rounded-2xl border border-white/30 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20">
                 Print
               </button>
             </div>

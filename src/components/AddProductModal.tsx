@@ -64,92 +64,92 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 my-8">
+      <div className="hero-gradient rounded-xl shadow-xl max-w-2xl w-full p-6 my-8 text-white">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-gray-900">Add New Product</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="w-5 h-5" />
+          <h2 className="text-white">Add New Product</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-white" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 mb-2">Product Name *</label>
+              <label className="block text-white/80 mb-2">Product Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-2">Category *</label>
+              <label className="block text-white/80 mb-2">Category *</label>
               <input
                 type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                 placeholder="e.g., Beverages"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-2">Barcode *</label>
+              <label className="block text-white/80 mb-2">Barcode *</label>
               <input
                 type="text"
                 value={formData.barcode}
                 onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-2">SKU *</label>
+              <label className="block text-white/80 mb-2">SKU *</label>
               <input
                 type="text"
                 value={formData.sku}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-2">Supplier *</label>
+              <label className="block text-white/80 mb-2">Supplier *</label>
               <input
                 type="text"
                 value={formData.supplier}
                 onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-2">Validity Date</label>
+              <label className="block text-white/80 mb-2">Validity Date</label>
               <input
                 type="date"
                 value={formData.validityDate}
                 onChange={(e) => setFormData({ ...formData, validityDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white"
               />
             </div>
           </div>
 
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-gray-900 mb-4">Variant Details</h3>
+          <div className="border-t border-white/30 pt-4">
+            <h3 className="text-white mb-4">Variant Details</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-700 mb-2">Variant Type</label>
+                <label className="block text-white/80 mb-2">Variant Type</label>
                 <select
                   value={formData.variantAttribute}
                   onChange={(e) => setFormData({ ...formData, variantAttribute: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white"
                 >
                   <option value="size">Size</option>
                   <option value="color">Color</option>
@@ -159,63 +159,63 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-2">Variant Value *</label>
+                <label className="block text-white/80 mb-2">Variant Value</label>
                 <input
                   type="text"
                   value={formData.variantValue}
                   onChange={(e) => setFormData({ ...formData, variantValue: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                   placeholder="e.g., 250g, Red, Large"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-2">Cost *</label>
+                <label className="block text-white/80 mb-2">Cost *</label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={formData.cost}
                   onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-2">Price *</label>
+                <label className="block text-white/80 mb-2">Price *</label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-2">Initial Stock *</label>
+                <label className="block text-white/80 mb-2">Initial Stock *</label>
                 <input
                   type="number"
                   min="0"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-2">Reorder Level *</label>
+                <label className="block text-white/80 mb-2">Reorder Level *</label>
                 <input
                   type="number"
                   min="0"
                   value={formData.reorderLevel}
                   onChange={(e) => setFormData({ ...formData, reorderLevel: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
                   required
                 />
               </div>
@@ -226,7 +226,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 border border-white/30 rounded-lg hover:bg-white/20 transition-colors text-white"
             >
               Cancel
             </button>

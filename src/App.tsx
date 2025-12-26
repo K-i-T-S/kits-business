@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import { AppProvider } from './context/AppContext';
 import { supabase } from './utils/supabaseClient';
 import { Toaster } from './components/ui/sonner';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Inventory = lazy(() => import('./pages/Inventory'));
@@ -11,6 +12,10 @@ const POS = lazy(() => import('./pages/POS'));
 const Customers = lazy(() => import('./pages/Customers'));
 const Employees = lazy(() => import('./pages/Employees'));
 const Reports = lazy(() => import('./pages/Reports'));
+const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
+const SystemSettings = lazy(() => import('./pages/SystemSettings'));
+const ActivityLog = lazy(() => import('./pages/ActivityLog'));
+const HelpSupport = lazy(() => import('./pages/HelpSupport'));
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -64,6 +69,7 @@ export default function App() {
   return (
     <AppProvider>
       <Toaster />
+      <SpeedInsights />
       <Router>
         <Suspense fallback={fallback}>
           <Routes>
@@ -120,6 +126,38 @@ export default function App() {
             element={
               isAuthenticated ? 
               <Reports /> : 
+              <Navigate to="/login" replace />
+            } 
+          />
+          <Route 
+            path="/profile-settings" 
+            element={
+              isAuthenticated ? 
+              <ProfileSettings /> : 
+              <Navigate to="/login" replace />
+            } 
+          />
+          <Route 
+            path="/system-settings" 
+            element={
+              isAuthenticated ? 
+              <SystemSettings /> : 
+              <Navigate to="/login" replace />
+            } 
+          />
+          <Route 
+            path="/activity-log" 
+            element={
+              isAuthenticated ? 
+              <ActivityLog /> : 
+              <Navigate to="/login" replace />
+            } 
+          />
+          <Route 
+            path="/help-support" 
+            element={
+              isAuthenticated ? 
+              <HelpSupport /> : 
               <Navigate to="/login" replace />
             } 
           />

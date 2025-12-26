@@ -262,14 +262,13 @@ export default function Reports() {
   return (
     <Layout>
       <div className="space-y-10">
-        <section className="glass-panel relative overflow-hidden p-6 md:p-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-rose-400/15 blur-[90px]" />
-          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-indigo-200/30" />
+        <section className="hero-gradient glass-panel relative overflow-hidden p-6 md:p-8 text-white">
+          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <p className="stat-chip bg-white/10 text-white/80">Intelligence lab</p>
-              <h1 className="mt-3 text-3xl font-semibold text-slate-900">Reports & analytics</h1>
-              <p className="mt-2 text-sm text-slate-600">
+              <h1 className="mt-3 text-3xl font-semibold text-white">Reports & analytics</h1>
+              <p className="mt-2 text-sm text-white/80">
                 Monitor revenue, profit, inventory velocity, and cashier performance. Use these charts
                 to guide purchasing decisions and improve daily operations.
               </p>
@@ -314,13 +313,13 @@ export default function Reports() {
         </section>
 
         <section className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
-          <div className="glass-panel p-6">
+          <div className="hero-gradient glass-panel p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Revenue pulse</p>
-                <h2 className="text-lg font-semibold text-slate-900">Sales trend (last 7 days)</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Revenue pulse</p>
+                <h2 className="text-lg font-semibold text-white">Sales trend (last 7 days)</h2>
               </div>
-              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Auto-refreshes</span>
+              <span className="text-xs uppercase tracking-[0.35em] text-white/70">Auto-refreshes</span>
             </div>
             <div className="mt-4 h-[260px] sm:h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -337,13 +336,13 @@ export default function Reports() {
             </div>
           </div>
 
-          <div className="glass-panel p-6">
+          <div className="hero-gradient glass-panel p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Merch velocity</p>
-                <h2 className="text-lg font-semibold text-slate-900">Top products by revenue</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Merch velocity</p>
+                <h2 className="text-lg font-semibold text-white">Top products by revenue</h2>
               </div>
-              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Sync with PLU</span>
+              <span className="text-xs uppercase tracking-[0.35em] text-white/70">Sync with PLU</span>
             </div>
             <div className="mt-4 h-[260px] sm:h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -358,13 +357,13 @@ export default function Reports() {
             </div>
           </div>
 
-          <div className="glass-panel p-6">
+          <div className="hero-gradient glass-panel p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Tender mix</p>
-                <h2 className="text-lg font-semibold text-slate-900">Payment method distribution</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Tender mix</p>
+                <h2 className="text-lg font-semibold text-white">Payment method distribution</h2>
               </div>
-              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Customize copy</span>
+              <span className="text-xs uppercase tracking-[0.35em] text-white/70">Customize copy</span>
             </div>
             <div className="mt-4 h-[260px] sm:h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -389,13 +388,13 @@ export default function Reports() {
             </div>
           </div>
 
-          <div className="glass-panel p-6">
+          <div className="hero-gradient glass-panel p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">People power</p>
-                <h2 className="text-lg font-semibold text-slate-900">Employee performance</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">People power</p>
+                <h2 className="text-lg font-semibold text-white">Employee performance</h2>
               </div>
-              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Use for coaching</span>
+              <span className="text-xs uppercase tracking-[0.35em] text-white/70">Use for coaching</span>
             </div>
             <div className="mt-4 h-[260px] sm:h-[320px]">
               {employeeSales.length > 0 ? (
@@ -409,7 +408,7 @@ export default function Reports() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                <div className="flex h-full items-center justify-center text-sm text-white/60">
                   No sales data available for this period
                 </div>
               )}
@@ -418,17 +417,17 @@ export default function Reports() {
         </section>
 
         <section className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
-          <div className="glass-panel p-6">
+          <div className="hero-gradient glass-panel p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Product intelligence</p>
-                <h2 className="text-lg font-semibold text-slate-900">Top products details</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Product intelligence</p>
+                <h2 className="text-lg font-semibold text-white">Top products details</h2>
               </div>
-              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Kits insights</span>
+              <span className="text-xs uppercase tracking-[0.35em] text-white/70">Kits insights</span>
             </div>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
+              <table className="w-full text-left text-sm text-white/80">
+                <thead className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white/60">
                   <tr>
                     <th className="px-4 py-3">Product</th>
                     <th className="px-4 py-3 text-right">Qty sold</th>
@@ -436,15 +435,15 @@ export default function Reports() {
                     <th className="px-4 py-3 text-right">Profit</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white/85">
+                <tbody className="divide-y divide-white/20 bg-white/10">
                   {topProducts.map((product, index) => (
                     <tr key={index}>
-                      <td className="px-4 py-3 text-slate-900">{product.name}</td>
-                      <td className="px-4 py-3 text-right text-slate-600">{product.quantity}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                      <td className="px-4 py-3 text-white">{product.name}</td>
+                      <td className="px-4 py-3 text-right text-white/80">{product.quantity}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-white">
                         {formatCurrency(product.revenue)}
                       </td>
-                      <td className="px-4 py-3 text-right text-emerald-600">
+                      <td className="px-4 py-3 text-right text-emerald-300">
                         {formatCurrency(product.profit)}
                       </td>
                     </tr>
@@ -452,22 +451,22 @@ export default function Reports() {
                 </tbody>
               </table>
               {topProducts.length === 0 && (
-                <p className="py-8 text-center text-sm text-slate-500">No sales data</p>
+                <p className="py-8 text-center text-sm text-white/60">No sales data</p>
               )}
             </div>
           </div>
 
-          <div className="glass-panel p-6">
+          <div className="hero-gradient glass-panel p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Cost intelligence</p>
-                <h2 className="text-lg font-semibold text-slate-900">Recent cost shifts</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Cost intelligence</p>
+                <h2 className="text-lg font-semibold text-white">Recent cost shifts</h2>
               </div>
-              <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Audit ready</span>
+              <span className="text-xs uppercase tracking-[0.35em] text-white/70">Audit ready</span>
             </div>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
+              <table className="w-full text-left text-sm text-white/80">
+                <thead className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white/60">
                   <tr>
                     <th className="px-4 py-3">Product</th>
                     <th className="px-4 py-3 text-right">Previous</th>
@@ -475,23 +474,23 @@ export default function Reports() {
                     <th className="px-4 py-3 text-right">Change</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white/85">
+                <tbody className="divide-y divide-white/20 bg-white/10">
                   {costShifts.slice(0, 5).map((shift: any, index) => (
                     <tr key={index}>
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-900">{shift.product}</p>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{shift.variant}</p>
+                        <p className="font-semibold text-white">{shift.product}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">{shift.variant}</p>
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-600">
+                      <td className="px-4 py-3 text-right text-white/80">
                         {formatCurrency(shift.previousCost)}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-900">
+                      <td className="px-4 py-3 text-right text-white">
                         {formatCurrency(shift.currentCost)}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span
                           className={
-                            shift.currentCost > shift.previousCost ? 'text-rose-500' : 'text-emerald-600'
+                            shift.currentCost > shift.previousCost ? 'text-rose-300' : 'text-emerald-300'
                           }
                         >
                           {shift.currentCost > shift.previousCost ? '+' : '-'}

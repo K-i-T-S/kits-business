@@ -104,16 +104,15 @@ export default function Employees() {
   return (
     <Layout>
       <div className="space-y-10">
-        <section className="glass-panel relative overflow-hidden p-6 md:p-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-sky-300/15 blur-[90px]" />
-          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-indigo-200/30" />
+        <section className="hero-gradient glass-panel relative overflow-hidden p-6 md:p-8 text-white">
+          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <p className="stat-chip bg-white/10 text-white/80">People operations</p>
-              <h1 className="mt-3 text-3xl font-semibold text-slate-900">
+              <h1 className="mt-3 text-3xl font-semibold text-white">
                 Build a legendary frontline team.
               </h1>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-white/80">
                 Manage roles, commissions, and performance so your team can deliver fast, friendly
                 service—whether you’re selling hardware, software, or POS setups.
               </p>
@@ -141,24 +140,24 @@ export default function Employees() {
           ))}
         </section>
 
-        <section className="glass-panel p-6">
+        <section className="hero-gradient glass-panel p-6 text-white">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Directory</p>
-              <h2 className="text-lg font-semibold text-slate-900">Filter by name or email</h2>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Directory</p>
+              <h2 className="text-lg font-semibold text-white">Filter by name or email</h2>
             </div>
-            <p className="text-xs uppercase tracking-[0.35em] text-slate-400">
+            <p className="text-xs uppercase tracking-[0.35em] text-white/70">
               Kits team directory
             </p>
           </div>
           <div className="mt-4 relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
             <input
               type="text"
               placeholder="Search by name, email, or role…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white/85 py-3 pl-12 pr-4 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
             />
           </div>
         </section>
@@ -169,16 +168,16 @@ export default function Employees() {
             const stats = calculateEmployeeStats(employee.id);
 
             return (
-              <article key={employee.id} className="glass-panel p-5 sm:p-6">
+              <article key={employee.id} className="hero-gradient glass-panel p-5 sm:p-6 text-white">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-2 sm:space-x-3">
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-lg font-semibold text-indigo-600">
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-lg font-semibold text-white">
                       {employee.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-base font-semibold text-slate-900">{employee.name}</h3>
-                      <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
-                        <Mail className="h-4 w-4 text-slate-400" />
+                      <h3 className="text-base font-semibold text-white">{employee.name}</h3>
+                      <div className="mt-1 flex items-center gap-2 text-sm text-white/80">
+                        <Mail className="h-4 w-4 text-white/60" />
                         <p className="truncate">{employee.email}</p>
                       </div>
                     </div>
@@ -189,29 +188,29 @@ export default function Employees() {
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-slate-50/90 p-3">
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Total sales</p>
-                    <p className="text-lg font-semibold text-slate-900">{formatCurrency(stats.totalRevenue)}</p>
+                  <div className="rounded-2xl bg-white/10 p-3">
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/70">Total sales</p>
+                    <p className="text-lg font-semibold text-white">{formatCurrency(stats.totalRevenue)}</p>
                   </div>
-                  <div className="rounded-2xl bg-slate-50/90 p-3">
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Commission</p>
-                    <p className="text-lg font-semibold text-slate-900">{formatCurrency(stats.commission)}</p>
+                  <div className="rounded-2xl bg-white/10 p-3">
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/70">Commission</p>
+                    <p className="text-lg font-semibold text-white">{formatCurrency(stats.commission)}</p>
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-2 rounded-2xl border border-slate-100 bg-white/80 p-3 text-xs text-slate-500">
+                <div className="mt-4 grid gap-2 rounded-2xl border border-white/20 bg-white/10 p-3 text-xs text-white/80">
                   <div className="flex justify-between">
                     <span>Transactions</span>
-                    <span className="font-semibold text-slate-900">{stats.totalSalesCount}</span>
+                    <span className="font-semibold text-white">{stats.totalSalesCount}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Commission rate</span>
-                    <span className="font-semibold text-slate-900">{employee.commission}%</span>
+                    <span className="font-semibold text-white">{employee.commission}%</span>
                   </div>
                   {stats.totalSalesCount > 0 && (
                     <div className="flex justify-between">
                       <span>Avg per transaction</span>
-                      <span className="font-semibold text-slate-900">
+                      <span className="font-semibold text-white">
                         {formatCurrency(stats.totalRevenue / stats.totalSalesCount)}
                       </span>
                     </div>
@@ -219,10 +218,10 @@ export default function Employees() {
                 </div>
 
                 <div className="mt-4 flex items-center justify-between">
-                  <div className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                  <div className="text-xs uppercase tracking-[0.3em] text-white/70">
                     Performance snapshot
                   </div>
-                  <button className="rounded-2xl border border-indigo-100 px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50">
+                  <button className="rounded-2xl border border-white/30 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">
                     View performance report
                   </button>
                 </div>

@@ -91,11 +91,11 @@ export default function Inventory() {
   return (
     <Layout>
       <div className="space-y-10">
-        <section className="glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
+        <section className="hero-gradient glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between text-white">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Inventory HQ</p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900">Product Intelligence</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/80">Inventory HQ</p>
+            <h1 className="mt-2 text-3xl font-semibold text-white">Product Intelligence</h1>
+            <p className="mt-2 max-w-2xl text-sm text-white/80">
               Track product performance with layered filters, live reorder signals, and variant-level
               cost history. Keep your hardware, accessories, and gaming stock organized—and always
               know what to reorder next.
@@ -123,49 +123,49 @@ export default function Inventory() {
           {inventoryStats.map((stat) => (
             <div
               key={stat.label}
-              className="tilt-hover rounded-3xl border border-white/10 bg-white/80 p-5 shadow-lg shadow-slate-900/5 backdrop-blur-xl"
+              className="hero-gradient tilt-hover rounded-3xl border border-white/30 p-5 shadow-lg shadow-slate-900/5 backdrop-blur-xl text-white"
             >
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">{stat.label}</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-white/70">{stat.label}</p>
               <p
                 className={`mt-3 text-3xl font-semibold ${
-                  stat.critical ? 'text-amber-600' : 'text-slate-900'
+                  stat.critical ? 'text-amber-400' : 'text-white'
                 }`}
               >
                 {stat.value}
               </p>
-              <p className="text-sm text-slate-500">{stat.subcopy}</p>
+              <p className="text-sm text-white/80">{stat.subcopy}</p>
             </div>
           ))}
         </section>
 
-        <section className="glass-panel p-6">
+        <section className="hero-gradient glass-panel p-6 text-white">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Filters</p>
-              <h2 className="text-lg font-semibold text-slate-900">Curate the catalog view</h2>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Filters</p>
+              <h2 className="text-lg font-semibold text-white">Curate catalog view</h2>
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50/60 px-4 py-2 text-xs text-slate-500">
+            <div className="flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-4 py-2 text-xs text-white/80">
               <Layers3 className="h-4 w-4" />
               Tip: keep categories consistent (e.g. Hardware, Software, Gaming, Accessories, POS).
             </div>
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-[2fr,1fr]">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
               <input
                 type="text"
                 placeholder="Search by product, barcode, or SKU…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white/80 py-3 pl-12 pr-4 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
               />
             </div>
             <div className="relative">
-              <Filter className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <Filter className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full appearance-none rounded-2xl border border-slate-200 bg-white/80 py-3 pl-12 pr-10 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                className="w-full appearance-none rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-10 text-sm text-white shadow-inner focus:border-white/50 focus:outline-none"
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -173,16 +173,16 @@ export default function Inventory() {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">▾</div>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/60">▾</div>
             </div>
           </div>
         </section>
 
-        <section className="glass-panel overflow-hidden p-0">
+        <section className="hero-gradient glass-panel overflow-hidden p-0 text-white">
           <div className="overflow-x-auto">
             <div className="min-w-[720px]">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-400">
+              <table className="w-full text-left text-sm text-white/80">
+                <thead className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white/60">
                   <tr>
                     <th className="px-6 py-4">Product</th>
                     <th className="px-6 py-4">Barcode / SKU</th>
@@ -194,26 +194,26 @@ export default function Inventory() {
                     <th className="px-6 py-4">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white/80">
+                <tbody className="divide-y divide-white/20 bg-white/10">
                   {filteredProducts.map((product) => {
                     const stats = calculateStats(product);
                     const isExpanded = selectedProduct === product.id;
 
                     return (
                       <Fragment key={product.id}>
-                        <tr className="transition hover:bg-slate-50">
+                        <tr className="transition hover:bg-white/20">
                           <td className="px-6 py-4">
-                            <p className="font-medium text-slate-900">{product.name}</p>
-                            <p className="text-xs text-slate-500">{product.category}</p>
+                            <p className="font-medium text-white">{product.name}</p>
+                            <p className="text-xs text-white/60">{product.category}</p>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="text-xs font-mono text-slate-500">{product.barcode}</p>
-                            <p className="text-xs text-slate-400">{product.sku}</p>
+                            <p className="text-xs font-mono text-white/60">{product.barcode}</p>
+                            <p className="text-xs text-white/60">{product.sku}</p>
                           </td>
                           <td className="px-6 py-4">
                             <button
                               onClick={() => setSelectedProduct(isExpanded ? null : product.id)}
-                              className="text-xs font-semibold text-indigo-600 hover:text-indigo-500"
+                              className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
                             >
                               {product.variants.length} variant
                               {product.variants.length > 1 ? 's' : ''}
@@ -222,28 +222,28 @@ export default function Inventory() {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                               {stats.isLowStock && (
-                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                <AlertTriangle className="h-4 w-4 text-amber-400" />
                               )}
                               <span
                                 className={`text-sm font-semibold ${
-                                  stats.isLowStock ? 'text-amber-600' : 'text-slate-700'
+                                  stats.isLowStock ? 'text-amber-400' : 'text-white/80'
                                 }`}
                               >
                                 {stats.totalStock}
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-slate-700">${stats.avgCost.toFixed(2)}</td>
-                          <td className="px-6 py-4 text-slate-700">${stats.avgPrice.toFixed(2)}</td>
-                          <td className="px-6 py-4 text-slate-500">{product.supplier}</td>
+                          <td className="px-6 py-4 text-white/80">${stats.avgCost.toFixed(2)}</td>
+                          <td className="px-6 py-4 text-white/80">${stats.avgPrice.toFixed(2)}</td>
+                          <td className="px-6 py-4 text-white/60">{product.supplier}</td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
-                              <button className="rounded-full border border-slate-200 bg-white/80 p-2 text-indigo-600 hover:bg-indigo-50">
+                              <button className="rounded-full border border-white/30 bg-white/20 p-2 text-indigo-300 hover:bg-white/30">
                                 <Edit className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={() => deleteProduct(product.id)}
-                                className="rounded-full border border-slate-200 bg-white/80 p-2 text-rose-600 hover:bg-rose-50"
+                                className="rounded-full border border-white/30 bg-white/20 p-2 text-rose-300 hover:bg-white/30"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -252,9 +252,9 @@ export default function Inventory() {
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={8} className="bg-slate-50 px-6 py-6">
-                              <div className="space-y-4 rounded-3xl border border-slate-100 bg-white/80 p-4">
-                                <p className="text-sm font-semibold text-slate-700">
+                            <td colSpan={8} className="bg-white/10 px-6 py-6">
+                              <div className="space-y-4 rounded-3xl border border-white/30 bg-white/20 p-4">
+                                <p className="text-sm font-semibold text-white/80">
                                   Variant intelligence
                                 </p>
                                 <div className="grid gap-4 md:grid-cols-2">
@@ -263,50 +263,50 @@ export default function Inventory() {
                                     return (
                                       <div
                                         key={variant.id}
-                                        className="rounded-2xl border border-slate-100 bg-white/90 p-4 shadow-inner shadow-white/60"
+                                        className="rounded-2xl border border-white/30 bg-white/10 p-4 shadow-inner"
                                       >
-                                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">
                                           {Object.entries(variant.attributes)
                                             .map(([key, value]) => `${key}: ${value}`)
                                             .join(' • ')}
                                         </p>
                                         <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                                           <div>
-                                            <p className="text-xs text-slate-400">Cost</p>
-                                            <p className="font-semibold text-slate-900">
+                                            <p className="text-xs text-white/60">Cost</p>
+                                            <p className="font-semibold text-white">
                                               ${variant.cost.toFixed(2)}
                                             </p>
                                           </div>
                                           <div>
-                                            <p className="text-xs text-slate-400">Price</p>
-                                            <p className="font-semibold text-slate-900">
+                                            <p className="text-xs text-white/60">Price</p>
+                                            <p className="font-semibold text-white">
                                               ${variant.price.toFixed(2)}
                                             </p>
                                           </div>
                                           <div>
-                                            <p className="text-xs text-slate-400">Stock</p>
+                                            <p className="text-xs text-white/60">Stock</p>
                                             <p
                                               className={`font-semibold ${
                                                 variant.stock <= variant.reorderLevel
-                                                  ? 'text-amber-600'
-                                                  : 'text-slate-900'
+                                                  ? 'text-amber-400'
+                                                  : 'text-white'
                                               }`}
                                             >
                                               {variant.stock} units
                                             </p>
                                           </div>
                                           <div>
-                                            <p className="text-xs text-slate-400">Trend</p>
+                                            <p className="text-xs text-white/60">Trend</p>
                                             <div className="flex items-center gap-1 text-xs font-semibold">
                                               {trend === 'up' && (
                                                 <>
-                                                  <TrendingUp className="h-4 w-4 text-rose-500" />
+                                                  <TrendingUp className="h-4 w-4 text-rose-300" />
                                                   Cost rising
                                                 </>
                                               )}
                                               {trend === 'down' && (
                                                 <>
-                                                  <TrendingUp className="h-4 w-4 rotate-180 text-emerald-500" />
+                                                  <TrendingUp className="h-4 w-4 rotate-180 text-emerald-300" />
                                                   Cost easing
                                                 </>
                                               )}

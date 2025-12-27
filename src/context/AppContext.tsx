@@ -9,7 +9,7 @@ import { useOptimisticUpdates, useOptimisticStockUpdates } from '../utils/optimi
 import { OperationQueue, StockUpdateLock, ConcurrentOperationGuard } from '../utils/raceConditionPrevention';
 
 export interface Product {
-  id: string;
+  id?: string;
   name: string;
   barcode: string;
   sku: string;
@@ -144,31 +144,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       
-      console.log('Loading data for tenant:', currentTenant?.id);
-      
       if (!currentTenant) {
-        console.log('No tenant set - skipping data load');
         return;
       }
       
       // Initialize demo data if needed
       await api.post('/init-demo', {});
       
-      // Load all data using direct Supabase calls (RLS will filter by tenant)
+      // Load all data using API calls for consistency
       const [productsRes, salesRes, customersRes, employeesRes] = await Promise.all([
-        supabase.from('products').select('*'),
-        supabase.from('sales').select('*'),
-        supabase.from('customers').select('*'),
-        supabase.from('employees').select('*')
+        api.get('/products'),
+        api.get('/sales'),
+        api.get('/customers'),
+        api.get('/employees')
       ]);
 
-      console.log('Products loaded:', productsRes.data?.length || 0);
-      console.log('Sales loaded:', salesRes.data?.length || 0);
-      console.log('Customers loaded:', customersRes.data?.length || 0);
-      console.log('Employees loaded:', employeesRes.data?.length || 0);
-
       // Transform database products to frontend format
-      const transformedProducts = (productsRes.data || []).map(dbProduct => ({
+      const transformedProducts = (productsRes.products || []).map(dbProduct => ({
         id: dbProduct.id,
         name: dbProduct.name,
         barcode: dbProduct.barcode || '',
@@ -188,12 +180,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }));
 
       setProducts(transformedProducts);
-      setSales(salesRes.data || []);
-      setCustomers(customersRes.data || []);
-      setEmployees(employeesRes.data || []);
+      setSales(salesRes.sales || []);
+      setCustomers(customersRes.customers || []);
+      setEmployees(employeesRes.employees || []);
       
-      if (employeesRes.data && employeesRes.data.length > 0) {
-        setCurrentEmployee(employeesRes.data[0]);
+      if (employeesRes.employees && employeesRes.employees.length > 0) {
+        setCurrentEmployee(employeesRes.employees[0]);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -231,7 +223,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           } catch (tenantError) {
             console.error('Failed to load tenant:', tenantError);
           }
-          loadData();
+          // Small delay to ensure tenant state is updated
+          setTimeout(() => {
+            loadData();
+          }, 100);
         }
       } catch (error) {
         console.error('Failed to get session:', error);
@@ -259,7 +254,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }).catch(error => {
           console.error('Failed to load tenant on auth change:', error);
         });
-        loadData();
+        // Small delay to ensure tenant state is updated
+          setTimeout(() => {
+            loadData();
+          }, 100);
       } else {
         setProducts([]);
         setSales([]);
@@ -292,7 +290,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      console.log('Creating product:', product);
       const { product: newProduct } = await api.post('/products', product);
+      console.log('Product created successfully:', newProduct);
       setProducts([...products, newProduct]);
       toast.success('Product added', { description: newProduct.name });
       return newProduct;
@@ -529,7 +529,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const switchTenant = async (tenantId: string) => {
     // For now, we'll reload data which will get the new tenant info
     // In the future, this could involve switching context without full reload
-    await loadData();
+    setTimeout(() => {
+      loadData();
+    }, 100);
   };
 
   if (loading && hasSession) {

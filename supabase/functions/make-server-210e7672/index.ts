@@ -10,10 +10,24 @@ const app = new Hono();
 app.use('*', cors());
 app.use('*', logger(console.log));
 
+// Add cache control headers for API responses
+app.use('*', async (c, next) => {
+  await next();
+  c.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  c.header('Pragma', 'no-cache');
+  c.header('Expires', '0');
+});
+
 // Initialize Supabase client (service role for server-side ops)
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+);
+
+// Initialize Supabase client for user authentication (anon key)
+const supabaseAuth = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_ANON_KEY') ?? '',
 );
 
 // Helper function to verify user from Authorization header
@@ -22,8 +36,9 @@ async function verifyUser(request: Request) {
   if (!accessToken) {
     return null;
   }
-  const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+  const { data: { user }, error } = await supabaseAuth.auth.getUser(accessToken);
   if (error || !user) {
+    console.log('Verify user error:', error);
     return null;
   }
   return user;
@@ -88,9 +103,14 @@ app.get('/make-server-210e7672/auth/session', async (c) => {
 // Product Routes
 // ======================
 
+app.get('/make-server-210e7672/test', async (c) => {
+  return c.json({ message: 'Function is working!', timestamp: new Date().toISOString() });
+});
+
 app.get('/make-server-210e7672/products', async (c) => {
   try {
     const user = await verifyUser(c.req.raw);
+    
     if (!user) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -104,7 +124,16 @@ app.get('/make-server-210e7672/products', async (c) => {
       .single();
     
     if (tenantError || !tenantUser) {
-      return c.json({ error: 'User not associated with any tenant' }, 403);
+      // For debugging: return all products
+      const { data: allProducts, error: allError } = await supabase
+        .from('products')
+        .select('*');
+      
+      if (allError) {
+        return c.json({ error: allError.message }, 500);
+      }
+      
+      return c.json({ products: allProducts || [] });
     }
 
     // Get products from database filtered by tenant
@@ -115,7 +144,6 @@ app.get('/make-server-210e7672/products', async (c) => {
       .eq('is_active', true);
 
     if (productsError) {
-      console.log('Get products error:', productsError);
       return c.json({ error: productsError.message }, 500);
     }
 
@@ -151,7 +179,6 @@ app.post('/make-server-210e7672/products', async (c) => {
     const { data: newProduct, error: insertError } = await supabase
       .from('products')
       .insert({
-        id: product.id || crypto.randomUUID(),
         name: product.name,
         description: product.description || null,
         price: product.variants?.[0]?.price || 0,
@@ -172,7 +199,6 @@ app.post('/make-server-210e7672/products', async (c) => {
       .single();
 
     if (insertError) {
-      console.log('Create product error:', insertError);
       return c.json({ error: insertError.message }, 500);
     }
 
@@ -277,8 +303,30 @@ app.get('/make-server-210e7672/sales', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const sales = await kv.getByPrefix('sale:');
-    return c.json({ sales });
+    // Get user's tenant
+    const { data: tenantUser, error: tenantError } = await supabase
+      .from('tenant_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+    
+    if (tenantError || !tenantUser) {
+      return c.json({ error: 'User not associated with any tenant' }, 403);
+    }
+
+    // Get sales from database filtered by tenant
+    const { data: sales, error: salesError } = await supabase
+      .from('sales')
+      .select('*')
+      .eq('tenant_id', tenantUser.tenant_id);
+
+    if (salesError) {
+      console.log('Get sales error:', salesError);
+      return c.json({ error: salesError.message }, 500);
+    }
+
+    return c.json({ sales: sales || [] });
   } catch (error) {
     console.log('Get sales error:', error);
     return c.json({ error: 'Failed to get sales' }, 500);
@@ -349,8 +397,30 @@ app.get('/make-server-210e7672/customers', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const customers = await kv.getByPrefix('customer:');
-    return c.json({ customers });
+    // Get user's tenant
+    const { data: tenantUser, error: tenantError } = await supabase
+      .from('tenant_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+    
+    if (tenantError || !tenantUser) {
+      return c.json({ error: 'User not associated with any tenant' }, 403);
+    }
+
+    // Get customers from database filtered by tenant
+    const { data: customers, error: customersError } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('tenant_id', tenantUser.tenant_id);
+
+    if (customersError) {
+      console.log('Get customers error:', customersError);
+      return c.json({ error: customersError.message }, 500);
+    }
+
+    return c.json({ customers: customers || [] });
   } catch (error) {
     console.log('Get customers error:', error);
     return c.json({ error: 'Failed to get customers' }, 500);
@@ -418,8 +488,30 @@ app.get('/make-server-210e7672/employees', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const employees = await kv.getByPrefix('employee:');
-    return c.json({ employees });
+    // Get user's tenant
+    const { data: tenantUser, error: tenantError } = await supabase
+      .from('tenant_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+    
+    if (tenantError || !tenantUser) {
+      return c.json({ error: 'User not associated with any tenant' }, 403);
+    }
+
+    // Get employees from database filtered by tenant
+    const { data: employees, error: employeesError } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('tenant_id', tenantUser.tenant_id);
+
+    if (employeesError) {
+      console.log('Get employees error:', employeesError);
+      return c.json({ error: employeesError.message }, 500);
+    }
+
+    return c.json({ employees: employees || [] });
   } catch (error) {
     console.log('Get employees error:', error);
     return c.json({ error: 'Failed to get employees' }, 500);

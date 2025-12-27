@@ -38,9 +38,15 @@ async function handleResponse(response: Response) {
 // API helper functions
 export const api = {
   async get(endpoint: string) {
+    // Add cache-busting parameter with version for better control
+    const cacheVersion = 'v1.0';
+    const url = `${API_URL}${endpoint}${endpoint.includes('?') ? '&' : '?'}_cb=${cacheVersion}-${Date.now()}`;
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}${endpoint}`, { headers });
-    return handleResponse(response);
+    const response = await fetch(url, {
+      headers,
+      cache: 'no-store' // Explicitly prevent caching
+    });
+    return await handleResponse(response);
   },
 
   async post(endpoint: string, data: any) {

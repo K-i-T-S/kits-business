@@ -46,7 +46,6 @@ export default function Dashboard() {
         // Set current tenant context from the first tenant found
         if (tenants && tenants.length > 0) {
           const firstTenant = tenants[0];
-          console.log('Using tenant from existing query:', firstTenant);
           const tenantObj = {
             id: firstTenant.tenant_id,
             name: firstTenant.tenant_name,
@@ -54,10 +53,7 @@ export default function Dashboard() {
             userRole: firstTenant.user_role,
             settings: firstTenant.settings || {}
           };
-          console.log('Dashboard setting tenant object:', tenantObj);
           setCurrentTenant(tenantObj);
-        } else {
-          console.log('No tenants found in query');
         }
       }
       if (!cancelled) {

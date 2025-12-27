@@ -32,7 +32,6 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
     e.preventDefault();
 
     const product = {
-      id: Date.now().toString(),
       name: formData.name,
       barcode: formData.barcode,
       sku: formData.sku,

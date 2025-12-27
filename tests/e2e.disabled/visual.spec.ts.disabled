@@ -1,0 +1,126 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Visual Regression Tests', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test('homepage visual layout', async ({ page }) => {
+    await expect(page).toHaveScreenshot('homepage.png');
+  });
+
+  test('login form visual layout', async ({ page }) => {
+    const loginButton = page.locator('button:has-text("Login"), [data-testid="login-button"]');
+    if (await loginButton.isVisible()) {
+      await loginButton.click();
+      await page.waitForTimeout(1000); // Wait for animations
+      await expect(page).toHaveScreenshot('login-form.png');
+    }
+  });
+
+  test('dashboard visual layout', async ({ page }) => {
+    // This test assumes user is logged in or can navigate to dashboard
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('dashboard.png');
+  });
+
+  test('mobile responsive layout', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 }); // iPhone size
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('mobile-homepage.png');
+  });
+
+  test('dark mode visual layout', async ({ page }) => {
+    // Test dark mode if available
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('dark-mode-homepage.png');
+  });
+
+  test('navigation menu visual layout', async ({ page }) => {
+    const navMenu = page.locator('nav, [role="navigation"], .navigation');
+    if (await navMenu.isVisible()) {
+      await expect(navMenu).toHaveScreenshot('navigation-menu.png');
+    }
+  });
+
+  test('forms visual consistency', async ({ page }) => {
+    // Test various form elements
+    const forms = page.locator('form');
+    const formCount = await forms.count();
+    
+    if (formCount > 0) {
+      await expect(forms.first()).toHaveScreenshot('form-layout.png');
+    }
+  });
+
+  test('card components visual layout', async ({ page }) => {
+    const cards = page.locator('.card, [data-testid="card"], .card-component');
+    const cardCount = await cards.count();
+    
+    if (cardCount > 0) {
+      await expect(cards.first()).toHaveScreenshot('card-component.png');
+    }
+  });
+
+  test('table components visual layout', async ({ page }) => {
+    const tables = page.locator('table, .table, [data-testid="table"]');
+    const tableCount = await tables.count();
+    
+    if (tableCount > 0) {
+      await expect(tables.first()).toHaveScreenshot('table-component.png');
+    }
+  });
+
+  test('modal components visual layout', async ({ page }) => {
+    // Look for modal triggers
+    const modalTriggers = page.locator('[data-testid="modal-trigger"], button:has-text("Open"), button:has-text("Add")');
+    const triggerCount = await modalTriggers.count();
+    
+    if (triggerCount > 0) {
+      await modalTriggers.first().click();
+      await page.waitForTimeout(500); // Wait for modal animation
+      await expect(page).toHaveScreenshot('modal-component.png');
+    }
+  });
+
+  test('loading states visual layout', async ({ page }) => {
+    // Test loading spinners and states
+    await page.route('**/*', route => {
+      // Delay responses to trigger loading states
+      setTimeout(() => route.continue(), 1000);
+    });
+    
+    await page.reload();
+    await page.waitForTimeout(2000); // Wait for loading states
+    
+    const loadingElements = page.locator('[data-testid="loading"], .loading, .spinner');
+    const loadingCount = await loadingElements.count();
+    
+    if (loadingCount > 0) {
+      await expect(loadingElements.first()).toHaveScreenshot('loading-state.png');
+    }
+  });
+
+  test('error states visual layout', async ({ page }) => {
+    // Mock error responses
+    await page.route('**/api/**', route => {
+      route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Test error' })
+      });
+    });
+    
+    await page.reload();
+    await page.waitForTimeout(2000); // Wait for error states
+    
+    const errorElements = page.locator('[data-testid="error"], .error, .error-message');
+    const errorCount = await errorElements.count();
+    
+    if (errorCount > 0) {
+      await expect(errorElements.first()).toHaveScreenshot('error-state.png');
+    }
+  });
+});

@@ -1,9 +1,17 @@
 import { useState } from 'react';
-import { Barcode, Minus, Plus, Trash2, CreditCard, DollarSign, Receipt, User } from 'lucide-react';
+import { Barcode, Minus, Plus, Trash2, CreditCard, DollarSign, Receipt, User, Tag, Star, Settings, Split } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import type { Sale } from '../context/AppContext';
-import { toast } from 'sonner@2.0.3';
+import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
+import { POSCalculator } from '../utils/posCalculations';
+import SplitPaymentModal from '../components/SplitPaymentModal';
+import TipsModal from '../components/TipsModal';
+import DiscountModal from '../components/DiscountModal';
+import LoyaltyModal from '../components/LoyaltyModal';
+import ReceiptCustomizationModal from '../components/ReceiptCustomizationModal';
+import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
+import { toast } from 'sonner';
 
 interface CartItem {
   productId: string;
@@ -23,6 +31,19 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
+  
+  // Enhanced POS states
+  const [showSplitPayment, setShowSplitPayment] = useState(false);
+  const [showTipsModal, setShowTipsModal] = useState(false);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [showLoyaltyModal, setShowLoyaltyModal] = useState(false);
+  const [showReceiptCustomization, setShowReceiptCustomization] = useState(false);
+  const [splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
+  const [tipInfo, setTipInfo] = useState<TipInfo | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<DiscountCoupon | null>(null);
+  const [loyaltyPointsRedeemed, setLoyaltyPointsRedeemed] = useState(0);
+  const [selectedReceiptTemplate, setSelectedReceiptTemplate] = useState<ReceiptTemplate | null>(null);
+  const [taxRate] = useState(0.08); // 8% tax rate
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,17 +67,17 @@ export default function POS() {
         );
 
         if (existingItem) {
-          setCart(cart.map(item =>
+          setCart(cart?.map(item =>
             item.productId === product.id && item.variantId === variant.id
               ? { ...item, quantity: item.quantity + 1 }
               : item
-          ));
+          ) || []);
         } else {
           const variantDesc = Object.entries(variant.attributes)
             .map(([key, value]) => `${value}`)
             .join(' - ');
 
-          setCart([...cart, {
+          setCart([...(cart || []), {
             productId: product.id,
             variantId: variant.id,
             productName: product.name,
@@ -95,27 +116,73 @@ export default function POS() {
   };
 
   const removeItem = (index: number) => {
-    setCart(cart.filter((_, i) => i !== index));
+    setCart((cart || [])?.filter((_, i) => i !== index) || []);
   };
 
   const calculateSubtotal = () => {
-    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return (cart || [])?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+  };
+
+  const calculateTax = () => {
+    return POSCalculator.calculateTax(calculateSubtotal(), taxRate);
+  };
+
+  const calculateDiscounts = () => {
+    let totalDiscount = 0;
+    
+    if (appliedCoupon) {
+      const cartItemsForDiscount = (cart || [])?.map(item => ({
+        productId: item.productId,
+        price: item.price,
+        quantity: item.quantity
+      })) || [];
+      totalDiscount += POSCalculator.calculateCouponDiscount(calculateSubtotal(), appliedCoupon, cartItemsForDiscount);
+    }
+    
+    if (loyaltyPointsRedeemed > 0) {
+      // Assuming loyalty program with 100 points = $1
+      totalDiscount += loyaltyPointsRedeemed * 0.01;
+    }
+    
+    return totalDiscount;
+  };
+
+  const calculateTips = () => {
+    if (!tipInfo) return 0;
+    return POSCalculator.calculateTip(calculateSubtotal(), tipInfo);
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal(); // Can add tax or discounts here
+    const subtotal = calculateSubtotal();
+    const tax = calculateTax();
+    const discounts = calculateDiscounts();
+    const tips = calculateTips();
+    return POSCalculator.calculateFinalTotal(subtotal, tax, discounts, tips);
   };
 
   const handleCheckout = async () => {
-    if (cart.length === 0) {
+    if (!cart?.length) {
       toast.error('Cart is empty', {
         description: 'Scan or add at least one product before completing a sale.',
       });
       return;
     }
 
+    // Show split payment modal if total > 0
+    if (calculateTotal() > 0) {
+      setShowSplitPayment(true);
+    }
+  };
+
+  const completeSale = async (payments: SplitPayment[]) => {
+    const subtotal = calculateSubtotal();
+    const tax = calculateTax();
+    const discounts = calculateDiscounts();
+    const tips = calculateTips();
+    const total = calculateTotal();
+
     const sale = {
-      id: Date.now().toString(),
+      id: `sale_${Date.now()}`,
       date: new Date().toISOString(),
       items: cart.map(item => ({
         productId: item.productId,
@@ -125,9 +192,9 @@ export default function POS() {
         price: item.price,
         cost: item.cost
       })),
-      subtotal: calculateSubtotal(),
-      total: calculateTotal(),
-      paymentMethod,
+      subtotal,
+      total,
+      paymentMethod: 'cash' as const,
       employeeId: currentEmployee?.id || '',
       ...(selectedCustomer ? { customerId: selectedCustomer } : {})
     } satisfies Sale;
@@ -151,8 +218,13 @@ export default function POS() {
       setCart([]);
       setBarcode('');
       setSelectedCustomer('');
+      setSplitPayments([]);
+      setTipInfo(null);
+      setAppliedCoupon(null);
+      setLoyaltyPointsRedeemed(0);
+      
       toast.success('Sale completed', {
-        description: `Total ${sale.total.toFixed(2)} charged via ${paymentMethod}.`,
+        description: `Total ${sale.total.toFixed(2)} charged via ${payments.map(p => p.method).join(', ')}.`,
       });
     } catch (error) {
       toast.error('Failed to complete sale', {
@@ -220,10 +292,10 @@ export default function POS() {
                   <h2 className="text-lg font-semibold text-white">Shopping cart</h2>
                 </div>
                 <p className="text-xs text-white/80">
-                  Ready to convert {cart.length} item{cart.length !== 1 ? 's' : ''}
+                  Ready to convert {cart?.length || 0} item{(cart?.length || 0) !== 1 ? 's' : ''}
                 </p>
               </div>
-              {cart.length === 0 ? (
+              {!cart?.length ? (
                 <div className="flex flex-col items-center gap-2 py-10 text-center text-white/60">
                   <Receipt className="h-12 w-12" />
                   <p className="text-sm">Cart is empty</p>
@@ -231,14 +303,14 @@ export default function POS() {
                 </div>
               ) : (
                 <div className="mt-4 space-y-3">
-                  {cart.map((item, index) => (
+                  {(cart || [])?.map((item, index) => (
                     <div key={index} className="flex flex-col gap-3 rounded-3xl border border-white/30 bg-white/10 p-4 sm:flex-row sm:items-center">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white">{item.productName}</p>
                         <p className="text-xs uppercase tracking-[0.2em] text-white/60">
                           {item.variantAttributes}
                         </p>
-                        <p className="text-sm text-white/80">${item.price.toFixed(2)}</p>
+                        <p className="text-sm text-white/80">${(item.price || 0).toFixed(2)}</p>
                       </div>
                       
                       <div className="flex flex-col items-center gap-2 sm:flex-row">
@@ -263,7 +335,7 @@ export default function POS() {
 
                       <div className="flex items-center justify-between sm:flex-col sm:items-end">
                         <p className="text-sm font-semibold text-white">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ${((item.price || 0) * item.quantity).toFixed(2)}
                         </p>
                         <button
                           onClick={() => removeItem(index)}
@@ -291,7 +363,7 @@ export default function POS() {
                   className="w-full appearance-none rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-10 text-sm text-white shadow-inner focus:border-white/50 focus:outline-none"
                 >
                   <option value="">Walk-in Customer</option>
-                  {customers.map(customer => (
+                  {(customers || [])?.map(customer => (
                     <option key={customer.id} value={customer.id}>
                       {customer.name} ({customer.phone})
                     </option>
@@ -302,58 +374,109 @@ export default function POS() {
 
             <section className="hero-gradient glass-panel p-6 text-white">
               <p className="text-xs uppercase tracking-[0.3em] text-white/70">Tender</p>
-              <h2 className="text-lg font-semibold text-white">Payment method</h2>
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <h2 className="text-lg font-semibold text-white">Payment options</h2>
+              
+              {/* Enhanced Payment Options */}
+              <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setShowSplitPayment(true)}
+                    className="p-3 rounded-lg border border-white/30 bg-white/10 text-white/80 hover:border-white/50 flex items-center justify-center gap-2"
+                  >
+                    <Split className="w-4 h-4" />
+                    <span className="text-sm">Split Payment</span>
+                  </button>
+                  <button
+                    onClick={() => setShowTipsModal(true)}
+                    className="p-3 rounded-lg border border-white/30 bg-white/10 text-white/80 hover:border-white/50 flex items-center justify-center gap-2"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span className="text-sm">Add Tip</span>
+                  </button>
+                  <button
+                    onClick={() => setShowDiscountModal(true)}
+                    className="p-3 rounded-lg border border-white/30 bg-white/10 text-white/80 hover:border-white/50 flex items-center justify-center gap-2"
+                  >
+                    <Tag className="w-4 h-4" />
+                    <span className="text-sm">Discount</span>
+                  </button>
+                  <button
+                    onClick={() => setShowLoyaltyModal(true)}
+                    disabled={!selectedCustomer}
+                    className="p-3 rounded-lg border border-white/30 bg-white/10 text-white/80 hover:border-white/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Star className="w-4 h-4" />
+                    <span className="text-sm">Loyalty</span>
+                  </button>
+                </div>
+                
                 <button
-                  onClick={() => setPaymentMethod('cash')}
-                  className={`p-3 sm:p-4 rounded-lg border-2 transition-colors ${
-                    paymentMethod === 'cash'
-                      ? 'border-emerald-400 bg-emerald-500/20 text-emerald-300'
-                      : 'border-white/30 text-white/80 hover:border-white/50'
-                  }`}
+                  onClick={() => setShowReceiptCustomization(true)}
+                  className="w-full p-3 rounded-lg border border-white/30 bg-white/10 text-white/80 hover:border-white/50 flex items-center justify-center gap-2"
                 >
-                  <DollarSign className={`mx-auto mb-2 h-8 w-8 ${
-                    paymentMethod === 'cash' ? 'text-emerald-300' : 'text-white/60'
-                  }`} />
-                  <p className="text-sm font-semibold">Cash</p>
-                </button>
-                <button
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-3 sm:p-4 rounded-lg border-2 transition-colors ${
-                    paymentMethod === 'card'
-                      ? 'border-indigo-400 bg-indigo-500/20 text-indigo-300'
-                      : 'border-white/30 text-white/80 hover:border-white/50'
-                  }`}
-                >
-                  <CreditCard className={`mx-auto mb-2 h-8 w-8 ${
-                    paymentMethod === 'card' ? 'text-indigo-300' : 'text-white/60'
-                  }`} />
-                  <p className="text-sm font-semibold">Card</p>
+                  <Settings className="w-4 h-4" />
+                  <span className="text-sm">Receipt Settings</span>
                 </button>
               </div>
+              
+              {/* Applied Discounts and Tips Display */}
+              {(appliedCoupon || tipInfo || loyaltyPointsRedeemed > 0) && (
+                <div className="mt-4 space-y-2">
+                  {appliedCoupon && (
+                    <div className="flex items-center justify-between p-2 rounded bg-emerald-500/20 border border-emerald-400">
+                      <span className="text-xs text-emerald-300">Coupon: {appliedCoupon.code}</span>
+                      <span className="text-xs text-emerald-300">-${calculateDiscounts().toFixed(2)}</span>
+                    </div>
+                  )}
+                  {tipInfo && (
+                    <div className="flex items-center justify-between p-2 rounded bg-blue-500/20 border border-blue-400">
+                      <span className="text-xs text-blue-300">Tip ({tipInfo.type})</span>
+                      <span className="text-xs text-blue-300">+${calculateTips().toFixed(2)}</span>
+                    </div>
+                  )}
+                  {loyaltyPointsRedeemed > 0 && (
+                    <div className="flex items-center justify-between p-2 rounded bg-amber-500/20 border border-amber-400">
+                      <span className="text-xs text-amber-300">Points Redeemed</span>
+                      <span className="text-xs text-amber-300">-{(loyaltyPointsRedeemed * 0.01).toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
 
             <section className="hero-gradient glass-panel p-6 text-white">
               <p className="text-xs uppercase tracking-[0.3em] text-white/70">Totals</p>
-              <h2 className="text-lg font-semibold text-white">Summary</h2>
+              <h2 className="text-lg font-semibold text-white">Order Summary</h2>
               <div className="mt-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between text-white/80">
                   <span>Subtotal</span>
-                  <span className="text-white">${calculateSubtotal().toFixed(2)}</span>
+                  <span className="text-white">${(calculateSubtotal() || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between text-white/80">
-                  <span>Tax</span>
-                  <span className="text-white">$0.00</span>
+                  <span>Tax ({(taxRate * 100).toFixed(0)}%)</span>
+                  <span className="text-white">${calculateTax().toFixed(2)}</span>
                 </div>
+                {calculateDiscounts() > 0 && (
+                  <div className="flex items-center justify-between text-emerald-300">
+                    <span>Discounts</span>
+                    <span>-${calculateDiscounts().toFixed(2)}</span>
+                  </div>
+                )}
+                {calculateTips() > 0 && (
+                  <div className="flex items-center justify-between text-blue-300">
+                    <span>Tips</span>
+                    <span>+${calculateTips().toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between border-t border-white/30 pt-3 text-base font-semibold text-white">
                   <span>Total</span>
-                  <span>${calculateTotal().toFixed(2)}</span>
+                  <span>${(calculateTotal() || 0).toFixed(2)}</span>
                 </div>
               </div>
 
               <button
                 onClick={handleCheckout}
-                disabled={cart.length === 0}
+                disabled={!cart?.length}
                 className="mt-6 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-lime-400 py-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Complete sale
@@ -363,7 +486,83 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Receipt Modal */}
+      {/* Enhanced Modals */}
+      <SplitPaymentModal
+        isOpen={showSplitPayment}
+        totalAmount={calculateTotal()}
+        onComplete={completeSale}
+        onCancel={() => setShowSplitPayment(false)}
+      />
+      
+      <TipsModal
+        isOpen={showTipsModal}
+        subtotal={calculateSubtotal()}
+        onComplete={(tip) => {
+          setTipInfo(tip);
+          setShowTipsModal(false);
+          toast.success('Tip added', {
+            description: `Tip of $${tip.amount.toFixed(2)} added to order.`
+          });
+        }}
+        onCancel={() => setShowTipsModal(false)}
+      />
+      
+      <DiscountModal
+        isOpen={showDiscountModal}
+        subtotal={calculateSubtotal()}
+        cartItems={(cart || [])?.map(item => ({
+          productId: item.productId,
+          price: item.price,
+          quantity: item.quantity
+        })) || []}
+        availableCoupons={demoCoupons}
+        onApplyCoupon={(coupon) => {
+          setAppliedCoupon(coupon);
+          setShowDiscountModal(false);
+          toast.success('Coupon applied', {
+            description: `${coupon.code} discount applied.`
+          });
+        }}
+        onRemoveCoupon={() => {
+          setAppliedCoupon(null);
+          toast.success('Coupon removed');
+        }}
+        onCancel={() => setShowDiscountModal(false)}
+        appliedCoupon={appliedCoupon || undefined}
+      />
+      
+      <LoyaltyModal
+        isOpen={showLoyaltyModal}
+        subtotal={calculateSubtotal()}
+        customerLoyalty={selectedCustomer ? demoCustomerLoyalty : undefined}
+        loyaltyProgram={demoLoyaltyProgram}
+        onRedeemPoints={(points) => {
+          setLoyaltyPointsRedeemed(points);
+          setShowLoyaltyModal(false);
+          toast.success('Points redeemed', {
+            description: `${points} points redeemed for discount.`
+          });
+        }}
+        onCancel={() => setShowLoyaltyModal(false)}
+      />
+      
+      <ReceiptCustomizationModal
+        isOpen={showReceiptCustomization}
+        templates={demoReceiptTemplates}
+        currentTemplate={selectedReceiptTemplate || undefined}
+        onSelectTemplate={(template) => {
+          setSelectedReceiptTemplate(template);
+          setShowReceiptCustomization(false);
+          toast.success('Receipt template selected', {
+            description: `${template.name} template applied.`
+          });
+        }}
+        onSaveTemplate={(template) => {
+          // TODO: Save to API
+          toast.success('Receipt template saved');
+        }}
+        onCancel={() => setShowReceiptCustomization(false)}
+      />
       {showReceipt && lastSale && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
           <div className="glass-panel max-h-[90vh] w-full max-w-md overflow-y-auto p-6">
@@ -376,24 +575,46 @@ export default function POS() {
             </div>
 
             <div className="mt-6 space-y-3 rounded-2xl border border-white/30 bg-white/20 px-4 py-3 text-sm">
-              {lastSale.items.map((item: any, index: number) => (
+              {(lastSale?.items || [])?.map((item: any, index: number) => (
                 <div key={index} className="flex items-center justify-between">
                   <span className="text-white/80">
                     {item.productName} x{item.quantity}
                   </span>
-                  <span className="font-semibold text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-semibold text-white">${((item.price || 0) * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
 
             <div className="mt-4 space-y-2 text-sm">
               <div className="flex items-center justify-between">
+                <span className="text-white/60">Subtotal</span>
+                <span className="font-semibold text-white">${(lastSale.subtotal || 0).toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-white/60">Tax</span>
+                <span className="font-semibold text-white">${(lastSale.tax || 0).toFixed(2)}</span>
+              </div>
+              {(lastSale.discounts || 0) > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-300">Discounts</span>
+                  <span className="font-semibold text-emerald-300">-${(lastSale.discounts || 0).toFixed(2)}</span>
+                </div>
+              )}
+              {(lastSale.tips || 0) > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-300">Tips</span>
+                  <span className="font-semibold text-blue-300">+${(lastSale.tips || 0).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between border-t border-white/30 pt-2">
                 <span className="text-white/60">Total</span>
-                <span className="font-semibold text-white">${lastSale.total.toFixed(2)}</span>
+                <span className="font-semibold text-white">${(lastSale.total || 0).toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-white/60">Payment</span>
-                <span className="capitalize text-white">{lastSale.paymentMethod}</span>
+                <span className="capitalize text-white">
+                  {lastSale.payments ? lastSale.payments.map((p: any) => p.method).join(', ') : lastSale.paymentMethod}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-white/60">Date</span>
@@ -401,6 +622,18 @@ export default function POS() {
                   {new Date(lastSale.date).toLocaleString()}
                 </span>
               </div>
+              {lastSale.appliedCoupon && (
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-300">Coupon</span>
+                  <span className="text-emerald-300">{lastSale.appliedCoupon.code}</span>
+                </div>
+              )}
+              {lastSale.loyaltyPointsRedeemed && (
+                <div className="flex items-center justify-between">
+                  <span className="text-amber-300">Points Redeemed</span>
+                  <span className="text-amber-300">{lastSale.loyaltyPointsRedeemed}</span>
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">

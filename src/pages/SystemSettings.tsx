@@ -1,12 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Database, Shield, Globe, Users, CreditCard, Bell, Mail, Smartphone, Save, X, AlertTriangle, CheckCircle, Info, RefreshCw, Download, Upload, Trash2, Plus, Edit, Eye } from 'lucide-react';
+import { 
+  Settings, 
+  Building2, 
+  Shield, 
+  Mail, 
+  Database, 
+  Bell, 
+  Plug, 
+  Key, 
+  Save, 
+  X, 
+  Check, 
+  AlertTriangle,
+  User,
+  Lock,
+  Smartphone,
+  Globe,
+  Clock,
+  RefreshCw,
+  Download,
+  Upload,
+  FileText,
+  Users as UsersIcon,
+  CreditCard,
+  Package,
+  TrendingUp,
+  HelpCircle,
+  Info,
+  CheckCircle,
+  Trash2
+} from 'lucide-react';
+import { useAccessibility } from '../providers/AccessibilityProvider';
 import { useApp } from '../context/AppContext';
 import { BRAND } from '../constants/branding';
 
 export default function SystemSettings() {
   const navigate = useNavigate();
   const { currentEmployee } = useApp();
+  const { announce, setAriaAttribute, setRole } = useAccessibility();
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
@@ -82,7 +114,7 @@ export default function SystemSettings() {
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
-    { id: 'business', label: 'Business', icon: Users },
+    { id: 'users', label: 'Users', icon: UsersIcon },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'email', label: 'Email', icon: Mail },
     { id: 'backup', label: 'Backup', icon: Database },
@@ -99,17 +131,29 @@ export default function SystemSettings() {
   };
 
   const handleSave = async () => {
-    setLoading(true);
-    setSaveStatus('saving');
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setSaveStatus('success');
-    setLoading(false);
-    
-    setTimeout(() => setSaveStatus('idle'), 3000);
+    try {
+      setSaveStatus('saving');
+      announce('Saving settings...', 'polite');
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setSaveStatus('success');
+      announce('Settings saved successfully!', 'polite');
+      
+      // Reset status after 3 seconds
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      setSaveStatus('error');
+      announce('Failed to save settings. Please try again.', 'assertive');
+    }
   };
+
+  const handleTabChange = useCallback((tabId: string) => {
+    setActiveTab(tabId);
+    announce(`Switched to ${tabId} settings`, 'polite');
+  }, [announce]);
 
   const handleBackup = async () => {
     setLoading(true);
@@ -119,13 +163,13 @@ export default function SystemSettings() {
     
     // Add new backup to history
     const newBackup = {
-      id: backupHistory.length + 1,
+      id: (backupHistory?.length || 0) + 1,
       date: new Date().toLocaleString(),
       size: '2.5 MB',
       type: 'Manual',
       status: 'completed'
     };
-    setBackupHistory([newBackup, ...backupHistory]);
+    setBackupHistory([newBackup, ...(backupHistory || [])]);
   };
 
   const handleRestore = (backupId: number) => {
@@ -134,7 +178,7 @@ export default function SystemSettings() {
   };
 
   const handleDeleteBackup = (backupId: number) => {
-    setBackupHistory(backupHistory.filter(backup => backup.id !== backupId));
+    setBackupHistory((backupHistory || [])?.filter(backup => backup.id !== backupId) || []);
   };
 
   const getLogLevelIcon = (level: string) => {
@@ -180,7 +224,7 @@ export default function SystemSettings() {
             <div className="bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Settings Categories</h3>
               <nav className="space-y-1">
-                {tabs.map((tab) => {
+                {(tabs || [])?.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <button
@@ -539,7 +583,7 @@ export default function SystemSettings() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-white/10">
-                              {backupHistory.map((backup) => (
+                              {(backupHistory || [])?.map((backup) => (
                                 <tr key={backup.id} className="hover:bg-white/5">
                                   <td className="px-4 py-3 text-sm text-white">{backup.date}</td>
                                   <td className="px-4 py-3 text-sm text-white">{backup.size}</td>

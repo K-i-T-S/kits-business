@@ -8,14 +8,19 @@ import {
   TrendingUp,
   Clock,
   Sparkles,
+  UserPlus,
+  Users,
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
+import InviteTeamMemberModal from '../components/InviteTeamMemberModal';
+import TenantSwitcher from '../components/TenantSwitcher';
 
 export default function Employees() {
-  const { employees, sales, addEmployee } = useApp();
+  const { employees, sales, addEmployee, currentTenant } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
@@ -36,18 +41,18 @@ export default function Employees() {
   const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
 
   const formatCurrency = (value: number) =>
-    value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    (value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
   const statCards = [
     {
       title: 'Team members',
-      value: employees.length.toLocaleString(),
+      value: (employees?.length || 0).toLocaleString(),
       helper: 'Add your staffing target here',
       accent: 'from-indigo-500/95 via-indigo-400/85 to-sky-400/80',
     },
     {
       title: 'Leadership coverage',
-      value: employees.filter((e) => e.role !== 'cashier').length.toLocaleString(),
+      value: (employees?.filter((e) => e.role !== 'cashier').length || 0).toLocaleString(),
       helper: 'Admins + managers online',
       accent: 'from-purple-500/95 via-purple-400/85 to-pink-400/80',
     },
@@ -108,22 +113,33 @@ export default function Employees() {
           <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
-              <p className="stat-chip bg-white/10 text-white/80">People operations</p>
+              <div className="flex items-center gap-4 mb-4">
+                <p className="stat-chip bg-white/10 text-white/80">People operations</p>
+                <TenantSwitcher />
+              </div>
               <h1 className="mt-3 text-3xl font-semibold text-white">
                 Build a legendary frontline team.
               </h1>
               <p className="mt-2 text-sm text-white/80">
-                Manage roles, commissions, and performance so your team can deliver fast, friendly
-                service—whether you’re selling hardware, software, or POS setups.
+                Manage roles, commissions, and performance for your {currentTenant?.name || 'business'} team.
               </p>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25"
-            >
-              <Plus className="h-5 w-5" />
-              Add teammate
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg"
+              >
+                <UserPlus className="h-5 w-5" />
+                Invite by email
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25"
+              >
+                <Plus className="h-5 w-5" />
+                Add teammate
+              </button>
+            </div>
           </div>
         </section>
 
@@ -307,6 +323,15 @@ export default function Employees() {
           </div>
         </div>
       )}
+      {/* Invite Team Member Modal */}
+      <InviteTeamMemberModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onSuccess={() => {
+          setShowInviteModal(false);
+          // Refresh data or show success message
+        }}
+      />
     </Layout>
   );
 }

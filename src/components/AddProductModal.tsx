@@ -226,7 +226,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-white/30 rounded-lg hover:bg-white/20 transition-colors text-white"
+              className="flex-1 px-4 py-3 bg-slate-800/50 border border-white/30 rounded-lg hover:bg-slate-700/50 transition-colors text-white"
             >
               Cancel
             </button>

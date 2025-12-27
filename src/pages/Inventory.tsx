@@ -25,26 +25,30 @@ export default function Inventory() {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
 
   const categories = useMemo(
-    () => ['all', ...new Set(products.map((p) => p.category))],
+    () => ['all', ...new Set(products?.map((p) => p.category) || [])],
     [products],
   );
 
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = products?.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.barcode.includes(searchQuery) ||
       product.sku.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
     return matchesSearch && matchesCategory;
-  });
+  }) || [];
 
   const calculateStats = (product: any) => {
-    const totalStock = product.variants.reduce((sum: number, v: any) => sum + v.stock, 0);
+    if (!product.variants || product.variants.length === 0) {
+      return { totalStock: 0, avgCost: 0, avgPrice: 0, isLowStock: false };
+    }
+    
+    const totalStock = product.variants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
     const avgCost =
-      product.variants.reduce((sum: number, v: any) => sum + v.cost, 0) / product.variants.length;
+      product.variants.reduce((sum: number, v: any) => sum + (v.cost || 0), 0) / product.variants.length;
     const avgPrice =
-      product.variants.reduce((sum: number, v: any) => sum + v.price, 0) / product.variants.length;
-    const isLowStock = product.variants.some((v: any) => v.stock <= v.reorderLevel);
+      product.variants.reduce((sum: number, v: any) => sum + (v.price || 0), 0) / product.variants.length;
+    const isLowStock = product.variants.some((v: any) => (v.stock || 0) <= (v.reorderLevel || 0));
 
     return { totalStock, avgCost, avgPrice, isLowStock };
   };
@@ -61,28 +65,28 @@ export default function Inventory() {
   const inventoryStats = [
     {
       label: 'Catalog size',
-      value: products.length,
+      value: products?.length || 0,
       subcopy: 'active SKUs',
     },
     {
       label: 'Variants',
-      value: products.reduce((acc, p) => acc + p.variants.length, 0),
+      value: products?.reduce((acc, p) => acc + (p.variants?.length || 0), 0) || 0,
       subcopy: 'configurations',
     },
     {
       label: 'Units on hand',
-      value: products.reduce(
-        (acc, p) => acc + p.variants.reduce((sum, v) => sum + v.stock, 0),
+      value: products?.reduce(
+        (acc, p) => acc + (p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0),
         0,
-      ),
+      ) || 0,
       subcopy: 'live quantity',
     },
     {
       label: 'Low stock alerts',
-      value: products.reduce(
-        (acc, p) => acc + p.variants.filter((v) => v.stock <= v.reorderLevel).length,
+      value: products?.reduce(
+        (acc, p) => acc + (p.variants?.filter((v) => v.stock <= v.reorderLevel).length || 0),
         0,
-      ),
+      ) || 0,
       subcopy: 'variants below buffer',
       critical: true,
     },
@@ -215,8 +219,8 @@ export default function Inventory() {
                               onClick={() => setSelectedProduct(isExpanded ? null : product.id)}
                               className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
                             >
-                              {product.variants.length} variant
-                              {product.variants.length > 1 ? 's' : ''}
+                              {product.variants?.length || 0} variant
+                              {(product.variants?.length || 0) > 1 ? 's' : ''}
                             </button>
                           </td>
                           <td className="px-6 py-4">
@@ -233,8 +237,8 @@ export default function Inventory() {
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-white/80">${stats.avgCost.toFixed(2)}</td>
-                          <td className="px-6 py-4 text-white/80">${stats.avgPrice.toFixed(2)}</td>
+                          <td className="px-6 py-4 text-white/80">${(stats.avgCost || 0).toFixed(2)}</td>
+                          <td className="px-6 py-4 text-white/80">${(stats.avgPrice || 0).toFixed(2)}</td>
                           <td className="px-6 py-4 text-white/60">{product.supplier}</td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
@@ -258,7 +262,7 @@ export default function Inventory() {
                                   Variant intelligence
                                 </p>
                                 <div className="grid gap-4 md:grid-cols-2">
-                                  {product.variants.map((variant) => {
+                                  {product.variants?.map((variant) => {
                                     const trend = getCostTrend(variant.costHistory);
                                     return (
                                       <div
@@ -274,13 +278,13 @@ export default function Inventory() {
                                           <div>
                                             <p className="text-xs text-white/60">Cost</p>
                                             <p className="font-semibold text-white">
-                                              ${variant.cost.toFixed(2)}
+                                              ${(variant.cost || 0).toFixed(2)}
                                             </p>
                                           </div>
                                           <div>
                                             <p className="text-xs text-white/60">Price</p>
                                             <p className="font-semibold text-white">
-                                              ${variant.price.toFixed(2)}
+                                              ${(variant.price || 0).toFixed(2)}
                                             </p>
                                           </div>
                                           <div>
@@ -324,14 +328,14 @@ export default function Inventory() {
                                       Cost history
                                     </p>
                                     <div className="mt-2 space-y-1 font-mono">
-                                      {product.variants[0].costHistory.map((entry, idx) => (
+                                      {product.variants?.[0]?.costHistory?.map((entry, idx) => (
                                         <div
                                           key={idx}
                                           className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2"
                                         >
                                           <span>{new Date(entry.date).toLocaleDateString()}</span>
                                           <span className="text-slate-900">
-                                            ${entry.cost.toFixed(2)} ({entry.quantity} units)
+                                            ${(entry.cost || 0).toFixed(2)} ({entry.quantity || 0} units)
                                           </span>
                                         </div>
                                       ))}
@@ -349,7 +353,7 @@ export default function Inventory() {
               </table>
             </div>
           </div>
-          {filteredProducts.length === 0 && (
+          {!filteredProducts?.length && (
             <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400">
               <Package className="h-12 w-12" />
               <p className="mt-3 text-sm">No products found. Reset filters and try again.</p>

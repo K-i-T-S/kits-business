@@ -1,26 +1,21 @@
-import { useState } from 'react';
-import {
-  CheckCircle,
-  Package,
-  Users,
-  ShoppingCart,
-  TrendingUp,
-  BarChart3,
-  Shield,
-  Sparkles,
-  Mail,
-  MessageCircle,
-  Instagram,
-} from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Lock, Mail, User, Building2, Sparkles, MessageCircle, Instagram, Package, ShoppingCart, Users, TrendingUp, BarChart3, Shield, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../utils/supabaseClient';
 import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
+import CreateTenantModal from '../components/CreateTenantModal';
+import { getCurrentUserTenant } from '../utils/tenantManager';
+import { useApp } from '../context/AppContext';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin?: () => void;
 }
 
 export default function Login({ onLogin }: LoginProps) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,13 +32,13 @@ export default function Login({ onLogin }: LoginProps) {
     try {
       if (isSignup) {
         // Sign up with Supabase
-        const { error: signupError } = await supabase.auth.signUp({
+        const { error: signupError, data } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               name: businessName,
-              role: 'admin',
+              role: 'owner',
               commission: 5
             }
           }
@@ -59,8 +54,9 @@ export default function Login({ onLogin }: LoginProps) {
 
         if (signInError) throw signInError;
         
-        toast.success('Account created');
-        onLogin();
+        toast.success('Account created! Please sign in to continue');
+        setIsSignup(false);
+        setError('');
       } else {
         // Sign in with Supabase
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -70,8 +66,17 @@ export default function Login({ onLogin }: LoginProps) {
 
         if (signInError) throw signInError;
         
-        toast.success('Welcome back');
-        onLogin();
+        toast.success('Welcome back!');
+        
+        // Use programmatic navigation instead of relying on onLogin prop
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
+        
+        // Still call onLogin if provided for backward compatibility
+        if (onLogin) {
+          onLogin();
+        }
       }
     } catch (err: any) {
       console.error('Auth error:', err);
@@ -136,14 +141,14 @@ export default function Login({ onLogin }: LoginProps) {
                   <ShoppingCart className="h-8 w-8 text-indigo-600" />
                 )}
               </div>
-              <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Sign in to</p>
+              <p className="text-xs uppercase tracking-[0.35em] text-slate-400">{t('auth.signIn')}</p>
               <h1 className="mt-2 text-3xl font-semibold text-slate-900">{BRAND.name}</h1>
               <p className="text-sm text-slate-500">{BRAND.tagline}</p>
             </div>
 
             <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-xl shadow-slate-900/5">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                {isSignup ? 'Create account' : 'Welcome back'}
+                {isSignup ? t('auth.signUp') : t('auth.signIn')}
               </p>
               <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                 {isSignup && (
@@ -161,7 +166,7 @@ export default function Login({ onLogin }: LoginProps) {
                 )}
 
                 <div>
-                  <label className="text-sm font-semibold text-slate-600">Email</label>
+                  <label className="text-sm font-semibold text-slate-600">{t('auth.email')}</label>
                   <input
                     type="email"
                     value={email}
@@ -173,7 +178,7 @@ export default function Login({ onLogin }: LoginProps) {
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold text-slate-600">Password</label>
+                  <label className="text-sm font-semibold text-slate-600">{t('auth.password')}</label>
                   <input
                     type="password"
                     value={password}
@@ -195,7 +200,7 @@ export default function Login({ onLogin }: LoginProps) {
                   disabled={loading}
                   className="tilt-hover w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading ? 'Please wait…' : isSignup ? 'Create account' : 'Sign in'}
+                  {loading ? t('common.loading') : isSignup ? t('auth.signUp') : t('auth.signIn')}
                 </button>
 
                 <button
@@ -203,7 +208,7 @@ export default function Login({ onLogin }: LoginProps) {
                   onClick={() => setIsSignup(!isSignup)}
                   className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-indigo-600 hover:bg-slate-50"
                 >
-                  {isSignup ? 'Already have an account? Sign in' : "Need an account? Create one"}
+                  {isSignup ? t('auth.haveAccount') : t('auth.noAccount')}
                 </button>
               </form>
             </div>
@@ -307,6 +312,7 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
         </section>
       </div>
-    </div>
+      
+      </div>
   );
 }

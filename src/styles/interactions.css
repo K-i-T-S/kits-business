@@ -1,0 +1,12 @@
+/* Interaction styles */
+.interactive-scale {
+  transition: transform 0.2s ease-in-out;
+}
+
+.interactive-scale:hover {
+  transform: scale(1.05);
+}
+
+.interactive-scale:active {
+  transform: scale(0.98);
+}

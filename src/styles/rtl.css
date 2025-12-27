@@ -1,0 +1,530 @@
+/* RTL Support Styles */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="ltr"] {
+  direction: ltr;
+}
+
+/* RTL-specific adjustments */
+[dir="rtl"] .text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left;
+}
+
+[dir="rtl"] .float-left {
+  float: right;
+}
+
+[dir="rtl"] .float-right {
+  float: left;
+}
+
+[dir="rtl"] .ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+[dir="rtl"] .mr-2 {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+[dir="rtl"] .ml-4 {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] .mr-4 {
+  margin-right: 0;
+  margin-left: 1rem;
+}
+
+[dir="rtl"] .pl-2 {
+  padding-left: 0;
+  padding-right: 0.5rem;
+}
+
+[dir="rtl"] .pr-2 {
+  padding-right: 0;
+  padding-left: 0.5rem;
+}
+
+[dir="rtl"] .pl-4 {
+  padding-left: 0;
+  padding-right: 1rem;
+}
+
+[dir="rtl"] .pr-4 {
+  padding-right: 0;
+  padding-left: 1rem;
+}
+
+/* Flexbox RTL adjustments */
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .justify-start {
+  justify-content: flex-end;
+}
+
+[dir="rtl"] .justify-end {
+  justify-content: flex-start;
+}
+
+[dir="rtl"] .items-start {
+  align-items: flex-end;
+}
+
+[dir="rtl"] .items-end {
+  align-items: flex-start;
+}
+
+/* Grid RTL adjustments */
+[dir="rtl"] .grid-cols-1 > :first-child {
+  grid-column: 1;
+}
+
+[dir="rtl"] .grid-cols-2 > :first-child {
+  grid-column: 2;
+}
+
+[dir="rtl"] .grid-cols-2 > :last-child {
+  grid-column: 1;
+}
+
+/* RTL-specific component styles */
+[dir="rtl"] .dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .sidebar {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .sidebar-left {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .sidebar-right {
+  right: auto;
+  left: 0;
+}
+
+/* RTL navigation */
+[dir="rtl"] .nav-item {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .nav-item:first-child {
+  margin-left: 0;
+}
+
+/* RTL form elements */
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: right;
+}
+
+[dir="rtl"] input[type="text"],
+[dir="rtl"] input[type="email"],
+[dir="rtl"] input[type="tel"],
+[dir="rtl"] input[type="password"],
+[dir="rtl"] textarea {
+  text-align: right;
+}
+
+[dir="rtl"] input[type="number"],
+[dir="rtl"] input[type="date"],
+[dir="rtl"] input[type="time"] {
+  text-align: left;
+}
+
+/* RTL table styles */
+[dir="rtl"] table {
+  direction: rtl;
+}
+
+[dir="rtl"] th:first-child,
+[dir="rtl"] td:first-child {
+  text-align: right;
+}
+
+[dir="rtl"] th:last-child,
+[dir="rtl"] td:last-child {
+  text-align: left;
+}
+
+/* RTL modal and dialog */
+[dir="rtl"] .modal-close {
+  left: 1rem;
+  right: auto;
+}
+
+[dir="rtl"] .modal-title {
+  text-align: right;
+}
+
+/* RTL pagination */
+[dir="rtl"] .pagination-prev {
+  order: 2;
+}
+
+[dir="rtl"] .pagination-next {
+  order: 1;
+}
+
+[dir="rtl"] .pagination-list {
+  order: 3;
+}
+
+/* RTL icons and indicators */
+[dir="rtl"] .icon-chevron-left {
+  transform: rotate(180deg);
+}
+
+[dir="rtl"] .icon-chevron-right {
+  transform: rotate(180deg);
+}
+
+[dir="rtl"] .icon-arrow-left {
+  transform: rotate(180deg);
+}
+
+[dir="rtl"] .icon-arrow-right {
+  transform: rotate(180deg);
+}
+
+/* RTL scrollbar positioning */
+[dir="rtl"] ::-webkit-scrollbar {
+  left: 0;
+  right: auto;
+}
+
+[dir="rtl"] ::-webkit-scrollbar-track {
+  left: 0;
+  right: auto;
+}
+
+[dir="rtl"] ::-webkit-scrollbar-thumb {
+  left: 0;
+  right: auto;
+}
+
+/* Enhanced RTL support for modern UI components */
+
+/* Numbers, dates, and currency should remain LTR within RTL context */
+[dir="rtl"] .number,
+[dir="rtl"] .date,
+[dir="rtl"] .currency,
+[dir="rtl"] .phone,
+[dir="rtl"] .time {
+  direction: ltr;
+  text-align: right;
+  unicode-bidi: embed;
+}
+
+/* RTL for card layouts */
+[dir="rtl"] .card {
+  text-align: right;
+}
+
+[dir="rtl"] .card-header {
+  text-align: right;
+}
+
+[dir="rtl"] .card-footer {
+  justify-content: flex-start;
+}
+
+/* RTL for button groups */
+[dir="rtl"] .button-group {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .button-group > :first-child {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .button-group > :last-child {
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+/* RTL for breadcrumbs */
+[dir="rtl"] .breadcrumb {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .breadcrumb-separator {
+  transform: rotate(180deg);
+}
+
+/* RTL for lists */
+[dir="rtl"] ul,
+[dir="rtl"] ol {
+  padding-right: 1.5rem;
+  padding-left: 0;
+}
+
+[dir="rtl"] li {
+  text-align: right;
+}
+
+[dir="rtl"] .list-item {
+  justify-content: flex-end;
+}
+
+/* RTL for code blocks (should remain LTR) */
+[dir="rtl"] pre,
+[dir="rtl"] code,
+[dir="rtl"] .code-block {
+  text-align: left;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* RTL for tooltips and popovers */
+[dir="rtl"] .tooltip {
+  left: 0;
+  right: auto;
+}
+
+[dir="rtl"] .popover {
+  left: 0;
+  right: auto;
+}
+
+/* RTL for tabs */
+[dir="rtl"] .tab-list {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .tab-panel {
+  text-align: right;
+}
+
+/* RTL for accordions */
+[dir="rtl"] .accordion-icon {
+  transform: rotate(180deg);
+}
+
+/* RTL for progress bars */
+[dir="rtl"] .progress-bar {
+  direction: ltr;
+}
+
+[dir="rtl"] .progress-text {
+  text-align: right;
+}
+
+/* RTL for alerts and notifications */
+[dir="rtl"] .alert {
+  text-align: right;
+}
+
+[dir="rtl"] .alert-icon {
+  margin-left: 0.75rem;
+  margin-right: 0;
+}
+
+/* RTL for badges */
+[dir="rtl"] .badge {
+  text-align: right;
+}
+
+/* RTL for avatars */
+[dir="rtl"] .avatar-group {
+  flex-direction: row-reverse;
+}
+
+/* RTL for search and filter inputs */
+[dir="rtl"] .search-input {
+  text-align: right;
+}
+
+[dir="rtl"] .search-icon {
+  left: 0.75rem;
+  right: auto;
+}
+
+[dir="rtl"] .filter-dropdown {
+  left: 0;
+  right: auto;
+}
+
+/* RTL for data tables */
+[dir="rtl"] .table-container {
+  direction: rtl;
+}
+
+[dir="rtl"] .table-header {
+  text-align: right;
+}
+
+[dir="rtl"] .table-cell {
+  text-align: right;
+}
+
+[dir="rtl"] .table-cell.number,
+[dir="rtl"] .table-cell.date,
+[dir="rtl"] .table-cell.currency {
+  direction: ltr;
+  text-align: right;
+  unicode-bidi: embed;
+}
+
+/* RTL for forms */
+[dir="rtl"] .form-group {
+  text-align: right;
+}
+
+[dir="rtl"] .form-label {
+  text-align: right;
+}
+
+[dir="rtl"] .form-error {
+  text-align: right;
+}
+
+[dir="rtl"] .checkbox-group {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .radio-group {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .switch {
+  flex-direction: row-reverse;
+}
+
+/* RTL for modals and dialogs */
+[dir="rtl"] .modal-content {
+  text-align: right;
+}
+
+[dir="rtl"] .modal-header {
+  text-align: right;
+}
+
+[dir="rtl"] .modal-body {
+  text-align: right;
+}
+
+[dir="rtl"] .modal-footer {
+  justify-content: flex-start;
+}
+
+[dir="rtl"] .dialog-content {
+  text-align: right;
+}
+
+/* RTL for navigation */
+[dir="rtl"] .nav-menu {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-item {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .nav-link {
+  text-align: right;
+}
+
+[dir="rtl"] .sidebar {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .sidebar-content {
+  text-align: right;
+}
+
+/* RTL for mobile responsive */
+@media (max-width: 768px) {
+  [dir="rtl"] .mobile-menu {
+    right: 0;
+    left: auto;
+  }
+  
+  [dir="rtl"] .mobile-nav {
+    flex-direction: row-reverse;
+  }
+  
+  [dir="rtl"] .mobile-header {
+    text-align: right;
+  }
+}
+
+/* RTL for print styles */
+@media print {
+  [dir="rtl"] {
+    direction: rtl;
+  }
+  
+  [dir="rtl"] .number,
+  [dir="rtl"] .date,
+  [dir="rtl"] .currency,
+  [dir="rtl"] .phone,
+  [dir="rtl"] .time {
+    direction: ltr;
+    unicode-bidi: embed;
+  }
+  
+  [dir="rtl"] pre,
+  [dir="rtl"] code {
+    direction: ltr;
+    unicode-bidi: embed;
+  }
+}
+
+/* RTL for specific component libraries */
+[dir="rtl"] .radix-select-content {
+  left: 0;
+  right: auto;
+}
+
+[dir="rtl"] .radix-dropdown-menu-content {
+  left: 0;
+  right: auto;
+}
+
+[dir="rtl"] .radix-popover-content {
+  left: 0;
+  right: auto;
+}
+
+[dir="rtl"] .radix-dialog-content {
+  text-align: right;
+}
+
+/* RTL for animations and transitions */
+[dir="rtl"] .slide-in-left {
+  transform: translateX(100%);
+}
+
+[dir="rtl"] .slide-in-right {
+  transform: translateX(-100%);
+}
+
+[dir="rtl"] .fade-in-left {
+  transform: translateX(20px);
+}
+
+[dir="rtl"] .fade-in-right {
+  transform: translateX(-20px);
+}

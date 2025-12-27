@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Package,
   ShoppingCart,
@@ -12,64 +14,122 @@ import {
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../utils/supabaseClient';
+import { getCurrentUserTenant } from '../utils/tenantManager';
 
 export default function Dashboard() {
-  const { products, sales, customers, currentEmployee } = useApp();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { products, sales, customers, currentEmployee, setCurrentTenant } = useApp();
+  const [checkingTenants, setCheckingTenants] = useState(true);
 
-  const totalProducts = products.reduce((acc, p) => acc + p.variants.length, 0);
-  const totalStock = products.reduce(
-    (acc, p) => acc + p.variants.reduce((sum, v) => sum + v.stock, 0),
-    0,
-  );
-  const lowStockItems = products.reduce(
-    (acc, p) => acc + p.variants.filter((v) => v.stock <= v.reorderLevel).length,
-    0,
-  );
+  // Check if user has tenants and load context
+  useEffect(() => {
+    let cancelled = false;
+    const checkUserTenants = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !cancelled) {
+        const { data: tenants } = await supabase
+          .from('tenant_user_details')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('user_active', true)
+          .eq('tenant_active', true);
 
-  const todaySales = sales.filter((s) => {
+        if (cancelled) return;
+
+        if (!tenants || tenants.length === 0) {
+          navigate('/select-tenant');
+          return;
+        }
+
+        // Set current tenant context from the first tenant found
+        if (tenants && tenants.length > 0) {
+          const firstTenant = tenants[0];
+          console.log('Using tenant from existing query:', firstTenant);
+          const tenantObj = {
+            id: firstTenant.tenant_id,
+            name: firstTenant.tenant_name,
+            slug: firstTenant.tenant_slug,
+            userRole: firstTenant.user_role,
+            settings: firstTenant.settings || {}
+          };
+          console.log('Dashboard setting tenant object:', tenantObj);
+          setCurrentTenant(tenantObj);
+        } else {
+          console.log('No tenants found in query');
+        }
+      }
+      if (!cancelled) {
+        setCheckingTenants(false);
+      }
+    };
+    checkUserTenants();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, setCurrentTenant]);
+
+  if (checkingTenants) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="text-white">Loading...</div>
+    </div>;
+  }
+
+  const totalProducts = products?.reduce((acc, p) => acc + (p.variants?.length || 0), 0) || 0;
+  const totalStock = products?.reduce(
+    (acc, p) => acc + (p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0),
+    0,
+  ) || 0;
+  const lowStockItems = products?.reduce(
+    (acc, p) => acc + (p.variants?.filter((v) => v.stock <= v.reorderLevel).length || 0),
+    0,
+  ) || 0;
+
+  const todaySales = sales?.filter((s) => {
     const today = new Date().toDateString();
     return new Date(s.date).toDateString() === today;
-  });
+  }) || [];
 
-  const todayRevenue = todaySales.reduce((acc, s) => acc + s.total, 0);
-  const todayProfit = todaySales.reduce(
+  const todayRevenue = todaySales?.reduce((acc, s) => acc + s.total, 0) || 0;
+  const todayProfit = todaySales?.reduce(
     (acc, s) =>
-      acc + s.items.reduce((sum, item) => sum + (item.price - item.cost) * item.quantity, 0),
+      acc + s.items?.reduce((sum, item) => sum + (item.price - item.cost) * item.quantity, 0),
     0,
-  );
+  ) || 0;
 
-  const totalCustomers = customers.length;
-  const customersWithDebt = customers.filter((c) => c.debtBalance > 0).length;
+  const totalCustomers = customers?.length || 0;
+  const customersWithDebt = customers?.filter((c) => c.debtBalance > 0).length || 0;
 
   const quickStats = [
     {
-      title: 'Total Products',
+      title: t('dashboard.totalProducts', 'Total Products'),
       value: totalProducts,
-      subtitle: `${totalStock} units in stock`,
+      subtitle: `${totalStock} ${t('inventory.unitsInStock', 'units in stock')}`,
       icon: Package,
       accent: 'from-blue-500/75 to-cyan-400/50',
       link: '/inventory',
     },
     {
-      title: "Today's Sales",
+      title: t('dashboard.todaysSales', "Today's Sales"),
       value: `$${todayRevenue.toFixed(2)}`,
-      subtitle: `${todaySales.length} transactions`,
+      subtitle: `${todaySales.length} ${t('pos.transactions', 'transactions')}`,
       icon: ShoppingCart,
       accent: 'from-emerald-500/70 to-lime-400/50',
       link: '/pos',
     },
     {
-      title: 'Customers',
+      title: t('customers.title', 'Customers'),
       value: totalCustomers,
-      subtitle: `${customersWithDebt} with debt`,
+      subtitle: `${customersWithDebt} ${t('customers.withDebt', 'with debt')}`,
       icon: Users,
       accent: 'from-purple-500/70 to-pink-400/50',
       link: '/customers',
     },
     {
-      title: "Today's Profit",
+      title: t('dashboard.todaysProfit', "Today's Profit"),
       value: `$${todayProfit.toFixed(2)}`,
-      subtitle: `${((todayProfit / todayRevenue) * 100 || 0).toFixed(1)}% margin`,
+      subtitle: `${((todayProfit / todayRevenue) * 100 || 0).toFixed(1)}% ${t('dashboard.margin', 'margin')}`,
       icon: TrendingUp,
       accent: 'from-amber-500/70 to-orange-400/50',
       link: '/reports',
@@ -77,10 +137,10 @@ export default function Dashboard() {
   ];
 
   const quickActions = [
-    { title: 'New Sale', icon: ShoppingCart, link: '/pos', accent: 'from-green-500 to-emerald-400' },
-    { title: 'Add Product', icon: Package, link: '/inventory', accent: 'from-blue-600 to-indigo-500' },
-    { title: 'View Reports', icon: BarChart3, link: '/reports', accent: 'from-purple-600 to-fuchsia-500' },
-    { title: 'Manage Team', icon: UserCircle, link: '/employees', accent: 'from-slate-700 to-slate-500' },
+    { title: t('dashboard.newOrder', 'New Sale'), icon: ShoppingCart, link: '/pos', accent: 'from-green-500 to-emerald-400' },
+    { title: t('dashboard.addProduct', 'Add Product'), icon: Package, link: '/inventory', accent: 'from-blue-600 to-indigo-500' },
+    { title: t('dashboard.viewReports', 'View Reports'), icon: BarChart3, link: '/reports', accent: 'from-purple-600 to-fuchsia-500' },
+    { title: t('employees.manageTeam', 'Manage Team'), icon: UserCircle, link: '/employees', accent: 'from-slate-700 to-slate-500' },
   ];
 
   return (
@@ -220,9 +280,9 @@ export default function Dashboard() {
               </Link>
             </div>
             <div className="mt-6 space-y-4">
-              {products.slice(0, 5).map((product) => {
-                const total = product.variants.reduce((sum, v) => sum + v.stock, 0);
-                const isLowStock = product.variants.some((v) => v.stock <= v.reorderLevel);
+              {products?.slice(0, 5).map((product) => {
+                const total = product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+                const isLowStock = product.variants?.some((v) => v.stock <= v.reorderLevel) || false;
                 return (
                   <div
                     key={product.id}

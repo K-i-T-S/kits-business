@@ -95,8 +95,31 @@ app.get('/make-server-210e7672/products', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const products = await kv.getByPrefix('product:');
-    return c.json({ products });
+    // Get user's tenant
+    const { data: tenantUser, error: tenantError } = await supabase
+      .from('tenant_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+    
+    if (tenantError || !tenantUser) {
+      return c.json({ error: 'User not associated with any tenant' }, 403);
+    }
+
+    // Get products from database filtered by tenant
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('tenant_id', tenantUser.tenant_id)
+      .eq('is_active', true);
+
+    if (productsError) {
+      console.log('Get products error:', productsError);
+      return c.json({ error: productsError.message }, 500);
+    }
+
+    return c.json({ products: products || [] });
   } catch (error) {
     console.log('Get products error:', error);
     return c.json({ error: 'Failed to get products' }, 500);
@@ -111,13 +134,49 @@ app.post('/make-server-210e7672/products', async (c) => {
     }
 
     const product = await c.req.json();
-    product.id = product.id || Date.now().toString();
-    product.createdAt = new Date().toISOString();
-    product.updatedAt = new Date().toISOString();
+    
+    // Get user's tenant
+    const { data: tenantUser, error: tenantError } = await supabase
+      .from('tenant_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+    
+    if (tenantError || !tenantUser) {
+      return c.json({ error: 'User not associated with any tenant' }, 403);
+    }
 
-    await kv.set(`product:${product.id}`, product);
+    // Insert product into database with tenant_id
+    const { data: newProduct, error: insertError } = await supabase
+      .from('products')
+      .insert({
+        id: product.id || crypto.randomUUID(),
+        name: product.name,
+        description: product.description || null,
+        price: product.variants?.[0]?.price || 0,
+        cost: product.variants?.[0]?.cost || 0,
+        sku: product.sku || null,
+        barcode: product.barcode || null,
+        category: product.category || null,
+        stock_quantity: product.variants?.[0]?.stock || 0,
+        min_stock_level: product.variants?.[0]?.reorderLevel || 0,
+        is_active: true,
+        tenant_id: tenantUser.tenant_id,
+        // Store variants as JSONB for now
+        variants: product.variants || [],
+        supplier: product.supplier || null,
+        validity_date: product.validityDate || null
+      })
+      .select()
+      .single();
 
-    return c.json({ product });
+    if (insertError) {
+      console.log('Create product error:', insertError);
+      return c.json({ error: insertError.message }, 500);
+    }
+
+    return c.json({ product: newProduct });
   } catch (error) {
     console.log('Create product error:', error);
     return c.json({ error: 'Failed to create product' }, 500);

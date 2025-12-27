@@ -1,0 +1,8 @@
+/* CSS Variables */
+:root {
+  --background: #0a0e1a;
+  --foreground: #f8faff;
+  --border: #374151;
+  --ring: #6366f1;
+  --radius: 0.5rem;
+}

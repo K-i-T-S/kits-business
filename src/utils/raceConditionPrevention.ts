@@ -13,7 +13,7 @@ export class OperationQueue {
   static async enqueue<T>(
     queueKey: string,
     operation: () => Promise<T>,
-    operationType: string = 'default'
+    operationType: string = 'default',
   ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const pendingOp: PendingOperation = {
@@ -21,7 +21,7 @@ export class OperationQueue {
         type: operationType,
         timestamp: Date.now(),
         resolve,
-        reject
+        reject,
       };
 
       if (!this.queues.has(queueKey)) {
@@ -93,7 +93,7 @@ export class OperationQueue {
     const queue = this.queues.get(queueKey);
     return {
       length: queue?.length || 0,
-      processing: this.processing.get(queueKey) || false
+      processing: this.processing.get(queueKey) || false,
     };
   }
 }
@@ -102,13 +102,13 @@ export class StockUpdateLock {
   private static locks = new Map<string, { timestamp: number; operationId: string }>();
 
   static async acquireLock(
-    productId: string, 
+    productId: string,
     variantId: string,
-    timeout: number = 10000
+    timeout: number = 10000,
   ): Promise<string | null> {
     const key = `${productId}-${variantId}`;
     const existing = this.locks.get(key);
-    
+
     if (existing && Date.now() - existing.timestamp < timeout) {
       return null;
     }
@@ -116,7 +116,7 @@ export class StockUpdateLock {
     const operationId = Math.random().toString(36).substr(2, 9);
     this.locks.set(key, {
       timestamp: Date.now(),
-      operationId
+      operationId,
     });
 
     return operationId;
@@ -125,12 +125,12 @@ export class StockUpdateLock {
   static releaseLock(productId: string, variantId: string, operationId: string): boolean {
     const key = `${productId}-${variantId}`;
     const existing = this.locks.get(key);
-    
+
     if (existing && existing.operationId === operationId) {
       this.locks.delete(key);
       return true;
     }
-    
+
     return false;
   }
 
@@ -156,14 +156,14 @@ export class ConcurrentOperationGuard {
   static async executeWithGuard<T>(
     resourceKey: string,
     operationId: string,
-    operation: () => Promise<T>
+    operation: () => Promise<T>,
   ): Promise<T> {
     if (!this.operations.has(resourceKey)) {
       this.operations.set(resourceKey, new Set());
     }
 
     const resourceOps = this.operations.get(resourceKey)!;
-    
+
     if (resourceOps.has(operationId)) {
       throw new Error('Operation already in progress');
     }
@@ -175,7 +175,7 @@ export class ConcurrentOperationGuard {
       return result;
     } finally {
       resourceOps.delete(operationId);
-      
+
       if (resourceOps.size === 0) {
         this.operations.delete(resourceKey);
       }

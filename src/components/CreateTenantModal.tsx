@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext';
 import { toast } from 'sonner';
-import { createTenant } from '../utils/tenantManager';
+
+import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
+import { createTenant } from '../utils/tenantManager';
 
 interface CreateTenantModalProps {
   isOpen: boolean;
@@ -16,12 +17,12 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
-    description: ''
+    description: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.slug) {
       toast.error('Please fill in all required fields');
       return;
@@ -40,19 +41,19 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
         formData.name,
         formData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         user.id,
-        { description: formData.description }
+        { description: formData.description },
       );
 
       toast.success('Business created successfully!');
       onSuccess();
       onClose();
-      
+
       // Reset form
       setFormData({ name: '', slug: '', description: '' });
     } catch (error) {
       console.error('Failed to create tenant:', error);
       toast.error('Failed to create business', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
       setLoading(false);
@@ -68,15 +69,22 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
     setFormData({
       ...formData,
       name,
-      slug: generateSlug(name)
+      slug: generateSlug(name),
     });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl border border-white/10 bg-slate-900/95 backdrop-blur-xl p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="w-full max-w-md p-6" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-white mb-2">Create New Business</h2>
           <p className="text-white/60">Set up your business to start managing inventory and sales</p>

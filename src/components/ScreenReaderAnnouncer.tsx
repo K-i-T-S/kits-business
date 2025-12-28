@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react';
 
 interface ScreenReaderAnnouncerProps {
   message?: string
@@ -6,22 +6,22 @@ interface ScreenReaderAnnouncerProps {
 }
 
 export function ScreenReaderAnnouncer({ message, politeness = 'polite' }: ScreenReaderAnnouncerProps) {
-  const announcerRef = useRef<HTMLDivElement>(null)
+  const announcerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (message && announcerRef.current) {
-      announcerRef.current.textContent = message
-      
+      announcerRef.current.textContent = message;
+
       // Clear the message after it's announced
       const timer = setTimeout(() => {
         if (announcerRef.current) {
-          announcerRef.current.textContent = ''
+          announcerRef.current.textContent = '';
         }
-      }, 1000)
+      }, 1000);
 
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer);
     }
-  }, [message])
+  }, [message]);
 
   return (
     <div
@@ -30,32 +30,32 @@ export function ScreenReaderAnnouncer({ message, politeness = 'polite' }: Screen
       aria-atomic="true"
       className="sr-only"
     />
-  )
+  );
 }
 
 // Hook for announcing screen reader messages
 export function useScreenReaderAnnouncer() {
-  const announcerRef = useRef<{ announce: (message: string, politeness?: 'polite' | 'assertive') => void }>()
+  const announcerRef = useRef<{ announce:(message: string, politeness?: 'polite' | 'assertive') => void }>();
 
   useEffect(() => {
     // Create a global announcer function
     announcerRef.current = {
       announce: (message: string, politeness = 'polite') => {
-        const announcer = document.createElement('div')
-        announcer.setAttribute('aria-live', politeness)
-        announcer.setAttribute('aria-atomic', 'true')
-        announcer.className = 'sr-only'
-        announcer.textContent = message
-        
-        document.body.appendChild(announcer)
-        
+        const announcer = document.createElement('div');
+        announcer.setAttribute('aria-live', politeness);
+        announcer.setAttribute('aria-atomic', 'true');
+        announcer.className = 'sr-only';
+        announcer.textContent = message;
+
+        document.body.appendChild(announcer);
+
         // Remove after announcement
         setTimeout(() => {
-          document.body.removeChild(announcer)
-        }, 1000)
-      }
-    }
-  }, [])
+          document.body.removeChild(announcer);
+        }, 1000);
+      },
+    };
+  }, []);
 
-  return announcerRef.current
+  return announcerRef.current;
 }

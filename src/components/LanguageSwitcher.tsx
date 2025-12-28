@@ -1,7 +1,9 @@
+import { Globe, ChevronDown } from 'lucide-react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, ChevronDown } from 'lucide-react';
+
 import { supportedLanguages } from '../i18n';
+
 import { Button } from './ui/button';
 import {
   DropdownMenu,

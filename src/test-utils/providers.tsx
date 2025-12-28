@@ -1,9 +1,11 @@
 import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { BrowserRouter } from 'react-router-dom';
+
 import { AppProvider } from '../context/AppContext';
 import { AccessibilityProvider } from '../providers/AccessibilityProvider';
 import { QueryProvider } from '../providers/QueryProvider';
+
 import { createSupabaseMock, tenantManagerMock } from './mocks';
 
 // Enhanced test wrapper with proper async handling

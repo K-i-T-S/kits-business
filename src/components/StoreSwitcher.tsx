@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { Building2, ChevronDown, Check, MapPin, Phone, Mail, Plus, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+
 import { useApp } from '../context/AppContext';
 import { getStoresByTenant, setStoreContext } from '../utils/storeManager';
 
@@ -33,7 +34,7 @@ export default function StoreSwitcher() {
       if (!currentTenant) return;
       const storeList = await getStoresByTenant(currentTenant.id);
       setStores(storeList || []);
-      
+
       // Set default store if none selected
       if (storeList && storeList.length > 0 && !currentStore) {
         setCurrentStore(storeList[0]);
@@ -53,11 +54,11 @@ export default function StoreSwitcher() {
     try {
       // Update store context in database
       await setStoreContext(store.id);
-      
+
       setCurrentStore(store);
       toast.success(`Switched to ${store.name}`);
       setIsOpen(false);
-      
+
       // Reload the page to ensure all data is refreshed
       window.location.reload();
     } catch (error) {
@@ -92,11 +93,11 @@ export default function StoreSwitcher() {
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Dropdown Content */}
           <div className="absolute top-full left-0 mt-2 w-80 bg-slate-900 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
             <div className="p-3 border-b border-white/10">

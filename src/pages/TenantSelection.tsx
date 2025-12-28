@@ -1,7 +1,8 @@
+import { Building2, Plus, ArrowRight } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { supabase } from '../utils/supabaseClient';
 import { createTenant } from '../utils/tenantManager';
 
@@ -32,7 +33,7 @@ export default function TenantSelection() {
       navigate('/login');
       return;
     }
-    
+
     setCurrentUser(session.user);
     await loadUserTenants(session.user.id);
   };
@@ -62,12 +63,12 @@ export default function TenantSelection() {
     try {
       const tenantId = await createTenant(tenantName, tenantSlug, currentUser.id);
       toast.success('Business created successfully!');
-      
+
       await loadUserTenants(currentUser.id);
       setShowCreateForm(false);
       setTenantName('');
       setTenantSlug('');
-      
+
       // Redirect to the new tenant
       navigate(`/app/${tenantSlug}/dashboard`);
     } catch (error: any) {

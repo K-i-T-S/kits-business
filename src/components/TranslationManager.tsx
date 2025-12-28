@@ -1,26 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslationManager } from '../contexts/TranslationContext';
-import { useTranslation } from 'react-i18next';
-import { supportedLanguages } from '../i18n';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { 
-  Download, 
-  Upload, 
-  Search, 
-  CheckCircle, 
-  AlertCircle, 
-  Plus, 
-  Edit2, 
+import {
+  Download,
+  Upload,
+  Search,
+  CheckCircle,
+  AlertCircle,
+  Plus,
+  Edit2,
   Trash2,
   FileText,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { useTranslationManager } from '../contexts/TranslationContext';
+import { supportedLanguages } from '../i18n';
+
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Textarea } from './ui/textarea';
 
 export const TranslationManager: React.FC = () => {
   const { t } = useTranslation();
@@ -34,7 +36,7 @@ export const TranslationManager: React.FC = () => {
     exportTranslations,
     importTranslations,
     validateTranslations,
-    searchTranslations
+    searchTranslations,
   } = useTranslationManager();
 
   const [selectedLanguage, setSelectedLanguage] = useState('en');
@@ -259,8 +261,8 @@ export const TranslationManager: React.FC = () => {
                   <Edit2 className="h-4 w-4" />
                   {t('translationManager.update', 'Update')}
                 </Button>
-                <Button 
-                  variant="destructive" 
+                <Button
+                  variant="destructive"
                   onClick={() => handleDeleteTranslation(editingKey)}
                   className="flex items-center gap-2"
                 >
@@ -306,8 +308,8 @@ export const TranslationManager: React.FC = () => {
                       </Button>
                     </div>
                   ))}
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={clearMissingTranslations}
                     className="mt-4"
                   >
@@ -407,9 +409,9 @@ export const TranslationManager: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Badge variant={validation.valid ? "default" : "destructive"}>
-                    {validation.valid ? 
-                      t('translationManager.valid', 'Valid') : 
+                  <Badge variant={validation.valid ? 'default' : 'destructive'}>
+                    {validation.valid ?
+                      t('translationManager.valid', 'Valid') :
                       t('translationManager.invalid', 'Invalid')
                     }
                   </Badge>
@@ -439,8 +441,8 @@ export const TranslationManager: React.FC = () => {
                       </span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
                             style={{ width: `${stat.completionPercentage}%` }}
                           />
                         </div>

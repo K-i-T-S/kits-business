@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
+
+import { log } from '../utils/logger';
+
 import { ErrorBoundary } from './ErrorBoundary';
 import { Button } from './ui/button';
-import { log } from '../utils/logger';
 
 const meta = {
   title: 'Components/ErrorBoundary',
@@ -35,7 +37,7 @@ const ThrowingComponent = ({ shouldThrow = false }: { shouldThrow?: boolean }) =
   if (shouldThrow) {
     throw new Error('This is a test error for demonstration purposes.');
   }
-  
+
   return (
     <div className="p-4 border rounded-md">
       <h3 className="text-lg font-semibold mb-2">Error Throwing Component</h3>
@@ -47,13 +49,13 @@ const ThrowingComponent = ({ shouldThrow = false }: { shouldThrow?: boolean }) =
 
 export const Default: Story = {
   args: {
-    children: <WorkingComponent />
+    children: <WorkingComponent />,
   },
 };
 
 export const WithError: Story = {
   args: {
-    children: <ThrowingComponent shouldThrow={true} />
+    children: <ThrowingComponent shouldThrow={true} />,
   },
 };
 
@@ -65,7 +67,7 @@ export const WithCustomFallback: Story = {
         <h3 className="text-red-800 font-semibold mb-2">Custom Error Fallback</h3>
         <p className="text-red-600">Something went wrong, but here's a custom error message!</p>
       </div>
-    )
+    ),
   },
 };
 
@@ -74,7 +76,7 @@ export const WithErrorHandler: Story = {
     children: <ThrowingComponent shouldThrow={true} />,
     onError: (error, errorInfo) => {
       log.error('Custom error handler called', error, { errorInfo });
-    }
+    },
   },
 };
 
@@ -96,6 +98,6 @@ export const Interactive: Story = {
           <p>This component demonstrates error boundary behavior.</p>
         </div>
       </div>
-    )
-  }
+    ),
+  },
 };

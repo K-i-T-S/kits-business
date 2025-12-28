@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import {
   AlertCircle,
   ArrowRight,
@@ -13,6 +12,7 @@ import {
   User,
   XCircle,
 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface Communication {
   id: string;
@@ -54,9 +54,9 @@ export default function CustomerCommunicationHistory({
   const sortedCommunications = useMemo(
     () =>
       [...communications].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       ),
-    [communications]
+    [communications],
   );
 
   const getTypeIcon = (type: Communication['type']) => {
@@ -196,7 +196,7 @@ export default function CustomerCommunicationHistory({
                         </span>
                         <span
                           className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(
-                            communication.status
+                            communication.status,
                           )}`}
                         >
                           {getStatusIcon(communication.status)}

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { CheckCircle, XCircle, AlertTriangle, Eye, EyeOff } from "lucide-react";
-import AccessibleModal from "./ui/AccessibleModal";
+import { CheckCircle, XCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import AccessibleModal from './ui/AccessibleModal';
 
 interface AuditResult {
   category: string;
@@ -26,114 +27,114 @@ export default function AccessibilityAudit() {
     // Keyboard Navigation Audit
     const keyboardChecks = [
       {
-        name: "Tab Order",
-        passed: document.querySelectorAll("button, a, input, select, textarea").length > 0,
-        description: "Interactive elements have logical tab order"
+        name: 'Tab Order',
+        passed: document.querySelectorAll('button, a, input, select, textarea').length > 0,
+        description: 'Interactive elements have logical tab order',
       },
       {
-        name: "Focus Indicators", 
-        passed: document.querySelector("style")?.textContent?.includes("focus-visible") !== null,
-        description: "Visible focus indicators exist"
+        name: 'Focus Indicators',
+        passed: document.querySelector('style')?.textContent?.includes('focus-visible') !== null,
+        description: 'Visible focus indicators exist',
       },
       {
-        name: "Skip Links",
-        passed: document.querySelectorAll(".skip-link, [href=\"#main-content\"]").length > 0,
-        description: "Skip links available for keyboard users"
+        name: 'Skip Links',
+        passed: document.querySelectorAll('.skip-link, [href="#main-content"]').length > 0,
+        description: 'Skip links available for keyboard users',
       },
       {
-        name: "Keyboard Trapping",
+        name: 'Keyboard Trapping',
         passed: (() => {
-          const modals = document.querySelectorAll("[role=\"dialog\"], .modal");
+          const modals = document.querySelectorAll('[role="dialog"], .modal');
           if (modals.length === 0) return false;
-          
+
           // Check if any modal has proper focus trapping setup
           return Array.from(modals).some(modal => {
-            const hasFocusableElements = modal.querySelectorAll("button, a, input, select, textarea, [tabindex]:not([tabindex=\"-1\"])").length > 0;
-            const hasAriaModal = modal.getAttribute("aria-modal") === "true";
+            const hasFocusableElements = modal.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])').length > 0;
+            const hasAriaModal = modal.getAttribute('aria-modal') === 'true';
             return hasFocusableElements && hasAriaModal;
           });
         })(),
-        description: "Focus trapping in modals"
-      }
+        description: 'Focus trapping in modals',
+      },
     ];
 
     // Screen Reader Audit
     const screenReaderChecks = [
       {
-        name: "ARIA Labels",
-        passed: document.querySelectorAll("[aria-label], [aria-labelledby]").length > 0,
-        description: "ARIA labels present on interactive elements"
+        name: 'ARIA Labels',
+        passed: document.querySelectorAll('[aria-label], [aria-labelledby]').length > 0,
+        description: 'ARIA labels present on interactive elements',
       },
       {
-        name: "Live Regions",
-        passed: document.querySelectorAll("[aria-live]").length > 0,
-        description: "Live regions for dynamic content"
+        name: 'Live Regions',
+        passed: document.querySelectorAll('[aria-live]').length > 0,
+        description: 'Live regions for dynamic content',
       },
       {
-        name: "Semantic HTML",
-        passed: document.querySelectorAll("main, nav, header, footer, section, article, aside").length > 0,
-        description: "Semantic HTML elements used"
+        name: 'Semantic HTML',
+        passed: document.querySelectorAll('main, nav, header, footer, section, article, aside').length > 0,
+        description: 'Semantic HTML elements used',
       },
       {
-        name: "Form Labels",
-        passed: document.querySelectorAll("label, [aria-label], [placeholder]").length > 0,
-        description: "Form inputs have proper labels"
-      }
+        name: 'Form Labels',
+        passed: document.querySelectorAll('label, [aria-label], [placeholder]').length > 0,
+        description: 'Form inputs have proper labels',
+      },
     ];
 
     // Visual Accessibility Audit
     const visualChecks = [
       {
-        name: "Color Contrast",
-        passed: document.querySelector("style")?.textContent?.includes("#4b5563") !== null,
-        description: "Text meets contrast requirements"
+        name: 'Color Contrast',
+        passed: document.querySelector('style')?.textContent?.includes('#4b5563') !== null,
+        description: 'Text meets contrast requirements',
       },
       {
-        name: "High Contrast Mode",
-        passed: document.querySelector("[data-high-contrast]") !== null,
-        description: "High contrast mode supported"
+        name: 'High Contrast Mode',
+        passed: document.querySelector('[data-high-contrast]') !== null,
+        description: 'High contrast mode supported',
       },
       {
-        name: "Text Scaling",
-        passed: document.querySelector("style")?.textContent?.includes("min-resolution") !== null,
-        description: "Text can be scaled up to 200%"
+        name: 'Text Scaling',
+        passed: document.querySelector('style')?.textContent?.includes('min-resolution') !== null,
+        description: 'Text can be scaled up to 200%',
       },
       {
-        name: "Button Sizing",
-        passed: document.querySelector("style")?.textContent?.includes("min-height: 44px") !== null,
-        description: "Buttons meet minimum touch target size"
+        name: 'Button Sizing',
+        passed: document.querySelector('style')?.textContent?.includes('min-height: 44px') !== null,
+        description: 'Buttons meet minimum touch target size',
       },
       {
-        name: "Focus Styles",
-        passed: document.querySelector("style")?.textContent?.includes("focus-visible") !== null,
-        description: "Enhanced focus styles implemented"
-      }
+        name: 'Focus Styles',
+        passed: document.querySelector('style')?.textContent?.includes('focus-visible') !== null,
+        description: 'Enhanced focus styles implemented',
+      },
     ];
 
     // Motor Accessibility Audit
     const motorChecks = [
       {
-        name: "Touch Targets",
-        passed: document.querySelector("style")?.textContent?.includes("min-height: 44px") !== null,
-        description: "Touch targets meet minimum size requirements"
+        name: 'Touch Targets',
+        passed: document.querySelector('style')?.textContent?.includes('min-height: 44px') !== null,
+        description: 'Touch targets meet minimum size requirements',
       },
       {
-        name: "Spacing",
-        passed: document.querySelector("style")?.textContent?.includes("margin-bottom: 16px") !== null,
-        description: "Adequate spacing between interactive elements"
+        name: 'Spacing',
+        passed: document.querySelector('style')?.textContent?.includes('margin-bottom: 16px') !== null,
+        description: 'Adequate spacing between interactive elements',
       },
       {
-        name: "Timeout Accommodations",
-        passed: document.querySelector("style")?.textContent?.includes("timeout-message") !== null,
-        description: "Timeout accommodations implemented"
-      }
+        name: 'Timeout Accommodations',
+        passed: document.querySelector('style')?.textContent?.includes('timeout-message') !== null,
+        description: 'Timeout accommodations implemented',
+      },
     ];
 
     results.push(
-      { category: "Keyboard Navigation", checks: keyboardChecks },
-      { category: "Screen Reader", checks: screenReaderChecks },
-      { category: "Visual Accessibility", checks: visualChecks },
-      { category: "Motor Accessibility", checks: motorChecks }
+      { category: 'Keyboard Navigation', checks: keyboardChecks },
+      { category: 'Screen Reader', checks: screenReaderChecks },
+      { category: 'Visual Accessibility', checks: visualChecks },
+      { category: 'Motor Accessibility', checks: motorChecks },
     );
 
     setAuditResults(results);
@@ -146,16 +147,16 @@ export default function AccessibilityAudit() {
 
   const getOverallScore = () => {
     const totalChecks = auditResults.reduce((sum, cat) => sum + cat.checks.length, 0);
-    const passedChecks = auditResults.reduce((sum, cat) => 
-      sum + cat.checks.filter(check => check.passed).length, 0
+    const passedChecks = auditResults.reduce((sum, cat) =>
+      sum + cat.checks.filter(check => check.passed).length, 0,
     );
     return totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return "text-green-600";
-    if (score >= 70) return "text-yellow-600";
-    return "text-red-600";
+    if (score >= 90) return 'text-green-600';
+    if (score >= 70) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   if (!isVisible) {
@@ -200,14 +201,14 @@ export default function AccessibilityAudit() {
             <div className="text-xs text-gray-600">Score</div>
           </div>
         </div>
-        
+
         <div className="flex gap-1">
           <button
             onClick={runAudit}
             disabled={isRunning}
             className="px-2 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 disabled:opacity-50"
           >
-            {isRunning ? "..." : "Run"}
+            {isRunning ? '...' : 'Run'}
           </button>
           <button
             onClick={() => setShowModal(true)}

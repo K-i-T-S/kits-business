@@ -1,8 +1,9 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryOptions, type UseMutationOptions } from '@tanstack/react-query'
-import { supabase } from '../utils/supabaseClient'
-import { api } from '../utils/supabaseClient'
-import { toast } from 'sonner'
-import type { Product, Sale, Customer, Employee } from '../context/AppContext'
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions, type UseMutationOptions } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import type { Product, Sale, Customer, Employee } from '../context/AppContext';
+import { supabase } from '../utils/supabaseClient';
+import { api } from '../utils/supabaseClient';
 
 // Query keys for cache management
 export const queryKeys = {
@@ -13,14 +14,14 @@ export const queryKeys = {
   product: (id: string) => ['products', id] as const,
   customer: (id: string) => ['customers', id] as const,
   employee: (id: string) => ['employees', id] as const,
-}
+};
 
 // Generic fetcher for Supabase queries
 const supabaseFetcher = async <T>(table: string, select = '*'): Promise<T[]> => {
-  const { data, error } = await supabase.from(table).select(select)
-  if (error) throw error
-  return (data || []) as T[]
-}
+  const { data, error } = await supabase.from(table).select(select);
+  if (error) throw error;
+  return (data || []) as T[];
+};
 
 // Products hooks
 export function useProducts(options?: Partial<UseQueryOptions<Product[]>>) {
@@ -29,85 +30,85 @@ export function useProducts(options?: Partial<UseQueryOptions<Product[]>>) {
     queryFn: () => supabaseFetcher<Product>('products'),
     staleTime: 5 * 60 * 1000, // 5 minutes
     ...options,
-  })
+  });
 }
 
 export function useProduct(id: string, options?: Partial<UseQueryOptions<Product>>) {
   return useQuery({
     queryKey: queryKeys.product(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('*').eq('id', id).single()
-      if (error) throw error
-      return data
+      const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+      if (error) throw error;
+      return data;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single product
     ...options,
-  })
+  });
 }
 
 export function useCreateProduct() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (product: Omit<Product, 'id'>) => {
-      const { data, error } = await api.post('/products', product)
-      if (error) throw error
-      return data.product
+      const { data, error } = await api.post('/products', product);
+      if (error) throw error;
+      return data.product;
     },
     onSuccess: (newProduct) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products })
-      toast.success('Product added', { description: newProduct.name })
+      queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      toast.success('Product added', { description: newProduct.name });
     },
     onError: (error: any) => {
       toast.error('Failed to add product', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }
 
 export function useUpdateProduct() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ id, product }: { id: string; product: Partial<Product> }) => {
-      const { data, error } = await api.put(`/products/${id}`, product)
-      if (error) throw error
-      return data.product
+      const { data, error } = await api.put(`/products/${id}`, product);
+      if (error) throw error;
+      return data.product;
     },
     onSuccess: (updatedProduct) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products })
-      queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) })
-      toast.success('Product updated', { description: updatedProduct.name })
+      queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
+      toast.success('Product updated', { description: updatedProduct.name });
     },
     onError: (error: any) => {
       toast.error('Failed to update product', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }
 
 export function useDeleteProduct() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await api.delete(`/products/${id}`)
-      if (error) throw error
-      return id
+      const { error } = await api.delete(`/products/${id}`);
+      if (error) throw error;
+      return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products })
-      toast.success('Product deleted')
+      queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      toast.success('Product deleted');
     },
     onError: (error: any) => {
       toast.error('Failed to delete product', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }
 
 // Sales hooks
@@ -117,31 +118,31 @@ export function useSales(options?: Partial<UseQueryOptions<Sale[]>>) {
     queryFn: () => supabaseFetcher<Sale>('sales'),
     staleTime: 2 * 60 * 1000, // 2 minutes for sales (more frequent updates)
     ...options,
-  })
+  });
 }
 
 export function useCreateSale() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (sale: Omit<Sale, 'id'>) => {
-      const { data, error } = await api.post('/sales', sale)
-      if (error) throw error
-      return data.sale
+      const { data, error } = await api.post('/sales', sale);
+      if (error) throw error;
+      return data.sale;
     },
     onSuccess: (newSale) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.sales })
-      queryClient.invalidateQueries({ queryKey: queryKeys.products })
+      queryClient.invalidateQueries({ queryKey: queryKeys.sales });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products });
       toast.success('Sale recorded', {
-        description: `Total $${newSale.total.toFixed(2)}`
-      })
+        description: `Total $${newSale.total.toFixed(2)}`,
+      });
     },
     onError: (error: any) => {
       toast.error('Failed to record sale', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }
 
 // Customers hooks
@@ -151,64 +152,64 @@ export function useCustomers(options?: Partial<UseQueryOptions<Customer[]>>) {
     queryFn: () => supabaseFetcher<Customer>('customers'),
     staleTime: 5 * 60 * 1000, // 5 minutes
     ...options,
-  })
+  });
 }
 
 export function useCustomer(id: string, options?: Partial<UseQueryOptions<Customer>>) {
   return useQuery({
     queryKey: queryKeys.customer(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from('customers').select('*').eq('id', id).single()
-      if (error) throw error
-      return data
+      const { data, error } = await supabase.from('customers').select('*').eq('id', id).single();
+      if (error) throw error;
+      return data;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single customer
     ...options,
-  })
+  });
 }
 
 export function useCreateCustomer() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (customer: Omit<Customer, 'id'>) => {
-      const { data, error } = await api.post('/customers', customer)
-      if (error) throw error
-      return data.customer
+      const { data, error } = await api.post('/customers', customer);
+      if (error) throw error;
+      return data.customer;
     },
     onSuccess: (newCustomer) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.customers })
-      toast.success('Customer added', { description: newCustomer.name })
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      toast.success('Customer added', { description: newCustomer.name });
     },
     onError: (error: any) => {
       toast.error('Failed to add customer', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }
 
 export function useUpdateCustomer() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ id, customer }: { id: string; customer: Partial<Customer> }) => {
-      const { data, error } = await api.put(`/customers/${id}`, customer)
-      if (error) throw error
-      return data.customer
+      const { data, error } = await api.put(`/customers/${id}`, customer);
+      if (error) throw error;
+      return data.customer;
     },
     onSuccess: (updatedCustomer) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.customers })
-      queryClient.invalidateQueries({ queryKey: queryKeys.customer(updatedCustomer.id) })
-      toast.success('Customer updated', { description: updatedCustomer.name })
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer(updatedCustomer.id) });
+      toast.success('Customer updated', { description: updatedCustomer.name });
     },
     onError: (error: any) => {
       toast.error('Failed to update customer', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }
 
 // Employees hooks
@@ -218,92 +219,92 @@ export function useEmployees(options?: Partial<UseQueryOptions<Employee[]>>) {
     queryFn: () => supabaseFetcher<Employee>('employees'),
     staleTime: 5 * 60 * 1000, // 5 minutes
     ...options,
-  })
+  });
 }
 
 export function useEmployee(id: string, options?: Partial<UseQueryOptions<Employee>>) {
   return useQuery({
     queryKey: queryKeys.employee(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from('employees').select('*').eq('id', id).single()
-      if (error) throw error
-      return data
+      const { data, error } = await supabase.from('employees').select('*').eq('id', id).single();
+      if (error) throw error;
+      return data;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single employee
     ...options,
-  })
+  });
 }
 
 export function useCreateEmployee() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (employee: Omit<Employee, 'id'>) => {
-      const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`
-      const { data, error } = await api.post('/employees', { ...employee, password: tempPassword })
-      if (error) throw error
-      return { ...data.employee, tempPassword }
+      const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
+      const { data, error } = await api.post('/employees', { ...employee, password: tempPassword });
+      if (error) throw error;
+      return { ...data.employee, tempPassword };
     },
     onSuccess: (newEmployee) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.employees })
+      queryClient.invalidateQueries({ queryKey: queryKeys.employees });
       toast.success('Employee created', {
-        description: `Temp password: ${newEmployee.tempPassword}`
-      })
+        description: `Temp password: ${newEmployee.tempPassword}`,
+      });
     },
     onError: (error: any) => {
       toast.error('Failed to add employee', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }
 
 export function useUpdateEmployee() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ id, employee }: { id: string; employee: Partial<Employee> }) => {
-      const { data, error } = await api.put(`/employees/${id}`, employee)
-      if (error) throw error
-      return data.employee
+      const { data, error } = await api.put(`/employees/${id}`, employee);
+      if (error) throw error;
+      return data.employee;
     },
     onSuccess: (updatedEmployee) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.employees })
-      queryClient.invalidateQueries({ queryKey: queryKeys.employee(updatedEmployee.id) })
-      toast.success('Employee updated', { description: updatedEmployee.name })
+      queryClient.invalidateQueries({ queryKey: queryKeys.employees });
+      queryClient.invalidateQueries({ queryKey: queryKeys.employee(updatedEmployee.id) });
+      toast.success('Employee updated', { description: updatedEmployee.name });
     },
     onError: (error: any) => {
       toast.error('Failed to update employee', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }
 
 // Stock update hook
 export function useUpdateStock() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async ({ productId, variantId, quantity }: { 
+    mutationFn: async ({ productId, variantId, quantity }: {
       productId: string
       variantId: string
-      quantity: number 
+      quantity: number
     }) => {
-      const { data, error } = await api.post(`/products/${productId}/variants/${variantId}/stock`, { quantity })
-      if (error) throw error
-      return data.product
+      const { data, error } = await api.post(`/products/${productId}/variants/${variantId}/stock`, { quantity });
+      if (error) throw error;
+      return data.product;
     },
     onSuccess: (updatedProduct) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products })
-      queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) })
-      toast.success('Stock updated')
+      queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
+      toast.success('Stock updated');
     },
     onError: (error: any) => {
       toast.error('Failed to update stock', {
-        description: error.message || 'Unknown error occurred.'
-      })
+        description: error.message || 'Unknown error occurred.',
+      });
     },
-  })
+  });
 }

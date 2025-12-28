@@ -1,5 +1,5 @@
-import { supabase } from './supabaseClient';
 import { securityMiddleware } from './securityMiddleware';
+import { supabase } from './supabaseClient';
 
 interface SecurityContext {
   userId?: string;
@@ -44,7 +44,7 @@ export class EnhancedAuditLogger {
 
       // Determine if this is a sensitive operation
       const isSensitive = this.isSensitiveOperation(event.action, event.entityType);
-      
+
       // Add security context to metadata
       const enhancedMetadata = {
         ...sanitizedMetadata,
@@ -53,7 +53,7 @@ export class EnhancedAuditLogger {
         sessionId: this.getSessionId(),
         isSensitive,
         category: event.category || this.categorizeEvent(event.action),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       // Log to audit table
@@ -63,7 +63,7 @@ export class EnhancedAuditLogger {
         p_entity_id: event.entityId,
         p_old_values: sanitizedOldValues,
         p_new_values: sanitizedNewValues,
-        p_metadata: enhancedMetadata
+        p_metadata: enhancedMetadata,
       });
 
       if (error) {
@@ -95,7 +95,7 @@ export class EnhancedAuditLogger {
     oldRole: string,
     newRole: string,
     changedBy: string,
-    context: SecurityContext
+    context: SecurityContext,
   ): Promise<void> {
     const event: AuditEvent = {
       action: 'role_changed',
@@ -106,10 +106,10 @@ export class EnhancedAuditLogger {
       metadata: {
         changedBy,
         roleChangeType: this.getRoleChangeType(oldRole, newRole),
-        escalation: this.isRoleEscalation(oldRole, newRole)
+        escalation: this.isRoleEscalation(oldRole, newRole),
       },
       severity: this.isRoleEscalation(oldRole, newRole) ? 'high' : 'medium',
-      category: 'security'
+      category: 'security',
     };
 
     await this.logAuditEvent(event, { ...context, userId, tenantId });
@@ -120,7 +120,7 @@ export class EnhancedAuditLogger {
     userId: string,
     oldTenantId: string | null,
     newTenantId: string,
-    context: SecurityContext
+    context: SecurityContext,
   ): Promise<void> {
     const event: AuditEvent = {
       action: 'tenant_switched',
@@ -130,10 +130,10 @@ export class EnhancedAuditLogger {
       newValues: { tenantId: newTenantId },
       metadata: {
         switchType: oldTenantId ? 'switch' : 'initial_login',
-        previousTenant: oldTenantId
+        previousTenant: oldTenantId,
       },
       severity: 'low',
-      category: 'security'
+      category: 'security',
     };
 
     await this.logAuditEvent(event, { ...context, userId, tenantId: newTenantId });
@@ -144,7 +144,7 @@ export class EnhancedAuditLogger {
     operation: string,
     entityType: string,
     affectedIds: string[],
-    context: SecurityContext
+    context: SecurityContext,
   ): Promise<void> {
     const event: AuditEvent = {
       action: `bulk_${operation}`,
@@ -152,10 +152,10 @@ export class EnhancedAuditLogger {
       metadata: {
         affectedCount: affectedIds.length,
         affectedIds: affectedIds.slice(0, 10), // Log first 10 IDs only
-        bulkOperationType: operation
+        bulkOperationType: operation,
       },
       severity: operation === 'delete' ? 'high' : 'medium',
-      category: 'business'
+      category: 'business',
     };
 
     await this.logAuditEvent(event, context);
@@ -166,7 +166,7 @@ export class EnhancedAuditLogger {
     exportType: string,
     recordCount: number,
     filters: any,
-    context: SecurityContext
+    context: SecurityContext,
   ): Promise<void> {
     const event: AuditEvent = {
       action: 'data_exported',
@@ -175,10 +175,10 @@ export class EnhancedAuditLogger {
         recordCount,
         exportFormat: 'csv', // or other format
         filters: this.sanitizeData(filters),
-        exportSize: this.estimateExportSize(recordCount)
+        exportSize: this.estimateExportSize(recordCount),
       },
       severity: recordCount > 1000 ? 'high' : 'medium',
-      category: 'compliance'
+      category: 'compliance',
     };
 
     await this.logAuditEvent(event, context);
@@ -189,7 +189,7 @@ export class EnhancedAuditLogger {
     email: string,
     reason: string,
     ipAddress: string,
-    userAgent: string
+    userAgent: string,
   ): Promise<void> {
     const event: AuditEvent = {
       action: 'login_failed',
@@ -197,10 +197,10 @@ export class EnhancedAuditLogger {
       metadata: {
         email: this.maskEmail(email),
         failureReason: reason,
-        attemptCount: await this.getFailedLoginAttempts(email, ipAddress)
+        attemptCount: await this.getFailedLoginAttempts(email, ipAddress),
       },
       severity: 'medium',
-      category: 'security'
+      category: 'security',
     };
 
     await this.logAuditEvent(event, { ipAddress, userAgent });
@@ -211,7 +211,7 @@ export class EnhancedAuditLogger {
     violationType: string,
     description: string,
     context: SecurityContext,
-    details: any = {}
+    details: any = {},
   ): Promise<void> {
     const event: AuditEvent = {
       action: `security_violation_${violationType}`,
@@ -219,10 +219,10 @@ export class EnhancedAuditLogger {
       metadata: {
         violationType,
         description,
-        ...details
+        ...details,
       },
       severity: 'high',
-      category: 'security'
+      category: 'security',
     };
 
     await this.logAuditEvent(event, context);
@@ -271,7 +271,7 @@ export class EnhancedAuditLogger {
     const parts = email.split('@');
     const username = parts[0];
     const domain = parts[1];
-    
+
     if (!username || !domain) return '***@***.***';
     if (username.length <= 2) return `${username[0]}***@${domain}`;
     return `${username.substring(0, 2)}***@${domain}`;
@@ -292,11 +292,11 @@ export class EnhancedAuditLogger {
     const sensitiveActions = [
       'role_changed', 'permission_changed', 'tenant_switched',
       'bulk_delete', 'data_exported', 'user_created', 'user_deleted',
-      'security_violation', 'login_failed', 'password_changed'
+      'security_violation', 'login_failed', 'password_changed',
     ];
 
     const sensitiveEntities = [
-      'tenant_users', 'auth', 'security_event', 'permissions'
+      'tenant_users', 'auth', 'security_event', 'permissions',
     ];
 
     return sensitiveActions.includes(action) || sensitiveEntities.includes(entityType);
@@ -305,7 +305,7 @@ export class EnhancedAuditLogger {
   private shouldLogToActivity(action: string): boolean {
     const activityActions = [
       'sale_created', 'customer_added', 'product_added',
-      'tenant_switched', 'user_login', 'user_logout'
+      'tenant_switched', 'user_login', 'user_logout',
     ];
 
     return activityActions.includes(action);
@@ -331,7 +331,7 @@ export class EnhancedAuditLogger {
       p_description: description,
       p_entity_type: event.entityType,
       p_entity_id: event.entityId,
-      p_metadata: event.metadata
+      p_metadata: event.metadata,
     });
   }
 
@@ -340,24 +340,24 @@ export class EnhancedAuditLogger {
       event_type: event.action,
       description: this.generateSecurityDescription(event),
       severity: event.severity || 'medium',
-      metadata: event.metadata
+      metadata: event.metadata,
     });
   }
 
   private generateActivityDescription(event: AuditEvent): string {
     switch (event.action) {
       case 'sale_created':
-        return `New sale processed`;
+        return 'New sale processed';
       case 'customer_added':
-        return `New customer added`;
+        return 'New customer added';
       case 'product_added':
-        return `New product added to inventory`;
+        return 'New product added to inventory';
       case 'tenant_switched':
-        return `Switched to different tenant`;
+        return 'Switched to different tenant';
       case 'user_login':
-        return `User logged in`;
+        return 'User logged in';
       case 'user_logout':
-        return `User logged out`;
+        return 'User logged out';
       default:
         return `${event.action} on ${event.entityType}`;
     }
@@ -366,13 +366,13 @@ export class EnhancedAuditLogger {
   private generateSecurityDescription(event: AuditEvent): string {
     switch (event.action) {
       case 'role_changed':
-        return `User role was changed`;
+        return 'User role was changed';
       case 'tenant_switched':
-        return `User switched tenant context`;
+        return 'User switched tenant context';
       case 'bulk_delete':
-        return `Bulk delete operation performed`;
+        return 'Bulk delete operation performed';
       case 'data_exported':
-        return `Data export operation performed`;
+        return 'Data export operation performed';
       default:
         return `Security event: ${event.action}`;
     }
@@ -387,7 +387,7 @@ export class EnhancedAuditLogger {
 
   private isRoleEscalation(oldRole: string, newRole: string): boolean {
     const roleHierarchy = { 'viewer': 1, 'cashier': 2, 'manager': 3, 'owner': 4 };
-    return (roleHierarchy[newRole as keyof typeof roleHierarchy] || 0) > 
+    return (roleHierarchy[newRole as keyof typeof roleHierarchy] || 0) >
            (roleHierarchy[oldRole as keyof typeof roleHierarchy] || 0);
   }
 
@@ -400,7 +400,7 @@ export class EnhancedAuditLogger {
     // Rough estimation in bytes
     const avgRecordSize = 500; // bytes per record
     const totalBytes = recordCount * avgRecordSize;
-    
+
     if (totalBytes < 1024) return `${totalBytes} B`;
     if (totalBytes < 1024 * 1024) return `${Math.round(totalBytes / 1024)} KB`;
     return `${Math.round(totalBytes / (1024 * 1024))} MB`;

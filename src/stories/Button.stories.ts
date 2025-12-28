@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { fn } from 'storybook/test';
 
 import { Button } from './Button';
@@ -56,13 +55,13 @@ export const Small: Story = {
 export const KitsBusiness: Story = {
   args: {
     primary: false,
-    label: "Button"
-  }
+    label: 'Button',
+  },
 };
 
 export const Test: Story = {
   args: {
     primary: false,
-    label: "Button"
-  }
+    label: 'Button',
+  },
 };

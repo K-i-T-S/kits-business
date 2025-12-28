@@ -1,38 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 
 export function SkipLink() {
-  const [isFocused, setIsFocused] = useState(false)
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
-        setIsFocused(true)
+        setIsFocused(true);
       }
-    }
+    };
 
     const handleMouseDown = () => {
-      setIsFocused(false)
-    }
+      setIsFocused(false);
+    };
 
-    document.addEventListener('keydown', handleKeyDown)
-    document.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleMouseDown);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('mousedown', handleMouseDown)
-    }
-  }, [])
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, []);
 
   const handleSkip = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    const mainContent = document.getElementById('main-content')
+    e.preventDefault();
+    const mainContent = document.getElementById('main-content');
     if (mainContent) {
-      mainContent.focus()
-      mainContent.scrollIntoView()
+      mainContent.focus();
+      mainContent.scrollIntoView();
     }
-  }
+  };
 
-  if (!isFocused) return null
+  if (!isFocused) return null;
 
   return (
     <a
@@ -42,5 +42,5 @@ export function SkipLink() {
     >
       Skip to main content
     </a>
-  )
+  );
 }

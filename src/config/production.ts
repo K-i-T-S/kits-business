@@ -11,5 +11,5 @@ export const PRODUCTION_CONFIG = {
   performance: {
     budget: parseInt(import.meta.env.VITE_PERFORMANCE_BUDGET || '500000'),
     monitoring: import.meta.env.VITE_ENABLE_PERFORMANCE_MONITORING === 'true',
-  }
+  },
 };

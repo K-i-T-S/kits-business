@@ -1,4 +1,3 @@
-import { Fragment, useMemo, useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -10,6 +9,8 @@ import {
   RefreshCw,
   Clock,
 } from 'lucide-react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
+
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import type { ReorderPoint } from '../types/inventory';

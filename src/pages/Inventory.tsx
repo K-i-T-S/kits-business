@@ -1,4 +1,3 @@
-import { Fragment, useMemo, useState } from 'react';
 import {
   Plus,
   Search,
@@ -11,10 +10,12 @@ import {
   Layers3,
   Filter,
 } from 'lucide-react';
-import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
+import { Fragment, useMemo, useState } from 'react';
+
 import AddProductModal from '../components/AddProductModal';
 import ImportInventoryModal from '../components/ImportInventoryModal';
+import Layout from '../components/Layout';
+import { useApp } from '../context/AppContext';
 
 export default function Inventory() {
   const { products, deleteProduct } = useApp();
@@ -42,7 +43,7 @@ export default function Inventory() {
     if (!product.variants || product.variants.length === 0) {
       return { totalStock: 0, avgCost: 0, avgPrice: 0, isLowStock: false };
     }
-    
+
     const totalStock = product.variants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
     const avgCost =
       product.variants.reduce((sum: number, v: any) => sum + (v.cost || 0), 0) / product.variants.length;

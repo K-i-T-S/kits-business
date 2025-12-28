@@ -5,7 +5,7 @@ export const monitoringConfig = {
     environment: process.env.NODE_ENV || 'development',
     release: process.env.VITE_APP_VERSION || '1.0.0',
     tracesSampleRate: 0.1,
-    debug: process.env.NODE_ENV === 'development'
+    debug: process.env.NODE_ENV === 'development',
   },
 
   // Performance thresholds
@@ -21,7 +21,7 @@ export const monitoringConfig = {
     apiResponseTime: { threshold: 2000, warning: 1000 },
     databaseQueryTime: { threshold: 500, warning: 200 },
     assetLoadTime: { threshold: 3000, warning: 1500 },
-    bundleSize: { threshold: 500, warning: 250 } // in KB
+    bundleSize: { threshold: 500, warning: 250 }, // in KB
   },
 
   // System monitoring thresholds
@@ -30,7 +30,7 @@ export const monitoringConfig = {
     cpuUsage: { threshold: 80, warning: 60 }, // percentage
     diskUsage: { threshold: 90, warning: 75 }, // percentage
     errorRate: { threshold: 0.05, warning: 0.01 }, // percentage
-    uptime: { threshold: 99, warning: 99.5 } // percentage
+    uptime: { threshold: 99, warning: 99.5 }, // percentage
   },
 
   // Alert configuration
@@ -40,7 +40,7 @@ export const monitoringConfig = {
       critical: 5,
       high: 10,
       medium: 15,
-      low: 30
+      low: 30,
     },
 
     // Notification channels
@@ -48,19 +48,19 @@ export const monitoringConfig = {
       email: {
         enabled: true,
         recipients: ['admin@company.com'],
-        severity: ['critical', 'high']
+        severity: ['critical', 'high'],
       },
       slack: {
         enabled: false,
         webhook: process.env.SLACK_WEBHOOK_URL,
         channel: '#alerts',
-        severity: ['critical', 'high', 'medium']
+        severity: ['critical', 'high', 'medium'],
       },
       sms: {
         enabled: false,
         numbers: [],
-        severity: ['critical']
-      }
+        severity: ['critical'],
+      },
     },
 
     // Alert rules
@@ -68,15 +68,15 @@ export const monitoringConfig = {
       enabled: true,
       checkInterval: 60000, // milliseconds
       maxAlertsPerHour: 50,
-      autoAcknowledgeAfter: 24 * 60 * 60 * 1000 // 24 hours in milliseconds
-    }
+      autoAcknowledgeAfter: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+    },
   },
 
   // Data retention
   retention: {
     metrics: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
     alerts: 90 * 24 * 60 * 60 * 1000, // 90 days in milliseconds
-    logs: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+    logs: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   },
 
   // Health check configuration
@@ -88,8 +88,8 @@ export const monitoringConfig = {
       { name: 'api', endpoint: '/api/health', critical: true },
       { name: 'database', endpoint: '/api/health/database', critical: true },
       { name: 'auth', endpoint: '/api/health/auth', critical: true },
-      { name: 'storage', endpoint: '/api/health/storage', critical: false }
-    ]
+      { name: 'storage', endpoint: '/api/health/storage', critical: false },
+    ],
   },
 
   // Dashboard configuration
@@ -97,8 +97,8 @@ export const monitoringConfig = {
     refreshInterval: 30000, // 30 seconds
     maxDataPoints: 100,
     defaultTimeRange: '24h',
-    availableTimeRanges: ['1h', '6h', '24h', '7d', '30d']
-  }
+    availableTimeRanges: ['1h', '6h', '24h', '7d', '30d'],
+  },
 };
 
 export type MonitoringConfig = typeof monitoringConfig;

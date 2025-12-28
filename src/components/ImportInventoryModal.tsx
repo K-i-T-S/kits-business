@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
 import { X, Upload } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+
+import { useApp } from '../context/AppContext';
 
 interface ImportInventoryModalProps {
   onClose: () => void;
@@ -25,7 +26,7 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
     // Parse CSV-like data (simplified example)
     // Format: barcode,quantity,cost
     const lines = importData.trim().split('\n');
-    
+
     const results = {
       created: 0,
       updated: 0,
@@ -34,18 +35,18 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
 
     await Promise.all(lines.map(async line => {
       const [barcode, quantity, newCost] = line.split(',').map(s => s.trim());
-      
+
       if (!barcode || !quantity) return;
 
       const product = products.find(p => p.barcode === barcode);
-      
+
       if (product) {
         // Update existing product
         const variant = product.variants[0];
         if (!variant) return;
         const baseCost = newCost ? parseFloat(newCost) : variant.cost;
         const calculatedCost = calculateNewCost(variant.cost, baseCost);
-        
+
         // Update cost history
         const updatedVariants = product.variants.map(v => ({
           ...v,
@@ -55,9 +56,9 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
             {
               date: new Date().toISOString(),
               cost: calculatedCost,
-              quantity: parseInt(quantity)
-            }
-          ]
+              quantity: parseInt(quantity),
+            },
+          ],
         }));
 
         await updateProduct(product.id!, { variants: updatedVariants });
@@ -81,14 +82,14 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
                 {
                   date: new Date().toISOString(),
                   cost: newCost ? parseFloat(newCost) : 0,
-                  quantity: parseInt(quantity)
-                }
+                  quantity: parseInt(quantity),
+                },
               ],
               price: newCost ? parseFloat(newCost) * 1.5 : 0,
               stock: parseInt(quantity),
-              reorderLevel: 10
-            }
-          ]
+              reorderLevel: 10,
+            },
+          ],
         };
         await addProduct(newProduct);
         results.created += 1;
@@ -114,8 +115,15 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="hero-gradient rounded-xl shadow-xl max-w-2xl w-full p-6 my-8 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="rounded-xl max-w-2xl w-full p-6 my-8" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-white">Import Inventory</h2>

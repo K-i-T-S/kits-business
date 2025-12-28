@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React from 'react';
-import { Button } from './button';
 import { Plus, Download, Trash2, Settings } from 'lucide-react';
+import React from 'react';
+
+import { Button } from './button';
 
 const meta = {
   title: 'UI/Button',
@@ -182,7 +183,7 @@ export const WithIcons: Story = {
 export const Interactive: Story = {
   render: () => {
     const [count, setCount] = React.useState(0);
-    
+
     return (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">Click count: {count}</p>

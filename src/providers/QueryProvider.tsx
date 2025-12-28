@@ -1,6 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import type { ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import type { ReactNode } from 'react';
 
 interface QueryProviderProps {
   children: ReactNode
@@ -14,10 +14,10 @@ const queryClient = new QueryClient({
       retry: (failureCount, error: any) => {
         // Don't retry on 4xx errors
         if (error?.status >= 400 && error?.status < 500) {
-          return false
+          return false;
         }
         // Retry up to 3 times for other errors
-        return failureCount < 3
+        return failureCount < 3;
       },
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
       networkMode: 'online',
     },
   },
-})
+});
 
 export function QueryProvider({ children }: QueryProviderProps) {
   return (
@@ -37,7 +37,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
       {children}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  )
+  );
 }
 
-export { queryClient }
+export { queryClient };

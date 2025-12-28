@@ -54,9 +54,9 @@ export class PerformanceMonitor {
       entries.forEach((entry) => {
         const resource = entry as PerformanceResourceTiming;
         const loadTime = resource.responseEnd - resource.startTime;
-        
+
         this.recordMetric(`resource-${resource.name}`, loadTime);
-        
+
         // Alert on slow resources
         if (loadTime > 3000) {
           sentryService.captureMessage(`Slow resource detected: ${resource.name}`, 'warning', {
@@ -77,7 +77,7 @@ export class PerformanceMonitor {
           list.getEntries().forEach((entry) => {
             const duration = entry.duration;
             this.recordMetric('long-task', duration);
-            
+
             // Alert on very long tasks
             if (duration > 100) {
               sentryService.captureMessage(`Long task detected: ${duration}ms`, 'warning', {
@@ -88,7 +88,7 @@ export class PerformanceMonitor {
             }
           });
         });
-        
+
         observer.observe({ entryTypes: ['longtask'] });
         this.observers.push(observer);
       } catch (e) {
@@ -104,7 +104,7 @@ export class PerformanceMonitor {
         const observer = new PerformanceObserver((list) => {
           callback(list.getEntries());
         });
-        
+
         observer.observe({ entryTypes: [type] });
         this.observers.push(observer);
       } catch (e) {
@@ -119,7 +119,7 @@ export class PerformanceMonitor {
       this.metrics.set(name, []);
     }
     this.metrics.get(name)!.push(value);
-    
+
     // Keep only last 100 values to prevent memory leaks
     const values = this.metrics.get(name)!;
     if (values.length > 100) {
@@ -131,11 +131,11 @@ export class PerformanceMonitor {
   static getMetricStats(name: string): { avg: number; min: number; max: number; count: number } | null {
     const values = this.metrics.get(name);
     if (!values || values.length === 0) return null;
-    
+
     const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
     const min = Math.min(...values);
     const max = Math.max(...values);
-    
+
     return { avg, min, max, count: values.length };
   }
 
@@ -188,7 +188,7 @@ export class PerformanceMonitor {
       const duration = performance.now() - start;
       this.recordMetric(`render-${componentName}`, duration);
       sentryService.capturePerformanceMetric(`render-${componentName}`, duration, 'ms');
-      
+
       if (duration > 100) {
         sentryService.captureMessage(`Slow render detected: ${componentName}`, 'warning', {
           component: componentName,
@@ -211,7 +211,7 @@ export class PerformanceMonitor {
       const duration = performance.now() - start;
       this.recordMetric(`interaction-${interactionName}`, duration);
       sentryService.capturePerformanceMetric(`interaction-${interactionName}`, duration, 'ms');
-      
+
       if (duration > 200) {
         sentryService.captureMessage(`Slow interaction detected: ${interactionName}`, 'warning', {
           interaction: interactionName,
@@ -227,13 +227,13 @@ export class PerformanceMonitor {
       const memory = (performance as any).memory;
       const usedMemory = memory.usedJSHeapSize / 1024 / 1024; // MB
       const totalMemory = memory.totalJSHeapSize / 1024 / 1024; // MB
-      
+
       this.recordMetric('memory-used', usedMemory);
       this.recordMetric('memory-total', totalMemory);
-      
+
       sentryService.capturePerformanceMetric('memory-used', usedMemory, 'MB');
       sentryService.capturePerformanceMetric('memory-total', totalMemory, 'MB');
-      
+
       // Alert on high memory usage
       if (usedMemory > 100) {
         sentryService.captureMessage('High memory usage detected', 'warning', {
@@ -259,7 +259,7 @@ export class PerformanceMonitor {
       const duration = performance.now() - start;
       this.recordMetric(`network-${method}-${url}`, duration);
       sentryService.captureApiCall(url, method, statusCode || 0, duration);
-      
+
       if (duration > 5000) {
         sentryService.captureMessage(`Slow network request: ${method} ${url}`, 'warning', {
           url,
@@ -274,14 +274,14 @@ export class PerformanceMonitor {
   // Get performance report
   static getPerformanceReport(): Record<string, any> {
     const report: Record<string, any> = {};
-    
+
     for (const [name, values] of this.metrics.entries()) {
       const stats = this.getMetricStats(name);
       if (stats) {
         report[name] = stats;
       }
     }
-    
+
     return report;
   }
 
@@ -311,7 +311,7 @@ export const usePerformanceMonitor = () => {
 // Initialize performance monitoring
 if (typeof window !== 'undefined') {
   PerformanceMonitor.initialize();
-  
+
   // Check memory usage every 30 seconds
   setInterval(() => {
     PerformanceMonitor.checkMemoryUsage();

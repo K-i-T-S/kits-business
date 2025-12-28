@@ -1,23 +1,25 @@
-import { useState, useEffect } from 'react';
 import { ShoppingCart, CreditCard, DollarSign, Tag, Star, Settings, Receipt, Plus, Minus, X } from 'lucide-react';
-import SplitPaymentModal from './SplitPaymentModal';
-import TipsModal from './TipsModal';
+import { useState, useEffect } from 'react';
+
+import type {
+  SplitPayment,
+  TipInfo,
+  DiscountCoupon,
+  Promotion,
+  LoyaltyProgram,
+  CustomerLoyalty,
+  ReceiptTemplate,
+  EnhancedSale,
+  SaleItem,
+} from '../types/pos';
+import { log } from '../utils/logger';
+import { POSCalculator } from '../utils/posCalculations';
+
 import DiscountModal from './DiscountModal';
 import LoyaltyModal from './LoyaltyModal';
 import ReceiptCustomizationModal from './ReceiptCustomizationModal';
-import type { 
-  SplitPayment, 
-  TipInfo, 
-  DiscountCoupon, 
-  Promotion, 
-  LoyaltyProgram, 
-  CustomerLoyalty, 
-  ReceiptTemplate,
-  EnhancedSale,
-  SaleItem 
-} from '../types/pos';
-import { POSCalculator } from '../utils/posCalculations';
-import { log } from '../utils/logger';
+import SplitPaymentModal from './SplitPaymentModal';
+import TipsModal from './TipsModal';
 
 interface EnhancedPOSProps {
   customerId?: string;
@@ -36,7 +38,7 @@ export default function EnhancedPOS({
   availablePromotions,
   loyaltyPrograms,
   receiptTemplates,
-  onCompleteSale
+  onCompleteSale,
 }: EnhancedPOSProps) {
   const [cartItems, setCartItems] = useState<SaleItem[]>([]);
   const [showSplitPayment, setShowSplitPayment] = useState(false);
@@ -44,14 +46,14 @@ export default function EnhancedPOS({
   const [showDiscount, setShowDiscount] = useState(false);
   const [showLoyalty, setShowLoyalty] = useState(false);
   const [showReceiptCustomization, setShowReceiptCustomization] = useState(false);
-  
+
   const [appliedCoupon, setAppliedCoupon] = useState<DiscountCoupon | undefined>();
   const [appliedPromotion, setAppliedPromotion] = useState<Promotion | undefined>();
   const [tipInfo, setTipInfo] = useState<TipInfo | undefined>();
   const [splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
   const [loyaltyPointsRedeemed, setLoyaltyPointsRedeemed] = useState(0);
   const [selectedReceiptTemplate, setSelectedReceiptTemplate] = useState<ReceiptTemplate | undefined>();
-  
+
   const [customerLoyalty, setCustomerLoyalty] = useState<CustomerLoyalty | undefined>();
   const [loyaltyProgram, setLoyaltyProgram] = useState<LoyaltyProgram | undefined>();
 
@@ -75,7 +77,7 @@ export default function EnhancedPOS({
         totalEarned: 500,
         totalRedeemed: 250,
         joinDate: '2024-01-01',
-        lastActivity: '2024-12-20'
+        lastActivity: '2024-12-20',
       };
       setCustomerLoyalty(mockCustomerLoyalty);
       setLoyaltyProgram(loyaltyPrograms[0]);
@@ -86,10 +88,10 @@ export default function EnhancedPOS({
     setCartItems(prev => {
       const existing = prev.find(i => i.productId === item.productId);
       if (existing) {
-        return prev.map(i => 
-          i.productId === item.productId 
+        return prev.map(i =>
+          i.productId === item.productId
             ? { ...i, quantity: i.quantity + item.quantity }
-            : i
+            : i,
         );
       }
       return [...prev, item];
@@ -100,8 +102,8 @@ export default function EnhancedPOS({
     if (quantity <= 0) {
       setCartItems(prev => prev.filter(item => item.productId !== productId));
     } else {
-      setCartItems(prev => prev.map(item => 
-        item.productId === productId ? { ...item, quantity } : item
+      setCartItems(prev => prev.map(item =>
+        item.productId === productId ? { ...item, quantity } : item,
       ));
     }
   };
@@ -138,7 +140,7 @@ export default function EnhancedPOS({
   const completeSale = (payments?: SplitPayment[]) => {
     const finalPayments = payments || splitPayments;
     const loyaltyPointsEarned = loyaltyProgram ? POSCalculator.calculateLoyaltyPointsEarned(subtotal, loyaltyProgram) : 0;
-    
+
     const sale: EnhancedSale = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
@@ -156,9 +158,9 @@ export default function EnhancedPOS({
       loyaltyPointsRedeemed: loyaltyPointsRedeemed,
       employeeId,
       customerId,
-      receiptTemplate: selectedReceiptTemplate?.id
+      receiptTemplate: selectedReceiptTemplate?.id,
     };
-    
+
     onCompleteSale(sale);
     resetSale();
   };
@@ -178,7 +180,7 @@ export default function EnhancedPOS({
     productName: 'Sample Product',
     quantity: 1,
     price: 10.00,
-    cost: 5.00
+    cost: 5.00,
   };
 
   return (
@@ -217,7 +219,7 @@ export default function EnhancedPOS({
                   {cartItems.length} items
                 </span>
               </div>
-              
+
               {cartItems.length === 0 ? (
                 <div className="text-center py-8 text-white/60">
                   <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -305,32 +307,32 @@ export default function EnhancedPOS({
           <div className="space-y-4">
             <div className="glass-panel p-6">
               <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between text-white/80">
                   <span>Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="flex justify-between text-white/80">
                   <span>Tax</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
-                
+
                 {totalDiscounts > 0 && (
                   <div className="flex justify-between text-emerald-300">
                     <span>Discounts</span>
                     <span>-${totalDiscounts.toFixed(2)}</span>
                   </div>
                 )}
-                
+
                 {tipAmount > 0 && (
                   <div className="flex justify-between text-blue-300">
                     <span>Tip</span>
                     <span>${tipAmount.toFixed(2)}</span>
                   </div>
                 )}
-                
+
                 <div className="border-t border-white/30 pt-3">
                   <div className="flex justify-between text-lg font-bold text-white">
                     <span>Total</span>
@@ -351,13 +353,13 @@ export default function EnhancedPOS({
                     </div>
                   </div>
                 )}
-                
+
                 {tipInfo && (
                   <div className="p-2 rounded border border-blue-400 bg-blue-500/20 text-blue-300 text-sm">
                     Tip: {tipInfo.type === 'percentage' ? `${tipInfo.percentage}%` : `$${tipInfo.amount.toFixed(2)}`}
                   </div>
                 )}
-                
+
                 {loyaltyPointsRedeemed > 0 && (
                   <div className="p-2 rounded border border-amber-400 bg-amber-500/20 text-amber-300 text-sm">
                     {loyaltyPointsRedeemed} points redeemed

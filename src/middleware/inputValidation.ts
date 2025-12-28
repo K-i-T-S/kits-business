@@ -1,4 +1,5 @@
 import { z, ZodSchema, ZodError } from 'zod';
+
 import { auditLogger } from '../utils/auditService';
 
 export interface ValidationMiddlewareConfig {
@@ -32,11 +33,11 @@ export class InputValidator {
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
         .replace(/<[^>]*>/g, '');
     }
-    
+
     if (Array.isArray(input)) {
       return input.map(item => InputValidator.sanitizeInput(item));
     }
-    
+
     if (input && typeof input === 'object') {
       const sanitized: any = {};
       for (const [key, value] of Object.entries(input)) {
@@ -44,7 +45,7 @@ export class InputValidator {
       }
       return sanitized;
     }
-    
+
     return input;
   }
 
@@ -60,13 +61,13 @@ export class InputValidator {
   public static validate(schema: ZodSchema, data: any, options: { sanitize?: boolean } = {}): ValidationResult {
     try {
       let processedData = data;
-      
+
       if (options.sanitize) {
         processedData = InputValidator.sanitizeInput(data);
       }
 
       const result = schema.parse(processedData);
-      
+
       return {
         success: true,
         data: result,
@@ -78,7 +79,7 @@ export class InputValidator {
           errors: InputValidator.formatZodError(error),
         };
       }
-      
+
       return {
         success: false,
         errors: [{
@@ -145,7 +146,7 @@ export const createValidationMiddleware = (config: ValidationMiddlewareConfig) =
             url: req.url,
             method: req.method,
             ip: req.ip,
-          }
+          },
         ).catch(console.error);
       }
 

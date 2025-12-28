@@ -1,6 +1,3 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   Package,
   ShoppingCart,
@@ -12,6 +9,10 @@ import {
   BarChart3,
   Sparkles,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
@@ -51,7 +52,7 @@ export default function Dashboard() {
             name: firstTenant.tenant_name,
             slug: firstTenant.tenant_slug,
             userRole: firstTenant.user_role,
-            settings: firstTenant.settings || {}
+            settings: firstTenant.settings || {},
           };
           setCurrentTenant(tenantObj);
         }
@@ -105,7 +106,7 @@ export default function Dashboard() {
       icon: Package,
       accent: 'from-blue-500/75 to-cyan-400/50',
       link: '/inventory',
-      testId: 'total-products'
+      testId: 'total-products',
     },
     {
       title: t('dashboard.todaysSales', "Today's Sales"),
@@ -114,7 +115,7 @@ export default function Dashboard() {
       icon: ShoppingCart,
       accent: 'from-emerald-500/70 to-lime-400/50',
       link: '/pos',
-      testId: 'total-revenue'
+      testId: 'total-revenue',
     },
     {
       title: t('customers.title', 'Customers'),
@@ -123,7 +124,7 @@ export default function Dashboard() {
       icon: Users,
       accent: 'from-purple-500/70 to-pink-400/50',
       link: '/customers',
-      testId: 'total-customers'
+      testId: 'total-customers',
     },
     {
       title: t('dashboard.todaysProfit', "Today's Profit"),
@@ -132,7 +133,7 @@ export default function Dashboard() {
       icon: TrendingUp,
       accent: 'from-amber-500/70 to-orange-400/50',
       link: '/reports',
-      testId: 'total-orders'
+      testId: 'total-orders',
     },
   ];
 

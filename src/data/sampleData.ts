@@ -13,7 +13,7 @@ export const sampleCoupons: DiscountCoupon[] = [
     usedCount: 15,
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    isActive: true
+    isActive: true,
   },
   {
     id: 'coupon-2',
@@ -25,7 +25,7 @@ export const sampleCoupons: DiscountCoupon[] = [
     usedCount: 8,
     startDate: '2024-06-01',
     endDate: '2024-12-31',
-    isActive: true
+    isActive: true,
   },
   {
     id: 'coupon-3',
@@ -37,7 +37,7 @@ export const sampleCoupons: DiscountCoupon[] = [
     usedCount: 5,
     startDate: '2024-11-01',
     endDate: '2024-12-31',
-    isActive: true
+    isActive: true,
   },
   {
     id: 'coupon-4',
@@ -50,8 +50,8 @@ export const sampleCoupons: DiscountCoupon[] = [
     usedCount: 45,
     startDate: '2024-11-15',
     endDate: '2024-12-31',
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 // Sample promotions
@@ -64,11 +64,11 @@ export const samplePromotions: Promotion[] = [
     value: 15,
     conditions: {
       minAmount: 100,
-      applicableCategories: ['electronics']
+      applicableCategories: ['electronics'],
     },
     startDate: '2024-12-20',
     endDate: '2024-12-31',
-    isActive: true
+    isActive: true,
   },
   {
     id: 'promo-2',
@@ -77,11 +77,11 @@ export const samplePromotions: Promotion[] = [
     type: 'fixed',
     value: 10,
     conditions: {
-      minQuantity: 2
+      minQuantity: 2,
     },
     startDate: '2024-12-01',
     endDate: '2024-12-31',
-    isActive: true
+    isActive: true,
   },
   {
     id: 'promo-3',
@@ -90,11 +90,11 @@ export const samplePromotions: Promotion[] = [
     type: 'free_shipping',
     value: 0,
     conditions: {
-      minAmount: 75
+      minAmount: 75,
     },
     startDate: '2024-12-01',
     endDate: '2024-12-31',
-    isActive: true
+    isActive: true,
   },
   {
     id: 'promo-4',
@@ -104,12 +104,12 @@ export const samplePromotions: Promotion[] = [
     value: 25,
     conditions: {
       minAmount: 150,
-      minQuantity: 3
+      minQuantity: 3,
     },
     startDate: '2024-12-15',
     endDate: '2024-12-31',
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 // Sample loyalty program
@@ -124,29 +124,29 @@ export const sampleLoyaltyProgram: LoyaltyProgram = {
       name: 'Bronze',
       minPoints: 0,
       benefits: ['1 point per dollar', 'Birthday rewards'],
-      discountRate: 0
+      discountRate: 0,
     },
     {
       id: 'tier-2',
       name: 'Silver',
       minPoints: 500,
       benefits: ['1.25 points per dollar', 'Birthday rewards', 'Free shipping on orders over $50'],
-      discountRate: 5
+      discountRate: 5,
     },
     {
       id: 'tier-3',
       name: 'Gold',
       minPoints: 1500,
       benefits: ['1.5 points per dollar', 'Birthday rewards', 'Free shipping on all orders', 'Exclusive access to sales'],
-      discountRate: 10
+      discountRate: 10,
     },
     {
       id: 'tier-4',
       name: 'Platinum',
       minPoints: 3000,
       benefits: ['2 points per dollar', 'Birthday rewards', 'Free shipping on all orders', 'Exclusive access to sales', 'Personal shopper service'],
-      discountRate: 15
-    }
+      discountRate: 15,
+    },
   ],
   rewards: [
     {
@@ -155,7 +155,7 @@ export const sampleLoyaltyProgram: LoyaltyProgram = {
       pointsCost: 500,
       type: 'discount',
       value: 5,
-      description: '$5 discount on your next purchase'
+      description: '$5 discount on your next purchase',
     },
     {
       id: 'reward-2',
@@ -163,7 +163,7 @@ export const sampleLoyaltyProgram: LoyaltyProgram = {
       pointsCost: 900,
       type: 'discount',
       value: 10,
-      description: '$10 discount on your next purchase'
+      description: '$10 discount on your next purchase',
     },
     {
       id: 'reward-3',
@@ -171,7 +171,7 @@ export const sampleLoyaltyProgram: LoyaltyProgram = {
       pointsCost: 200,
       type: 'discount',
       value: 0,
-      description: 'Free shipping on your next order'
+      description: 'Free shipping on your next order',
     },
     {
       id: 'reward-4',
@@ -179,9 +179,9 @@ export const sampleLoyaltyProgram: LoyaltyProgram = {
       pointsCost: 1500,
       type: 'upgrade',
       value: 0,
-      description: 'Free upgrade to premium version of selected products'
-    }
-  ]
+      description: 'Free upgrade to premium version of selected products',
+    },
+  ],
 };
 
 // Sample receipt templates
@@ -200,17 +200,17 @@ export const sampleReceiptTemplates: ReceiptTemplate[] = [
         label: 'Store Location',
         type: 'text',
         value: 'Main Street Store',
-        position: 'header'
+        position: 'header',
       },
       {
         id: 'field-2',
         label: 'Cashier',
         type: 'text',
         value: '',
-        position: 'footer'
-      }
+        position: 'footer',
+      },
     ],
-    isActive: true
+    isActive: true,
   },
   {
     id: 'template-2',
@@ -221,7 +221,7 @@ export const sampleReceiptTemplates: ReceiptTemplate[] = [
     includeBarcode: true,
     includeQrCode: false,
     customFields: [],
-    isActive: false
+    isActive: false,
   },
   {
     id: 'template-3',
@@ -237,32 +237,32 @@ export const sampleReceiptTemplates: ReceiptTemplate[] = [
         label: 'Store Phone',
         type: 'text',
         value: '1-800-123-4567',
-        position: 'footer'
+        position: 'footer',
       },
       {
         id: 'field-4',
         label: 'Website',
         type: 'text',
         value: 'www.store.com',
-        position: 'footer'
+        position: 'footer',
       },
       {
         id: 'field-5',
         label: 'Order Number',
         type: 'custom',
         value: '',
-        position: 'header'
+        position: 'header',
       },
       {
         id: 'field-6',
         label: 'Return Policy',
         type: 'text',
         value: '30-day return policy with receipt',
-        position: 'footer'
-      }
+        position: 'footer',
+      },
     ],
-    isActive: false
-  }
+    isActive: false,
+  },
 ];
 
 // Sample products for testing
@@ -274,7 +274,7 @@ export const sampleProducts = [
     quantity: 1,
     price: 89.99,
     cost: 45.00,
-    category: 'electronics'
+    category: 'electronics',
   },
   {
     productId: 'prod-2',
@@ -283,7 +283,7 @@ export const sampleProducts = [
     quantity: 2,
     price: 12.99,
     cost: 6.50,
-    category: 'kitchen'
+    category: 'kitchen',
   },
   {
     productId: 'prod-3',
@@ -292,7 +292,7 @@ export const sampleProducts = [
     quantity: 1,
     price: 24.99,
     cost: 12.00,
-    category: 'clothing'
+    category: 'clothing',
   },
   {
     productId: 'prod-4',
@@ -301,7 +301,7 @@ export const sampleProducts = [
     quantity: 3,
     price: 8.99,
     cost: 4.50,
-    category: 'office'
+    category: 'office',
   },
   {
     productId: 'prod-5',
@@ -310,8 +310,8 @@ export const sampleProducts = [
     quantity: 1,
     price: 199.99,
     cost: 120.00,
-    category: 'electronics'
-  }
+    category: 'electronics',
+  },
 ];
 
 // Helper functions for testing

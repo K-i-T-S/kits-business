@@ -1,56 +1,58 @@
-import { Button } from './ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Switch } from './ui/switch'
-import { Badge } from './ui/badge'
-import { Bell, BellOff, Settings, Smartphone } from 'lucide-react'
-import { usePushNotifications } from '@/hooks/usePushNotifications'
-import { useState } from 'react'
+import { Bell, BellOff, Settings, Smartphone } from 'lucide-react';
+import { useState } from 'react';
+
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Switch } from './ui/switch';
+
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export function NotificationSettings() {
-  const { 
-    isSupported, 
-    permission, 
-    subscription, 
-    requestPermission, 
-    subscribe, 
-    unsubscribe 
-  } = usePushNotifications()
+  const {
+    isSupported,
+    permission,
+    subscription,
+    requestPermission,
+    subscribe,
+    unsubscribe,
+  } = usePushNotifications();
 
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleEnableNotifications = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const granted = await requestPermission()
+      const granted = await requestPermission();
       if (granted) {
-        await subscribe()
+        await subscribe();
       }
     } catch (error) {
-      console.error('Error enabling notifications:', error)
+      console.error('Error enabling notifications:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDisableNotifications = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await unsubscribe()
+      await unsubscribe();
     } catch (error) {
-      console.error('Error disabling notifications:', error)
+      console.error('Error disabling notifications:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const getPermissionStatus = () => {
-    if (!isSupported) return { text: 'Not Supported', color: 'bg-gray-500' }
-    if (permission === 'granted') return { text: 'Enabled', color: 'bg-green-500' }
-    if (permission === 'denied') return { text: 'Blocked', color: 'bg-red-500' }
-    return { text: 'Not Requested', color: 'bg-yellow-500' }
-  }
+    if (!isSupported) return { text: 'Not Supported', color: 'bg-gray-500' };
+    if (permission === 'granted') return { text: 'Enabled', color: 'bg-green-500' };
+    if (permission === 'denied') return { text: 'Blocked', color: 'bg-red-500' };
+    return { text: 'Not Requested', color: 'bg-yellow-500' };
+  };
 
-  const status = getPermissionStatus()
+  const status = getPermissionStatus();
 
   return (
     <Card className="w-full max-w-md">
@@ -63,7 +65,7 @@ export function NotificationSettings() {
           Stay updated with important business alerts and notifications
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {!isSupported && (
           <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
@@ -89,7 +91,7 @@ export function NotificationSettings() {
             {permission === 'denied' && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-700">
-                  Notifications are blocked in your browser settings. 
+                  Notifications are blocked in your browser settings.
                   Please enable them in your browser preferences to receive push notifications.
                 </p>
               </div>
@@ -114,9 +116,9 @@ export function NotificationSettings() {
                     checked={!!subscription}
                     onCheckedChange={(enabled) => {
                       if (enabled) {
-                        subscribe()
+                        subscribe();
                       } else {
-                        unsubscribe()
+                        unsubscribe();
                       }
                     }}
                     disabled={isLoading}
@@ -165,5 +167,5 @@ export function NotificationSettings() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

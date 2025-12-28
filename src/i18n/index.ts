@@ -1,12 +1,12 @@
 import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
+import { initReactI18next } from 'react-i18next';
 
+import arTranslations from './locales/ar.json';
 import enTranslations from './locales/en.json';
 import esTranslations from './locales/es.json';
 import frTranslations from './locales/fr.json';
-import arTranslations from './locales/ar.json';
 import zhTranslations from './locales/zh.json';
 
 const resources = {
@@ -27,16 +27,16 @@ i18n
     resources,
     fallbackLng: 'en',
     debug: process.env.NODE_ENV === 'development',
-    
+
     interpolation: {
       escapeValue: false,
     },
-    
+
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
     },
-    
+
     react: {
       useSuspense: false,
     },

@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, User, Building2, Sparkles, MessageCircle, Instagram, Package, ShoppingCart, Users, TrendingUp, BarChart3, Shield, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { supabase } from '../utils/supabaseClient';
-import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
 import CreateTenantModal from '../components/CreateTenantModal';
-import { getCurrentUserTenant } from '../utils/tenantManager';
+import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../utils/supabaseClient';
+import { getCurrentUserTenant } from '../utils/tenantManager';
 
 interface LoginProps {
   onLogin?: () => void;
@@ -39,21 +40,21 @@ export default function Login({ onLogin }: LoginProps) {
             data: {
               name: businessName,
               role: 'owner',
-              commission: 5
-            }
-          }
+              commission: 5,
+            },
+          },
         });
 
         if (signupError) throw signupError;
-        
+
         // Auto sign in after signup
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
-          password
+          password,
         });
 
         if (signInError) throw signInError;
-        
+
         toast.success('Account created! Please sign in to continue');
         setIsSignup(false);
         setError('');
@@ -61,18 +62,18 @@ export default function Login({ onLogin }: LoginProps) {
         // Sign in with Supabase
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
-          password
+          password,
         });
 
         if (signInError) throw signInError;
-        
+
         toast.success('Welcome back!');
-        
+
         // Use programmatic navigation instead of relying on onLogin prop
         setTimeout(() => {
           navigate('/dashboard');
         }, 500);
-        
+
         // Still call onLogin if provided for backward compatibility
         if (onLogin) {
           onLogin();
@@ -92,33 +93,33 @@ export default function Login({ onLogin }: LoginProps) {
     {
       icon: Package,
       title: 'Inventory Management',
-      description: 'Track products, variants, costs, and stock levels in real-time'
+      description: 'Track products, variants, costs, and stock levels in real-time',
     },
     {
       icon: ShoppingCart,
       title: 'Point of Sale',
-      description: 'Fast checkout with barcode scanning, receipts, and payment processing'
+      description: 'Fast checkout with barcode scanning, receipts, and payment processing',
     },
     {
       icon: Users,
       title: 'Customer & Employee Management',
-      description: 'Manage customer debts, employee roles, and sales commissions'
+      description: 'Manage customer debts, employee roles, and sales commissions',
     },
     {
       icon: TrendingUp,
       title: 'Advanced Analytics',
-      description: 'Daily sales reports, profit tracking, and cost shift analysis'
+      description: 'Daily sales reports, profit tracking, and cost shift analysis',
     },
     {
       icon: BarChart3,
       title: 'Multi-Supplier Tracking',
-      description: 'Import inventory from multiple suppliers with automatic cost calculations'
+      description: 'Import inventory from multiple suppliers with automatic cost calculations',
     },
     {
       icon: Shield,
       title: 'Secure & Scalable',
-      description: 'Role-based access control and enterprise-grade security'
-    }
+      description: 'Role-based access control and enterprise-grade security',
+    },
   ];
 
   return (
@@ -126,10 +127,10 @@ export default function Login({ onLogin }: LoginProps) {
       <div className="pointer-events-none blur-blob top-10 left-10 bg-indigo-500/40" aria-hidden="true" />
       <div className="pointer-events-none blur-blob bottom-12 right-0 bg-orange-400/30" aria-hidden="true" />
       <div className="relative flex min-h-screen flex-col lg:flex-row">
-        <section className="flex w-full flex-col justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 px-6 py-10 text-slate-900 lg:w-1/2 lg:px-16 pb-20 lg:pb-10">
+        <section className="flex w-full flex-col justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-6 py-10 text-white lg:w-1/2 lg:px-16 pb-20 lg:pb-10">
           <div className="mx-auto w-full max-w-md space-y-8">
             <div className="text-center">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-900/5">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/20 bg-white/10 shadow-lg shadow-black/20">
                 {!logoError ? (
                   <img
                     src="/logo.png"
@@ -141,25 +142,25 @@ export default function Login({ onLogin }: LoginProps) {
                   <ShoppingCart className="h-8 w-8 text-indigo-600" />
                 )}
               </div>
-              <p className="text-xs uppercase tracking-[0.35em] text-slate-400">{t('auth.signIn')}</p>
-              <h1 className="mt-2 text-3xl font-semibold text-slate-900">{BRAND.name}</h1>
-              <p className="text-sm text-slate-500">{BRAND.tagline}</p>
+              <p className="text-xs uppercase tracking-[0.35em] text-white/60">{t('auth.signIn')}</p>
+              <h1 className="mt-2 text-3xl font-semibold text-white">{BRAND.name}</h1>
+              <p className="text-sm text-white/60">{BRAND.tagline}</p>
             </div>
 
-            <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-xl shadow-slate-900/5">
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+            <div className="rounded-3xl border border-white/20 bg-white/5 p-6 shadow-xl shadow-black/20">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/60">
                 {isSignup ? t('auth.signUp') : t('auth.signIn')}
               </p>
               <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                 {isSignup && (
                   <div>
-                    <label className="text-sm font-semibold text-slate-600" htmlFor="business-name-input">Business name</label>
+                    <label className="text-sm font-semibold text-white/80" htmlFor="business-name-input">Business name</label>
                     <input
                       id="business-name-input"
                       type="text"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                      className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white shadow-inner focus:border-indigo-500 focus:outline-none"
                       placeholder={BRAND.name}
                       required={isSignup}
                     />
@@ -167,28 +168,28 @@ export default function Login({ onLogin }: LoginProps) {
                 )}
 
                 <div>
-                  <label className="text-sm font-semibold text-slate-600" htmlFor="email-input">{t('auth.email')}</label>
+                  <label className="text-sm font-semibold text-white/80" htmlFor="email-input">{t('auth.email')}</label>
                   <input
                     id="email-input"
                     type="email"
                     data-testid="email-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                    className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white shadow-inner focus:border-indigo-500 focus:outline-none"
                     placeholder="your@email.com"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold text-slate-600" htmlFor="password-input">{t('auth.password')}</label>
+                  <label className="text-sm font-semibold text-white/80" htmlFor="password-input">{t('auth.password')}</label>
                   <input
                     id="password-input"
                     type="password"
                     data-testid="password-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
+                    className="mt-2 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white shadow-inner focus:border-indigo-500 focus:outline-none"
                     placeholder="••••••••"
                     required
                   />
@@ -212,15 +213,15 @@ export default function Login({ onLogin }: LoginProps) {
                 <button
                   type="button"
                   onClick={() => setIsSignup(!isSignup)}
-                  className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-indigo-600 hover:bg-slate-50"
+                  className="w-full rounded-2xl border border-white/20 bg-white/10 py-3 text-sm font-semibold text-white hover:bg-white/20"
                 >
                   {isSignup ? t('auth.haveAccount') : t('auth.noAccount')}
                 </button>
               </form>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white/70 p-4 text-center text-xs text-slate-500">
-              <p className="font-semibold text-slate-700">Need help onboarding?</p>
+            <div className="rounded-3xl border border-white/20 bg-white/5 p-4 text-center text-xs text-white/60">
+              <p className="font-semibold text-white/80">Need help onboarding?</p>
               <div className="mt-1 flex items-center justify-center gap-4">
                 <a
                   href={`https://wa.me/${BRAND.supportWhatsApp.replace(/\D/g, '')}`}
@@ -318,7 +319,7 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
         </section>
       </div>
-      
-      </div>
+
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { format, parseISO } from 'date-fns';
+
 import i18n from '../i18n';
 
 // Locale mappings for date-fns
@@ -102,11 +103,11 @@ export const formatNumber = (number: number, language?: string): string => {
 export const formatDate = (
   date: Date | string | number,
   formatType: 'short' | 'long' | 'time' | 'date' = 'short',
-  language?: string
+  language?: string,
 ): string => {
   const lang = language || i18n.language;
   initializeFormatters(lang);
-  
+
   const dateObj = typeof date === 'string' ? parseISO(date) : new Date(date);
   return dateFormatters[lang]?.[formatType]?.format(dateObj) || dateObj.toLocaleDateString();
 };
@@ -117,11 +118,11 @@ export const formatDate = (
 export const formatDateWithLocale = (
   date: Date | string | number,
   formatString: string,
-  language?: string
+  language?: string,
 ): string => {
   const lang = language || i18n.language;
   const dateObj = typeof date === 'string' ? parseISO(date) : new Date(date);
-  
+
   // Use Intl.DateTimeFormat for consistent formatting across locales
   try {
     return new Intl.DateTimeFormat(lang, {
@@ -155,7 +156,7 @@ export const formatPercentage = (value: number, decimals: number = 1, language?:
 export const formatRelativeTime = (
   value: number,
   unit: Intl.RelativeTimeFormatUnit,
-  language?: string
+  language?: string,
 ): string => {
   const lang = language || i18n.language;
   const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
@@ -171,7 +172,7 @@ export const getCurrencySymbol = (language?: string): string => {
     style: 'currency',
     currency: getCurrencyForLanguage(lang),
   });
-  
+
   const parts = formatter.formatToParts(1);
   const currencyPart = parts.find(part => part.type === 'currency');
   return currencyPart?.value || '$';
@@ -185,11 +186,11 @@ export const formatFileSize = (bytes: number, language?: string): string => {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let size = bytes;
   let unitIndex = 0;
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024;
     unitIndex++;
   }
-  
+
   return `${formatNumber(size, lang)} ${units[unitIndex]}`;
 };

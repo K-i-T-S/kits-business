@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { 
-  FocusManager, 
-  ScreenReaderAnnouncer, 
-  KeyboardNavigation, 
+
+import {
+  FocusManager,
+  ScreenReaderAnnouncer,
+  KeyboardNavigation,
   HighContrastMode,
   AccessibilityConstants,
-  type AccessibilityContextType 
+  type AccessibilityContextType,
 } from '../utils/accessibility';
 
 interface AccessibilityProviderProps {
@@ -122,7 +123,7 @@ export function AccessibilityProvider({ children }: AccessibilityProviderProps) 
     event: KeyboardEvent,
     items: HTMLElement[],
     currentIndex: number,
-    orientation: 'horizontal' | 'vertical' = 'vertical'
+    orientation: 'horizontal' | 'vertical' = 'vertical',
   ) => {
     return KeyboardNavigation.handleListNavigation(event, items, currentIndex, orientation);
   }, []);
@@ -136,7 +137,7 @@ export function AccessibilityProvider({ children }: AccessibilityProviderProps) 
   const setAriaAttribute = useCallback((
     element: HTMLElement,
     attribute: string,
-    value: string | boolean | null
+    value: string | boolean | null,
   ) => {
     if (value === null || value === undefined) {
       element.removeAttribute(attribute);
@@ -181,12 +182,12 @@ export function AccessibilityProvider({ children }: AccessibilityProviderProps) 
     setRole,
     isFocusable,
     focusElement,
-    constants: AccessibilityConstants
+    constants: AccessibilityConstants,
   };
 
   return (
     <AccessibilityContext.Provider value={contextValue}>
-      <div 
+      <div
         className={`accessibility-root ${isKeyboardNav ? 'keyboard-nav' : ''} ${focusVisible ? 'focus-visible' : ''}`}
         data-high-contrast={isHighContrast}
         data-reduced-motion={reducedMotion}

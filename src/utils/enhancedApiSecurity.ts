@@ -1,5 +1,5 @@
-import { api } from './supabaseClient';
 import { securityMiddleware } from './securityMiddleware';
+import { api } from './supabaseClient';
 
 // Enhanced API security wrapper
 export class ApiSecurityWrapper {
@@ -17,7 +17,7 @@ export class ApiSecurityWrapper {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     endpoint: string,
     data?: any,
-    requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer'
+    requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer',
   ): Promise<T> {
     // Get current session for context
     const session = await api.get('/auth/session').catch(() => null);
@@ -26,14 +26,14 @@ export class ApiSecurityWrapper {
       tenantId: session?.tenant?.id,
       userRole: session?.tenant?.userRole,
       ipAddress: await this.getClientIP(),
-      userAgent: navigator.userAgent
+      userAgent: navigator.userAgent,
     };
 
     // Apply security middleware
     const securityResult = await securityMiddleware.apiMiddleware(
       `${method}_${endpoint}`,
       context,
-      requiredRole
+      requiredRole,
     );
 
     if (!securityResult.authorized) {
@@ -73,7 +73,7 @@ export class ApiSecurityWrapper {
       await securityMiddleware.auditSensitiveOperation(
         `${method}_${endpoint}`,
         context,
-        { endpoint, method, data: data ? 'present' : 'none' }
+        { endpoint, method, data: data ? 'present' : 'none' },
       );
 
       return result;
@@ -83,7 +83,7 @@ export class ApiSecurityWrapper {
         await securityMiddleware.auditSensitiveOperation(
           'unauthorized_api_attempt',
           context,
-          { endpoint, method, error: error.message }
+          { endpoint, method, error: error.message },
         );
       }
       throw error;
@@ -108,13 +108,13 @@ export const apiSecurity = ApiSecurityWrapper.getInstance();
 export const secureApi = {
   get: <T>(endpoint: string, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
     apiSecurity.secureApiCall<T>('GET', endpoint, undefined, requiredRole),
-    
+
   post: <T>(endpoint: string, data: any, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
     apiSecurity.secureApiCall<T>('POST', endpoint, data, requiredRole),
-    
+
   put: <T>(endpoint: string, data: any, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
     apiSecurity.secureApiCall<T>('PUT', endpoint, data, requiredRole),
-    
+
   delete: <T>(endpoint: string, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
-    apiSecurity.secureApiCall<T>('DELETE', endpoint, undefined, requiredRole)
+    apiSecurity.secureApiCall<T>('DELETE', endpoint, undefined, requiredRole),
 };

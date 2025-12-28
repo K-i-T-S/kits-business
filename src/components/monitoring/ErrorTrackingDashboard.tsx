@@ -1,9 +1,10 @@
+import { AlertTriangle, Bug, Clock, Filter, Download, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+
+import { sentryService } from '../../services/sentryService';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { AlertTriangle, Bug, Clock, Filter, Download, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { sentryService } from '../../services/sentryService';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
 interface ErrorEvent {
   id: string;
@@ -42,7 +43,7 @@ export default function ErrorTrackingDashboard() {
   const fetchErrors = async () => {
     try {
       setIsLoading(true);
-      
+
       // In a real implementation, this would call your monitoring API
       // For now, we'll simulate with mock data
       const mockErrors: ErrorEvent[] = [
@@ -57,7 +58,7 @@ export default function ErrorTrackingDashboard() {
           environment: 'production',
           platform: 'web',
           tags: { component: 'UserProfile', route: '/dashboard' },
-          context: { userId: '123', userAgent: 'Mozilla/5.0...' }
+          context: { userId: '123', userAgent: 'Mozilla/5.0...' },
         },
         {
           id: '2',
@@ -70,7 +71,7 @@ export default function ErrorTrackingDashboard() {
           environment: 'production',
           platform: 'web',
           tags: { endpoint: '/api/inventory', method: 'GET' },
-          context: { timeout: 5000, retryCount: 2 }
+          context: { timeout: 5000, retryCount: 2 },
         },
         {
           id: '3',
@@ -83,8 +84,8 @@ export default function ErrorTrackingDashboard() {
           environment: 'production',
           platform: 'server',
           tags: { service: 'database', pool: 'primary' },
-          context: { activeConnections: 100, maxConnections: 100 }
-        }
+          context: { activeConnections: 100, maxConnections: 100 },
+        },
       ];
 
       const mockStats: ErrorStats = {
@@ -96,17 +97,17 @@ export default function ErrorTrackingDashboard() {
         trends: {
           errors: 5,
           warnings: -2,
-          info: 0
-        }
+          info: 0,
+        },
       };
 
       setErrors(mockErrors);
       setStats(mockStats);
-      
+
       sentryService.captureUserAction('Error tracking dashboard viewed', {
         errorCount: mockErrors.length,
         timeRange,
-        filterLevel: selectedLevel
+        filterLevel: selectedLevel,
       });
     } catch (error) {
       sentryService.captureException(error as Error, { operation: 'fetch-errors' });
@@ -150,8 +151,8 @@ export default function ErrorTrackingDashboard() {
     return <Minus className="h-4 w-4 text-gray-500" />;
   };
 
-  const filteredErrors = errors.filter(error => 
-    selectedLevel === 'all' || error.level === selectedLevel
+  const filteredErrors = errors.filter(error =>
+    selectedLevel === 'all' || error.level === selectedLevel,
   );
 
   const exportErrors = () => {
@@ -164,8 +165,8 @@ export default function ErrorTrackingDashboard() {
         error.count,
         error.firstSeen,
         error.lastSeen,
-        error.environment
-      ])
+        error.environment,
+      ]),
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -178,7 +179,7 @@ export default function ErrorTrackingDashboard() {
 
     sentryService.captureUserAction('Error data exported', {
       recordCount: filteredErrors.length,
-      format: 'csv'
+      format: 'csv',
     });
   };
 
@@ -191,7 +192,7 @@ export default function ErrorTrackingDashboard() {
             Monitor and analyze application errors
           </p>
         </div>
-        
+
         <Button variant="outline" onClick={exportErrors}>
           <Download className="h-4 w-4 mr-2" />
           Export

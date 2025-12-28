@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
 import { X, Upload, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+
+import { useApp } from '../context/AppContext';
 import { DataValidator } from '../utils/dataValidation';
-import { TransactionManager } from '../utils/transactionManager';
 import { OperationQueue } from '../utils/raceConditionPrevention';
+import { TransactionManager } from '../utils/transactionManager';
 
 interface ImportInventoryModalProps {
   onClose: () => void;
@@ -34,76 +35,76 @@ export default function EnhancedImportInventoryModal({ onClose }: ImportInventor
 
   const validateImportData = (lines: string[]): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
-    
+
     lines.forEach((line, index) => {
       const parts = line.split(',').map(s => s.trim());
-      
+
       if (parts.length < 2) {
         errors.push(`Line ${index + 1}: Must have at least barcode and quantity`);
         return;
       }
-      
+
       const [barcode, quantity, cost] = parts;
-      
+
       if (!barcode) {
         errors.push(`Line ${index + 1}: Barcode is required`);
       }
-      
+
       if (!quantity || isNaN(parseInt(quantity))) {
         errors.push(`Line ${index + 1}: Invalid quantity`);
       }
-      
+
       if (cost && (isNaN(parseFloat(cost)) || parseFloat(cost) < 0)) {
         errors.push(`Line ${index + 1}: Invalid cost`);
       }
     });
-    
+
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   };
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const lines = importData.trim().split('\n').filter(line => line.trim());
-    
+
     if (lines.length === 0) {
       toast.error('No data to import');
       return;
     }
-    
+
     const validation = validateImportData(lines);
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
       toast.error('Validation failed', {
-        description: `${validation.errors.length} errors found`
+        description: `${validation.errors.length} errors found`,
       });
       return;
     }
-    
+
     setValidationErrors([]);
     setIsImporting(true);
-    
+
     const results: ImportResult[] = lines.map(line => ({
       barcode: line.split(',')[0]?.trim() || '',
       status: 'pending' as const,
-      message: 'Processing...'
+      message: 'Processing...',
     }));
-    
+
     setImportResults(results);
-    
+
     try {
       const operations = lines.map(line => {
         const [barcode, quantity, newCost] = line.split(',').map(s => s.trim());
         const product = products.find(p => p.barcode === barcode);
-        
+
         if (product && product.variants[0]) {
-          
+
           const baseCost = newCost ? parseFloat(newCost) : product.variants[0].cost;
           const calculatedCost = calculateNewCost(product.variants[0].cost, baseCost);
-          
+
           return {
             type: 'update' as const,
             entity: 'product' as const,
@@ -117,11 +118,11 @@ export default function EnhancedImportInventoryModal({ onClose }: ImportInventor
                   {
                     date: new Date().toISOString(),
                     cost: calculatedCost,
-                    quantity: parseInt(quantity || '0')
-                  }
-                ]
-              }))
-            }
+                    quantity: parseInt(quantity || '0'),
+                  },
+                ],
+              })),
+            },
           };
         } else {
           const newProduct = {
@@ -140,28 +141,28 @@ export default function EnhancedImportInventoryModal({ onClose }: ImportInventor
                   {
                     date: new Date().toISOString(),
                     cost: newCost ? parseFloat(newCost) : 0,
-                    quantity: parseInt(quantity || '0')
-                  }
+                    quantity: parseInt(quantity || '0'),
+                  },
                 ],
                 price: newCost ? parseFloat(newCost) * 1.5 : 0,
                 stock: parseInt(quantity || '0'),
-                reorderLevel: 10
-              }
-            ]
+                reorderLevel: 10,
+              },
+            ],
           };
-          
+
           return {
             type: 'create' as const,
             entity: 'product' as const,
-            data: newProduct
+            data: newProduct,
           };
         }
       }).filter(op => op !== null);
-      
+
       const stockOperations = lines.map(line => {
         const [barcode, quantity] = line.split(',').map(s => s.trim());
         const product = products.find(p => p.barcode === barcode);
-        
+
         if (product && product.variants[0]) {
           return {
             type: 'update' as const,
@@ -169,36 +170,36 @@ export default function EnhancedImportInventoryModal({ onClose }: ImportInventor
             data: {
               productId: product.id,
               variantId: product.variants[0].id,
-              quantity: (product.variants[0].stock || 0) + parseInt(quantity || '0')
-            }
+              quantity: (product.variants[0].stock || 0) + parseInt(quantity || '0'),
+            },
           };
         }
         return null;
       }).filter(op => op !== null);
-      
+
       const allOperations = [...operations, ...stockOperations];
-      
+
       const transactionResult = await TransactionManager.executeTransaction(allOperations);
-      
+
       if (transactionResult.success) {
         const updatedResults = lines.map((line, index) => {
           const barcode = line.split(',')[0]?.trim() || '';
           const product = products.find(p => p.barcode === barcode);
-          
+
           return {
             barcode,
             status: 'success' as const,
             message: product ? 'Updated successfully' : 'Created successfully',
-            productId: product?.id
+            productId: product?.id,
           };
         });
-        
+
         setImportResults(updatedResults);
-        
+
         toast.success('Import completed', {
-          description: `${operations.length} products processed successfully`
+          description: `${operations.length} products processed successfully`,
         });
-        
+
         setTimeout(() => {
           onClose();
         }, 2000);
@@ -206,28 +207,28 @@ export default function EnhancedImportInventoryModal({ onClose }: ImportInventor
         const errorResults = lines.map(line => ({
           barcode: line.split(',')[0]?.trim() || '',
           status: 'error' as const,
-          message: typeof transactionResult.error === 'string' ? transactionResult.error : 'Transaction failed'
+          message: typeof transactionResult.error === 'string' ? transactionResult.error : 'Transaction failed',
         }));
-        
+
         setImportResults(errorResults);
-        
+
         toast.error('Import failed', {
-          description: transactionResult.error || 'Transaction failed'
+          description: transactionResult.error || 'Transaction failed',
         });
       }
     } catch (error) {
       console.error('Import failed:', error);
-      
+
       const errorResults = lines.map(line => ({
         barcode: line.split(',')[0]?.trim() || '',
         status: 'error' as const,
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       }));
-      
+
       setImportResults(errorResults);
-      
+
       toast.error('Import failed', {
-        description: error instanceof Error ? error.message : 'Unknown error'
+        description: error instanceof Error ? error.message : 'Unknown error',
       });
     } finally {
       setIsImporting(false);
@@ -257,8 +258,15 @@ export default function EnhancedImportInventoryModal({ onClose }: ImportInventor
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="hero-gradient rounded-xl shadow-xl max-w-4xl w-full p-6 my-8 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="rounded-xl max-w-4xl w-full p-6 my-8" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-white">Enhanced Import Inventory</h2>

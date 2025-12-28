@@ -1,4 +1,3 @@
-import { useState, useMemo } from 'react';
 import {
   Calendar,
   ChevronDown,
@@ -16,6 +15,8 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+
 import type { MarketingCampaign, CustomerSegment, AutomatedWorkflow } from '../../types/crm';
 
 interface AutomatedMarketingProps {
@@ -241,7 +242,7 @@ export default function AutomatedMarketing({
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-4">{campaign.description}</p>
-                      
+
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         <div>
                           <p className="text-xs text-gray-500">Sent</p>
@@ -317,7 +318,7 @@ export default function AutomatedMarketing({
             <div className="space-y-4">
               {workflows.map((workflow) => {
                 const isExpanded = expandedWorkflows.has(workflow.id);
-                
+
                 return (
                   <div key={workflow.id} className="bg-white rounded-lg border border-gray-200">
                     <div className="p-4">

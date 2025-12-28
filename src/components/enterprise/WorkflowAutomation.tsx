@@ -1,17 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { 
+import {
   Zap,
   Plus,
   Edit,
@@ -25,9 +12,24 @@ import {
   AlertTriangle,
   Calendar,
   FileText,
-  Sparkles
+  Sparkles,
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
 import Layout from '../Layout';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
 interface WorkflowAction {
   type: string;
@@ -82,7 +84,7 @@ export default function WorkflowAutomation() {
     description: '',
     trigger_type: 'event',
     trigger_config: { type: 'event', config: {} } as WorkflowTrigger,
-    actions: [] as WorkflowAction[]
+    actions: [] as WorkflowAction[],
   });
 
   useEffect(() => {
@@ -103,8 +105,8 @@ export default function WorkflowAutomation() {
           trigger_type: 'event',
           actions: [
             { type: 'send_notification', config: { message: 'Product is low on stock' } },
-            { type: 'create_task', config: { task: 'Reorder product' } }
-          ]
+            { type: 'create_task', config: { task: 'Reorder product' } },
+          ],
         },
         {
           id: '2',
@@ -114,8 +116,8 @@ export default function WorkflowAutomation() {
           trigger_type: 'schedule',
           actions: [
             { type: 'generate_report', config: { type: 'sales', period: 'daily' } },
-            { type: 'send_email', config: { recipients: ['manager@example.com'] } }
-          ]
+            { type: 'send_email', config: { recipients: ['manager@example.com'] } },
+          ],
         },
         {
           id: '3',
@@ -125,9 +127,9 @@ export default function WorkflowAutomation() {
           trigger_type: 'event',
           actions: [
             { type: 'send_email', config: { template: 'welcome' } },
-            { type: 'add_to_list', config: { list: 'new_customers' } }
-          ]
-        }
+            { type: 'add_to_list', config: { list: 'new_customers' } },
+          ],
+        },
       ];
 
       const mockWorkflows: Workflow[] = [
@@ -138,11 +140,11 @@ export default function WorkflowAutomation() {
           trigger_type: 'event',
           trigger_config: { type: 'event', config: { event: 'stock_low' } },
           actions: [
-            { type: 'send_notification', config: { message: 'Stock is low' } }
+            { type: 'send_notification', config: { message: 'Stock is low' } },
           ],
           is_active: true,
           created_at: '2024-01-01T00:00:00Z',
-          last_run: '2024-01-15T10:30:00Z'
+          last_run: '2024-01-15T10:30:00Z',
         },
         {
           id: '2',
@@ -151,12 +153,12 @@ export default function WorkflowAutomation() {
           trigger_type: 'schedule',
           trigger_config: { type: 'schedule', config: { cron: '0 18 * * *' } },
           actions: [
-            { type: 'generate_report', config: { type: 'sales' } }
+            { type: 'generate_report', config: { type: 'sales' } },
           ],
           is_active: true,
           created_at: '2024-01-01T00:00:00Z',
           last_run: '2024-01-15T18:00:00Z',
-          next_run: '2024-01-16T18:00:00Z'
+          next_run: '2024-01-16T18:00:00Z',
         },
         {
           id: '3',
@@ -165,11 +167,11 @@ export default function WorkflowAutomation() {
           trigger_type: 'event',
           trigger_config: { type: 'event', config: { event: 'customer_created' } },
           actions: [
-            { type: 'send_email', config: { template: 'welcome' } }
+            { type: 'send_email', config: { template: 'welcome' } },
           ],
           is_active: false,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ];
 
       const mockExecutions: WorkflowExecution[] = [
@@ -178,22 +180,22 @@ export default function WorkflowAutomation() {
           workflow_id: '1',
           status: 'completed',
           started_at: '2024-01-15T10:30:00Z',
-          completed_at: '2024-01-15T10:30:15Z'
+          completed_at: '2024-01-15T10:30:15Z',
         },
         {
           id: '2',
           workflow_id: '2',
           status: 'completed',
           started_at: '2024-01-15T18:00:00Z',
-          completed_at: '2024-01-15T18:02:30Z'
+          completed_at: '2024-01-15T18:02:30Z',
         },
         {
           id: '3',
           workflow_id: '1',
           status: 'failed',
           started_at: '2024-01-15T09:15:00Z',
-          error: 'Failed to send notification'
-        }
+          error: 'Failed to send notification',
+        },
       ];
 
       setTemplates(mockTemplates);
@@ -217,7 +219,7 @@ export default function WorkflowAutomation() {
         id: Date.now().toString(),
         ...newWorkflow,
         is_active: true,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       setWorkflows([...workflows, createdWorkflow]);
@@ -226,7 +228,7 @@ export default function WorkflowAutomation() {
         description: '',
         trigger_type: 'event',
         trigger_config: { type: 'event', config: {} },
-        actions: []
+        actions: [],
       });
       setIsCreateWorkflowOpen(false);
       toast.success('Workflow created successfully');
@@ -237,8 +239,8 @@ export default function WorkflowAutomation() {
 
   const handleToggleWorkflow = async (workflowId: string) => {
     try {
-      setWorkflows(workflows.map(workflow => 
-        workflow.id === workflowId ? { ...workflow, is_active: !workflow.is_active } : workflow
+      setWorkflows(workflows.map(workflow =>
+        workflow.id === workflowId ? { ...workflow, is_active: !workflow.is_active } : workflow,
       ));
       toast.success('Workflow status updated');
     } catch (error) {
@@ -252,7 +254,7 @@ export default function WorkflowAutomation() {
         id: Date.now().toString(),
         workflow_id: workflowId,
         status: 'running',
-        started_at: new Date().toISOString()
+        started_at: new Date().toISOString(),
       };
 
       setExecutions([execution, ...executions]);
@@ -260,10 +262,10 @@ export default function WorkflowAutomation() {
 
       // Simulate completion
       setTimeout(() => {
-        setExecutions(prev => prev.map(e => 
-          e.id === execution.id 
+        setExecutions(prev => prev.map(e =>
+          e.id === execution.id
             ? { ...e, status: 'completed', completed_at: new Date().toISOString() }
-            : e
+            : e,
         ));
       }, 3000);
     } catch (error) {
@@ -367,7 +369,7 @@ export default function WorkflowAutomation() {
                     </div>
                     <div>
                       <Label htmlFor="triggerType">Trigger Type</Label>
-                      <Select value={newWorkflow.trigger_type} onValueChange={(value) => 
+                      <Select value={newWorkflow.trigger_type} onValueChange={(value) =>
                         setNewWorkflow({ ...newWorkflow, trigger_type: value })
                       }>
                         <SelectTrigger>
@@ -409,8 +411,8 @@ export default function WorkflowAutomation() {
                       <div className="flex items-center space-x-2">
                         {getTriggerIcon(workflow.trigger_type)}
                         <CardTitle>{workflow.name}</CardTitle>
-                        <Badge variant={workflow.is_active ? "default" : "secondary"}>
-                          {workflow.is_active ? "Active" : "Inactive"}
+                        <Badge variant={workflow.is_active ? 'default' : 'secondary'}>
+                          {workflow.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -418,8 +420,8 @@ export default function WorkflowAutomation() {
                           checked={workflow.is_active}
                           onCheckedChange={() => handleToggleWorkflow(workflow.id)}
                         />
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleExecuteWorkflow(workflow.id)}
                         >
@@ -428,8 +430,8 @@ export default function WorkflowAutomation() {
                         <Button variant="outline" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteWorkflow(workflow.id)}
                         >
@@ -503,10 +505,10 @@ export default function WorkflowAutomation() {
               <TableBody>
                 {executions.map((execution) => {
                   const workflow = workflows.find(w => w.id === execution.workflow_id);
-                  const duration = execution.completed_at 
+                  const duration = execution.completed_at
                     ? new Date(execution.completed_at).getTime() - new Date(execution.started_at).getTime()
                     : null;
-                  
+
                   return (
                     <TableRow key={execution.id}>
                       <TableCell className="font-medium">

@@ -1,13 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
-import { api, supabase } from '../utils/supabaseClient';
-import { getCurrentUserTenant } from '../utils/tenantManager';
+
 import { DataValidator } from '../utils/dataValidation';
-import { TransactionManager } from '../utils/transactionManager';
+import { log } from '../utils/logger';
 import { useOptimisticUpdates, useOptimisticStockUpdates } from '../utils/optimisticUpdates';
 import { OperationQueue, StockUpdateLock, ConcurrentOperationGuard } from '../utils/raceConditionPrevention';
-import { log } from '../utils/logger';
+import { api, supabase } from '../utils/supabaseClient';
+import { getCurrentUserTenant } from '../utils/tenantManager';
+import { TransactionManager } from '../utils/transactionManager';
 
 export interface Product {
   id?: string;
@@ -144,20 +145,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       if (!currentTenant) {
         return;
       }
-      
+
       // Initialize demo data if needed
       await api.post('/init-demo', {});
-      
+
       // Load all data using API calls for consistency
       const [productsRes, salesRes, customersRes, employeesRes] = await Promise.all([
         api.get('/products'),
         api.get('/sales'),
         api.get('/customers'),
-        api.get('/employees')
+        api.get('/employees'),
       ]);
 
       // Transform database products to frontend format
@@ -173,18 +174,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
           costHistory: [],
           price: dbProduct.price || 0,
           stock: dbProduct.stock_quantity || 0,
-          reorderLevel: dbProduct.min_stock_level || 0
+          reorderLevel: dbProduct.min_stock_level || 0,
         }],
         supplier: dbProduct.supplier || '',
         category: dbProduct.category || '',
-        validityDate: dbProduct.validity_date || undefined
+        validityDate: dbProduct.validity_date || undefined,
       }));
 
       setProducts(transformedProducts);
       setSales(salesRes.sales || []);
       setCustomers(customersRes.customers || []);
       setEmployees(employeesRes.employees || []);
-      
+
       if (employeesRes.employees && employeesRes.employees.length > 0) {
         setCurrentEmployee(employeesRes.employees[0]);
       }
@@ -219,7 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 name: tenantData.tenant_name,
                 slug: tenantData.tenant_slug,
                 userRole: tenantData.user_role,
-                settings: tenantData.settings || {}
+                settings: tenantData.settings || {},
               });
             }
           } catch (tenantError) {
@@ -252,7 +253,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               name: tenantData.tenant_name,
               slug: tenantData.tenant_slug,
               userRole: tenantData.user_role,
-              settings: tenantData.settings || {}
+              settings: tenantData.settings || {},
             });
           }
         }).catch(error => {
@@ -260,9 +261,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           log.error('Failed to load tenant on auth change', errorObj);
         });
         // Small delay to ensure tenant state is updated
-          setTimeout(() => {
-            loadData();
-          }, 100);
+        setTimeout(() => {
+          loadData();
+        }, 100);
       } else {
         setProducts([]);
         setSales([]);
@@ -283,14 +284,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const validation = DataValidator.validateProduct(product);
     if (!validation.isValid) {
       toast.error('Validation failed', {
-        description: validation.errors.join(', ')
+        description: validation.errors.join(', '),
       });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
     if (validation.warnings.length > 0) {
       toast.warning('Validation warnings', {
-        description: validation.warnings.join(', ')
+        description: validation.warnings.join(', '),
       });
     }
 
@@ -346,43 +347,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const validation = DataValidator.validateSale(sale);
     if (!validation.isValid) {
       toast.error('Validation failed', {
-        description: validation.errors.join(', ')
+        description: validation.errors.join(', '),
       });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
     if (validation.warnings.length > 0) {
       toast.warning('Validation warnings', {
-        description: validation.warnings.join(', ')
+        description: validation.warnings.join(', '),
       });
     }
 
     try {
       const result = await TransactionManager.executeSaleTransaction(sale, products);
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');
       }
 
       const newSale = result.results[0].sale;
       setSales([...sales, newSale]);
-      
+
       const updatedProducts = await api.get('/products');
       setProducts(updatedProducts.products);
-      
+
       const updatedEmployees = await api.get('/employees');
       setEmployees(updatedEmployees.employees);
-      
+
       if (currentEmployee && newSale.employeeId === currentEmployee.id) {
         const updated = updatedEmployees.employees.find((e: Employee) => e.id === currentEmployee.id);
         if (updated) setCurrentEmployee(updated);
       }
-      
+
       if (sale.customerId) {
         const updatedCustomers = await api.get('/customers');
         setCustomers(updatedCustomers.customers);
       }
-      
+
       toast.success('Sale recorded', {
         description: `Total ${newSale.total.toFixed(2)}`,
       });
@@ -401,14 +402,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const validation = DataValidator.validateCustomer(customer);
     if (!validation.isValid) {
       toast.error('Validation failed', {
-        description: validation.errors.join(', ')
+        description: validation.errors.join(', '),
       });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
     if (validation.warnings.length > 0) {
       toast.warning('Validation warnings', {
-        description: validation.warnings.join(', ')
+        description: validation.warnings.join(', '),
       });
     }
 
@@ -447,31 +448,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const validation = DataValidator.validateEmployee(employee);
     if (!validation.isValid) {
       toast.error('Validation failed', {
-        description: validation.errors.join(', ')
+        description: validation.errors.join(', '),
       });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
     if (validation.warnings.length > 0) {
       toast.warning('Validation warnings', {
-        description: validation.warnings.join(', ')
+        description: validation.warnings.join(', '),
       });
     }
 
     try {
       const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-      
+
       const { employee: newEmployee } = await api.post('/employees', {
         ...employee,
-        password: tempPassword
+        password: tempPassword,
       });
-      
+
       setEmployees([...employees, newEmployee]);
       toast.success('Employee created', {
         description: `Temp password: ${tempPassword}`,
       });
       return newEmployee;
-      
+
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       log.error('Failed to add employee', errorObj);
@@ -502,7 +503,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const validation = DataValidator.validateStockUpdate(productId, variantId, quantity);
     if (!validation.isValid) {
       toast.error('Validation failed', {
-        description: validation.errors.join(', ')
+        description: validation.errors.join(', '),
       });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
@@ -510,7 +511,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const operationId = await StockUpdateLock.acquireLock(productId, variantId);
     if (!operationId) {
       toast.error('Stock update in progress', {
-        description: 'Another operation is updating this stock. Please try again.'
+        description: 'Another operation is updating this stock. Please try again.',
       });
       throw new Error('Stock update locked');
     }
@@ -522,9 +523,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const { product } = await api.post(`/products/${productId}/variants/${variantId}/stock`, { quantity });
           return product;
         },
-        'stock-update'
+        'stock-update',
       );
-      
+
       setProducts(products.map(p => p.id === productId ? result : p));
       toast.success('Stock updated');
       return result;
@@ -584,7 +585,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loading,
       hasSession,
       setUser: () => {},
-      setCurrentTenant
+      setCurrentTenant,
     }}>
       {children}
     </AppContext.Provider>

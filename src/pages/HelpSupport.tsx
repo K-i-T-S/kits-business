@@ -1,8 +1,9 @@
+import { HelpCircle, Search, Book, MessageCircle, Mail, Phone, ExternalLink, Star, Clock, CheckCircle, X, Send, FileText, Video, Download, ChevronDown, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, Search, Book, MessageCircle, Mail, Phone, ExternalLink, Star, Clock, CheckCircle, X, Send, FileText, Video, Download, ChevronDown, Eye } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+
 import { BRAND } from '../constants/branding';
+import { useApp } from '../context/AppContext';
 
 export default function HelpSupport() {
   const navigate = useNavigate();
@@ -16,10 +17,10 @@ export default function HelpSupport() {
     subject: '',
     category: 'general',
     priority: 'medium',
-    description: ''
+    description: '',
   });
   const [ticketSubmitted, setTicketSubmitted] = useState(false);
-  
+
   const [faqs, setFaqs] = useState([
     {
       id: 1,
@@ -27,7 +28,7 @@ export default function HelpSupport() {
       question: 'How do I reset my password?',
       answer: 'To reset your password, go to the login page and click on "Forgot Password". Enter your email address and follow the instructions sent to your email. You can also contact your system administrator for assistance.',
       helpful: 42,
-      views: 156
+      views: 156,
     },
     {
       id: 2,
@@ -35,7 +36,7 @@ export default function HelpSupport() {
       question: 'How do I add a new product to inventory?',
       answer: 'Navigate to the Inventory page and click on "Add Product". Fill in the required information including product name, SKU, price, quantity, and category. You can also add product images and detailed descriptions. Click "Save" to add the product to your inventory.',
       helpful: 38,
-      views: 203
+      views: 203,
     },
     {
       id: 3,
@@ -43,7 +44,7 @@ export default function HelpSupport() {
       question: 'How do I process a sale at the POS?',
       answer: 'Go to the POS page and scan or manually enter the product barcode. Add items to the cart, apply any discounts if needed, select the payment method, and complete the transaction. The system will automatically update inventory levels and generate a receipt.',
       helpful: 45,
-      views: 189
+      views: 189,
     },
     {
       id: 4,
@@ -51,7 +52,7 @@ export default function HelpSupport() {
       question: 'How do I manage customer information?',
       answer: 'Navigate to the Customers page to view, add, edit, or delete customer records. You can search for customers by name, email, or phone number. Each customer profile includes order history, contact information, and payment preferences.',
       helpful: 31,
-      views: 145
+      views: 145,
     },
     {
       id: 5,
@@ -59,7 +60,7 @@ export default function HelpSupport() {
       question: 'How do I generate sales reports?',
       answer: 'Go to the Reports page and select the type of report you want to generate (sales, inventory, customer, etc.). Choose your date range and any specific filters. The system will generate a detailed report that can be exported to PDF or Excel format.',
       helpful: 28,
-      views: 167
+      views: 167,
     },
     {
       id: 6,
@@ -67,7 +68,7 @@ export default function HelpSupport() {
       question: 'How do I manage employee accounts?',
       answer: 'Navigate to the Employees page to add, edit, or remove employee accounts. You can set different permission levels, track employee performance, and manage schedules. Each employee has their own login credentials and access based on their role.',
       helpful: 25,
-      views: 134
+      views: 134,
     },
     {
       id: 7,
@@ -75,7 +76,7 @@ export default function HelpSupport() {
       question: 'What are the system requirements?',
       answer: 'The system works on any modern web browser (Chrome, Firefox, Safari, Edge) with an internet connection. For mobile devices, we recommend using the latest version of your mobile browser. The system is cloud-based, so no local installation is required.',
       helpful: 33,
-      views: 198
+      views: 198,
     },
     {
       id: 8,
@@ -83,8 +84,8 @@ export default function HelpSupport() {
       question: 'How secure is my data?',
       answer: 'We use industry-standard encryption to protect your data both in transit and at rest. Regular backups are performed, and we comply with data protection regulations. Access to your data is controlled through user permissions and two-factor authentication.',
       helpful: 47,
-      views: 176
-    }
+      views: 176,
+    },
   ]);
 
   const [tutorials, setTutorials] = useState([
@@ -94,7 +95,7 @@ export default function HelpSupport() {
       description: 'Learn the basics of managing your inventory, adding products, and tracking stock levels.',
       duration: '5 min',
       level: 'Beginner',
-      thumbnail: '/api/placeholder/300/200'
+      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 2,
@@ -102,7 +103,7 @@ export default function HelpSupport() {
       description: 'Complete guide to using the Point of Sale system, including payment processing and receipts.',
       duration: '8 min',
       level: 'Beginner',
-      thumbnail: '/api/placeholder/300/200'
+      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 3,
@@ -110,7 +111,7 @@ export default function HelpSupport() {
       description: 'Tips and tricks for effectively managing customer relationships and data.',
       duration: '6 min',
       level: 'Intermediate',
-      thumbnail: '/api/placeholder/300/200'
+      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 4,
@@ -118,7 +119,7 @@ export default function HelpSupport() {
       description: 'How to create comprehensive reports and use data to make business decisions.',
       duration: '10 min',
       level: 'Intermediate',
-      thumbnail: '/api/placeholder/300/200'
+      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 5,
@@ -126,7 +127,7 @@ export default function HelpSupport() {
       description: 'Setting up employee accounts and managing access levels and permissions.',
       duration: '7 min',
       level: 'Advanced',
-      thumbnail: '/api/placeholder/300/200'
+      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 6,
@@ -134,8 +135,8 @@ export default function HelpSupport() {
       description: 'Customizing the system to meet your specific business needs and preferences.',
       duration: '12 min',
       level: 'Advanced',
-      thumbnail: '/api/placeholder/300/200'
-    }
+      thumbnail: '/api/placeholder/300/200',
+    },
   ]);
 
   const [contactMethods] = useState([
@@ -145,7 +146,7 @@ export default function HelpSupport() {
       description: 'Get help via email',
       value: BRAND.supportEmail,
       responseTime: '24-48 hours',
-      color: 'blue'
+      color: 'blue',
     },
     {
       icon: MessageCircle,
@@ -153,7 +154,7 @@ export default function HelpSupport() {
       description: 'Chat with our team',
       value: BRAND.supportWhatsApp,
       responseTime: '2-4 hours',
-      color: 'green'
+      color: 'green',
     },
     {
       icon: Phone,
@@ -161,15 +162,15 @@ export default function HelpSupport() {
       description: 'Call us directly',
       value: '+961 1 234 567',
       responseTime: 'Mon-Fri 9AM-5PM',
-      color: 'purple'
-    }
+      color: 'purple',
+    },
   ]);
 
   const tabs = [
     { id: 'faqs', label: 'FAQs', icon: HelpCircle },
     { id: 'tutorials', label: 'Tutorials', icon: Video },
     { id: 'contact', label: 'Contact Support', icon: MessageCircle },
-    { id: 'documentation', label: 'Documentation', icon: Book }
+    { id: 'documentation', label: 'Documentation', icon: Book },
   ];
 
   const categories = [
@@ -180,7 +181,7 @@ export default function HelpSupport() {
     { value: 'customers', label: 'Customers' },
     { value: 'employees', label: 'Employees' },
     { value: 'reports', label: 'Reports' },
-    { value: 'security', label: 'Security' }
+    { value: 'security', label: 'Security' },
   ];
 
   const filteredFaqs = faqs.filter(faq => {
@@ -193,13 +194,13 @@ export default function HelpSupport() {
   const handleTicketSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
     setTicketSubmitted(true);
     setLoading(false);
-    
+
     // Reset form after 3 seconds
     setTimeout(() => {
       setTicketSubmitted(false);
@@ -207,17 +208,17 @@ export default function HelpSupport() {
         subject: '',
         category: 'general',
         priority: 'medium',
-        description: ''
+        description: '',
       });
     }, 3000);
   };
 
   const handleFaqHelpful = async (faqId: number, helpful: boolean) => {
     // Update helpful count
-    setFaqs(prev => prev.map(faq => 
-      faq.id === faqId 
+    setFaqs(prev => prev.map(faq =>
+      faq.id === faqId
         ? { ...faq, helpful: faq.helpful + (helpful ? 1 : 0) }
-        : faq
+        : faq,
     ));
   };
 
@@ -298,7 +299,7 @@ export default function HelpSupport() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold text-white mb-6">Frequently Asked Questions</h2>
-                
+
                 {/* Search and Filter */}
                 <div className="flex flex-col lg:flex-row gap-4 mb-6">
                   <div className="flex-1">
@@ -395,7 +396,7 @@ export default function HelpSupport() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold text-white mb-6">Video Tutorials</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {tutorials.map((tutorial) => (
                     <div key={tutorial.id} className="border border-white/10 rounded-lg overflow-hidden hover:border-white/20 transition-colors">
@@ -412,8 +413,8 @@ export default function HelpSupport() {
                           </div>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             tutorial.level === 'Beginner' ? 'bg-green-500/20 text-green-400' :
-                            tutorial.level === 'Intermediate' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-red-500/20 text-red-400'
+                              tutorial.level === 'Intermediate' ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-red-500/20 text-red-400'
                           }`}>
                             {tutorial.level}
                           </span>
@@ -434,7 +435,7 @@ export default function HelpSupport() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold text-white mb-6">Submit a Support Ticket</h2>
-                
+
                 {ticketSubmitted ? (
                   <div className="text-center py-12">
                     <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
@@ -469,7 +470,7 @@ export default function HelpSupport() {
                         </select>
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-white/80 mb-2">Priority</label>
                       <div className="flex gap-4">
@@ -487,7 +488,7 @@ export default function HelpSupport() {
                         ))}
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-white/80 mb-2">Description</label>
                       <textarea
@@ -498,7 +499,7 @@ export default function HelpSupport() {
                         className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 resize-none"
                       />
                     </div>
-                    
+
                     <div className="flex justify-end">
                       <button
                         type="submit"
@@ -520,7 +521,7 @@ export default function HelpSupport() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold text-white mb-6">Documentation</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="border border-white/10 rounded-lg p-6 hover:border-white/20 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
@@ -536,7 +537,7 @@ export default function HelpSupport() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="border border-white/10 rounded-lg p-6 hover:border-white/20 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
                       <FileText className="h-6 w-6 text-green-400" />
@@ -551,7 +552,7 @@ export default function HelpSupport() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="border border-white/10 rounded-lg p-6 hover:border-white/20 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
                       <Video className="h-6 w-6 text-purple-400" />
@@ -566,7 +567,7 @@ export default function HelpSupport() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="border border-white/10 rounded-lg p-6 hover:border-white/20 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
                       <HelpCircle className="h-6 w-6 text-yellow-400" />

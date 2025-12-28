@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import {
   Home,
   ShoppingCart,
@@ -22,12 +21,14 @@ import {
   Activity,
   Zap,
   MapPin,
-  Key
-} from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { supabase } from '../utils/supabaseClient'
-import { BRAND } from '../constants/branding'
+  Key,
+} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import { BRAND } from '../constants/branding';
+import { useApp } from '../context/AppContext';
+import { supabase } from '../utils/supabaseClient';
 
 interface NavItem {
   id: string
@@ -46,172 +47,172 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { 
-    id: 'dashboard', 
-    label: 'Dashboard', 
-    icon: Home, 
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: Home,
     path: '/dashboard',
-    description: 'Overview and quick actions'
+    description: 'Overview and quick actions',
   },
-  { 
-    id: 'pos', 
-    label: 'POS', 
-    icon: ShoppingCart, 
+  {
+    id: 'pos',
+    label: 'POS',
+    icon: ShoppingCart,
     path: '/pos',
     description: 'Point of Sale system',
-    badge: 0
+    badge: 0,
   },
-  { 
-    id: 'inventory', 
-    label: 'Inventory', 
-    icon: Package, 
+  {
+    id: 'inventory',
+    label: 'Inventory',
+    icon: Package,
     path: '/inventory',
     description: 'Manage products and stock',
     subItems: [
-      { 
-        id: 'products', 
-        label: 'Products', 
-        icon: Package, 
+      {
+        id: 'products',
+        label: 'Products',
+        icon: Package,
         path: '/inventory',
-        description: 'Product catalog and management'
+        description: 'Product catalog and management',
       },
-      { 
-        id: 'batch-tracking', 
-        label: 'Batch Tracking', 
-        icon: Layers, 
+      {
+        id: 'batch-tracking',
+        label: 'Batch Tracking',
+        icon: Layers,
         path: '/inventory/batch-tracking',
-        description: 'Track product batches and expiry'
+        description: 'Track product batches and expiry',
       },
-      { 
-        id: 'suppliers', 
-        label: 'Suppliers', 
-        icon: Users, 
+      {
+        id: 'suppliers',
+        label: 'Suppliers',
+        icon: Users,
         path: '/inventory/suppliers',
-        description: 'Supplier management and relationships'
+        description: 'Supplier management and relationships',
       },
-      { 
-        id: 'purchase-orders', 
-        label: 'Purchase Orders', 
-        icon: ShoppingCart, 
+      {
+        id: 'purchase-orders',
+        label: 'Purchase Orders',
+        icon: ShoppingCart,
         path: '/inventory/purchase-orders',
-        description: 'Manage purchase orders and receiving'
+        description: 'Manage purchase orders and receiving',
       },
-      { 
-        id: 'stock-transfers', 
-        label: 'Stock Transfers', 
-        icon: Truck, 
+      {
+        id: 'stock-transfers',
+        label: 'Stock Transfers',
+        icon: Truck,
         path: '/inventory/stock-transfers',
-        description: 'Transfer stock between locations'
+        description: 'Transfer stock between locations',
       },
-      { 
-        id: 'reorder-points', 
-        label: 'Reorder Points', 
-        icon: AlertTriangle, 
+      {
+        id: 'reorder-points',
+        label: 'Reorder Points',
+        icon: AlertTriangle,
         path: '/inventory/reorder-points',
-        description: 'Automated reorder management'
-      }
-    ]
+        description: 'Automated reorder management',
+      },
+    ],
   },
-  { 
-    id: 'customers', 
-    label: 'Customers', 
-    icon: Users, 
+  {
+    id: 'customers',
+    label: 'Customers',
+    icon: Users,
     path: '/customers',
-    description: 'Customer management'
+    description: 'Customer management',
   },
-  { 
-    id: 'employees', 
-    label: 'Employees', 
-    icon: UserCircle, 
+  {
+    id: 'employees',
+    label: 'Employees',
+    icon: UserCircle,
     path: '/employees',
-    description: 'Employee management'
+    description: 'Employee management',
   },
-  { 
-    id: 'monitoring', 
-    label: 'Monitoring', 
-    icon: Activity, 
-    path: '/monitoring', 
-    description: 'System monitoring and alerts'
+  {
+    id: 'monitoring',
+    label: 'Monitoring',
+    icon: Activity,
+    path: '/monitoring',
+    description: 'System monitoring and alerts',
   },
-  { 
-    id: 'analytics', 
-    label: 'Analytics', 
-    icon: BarChart3, 
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: BarChart3,
     path: '/reports',
-    description: 'Reports and insights'
+    description: 'Reports and insights',
   },
-  { 
-    id: 'enterprise', 
-    label: 'Enterprise', 
-    icon: Shield, 
+  {
+    id: 'enterprise',
+    label: 'Enterprise',
+    icon: Shield,
     path: '/enterprise',
     description: 'Advanced enterprise features',
     subItems: [
-      { 
-        id: 'enterprise-dashboard', 
-        label: 'Enterprise Dashboard', 
-        icon: Shield, 
+      {
+        id: 'enterprise-dashboard',
+        label: 'Enterprise Dashboard',
+        icon: Shield,
         path: '/enterprise',
-        description: 'Enterprise overview and analytics'
+        description: 'Enterprise overview and analytics',
       },
-      { 
-        id: 'roles-permissions', 
-        label: 'Roles & Permissions', 
-        icon: Shield, 
+      {
+        id: 'roles-permissions',
+        label: 'Roles & Permissions',
+        icon: Shield,
         path: '/enterprise/roles',
-        description: 'User roles and permissions management'
+        description: 'User roles and permissions management',
       },
-      { 
-        id: 'workflows', 
-        label: 'Workflow Automation', 
-        icon: Zap, 
+      {
+        id: 'workflows',
+        label: 'Workflow Automation',
+        icon: Zap,
         path: '/enterprise/workflows',
-        description: 'Automated workflows and processes'
+        description: 'Automated workflows and processes',
       },
-      { 
-        id: 'locations', 
-        label: 'Multi-Location', 
-        icon: MapPin, 
+      {
+        id: 'locations',
+        label: 'Multi-Location',
+        icon: MapPin,
         path: '/enterprise/locations',
-        description: 'Multi-location inventory management'
+        description: 'Multi-location inventory management',
       },
-      { 
-        id: 'api-webhooks', 
-        label: 'API & Webhooks', 
-        icon: Key, 
+      {
+        id: 'api-webhooks',
+        label: 'API & Webhooks',
+        icon: Key,
         path: '/enterprise/api',
-        description: 'API management and webhook integrations'
-      }
-    ]
+        description: 'API management and webhook integrations',
+      },
+    ],
   },
-  { 
-    id: 'settings', 
-    label: 'Settings', 
-    icon: Settings, 
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: Settings,
     path: '/profile-settings',
-    description: 'App preferences'
-  }
-]
+    description: 'App preferences',
+  },
+];
 
 export function MobileNavigation() {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
-  const location = useLocation()
-  const navigate = useNavigate()
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Handle body scroll lock when drawer is open
   useEffect(() => {
     if (isDrawerOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = ''
+      document.body.style.overflow = '';
     }
-    
+
     return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isDrawerOpen])
+      document.body.style.overflow = '';
+    };
+  }, [isDrawerOpen]);
 
   // Disable aggressive padding adjustment to avoid layout issues
   // useEffect(() => {
@@ -222,65 +223,65 @@ export function MobileNavigation() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut()
-      navigate('/login')
+      await supabase.auth.signOut();
+      navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error('Logout error:', error);
     }
-  }
+  };
 
   const handleSupportAction = (type: string) => {
     switch (type) {
       case 'whatsapp':
-        window.open(`https://wa.me/${BRAND.supportWhatsApp?.replace(/[^0-9]/g, '')}`, '_blank')
-        break
+        window.open(`https://wa.me/${BRAND.supportWhatsApp?.replace(/[^0-9]/g, '')}`, '_blank');
+        break;
       case 'instagram':
-        window.open(BRAND.supportInstagram, '_blank')
-        break
+        window.open(BRAND.supportInstagram, '_blank');
+        break;
       case 'email':
-        window.open(`mailto:${BRAND.supportEmail}`, '_blank')
-        break
+        window.open(`mailto:${BRAND.supportEmail}`, '_blank');
+        break;
     }
-  }
+  };
 
   const handleNavClick = (path: string) => {
-    setIsAnimating(true)
+    setIsAnimating(true);
     setTimeout(() => {
-      navigate(path)
-      setIsDrawerOpen(false)
-      setIsAnimating(false)
-    }, 150)
-  }
+      navigate(path);
+      setIsDrawerOpen(false);
+      setIsAnimating(false);
+    }, 150);
+  };
 
   const isActive = (path: string) => {
-    return location.pathname === path || 
-           (path !== '/' && location.pathname.startsWith(path))
-  }
+    return location.pathname === path ||
+           (path !== '/' && location.pathname.startsWith(path));
+  };
 
   const handleDrawerToggle = () => {
     if (isDrawerOpen) {
-      setIsAnimating(true)
-      setTimeout(() => setIsDrawerOpen(false), 150)
+      setIsAnimating(true);
+      setTimeout(() => setIsDrawerOpen(false), 150);
     } else {
-      setIsDrawerOpen(true)
+      setIsDrawerOpen(true);
     }
-  }
+  };
 
   const toggleExpanded = (itemId: string) => {
-    const newExpanded = new Set(expandedItems)
+    const newExpanded = new Set(expandedItems);
     if (newExpanded.has(itemId)) {
-      newExpanded.delete(itemId)
+      newExpanded.delete(itemId);
     } else {
-      newExpanded.add(itemId)
+      newExpanded.add(itemId);
     }
-    setExpandedItems(newExpanded)
-  }
+    setExpandedItems(newExpanded);
+  };
 
   const isItemExpanded = (itemId: string) => {
-    return expandedItems.has(itemId) || 
+    return expandedItems.has(itemId) ||
            (itemId === 'inventory' && location.pathname.startsWith('/inventory')) ||
-           (itemId === 'enterprise' && location.pathname.startsWith('/enterprise'))
-  }
+           (itemId === 'enterprise' && location.pathname.startsWith('/enterprise'));
+  };
 
   return (
     <>
@@ -300,7 +301,7 @@ export function MobileNavigation() {
       </div>
 
       {/* Enhanced Mobile Drawer Overlay with better animation */}
-      <div 
+      <div
         className={`md:hidden fixed inset-0 z-[50] transition-all duration-300 ease-out ${
           isDrawerOpen ? 'bg-black/60 backdrop-blur-sm' : 'pointer-events-none opacity-0'
         }`}
@@ -335,26 +336,26 @@ export function MobileNavigation() {
               <X className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
             </button>
           </div>
-          
+
           {/* Enhanced Navigation Items with descriptions and sub-items */}
           <nav className="p-4 space-y-2">
             {navItems.map((item, index) => {
-              const Icon = item.icon
-              const active = isActive(item.path)
-              const expanded = isItemExpanded(item.id)
-              const hasSubItems = item.subItems && item.subItems.length > 0
-              
+              const Icon = item.icon;
+              const active = isActive(item.path);
+              const expanded = isItemExpanded(item.id);
+              const hasSubItems = item.subItems && item.subItems.length > 0;
+
               return (
                 <div key={item.id}>
                   <button
                     onClick={() => hasSubItems ? toggleExpanded(item.id) : handleNavClick(item.path)}
                     className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
-                      active 
-                        ? 'bg-gradient-to-r from-blue-600/20 to-blue-700/20 text-blue-400 border border-blue-600/30 shadow-lg' 
+                      active
+                        ? 'bg-gradient-to-r from-blue-600/20 to-blue-700/20 text-blue-400 border border-blue-600/30 shadow-lg'
                         : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 active:scale-[0.98]'
                     }`}
                     style={{
-                      animationDelay: `${index * 50}ms`
+                      animationDelay: `${index * 50}ms`,
                     }}
                   >
                     <div className="relative">
@@ -381,25 +382,25 @@ export function MobileNavigation() {
                       }`} />
                     )}
                   </button>
-                  
+
                   {/* Sub-items */}
                   {hasSubItems && expanded && (
                     <div className="ml-4 mt-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
                       {item.subItems!.map((subItem, subIndex) => {
-                        const SubIcon = subItem.icon
-                        const subActive = isActive(subItem.path)
-                        
+                        const SubIcon = subItem.icon;
+                        const subActive = isActive(subItem.path);
+
                         return (
                           <button
                             key={subItem.id}
                             onClick={() => handleNavClick(subItem.path)}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
-                              subActive 
-                                ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-400' 
+                              subActive
+                                ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-400'
                                 : 'text-gray-500 hover:bg-gray-800/30 hover:text-gray-300'
                             }`}
                             style={{
-                              animationDelay: `${(index * 50) + (subIndex * 30)}ms`
+                              animationDelay: `${(index * 50) + (subIndex * 30)}ms`,
                             }}
                           >
                             <SubIcon className={`h-4 w-4 transition-transform duration-200 group-hover:scale-110 ${subActive ? 'text-blue-400' : ''}`} />
@@ -410,12 +411,12 @@ export function MobileNavigation() {
                               )}
                             </div>
                           </button>
-                        )
+                        );
                       })}
                     </div>
                   )}
                 </div>
-              )
+              );
             })}
           </nav>
 
@@ -433,7 +434,7 @@ export function MobileNavigation() {
                   <div className="text-xs opacity-70">Chat with support team</div>
                 </div>
               </button>
-              
+
               <button
                 onClick={() => handleSupportAction('instagram')}
                 className="flex items-center gap-3 p-3 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 transition-all hover:bg-purple-500/20 hover:border-purple-500/50"
@@ -444,7 +445,7 @@ export function MobileNavigation() {
                   <div className="text-xs opacity-70">Follow us for updates</div>
                 </div>
               </button>
-              
+
               <button
                 onClick={() => handleSupportAction('email')}
                 className="flex items-center gap-3 p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 transition-all hover:bg-blue-500/20 hover:border-blue-500/50"
@@ -485,16 +486,16 @@ export function MobileNavigation() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/98 backdrop-blur-xl border-t border-gray-800/30 z-50 mobile-bottom-safe" style={{ height: 'auto', minHeight: 'max(60px, env(safe-area-inset-bottom) + 60px)' }}>
         <div className="flex justify-around items-center py-3 pb-safe-area">
           {navItems.slice(0, 5).map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.path)
-            
+            const Icon = item.icon;
+            const active = isActive(item.path);
+
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.path)}
                 className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 min-w-[70px] relative group ${
-                  active 
-                    ? 'text-blue-400' 
+                  active
+                    ? 'text-blue-400'
                     : 'text-gray-500 hover:text-gray-300 active:scale-95'
                 }`}
                 aria-label={item.label}
@@ -517,10 +518,10 @@ export function MobileNavigation() {
                   <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full" />
                 )}
               </button>
-            )
+            );
           })}
         </div>
       </nav>
     </>
-  )
+  );
 }

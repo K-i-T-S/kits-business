@@ -47,7 +47,7 @@ export class MonitoringAlerts {
         condition: (metrics) => metrics.errorRate > 0.05,
         severity: 'critical',
         enabled: true,
-        cooldown: 15
+        cooldown: 15,
       },
       {
         id: 'slow-response-time',
@@ -55,7 +55,7 @@ export class MonitoringAlerts {
         condition: (metrics) => metrics.averageResponseTime > 2000,
         severity: 'medium',
         enabled: true,
-        cooldown: 10
+        cooldown: 10,
       },
       {
         id: 'high-memory-usage',
@@ -63,7 +63,7 @@ export class MonitoringAlerts {
         condition: (metrics) => metrics.memoryUsage > 85,
         severity: 'medium',
         enabled: true,
-        cooldown: 20
+        cooldown: 20,
       },
       {
         id: 'database-connection-failure',
@@ -71,7 +71,7 @@ export class MonitoringAlerts {
         condition: (metrics) => !metrics.databaseConnected,
         severity: 'critical',
         enabled: true,
-        cooldown: 5
+        cooldown: 5,
       },
       {
         id: 'low-uptime',
@@ -79,8 +79,8 @@ export class MonitoringAlerts {
         condition: (metrics) => metrics.uptime < 99,
         severity: 'high',
         enabled: true,
-        cooldown: 60
-      }
+        cooldown: 60,
+      },
     ];
   }
 
@@ -103,7 +103,7 @@ export class MonitoringAlerts {
           message: this.generateAlertMessage(rule, metrics),
           severity: rule.severity,
           source: 'automated-rule',
-          metadata: { ruleId: rule.id, metrics }
+          metadata: { ruleId: rule.id, metrics },
         });
 
         rule.lastTriggered = now;
@@ -133,7 +133,7 @@ export class MonitoringAlerts {
       id: this.generateAlertId(),
       timestamp: new Date().toISOString(),
       acknowledged: false,
-      ...alertData
+      ...alertData,
     };
 
     this.alerts.unshift(alert);
@@ -148,7 +148,7 @@ export class MonitoringAlerts {
       alertId: alert.id,
       severity: alert.severity,
       source: alert.source,
-      metadata: alert.metadata
+      metadata: alert.metadata,
     });
 
     // Notify subscribers
@@ -192,13 +192,13 @@ export class MonitoringAlerts {
     if (alert) {
       alert.acknowledged = true;
       this.notifySubscribers();
-      
+
       sentryService.captureUserAction('Alert acknowledged', {
         alertId,
         alertTitle: alert.title,
-        alertSeverity: alert.severity
+        alertSeverity: alert.severity,
       });
-      
+
       return true;
     }
     return false;
@@ -254,7 +254,7 @@ export class MonitoringAlerts {
     critical: number;
     byType: Record<string, number>;
     bySeverity: Record<string, number>;
-  } {
+    } {
     const total = this.alerts.length;
     const unacknowledged = this.getUnacknowledgedAlerts().length;
     const critical = this.getCriticalAlerts().length;
@@ -282,7 +282,7 @@ if (typeof window !== 'undefined') {
       averageResponseTime: 100 + Math.random() * 3000,
       memoryUsage: 50 + Math.random() * 50,
       databaseConnected: Math.random() > 0.05,
-      uptime: 95 + Math.random() * 5
+      uptime: 95 + Math.random() * 5,
     };
 
     monitoringAlerts.checkRules(mockMetrics);

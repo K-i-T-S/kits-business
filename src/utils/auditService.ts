@@ -87,7 +87,7 @@ export class AuditLogger {
     action: 'login' | 'logout' | 'register' | 'password_change' | 'password_reset' | 'mfa_enabled' | 'mfa_disabled',
     success: boolean,
     metadata?: Record<string, any>,
-    error?: string
+    error?: string,
   ): Promise<void> {
     await this.log({
       user_id: userId,
@@ -109,10 +109,10 @@ export class AuditLogger {
     resourceId: string | undefined,
     oldValues?: Record<string, any>,
     newValues?: Record<string, any>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<void> {
     const severity = this.getDataOperationSeverity(action, resourceType);
-    
+
     await this.log({
       user_id: userId,
       tenant_id: tenantId,
@@ -133,7 +133,7 @@ export class AuditLogger {
     action: 'rate_limit_exceeded' | 'suspicious_activity' | 'blocked_request' | 'privilege_escalation' | 'data_breach_attempt',
     resourceType: string,
     metadata: Record<string, any>,
-    severity: 'high' | 'critical' = 'high'
+    severity: 'high' | 'critical' = 'high',
   ): Promise<void> {
     await this.log({
       user_id: userId || 'anonymous',

@@ -1,4 +1,3 @@
-import { Fragment, useMemo, useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -9,6 +8,8 @@ import {
   Layers,
   Clock,
 } from 'lucide-react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
+
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import type { ProductBatch } from '../types/inventory';
@@ -104,7 +105,7 @@ export default function BatchTracking() {
     const matchesSearch =
       batch.batch_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       batch.notes?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || 
+    const matchesStatus = filterStatus === 'all' ||
       (filterStatus === 'active' && batch.is_active) ||
       (filterStatus === 'inactive' && !batch.is_active);
     return matchesSearch && matchesStatus;
@@ -150,7 +151,7 @@ export default function BatchTracking() {
     const today = new Date();
     const expDate = new Date(expirationDate);
     const daysUntilExpiration = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (daysUntilExpiration < 0) {
       return { text: 'Expired', color: 'text-red-600' };
     } else if (daysUntilExpiration <= 7) {

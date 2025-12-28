@@ -1,13 +1,14 @@
+import { Settings, Tag } from 'lucide-react';
 import { useState } from 'react';
+
 import EnhancedPOS from '../components/EnhancedPOS';
 import PromotionManagementModal from '../components/PromotionManagementModal';
-import { Settings, Tag } from 'lucide-react';
-import { 
-  sampleCoupons, 
-  samplePromotions, 
-  sampleLoyaltyProgram, 
+import {
+  sampleCoupons,
+  samplePromotions,
+  sampleLoyaltyProgram,
   sampleReceiptTemplates,
-  getRandomProduct 
+  getRandomProduct,
 } from '../data/sampleData';
 import type { DiscountCoupon, Promotion, LoyaltyProgram, ReceiptTemplate, EnhancedSale } from '../types/pos';
 import { log } from '../utils/logger';
@@ -22,7 +23,7 @@ export default function POSTestPage() {
   const handleCreatePromotion = (promotion: Omit<Promotion, 'id'>) => {
     const newPromotion: Promotion = {
       ...promotion,
-      id: `promo-${Date.now()}`
+      id: `promo-${Date.now()}`,
     };
     setPromotions(prev => [...prev, newPromotion]);
   };

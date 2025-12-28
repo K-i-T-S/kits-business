@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import {
   BarChart3,
   Calendar,
@@ -17,6 +16,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface Campaign {
   id: string;
@@ -99,7 +99,7 @@ export default function MarketingCampaigns({
         const matchesType = typeFilter === 'all' || campaign.type === typeFilter;
         return matchesSearch && matchesStatus && matchesType;
       }),
-    [campaigns, searchQuery, statusFilter, typeFilter]
+    [campaigns, searchQuery, statusFilter, typeFilter],
   );
 
   const getStatusColor = (status: Campaign['status']) => {
@@ -140,11 +140,11 @@ export default function MarketingCampaigns({
 
   const calculatePerformance = (metrics: Campaign['metrics']) => {
     if (!metrics.sent || metrics.sent === 0) return { openRate: 0, clickRate: 0, conversionRate: 0 };
-    
+
     const openRate = ((metrics.opened || 0) / metrics.sent) * 100;
     const clickRate = ((metrics.clicked || 0) / (metrics.opened || 1)) * 100;
     const conversionRate = ((metrics.converted || 0) / (metrics.clicked || 1)) * 100;
-    
+
     return { openRate, clickRate, conversionRate };
   };
 
@@ -299,7 +299,7 @@ export default function MarketingCampaigns({
           filteredCampaigns.map((campaign) => {
             const performance = calculatePerformance(campaign.metrics);
             const isSelected = selectedCampaign === campaign.id;
-            
+
             return (
               <div key={campaign.id} className="rounded-lg border border-gray-200 bg-white">
                 <div className="p-4">
@@ -314,7 +314,7 @@ export default function MarketingCampaigns({
                         <div className="mt-1 flex items-center gap-2">
                           <span
                             className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(
-                              campaign.status
+                              campaign.status,
                             )}`}
                           >
                             {campaign.status}
@@ -463,7 +463,7 @@ export default function MarketingCampaigns({
                           )}
                         </div>
                       </div>
-                      
+
                       <div>
                         <h5 className="font-medium text-gray-900 mb-3">Performance Metrics</h5>
                         <div className="space-y-2">
@@ -622,7 +622,7 @@ export default function MarketingCampaigns({
                       className="mr-2"
                     />
                       Send immediately
-                    </label>
+                  </label>
                   <label className="flex items-center">
                     <input
                       type="radio"
@@ -638,7 +638,7 @@ export default function MarketingCampaigns({
                       className="mr-2"
                     />
                       Schedule for later
-                    </label>
+                  </label>
                 </div>
                 {!newCampaign.scheduleConfig.sendImmediately && (
                   <input

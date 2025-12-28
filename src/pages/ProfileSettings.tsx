@@ -1,8 +1,9 @@
+import { User, Mail, Phone, Calendar, Shield, Camera, Save, X, Eye, EyeOff, Key, Globe, Bell, Palette } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Calendar, Shield, Camera, Save, X, Eye, EyeOff, Key, Globe, Bell, Palette } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+
 import { BRAND } from '../constants/branding';
+import { useApp } from '../context/AppContext';
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ export default function ProfileSettings() {
   const [showPassword, setShowPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     firstName: currentEmployee?.name?.split(' ')[0] || '',
     lastName: currentEmployee?.name?.split(' ')[1] || '',
@@ -29,16 +30,16 @@ export default function ProfileSettings() {
       email: true,
       push: true,
       sms: false,
-      desktop: true
+      desktop: true,
     },
     theme: 'dark',
-    accentColor: 'indigo'
+    accentColor: 'indigo',
   });
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
 
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -46,7 +47,7 @@ export default function ProfileSettings() {
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -55,15 +56,15 @@ export default function ProfileSettings() {
       ...prev,
       notifications: {
         ...prev.notifications,
-        [type]: value
-      }
+        [type]: value,
+      },
     }));
   };
 
   const handlePasswordChange = (field: string, value: string) => {
     setPasswordData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -91,7 +92,7 @@ export default function ProfileSettings() {
     { id: 'personal', label: 'Personal Info', icon: User },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'preferences', label: 'Preferences', icon: Palette },
-    { id: 'notifications', label: 'Notifications', icon: Bell }
+    { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
   return (
@@ -171,7 +172,7 @@ export default function ProfileSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Personal Information</h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-white/80 mb-2">First Name</label>
@@ -264,7 +265,7 @@ export default function ProfileSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Security Settings</h2>
-                    
+
                     <div className="space-y-6">
                       <div className="p-4 border border-white/10 rounded-lg">
                         <h3 className="text-lg font-medium text-white mb-4">Change Password</h3>
@@ -356,7 +357,7 @@ export default function ProfileSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Preferences</h2>
-                    
+
                     <div className="space-y-6">
                       <div>
                         <h3 className="text-lg font-medium text-white mb-4">Appearance</h3>
@@ -462,7 +463,7 @@ export default function ProfileSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Notification Preferences</h2>
-                    
+
                     <div className="space-y-4">
                       <div className="p-4 border border-white/10 rounded-lg">
                         <div className="flex items-center justify-between">

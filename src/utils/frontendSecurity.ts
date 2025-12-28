@@ -1,7 +1,7 @@
-import { SecurityValidator } from './enhancedValidation';
-import { securityMonitor } from './securityMonitor';
-import { securityMiddleware } from './securityMiddleware';
 import { logSecurityEvent } from './auditLogger';
+import { SecurityValidator } from './enhancedValidation';
+import { securityMiddleware } from './securityMiddleware';
+import { securityMonitor } from './securityMonitor';
 
 // Enhanced security utilities for frontend components
 export class FrontendSecurity {
@@ -13,7 +13,7 @@ export class FrontendSecurity {
   } {
     try {
       let validatedData;
-      
+
       switch (type) {
         case 'product':
           validatedData = SecurityValidator.validateProduct(input);
@@ -35,7 +35,7 @@ export class FrontendSecurity {
     } catch (error) {
       return {
         isValid: false,
-        errors: error instanceof Error ? [error.message] : ['Validation failed']
+        errors: error instanceof Error ? [error.message] : ['Validation failed'],
       };
     }
   }
@@ -51,12 +51,12 @@ export class FrontendSecurity {
   static safeJsonParse(jsonString: string, schema?: any): any {
     try {
       const parsed = JSON.parse(jsonString);
-      
+
       // Basic validation to prevent prototype pollution
       if (parsed && typeof parsed === 'object') {
         return this.preventPrototypePollution(parsed);
       }
-      
+
       return parsed;
     } catch (error) {
       throw new Error('Invalid JSON format');
@@ -68,7 +68,7 @@ export class FrontendSecurity {
 
     // Check for dangerous keys
     const dangerousKeys = ['__proto__', 'prototype', 'constructor'];
-    
+
     if (Array.isArray(obj)) {
       return obj.map(item => this.preventPrototypePollution(item));
     }
@@ -79,7 +79,7 @@ export class FrontendSecurity {
         safe[key] = this.preventPrototypePollution(value);
       }
     }
-    
+
     return safe;
   }
 
@@ -98,7 +98,7 @@ export class FrontendSecurity {
       try {
         const encrypted = localStorage.getItem(`secure_${key}`);
         if (!encrypted) return null;
-        
+
         const decrypted = JSON.parse(atob(encrypted));
         return decrypted as T;
       } catch (error) {
@@ -126,7 +126,7 @@ export class FrontendSecurity {
       } catch (error) {
         console.error('Failed to clear secure storage:', error);
       }
-    }
+    },
   };
 
   // CSRF protection
@@ -145,10 +145,10 @@ export class FrontendSecurity {
     isSessionValid: (): boolean => {
       const sessionStart = localStorage.getItem('session_start');
       if (!sessionStart) return false;
-      
+
       const sessionAge = Date.now() - parseInt(sessionStart);
       const maxSessionAge = 8 * 60 * 60 * 1000; // 8 hours
-      
+
       return sessionAge < maxSessionAge;
     },
 
@@ -160,14 +160,14 @@ export class FrontendSecurity {
       localStorage.removeItem('session_start');
       localStorage.removeItem('auth_token');
       FrontendSecurity.secureStorage.clear();
-    }
+    },
   };
 
   // Security event reporting
   static reportSecurityEvent(
     eventType: string,
     details?: any,
-    severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'
+    severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
   ): void {
     // Log to console in development
     if (import.meta.env.DEV) {
@@ -232,7 +232,7 @@ export class FrontendSecurity {
     }
 
     const isValid = score >= 4 && password.length >= 8;
-    
+
     return { isValid, score: Math.max(0, score), feedback };
   }
 
@@ -274,7 +274,7 @@ export class FrontendSecurity {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }
@@ -292,5 +292,5 @@ export const useSecurity = () => ({
   sanitizeInput: FrontendSecurity.sanitizeInput,
   validatePassword: FrontendSecurity.validatePasswordStrength,
   isValidUrl: FrontendSecurity.isValidUrl,
-  validateFile: FrontendSecurity.validateFileUpload
+  validateFile: FrontendSecurity.validateFileUpload,
 });

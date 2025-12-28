@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
-import { supabase } from '../utils/supabaseClient';
+
 import { log } from '../utils/logger';
+import { supabase } from '../utils/supabaseClient';
 
 export interface SentryConfig {
   dsn: string;
@@ -46,7 +47,7 @@ export class SentryService {
 
         // Add user context if available
         this.addUserContext(event);
-        
+
         return event;
       },
     });
@@ -192,7 +193,7 @@ export const PerformanceMonitor = {
 export const createApiMonitoringMiddleware = () => {
   return (req: any, res: any, next: Function) => {
     const start = Date.now();
-    
+
     // Capture request start
     sentryService.addBreadcrumb({
       category: 'http',
@@ -206,12 +207,12 @@ export const createApiMonitoringMiddleware = () => {
     });
 
     const originalSend = res.send;
-    res.send = function(data: any) {
+    res.send = function (data: any) {
       const duration = Date.now() - start;
-      
+
       // Capture API call completion
       sentryService.captureApiCall(req.url, req.method, res.statusCode, duration);
-      
+
       // Add error context if request failed
       if (res.statusCode >= 400) {
         sentryService.setContext('api_error', {
@@ -222,10 +223,10 @@ export const createApiMonitoringMiddleware = () => {
           response: data,
         });
       }
-      
+
       return originalSend.call(this, data);
     };
-    
+
     next();
   };
 };

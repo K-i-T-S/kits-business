@@ -1,7 +1,3 @@
-import type { ReactNode } from 'react';
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Package,
@@ -34,18 +30,24 @@ import {
   MapPin,
   Key,
 } from 'lucide-react';
-import { supabase } from '../utils/supabaseClient';
+import type { ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+
+import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
 import { useApp } from '../context/AppContext';
 import { useAccessibility } from '../providers/AccessibilityProvider';
-import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
+import { supabase } from '../utils/supabaseClient';
+
+import { LanguageSwitcher } from './LanguageSwitcher';
+import NavItem from './NavItem';
+import NotificationItem from './NotificationItem';
+import StoreSwitcher from './StoreSwitcher';
+import SupportCard from './SupportCard';
 import TenantInfo from './TenantInfo';
 import TenantSwitcher from './TenantSwitcher';
-import StoreSwitcher from './StoreSwitcher';
 import UserProfileModal from './UserProfileModal';
-import NavItem from './NavItem';
-import SupportCard from './SupportCard';
-import NotificationItem from './NotificationItem';
-import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface LayoutProps {
   children: ReactNode;
@@ -81,9 +83,9 @@ export default function Layout({ children }: LayoutProps) {
 
   const navigation = useMemo(() => [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { 
-      name: 'Inventory', 
-      href: '/inventory', 
+    {
+      name: 'Inventory',
+      href: '/inventory',
       icon: Package,
       subItems: [
         { name: 'Products', href: '/inventory', icon: Package },
@@ -91,26 +93,26 @@ export default function Layout({ children }: LayoutProps) {
         { name: 'Suppliers', href: '/inventory/suppliers', icon: Users },
         { name: 'Purchase Orders', href: '/inventory/purchase-orders', icon: ShoppingCart },
         { name: 'Stock Transfers', href: '/inventory/stock-transfers', icon: Truck },
-        { name: 'Reorder Points', href: '/inventory/reorder-points', icon: AlertTriangle }
-      ]
+        { name: 'Reorder Points', href: '/inventory/reorder-points', icon: AlertTriangle },
+      ],
     },
     { name: 'POS', href: '/pos', icon: ShoppingCart },
     { name: 'Customers', href: '/customers', icon: Users },
     { name: 'Employees', href: '/employees', icon: UserCircle },
     { name: 'Monitoring', href: '/monitoring', icon: Activity },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
-    { 
-      name: 'Enterprise', 
-      href: '/enterprise', 
+    {
+      name: 'Enterprise',
+      href: '/enterprise',
       icon: Shield,
       subItems: [
         { name: 'Enterprise Dashboard', href: '/enterprise', icon: Shield },
         { name: 'Roles & Permissions', href: '/enterprise/roles', icon: Shield },
         { name: 'Workflow Automation', href: '/enterprise/workflows', icon: Zap },
         { name: 'Multi-Location', href: '/enterprise/locations', icon: MapPin },
-        { name: 'API & Webhooks', href: '/enterprise/api', icon: Key }
-      ]
-    }
+        { name: 'API & Webhooks', href: '/enterprise/api', icon: Key },
+      ],
+    },
   ], []);
 
   const supportActions = useMemo(() => [
@@ -139,10 +141,10 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-900 text-slate-100 md:flex">
       {/* Skip Links - Completely hidden until focused */}
-      <a 
-        href="#main-content" 
+      <a
+        href="#main-content"
         className="skip-link"
-        style={{ 
+        style={{
           position: 'absolute',
           top: '-9999px',
           left: '-9999px',
@@ -158,7 +160,7 @@ export default function Layout({ children }: LayoutProps) {
           color: 'transparent',
           textDecoration: 'none',
           fontSize: '0',
-          lineHeight: '0'
+          lineHeight: '0',
         }}
         onClick={(e) => {
           e.preventDefault();
@@ -171,10 +173,10 @@ export default function Layout({ children }: LayoutProps) {
       >
         Skip to main content
       </a>
-      <a 
-        href="#navigation" 
+      <a
+        href="#navigation"
         className="skip-link"
-        style={{ 
+        style={{
           position: 'absolute',
           top: '-9999px',
           left: '-9999px',
@@ -190,7 +192,7 @@ export default function Layout({ children }: LayoutProps) {
           color: 'transparent',
           textDecoration: 'none',
           fontSize: '0',
-          lineHeight: '0'
+          lineHeight: '0',
         }}
         onClick={(e) => {
           e.preventDefault();
@@ -203,10 +205,10 @@ export default function Layout({ children }: LayoutProps) {
       >
         Skip to navigation
       </a>
-      <a 
-        href="#search" 
+      <a
+        href="#search"
         className="skip-link"
-        style={{ 
+        style={{
           position: 'absolute',
           top: '-9999px',
           left: '-9999px',
@@ -222,7 +224,7 @@ export default function Layout({ children }: LayoutProps) {
           color: 'transparent',
           textDecoration: 'none',
           fontSize: '0',
-          lineHeight: '0'
+          lineHeight: '0',
         }}
         onClick={(e) => {
           e.preventDefault();
@@ -312,7 +314,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="px-3 py-2">
               <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider nav-section-title">Support</h3>
             </div>
-            
+
             <div className="grid grid-cols-1 gap-3" role="complementary" aria-label="Support options">
               <SupportCard type="email" />
               <SupportCard type="whatsapp" />
@@ -373,11 +375,11 @@ export default function Layout({ children }: LayoutProps) {
                   >
                     <Menu className="h-5 w-5" />
                   </button>
-                  
+
                   <div className="md:hidden w-12 h-12">
                     {/* Empty space to maintain logo positioning */}
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 shadow-lg header-logo">
@@ -444,17 +446,17 @@ export default function Layout({ children }: LayoutProps) {
                   <div className="hidden lg:block">
                     <TenantSwitcher />
                   </div>
-                  
+
                   {/* Store Switcher */}
                   <div className="hidden md:block">
                     <StoreSwitcher />
                   </div>
-                  
+
                   {/* Tenant Info */}
                   <div className="hidden sm:block">
                     <TenantInfo />
                   </div>
-                  
+
                   {/* Search Button (Mobile) */}
                   <button
                     className="rounded-xl border border-white/20 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20 hover:scale-105 md:hidden header-button flex-shrink-0"
@@ -476,9 +478,9 @@ export default function Layout({ children }: LayoutProps) {
                       <Bell className="h-5 w-5" />
                       <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 animate-pulse notification-badge" aria-label="New notifications"></span>
                     </button>
-                    
+
                     {notificationsOpen && (
-                      <div 
+                      <div
                         className="absolute right-0 mt-2 w-80 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 dropdown-menu"
                         role="region"
                         aria-label="Notifications"
@@ -525,9 +527,9 @@ export default function Layout({ children }: LayoutProps) {
                       </div>
                       <ChevronDown className="h-4 w-4" aria-hidden="true" />
                     </button>
-                    
+
                     {profileOpen && (
-                      <div 
+                      <div
                         className="absolute right-0 mt-2 w-64 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 dropdown-menu"
                         role="menu"
                         aria-label="User menu"
@@ -594,7 +596,7 @@ export default function Layout({ children }: LayoutProps) {
                   </div>
                 </div>
               </div>
-              
+
               {/* Mobile Search Bar */}
               {searchOpen && (
                 <div className="md:hidden px-4 pb-3" role="search">
@@ -619,9 +621,9 @@ export default function Layout({ children }: LayoutProps) {
             <main className="relative z-10 app-shell space-y-10 mobile-content" role="main" id="main-content">{children}</main>
           </div>
         </div>
-        
+
         {/* User Profile Modal */}
-        <UserProfileModal 
+        <UserProfileModal
           isOpen={profileModalOpen}
           onClose={() => setProfileModalOpen(false)}
         />

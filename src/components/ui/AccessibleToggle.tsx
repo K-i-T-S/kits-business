@@ -1,4 +1,5 @@
 import React, { forwardRef, useCallback } from 'react';
+
 import { useAccessibility } from '../../providers/AccessibilityProvider';
 
 interface AccessibleToggleProps {
@@ -35,7 +36,7 @@ const AccessibleToggle = forwardRef<HTMLButtonElement, AccessibleToggleProps>(
     return (
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <label 
+          <label
             htmlFor={toggleId}
             className="text-sm font-medium text-gray-700 cursor-pointer"
           >
@@ -73,7 +74,7 @@ const AccessibleToggle = forwardRef<HTMLButtonElement, AccessibleToggleProps>(
         </button>
       </div>
     );
-  }
+  },
 );
 
 AccessibleToggle.displayName = 'AccessibleToggle';

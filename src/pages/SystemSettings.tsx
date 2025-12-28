@@ -1,17 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Settings, 
-  Building2, 
-  Shield, 
-  Mail, 
-  Database, 
-  Bell, 
-  Plug, 
-  Key, 
-  Save, 
-  X, 
-  Check, 
+import {
+  Settings,
+  Building2,
+  Shield,
+  Mail,
+  Database,
+  Bell,
+  Plug,
+  Key,
+  Save,
+  X,
+  Check,
   AlertTriangle,
   User,
   Lock,
@@ -29,11 +27,14 @@ import {
   HelpCircle,
   Info,
   CheckCircle,
-  Trash2
+  Trash2,
 } from 'lucide-react';
-import { useAccessibility } from '../providers/AccessibilityProvider';
-import { useApp } from '../context/AppContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { BRAND } from '../constants/branding';
+import { useApp } from '../context/AppContext';
+import { useAccessibility } from '../providers/AccessibilityProvider';
 import { log } from '../utils/logger';
 
 export default function SystemSettings() {
@@ -43,7 +44,7 @@ export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  
+
   const [settings, setSettings] = useState({
     // General Settings
     siteName: BRAND.name,
@@ -52,21 +53,21 @@ export default function SystemSettings() {
     currency: 'USD',
     dateFormat: 'MM/DD/YYYY',
     language: 'English',
-    
+
     // Business Settings
     businessName: 'Kits - Khoder\'s IT Solutions',
     businessEmail: BRAND.supportEmail,
     businessPhone: BRAND.supportWhatsApp,
     businessAddress: 'Beirut, Lebanon',
     taxRate: 15,
-    
+
     // Security Settings
     sessionTimeout: 30,
     passwordMinLength: 8,
     require2FA: false,
     allowedIPs: '',
     loginAttempts: 5,
-    
+
     // Email Settings
     smtpHost: 'smtp.gmail.com',
     smtpPort: 587,
@@ -74,25 +75,25 @@ export default function SystemSettings() {
     smtpPassword: '',
     emailFrom: BRAND.supportEmail,
     emailFromName: BRAND.name,
-    
+
     // Backup Settings
     autoBackup: true,
     backupFrequency: 'daily',
     retentionDays: 30,
     backupLocation: 'cloud',
-    
+
     // Notification Settings
     emailNotifications: true,
     smsNotifications: false,
     pushNotifications: true,
     lowStockAlert: true,
     newOrderAlert: true,
-    
+
     // Integration Settings
     paymentGateway: 'stripe',
     shippingProvider: 'dhl',
     analyticsProvider: 'google',
-    
+
     // API Settings
     apiEnabled: true,
     apiRateLimit: 1000,
@@ -127,7 +128,7 @@ export default function SystemSettings() {
   const handleSettingChange = (category: string, field: string, value: any) => {
     setSettings(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -135,13 +136,13 @@ export default function SystemSettings() {
     try {
       setSaveStatus('saving');
       announce('Saving settings...', 'polite');
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       setSaveStatus('success');
       announce('Settings saved successfully!', 'polite');
-      
+
       // Reset status after 3 seconds
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (error) {
@@ -161,14 +162,14 @@ export default function SystemSettings() {
     // Simulate backup process
     await new Promise(resolve => setTimeout(resolve, 2000));
     setLoading(false);
-    
+
     // Add new backup to history
     const newBackup = {
       id: (backupHistory?.length || 0) + 1,
       date: new Date().toLocaleString(),
       size: '2.5 MB',
       type: 'Manual',
-      status: 'completed'
+      status: 'completed',
     };
     setBackupHistory([newBackup, ...(backupHistory || [])]);
   };
@@ -254,7 +255,7 @@ export default function SystemSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">General Settings</h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-white/80 mb-2">Site Name</label>
@@ -333,7 +334,7 @@ export default function SystemSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Business Information</h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-white/80 mb-2">Business Name</label>
@@ -390,7 +391,7 @@ export default function SystemSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Security Configuration</h2>
-                    
+
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -462,7 +463,7 @@ export default function SystemSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Email Configuration</h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-white/80 mb-2">SMTP Host</label>
@@ -544,7 +545,7 @@ export default function SystemSettings() {
                         {loading ? 'Creating Backup...' : 'Create Backup'}
                       </button>
                     </div>
-                    
+
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -628,7 +629,7 @@ export default function SystemSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Notification Preferences</h2>
-                    
+
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
                         <div>
@@ -734,7 +735,7 @@ export default function SystemSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">Third-Party Integrations</h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-white/80 mb-2">Payment Gateway</label>
@@ -782,7 +783,7 @@ export default function SystemSettings() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-white mb-6">API Configuration</h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-white/80 mb-2">API Enabled</label>

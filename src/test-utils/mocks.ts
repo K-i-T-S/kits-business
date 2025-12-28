@@ -138,10 +138,10 @@ export class AuthMockManager {
   simulateLogin(user?: Partial<MockUser>) {
     const mockUser = this.createMockUser(user);
     const mockSession = this.createMockSession(mockUser);
-    
-    this.mockAuth.signInWithPassword.mockResolvedValue({ 
-      data: { session: mockSession, user: mockUser }, 
-      error: null 
+
+    this.mockAuth.signInWithPassword.mockResolvedValue({
+      data: { session: mockSession, user: mockUser },
+      error: null,
     });
 
     return { mockUser, mockSession };
@@ -149,17 +149,17 @@ export class AuthMockManager {
 
   // Simulate login failure
   simulateLoginError(error: string = 'Invalid credentials') {
-    this.mockAuth.signInWithPassword.mockResolvedValue({ 
-      data: { session: null, user: null }, 
-      error: { message: error } 
+    this.mockAuth.signInWithPassword.mockResolvedValue({
+      data: { session: null, user: null },
+      error: { message: error },
     });
   }
 
   // Simulate session expiration
   simulateSessionExpiration() {
-    this.mockAuth.refreshSession.mockResolvedValue({ 
-      data: { session: null }, 
-      error: { message: 'Session expired' } 
+    this.mockAuth.refreshSession.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Session expired' },
     });
   }
 
@@ -167,7 +167,7 @@ export class AuthMockManager {
   triggerAuthStateChange(session: MockSession | null, callback?: any) {
     const mockCallback = callback || vi.fn();
     const subscription = this.mockAuth.onAuthStateChange(mockCallback);
-    
+
     // Simulate the callback being called with the new session
     if (session) {
       mockCallback('SIGNED_IN', session);
@@ -265,13 +265,13 @@ export const createMockSession = (overrides: Partial<MockUser> = {}): MockSessio
 export const setupMockSession = (tenant?: Partial<MockTenant>) => {
   const mockSession = createMockSession();
   const { supabase: mockSupabase } = createSupabaseMock();
-  
+
   // Mock getSession to return authenticated session
-  mockSupabase.auth.getSession.mockResolvedValue({ 
-    data: { session: mockSession }, 
-    error: null 
+  mockSupabase.auth.getSession.mockResolvedValue({
+    data: { session: mockSession },
+    error: null,
   });
-  
+
   // Mock tenant manager to return tenant if provided
   if (tenant) {
     const mockTenant = createMockTenant(tenant);
@@ -279,7 +279,7 @@ export const setupMockSession = (tenant?: Partial<MockTenant>) => {
   } else {
     tenantManagerMock.getCurrentUserTenant.mockResolvedValue(null);
   }
-  
+
   return { mockSession, mockSupabase };
 };
 

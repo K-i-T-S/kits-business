@@ -6,8 +6,31 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import importPlugin from 'eslint-plugin-import';
 import securityPlugin from 'eslint-plugin-security';
 
-export default [
-  js.configs.recommended,
+const config = [
+  // Global ignores
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/__tests__/__snapshots__/**',
+      '**/*.test.{js,ts,tsx,jsx}',
+      '**/*.spec.{js,ts,tsx,jsx}',
+      '**/.eslintrc.js',
+      '**/eslint.config.js',
+      '**/vite.config.*',
+      '**/playwright.config.*',
+      '**/vitest.config.*',
+      '**/test-results/**',
+      '**/playwright-report/**',
+      '**/public/**',
+      '**/storybook-static/**',
+      '**/.storybook/**',
+      '**/.github/**'
+    ]
+  },
+  // Base TypeScript config
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -21,6 +44,22 @@ export default [
         project: './tsconfig.json',
       },
     },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+          extensions: ['.ts', '.tsx', '.d.ts'],
+        },
+        node: {
+          extensions: ['.js', '.jsx', '.ts', '.tsx', '.d.ts'],
+        },
+      },
+      'import/extensions': ['.js', '.jsx', '.ts', '.tsx'],
+      'import/parsers': {
+        '@typescript-eslint/parser': ['.ts', '.tsx'],
+      },
+    },
     plugins: {
       '@typescript-eslint': tseslint,
       'react-hooks': reactHooks,
@@ -29,14 +68,13 @@ export default [
       'security': securityPlugin,
     },
     rules: {
-      // TypeScript specific rules
+      // TypeScript rules
       '@typescript-eslint/no-unused-vars': ['error', { 
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
       }],
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/prefer-unknown': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
@@ -48,232 +86,89 @@ export default [
       '@typescript-eslint/return-await': 'error',
       '@typescript-eslint/no-base-to-string': 'error',
       '@typescript-eslint/no-duplicate-enum-values': 'error',
-      '@typescript-eslint/no-dynamic-delete': 'error',
-      '@typescript-eslint/no-empty-interface': 'error',
-      '@typescript-eslint/no-extraneous-class': 'error',
-      '@typescript-eslint/no-inferrable-types': 'error',
-      '@typescript-eslint/no-invalid-void-type': 'error',
-      '@typescript-eslint/no-mixed-enums': 'error',
-      '@typescript-eslint/no-namespace': 'error',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
-      '@typescript-eslint/no-this-alias': 'error',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
-      '@typescript-eslint/no-unnecessary-type-constraint': 'error',
-      '@typescript-eslint/prefer-as-const': 'error',
-      '@typescript-eslint/prefer-for-of': 'error',
-      '@typescript-eslint/prefer-function-type': 'error',
-      '@typescript-eslint/prefer-includes': 'error',
-      '@typescript-eslint/prefer-nullish-coalescing': 'error',
-      '@typescript-eslint/prefer-optional-chain': 'error',
-      '@typescript-eslint/prefer-readonly': 'error',
-      '@typescript-eslint/prefer-reduce-type-parameter': 'error',
-      '@typescript-eslint/prefer-regexp-exec': 'error',
-      '@typescript-eslint/prefer-string-starts-ends-with': 'error',
-      '@typescript-eslint/prefer-ts-expect-error': 'error',
-      '@typescript-eslint/triple-slash-reference': 'error',
-      '@typescript-eslint/type-annotation-spacing': 'error',
-      '@typescript-eslint/unbound-method': 'error',
-
-      // React Hooks rules
+      
+      // React rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-
-      // React Refresh rules
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
-
-      // Import/Export rules
-      'import/order': ['error', {
-        'groups': [
-          'builtin',
-          'external',
-          'internal',
-          'parent',
-          'sibling',
-          'index',
-          'object',
-          'type'
-        ],
-        'newlines-between': 'always',
-        'alphabetize': {
-          'order': 'asc',
-          'caseInsensitive': true
-        }
-      }],
+      'react-refresh/only-export-components': 'warn',
+      
+      // Import rules
       'import/no-unresolved': 'error',
-      'import/no-cycle': 'error',
-      'import/no-self-import': 'error',
-      'import/no-useless-path-segments': 'error',
-      'import/no-duplicates': 'error',
-      'import/newline-after-import': 'error',
-      'import/no-absolute-path': 'error',
-      'import/no-dynamic-require': 'error',
-      'import/no-webpack-loader-syntax': 'error',
-
+      'import/named': 'error',
+      'import/namespace': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
+      'import/order': ['error', {
+        'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+        'newlines-between': 'always',
+        'alphabetize': { 'order': 'asc', 'caseInsensitive': true }
+      }],
+      
       // Security rules
       'security/detect-object-injection': 'warn',
-      'security/detect-non-literal-fs-filename': 'warn',
-      'security/detect-non-literal-regexp': 'warn',
-      'security/detect-possible-timing-attacks': 'warn',
-      'security/detect-pseudoRandomBytes': 'warn',
+      'security/detect-non-literal-fs-filename': 'error',
+      'security/detect-non-literal-require': 'error',
       'security/detect-unsafe-regex': 'error',
       'security/detect-buffer-noassert': 'error',
-      'security/detect-child-process': 'warn',
+      'security/detect-child-process': 'error',
       'security/detect-disable-mustache-escape': 'error',
       'security/detect-eval-with-expression': 'error',
-      'security/detect-new-buffer': 'error',
       'security/detect-no-csrf-before-method-override': 'error',
-      'security/detect-non-literal-require': 'warn',
-      'security/detect-possible-timing-attacks': 'warn',
-      'security/detect-pseudoRandomBytes': 'warn',
-
-      // General JavaScript rules
-      'no-console': 'warn',
-      'no-debugger': 'error',
-      'no-alert': 'error',
-      'no-eval': 'error',
-      'no-implied-eval': 'error',
-      'no-new-func': 'error',
-      'no-script-url': 'error',
-      'no-void': 'error',
-      'no-with': 'error',
-      'no-delete-var': 'error',
-      'no-label-var': 'error',
-      'no-restricted-globals': 'error',
-      'no-restricted-imports': ['error', {
-        patterns: [{
-          group: ['console'],
-          message: 'Use the logger utility instead of console methods'
-        }]
-      }],
-      'prefer-const': 'error',
+      'security/detect-non-literal-regexp': 'error',
+      'security/detect-pseudoRandomBytes': 'error',
+      'security/detect-possible-timing-attacks': 'error',
+      
+      // General rules
+      'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+      'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+      'no-unused-vars': 'off', // Handled by @typescript-eslint/no-unused-vars
       'no-var': 'error',
-      'prefer-arrow-callback': 'error',
-      'arrow-spacing': 'error',
-      'no-duplicate-imports': 'error',
-      'no-useless-constructor': 'error',
-      'no-useless-rename': 'error',
-      'object-shorthand': 'error',
-      'prefer-destructuring': ['error', {
-        'array': false,
-        'object': true
-      }],
-      'prefer-template': 'error',
-      'template-curly-spacing': 'error',
-      'no-nested-ternary': 'error',
-      'no-unneeded-ternary': 'error',
-      'yoda': 'error',
-      'no-else-return': 'error',
-      'no-empty': ['error', { 'allowEmptyCatch': true }],
-      'no-constant-condition': ['error', { 'checkLoops': false }],
-      'no-extra-boolean-cast': 'error',
-      'no-regex-spaces': 'error',
-      'valid-typeof': 'error',
-      'no-undef-init': 'error',
-      'no-unreachable': 'error',
-      'no-unsafe-finally': 'error',
-      'no-unsafe-negation': 'error',
-      'use-isnan': 'error',
-      'no-throw-literal': 'error',
-      'prefer-promise-reject-errors': 'error',
-      'require-await': 'off', // Using TypeScript version
-      'no-return-await': 'off', // Using TypeScript version
-      'no-unused-expressions': 'error',
-      'no-use-before-define': ['error', { 'functions': false }],
-      'no-useless-call': 'error',
-      'no-useless-concat': 'error',
-      'no-useless-return': 'error',
-      'radix': 'error',
-      'spaced-comment': ['error', 'always'],
+      'prefer-const': 'error',
       'eqeqeq': ['error', 'always'],
-      'curly': ['error', 'all'],
-      'brace-style': ['error', '1tbs'],
-      'comma-dangle': ['error', 'always-multiline'],
-      'comma-spacing': 'error',
-      'comma-style': 'error',
-      'computed-property-spacing': 'error',
-      'func-call-spacing': 'error',
-      'indent': ['error', 2, { 'SwitchCase': 1 }],
-      'key-spacing': 'error',
-      'keyword-spacing': 'error',
-      'line-comment-position': 'error',
-      'lines-around-comment': 'error',
-      'max-depth': ['warn', 4],
-      'max-len': ['warn', { 'code': 120, 'ignoreUrls': true }],
-      'max-nested-callbacks': ['warn', 3],
-      'max-params': ['warn', 4],
-      'max-statements-per-line': ['error', { 'max': 1 }],
-      'new-cap': 'error',
-      'new-parens': 'error',
-      'no-array-constructor': 'error',
-      'no-continue': 'warn',
-      'no-inline-comments': 'warn',
-      'no-lonely-if': 'error',
-      'no-multiple-empty-lines': ['error', { 'max': 2, 'maxEOF': 1 }],
-      'no-negated-condition': 'warn',
-      'no-new-object': 'error',
-      'no-plusplus': 'warn',
-      'no-restricted-syntax': ['error', 'WithStatement'],
-      'no-tabs': 'error',
+      'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 1 }],
       'no-trailing-spaces': 'error',
-      'no-underscore-dangle': 'warn',
-      'no-unneeded-semicolon': 'error',
-      'object-curly-spacing': ['error', 'always'],
-      'one-var': ['error', 'never'],
-      'one-var-declaration-per-line': ['error', 'always'],
-      'operator-assignment': ['error', 'always'],
-      'operator-linebreak': ['error', 'before'],
-      'padded-blocks': ['error', 'never'],
-      'quote-props': ['error', 'as-needed'],
-      'quotes': ['error', 'single', { 'avoidEscape': true }],
       'semi': ['error', 'always'],
-      'semi-spacing': 'error',
+      'quotes': ['error', 'single', { 'avoidEscape': true }],
+      'indent': ['error', 2, { 'SwitchCase': 1 }],
+      'comma-dangle': ['error', 'always-multiline'],
+      'object-curly-spacing': ['error', 'always'],
+      'array-bracket-spacing': ['error', 'never'],
+      'space-in-parens': ['error', 'never'],
       'space-before-blocks': 'error',
+      'space-infix-ops': 'error',
+      'key-spacing': ['error', { 'beforeColon': false, 'afterColon': true }],
+      'keyword-spacing': ['error', { 'before': true, 'after': true }],
+      'arrow-spacing': ['error', { 'before': true, 'after': true }],
+      'no-multi-spaces': 'error',
+      'no-whitespace-before-property': 'error',
+      'func-call-spacing': ['error', 'never'],
+      'block-spacing': 'error',
+      'comma-spacing': ['error', { 'before': false, 'after': true }],
+      'rest-spread-spacing': ['error', 'never'],
+      'template-curly-spacing': ['error', 'never'],
+      'yield-star-spacing': ['error', 'after'],
+      'generator-star-spacing': ['error', { 'before': false, 'after': true }],
+      'semi-spacing': ['error', {'before': false, 'after': true}],
+      'space-unary-ops': 'error',
       'space-before-function-paren': ['error', {
         'anonymous': 'always',
         'named': 'never',
         'asyncArrow': 'always'
       }],
-      'space-in-parens': 'error',
-      'space-infix-ops': 'error',
-      'space-unary-ops': 'error',
-      'unicode-bom': ['error', 'never'],
-    },
-    settings: {
-      'import/resolver': {
-        typescript: true,
-        node: true,
-      },
-    },
-  },
-  {
-    files: ['**/*.js'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: {
-        console: 'readonly',
-        process: 'readonly',
-        Buffer: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        global: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        exports: 'readonly',
-      },
-    },
-    rules: {
-      'no-console': 'off', // Allow console in build scripts
-      'no-unused-vars': ['error', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_'
+      'spaced-comment': ['error', 'always', {
+        'line': {
+          'markers': ['/'],
+          'exceptions': ['-', '+']
+        },
+        'block': {
+          'markers': ['!'],
+          'exceptions': ['*'],
+          'balanced': true
+        }
       }],
-    },
+    }
   },
+  // Test files
   {
     files: ['**/*.test.{ts,tsx,js,jsx}', '**/*.spec.{ts,tsx,js,jsx}'],
     rules: {
@@ -289,27 +184,15 @@ export default [
       'max-statements': 'off',
     },
   },
+  // Config files
   {
-    files: ['vite.config.ts', 'playwright.config.ts', 'vitest.config.ts'],
+    files: ['vite.config.ts', 'playwright.config.ts', 'vitest.config.ts', '*.config.{js,ts}'],
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       'import/no-default-export': 'off',
     },
   },
-  {
-    ignores: [
-      'dist/**',
-      'build/**',
-      'node_modules/**',
-      'coverage/**',
-      '.next/**',
-      '.storybook/**',
-      'test-results/**',
-      'playwright-report/**',
-      '*.config.js',
-      '*.config.mjs',
-      '*.config.ts',
-    ],
-  },
 ];
+
+export default config;

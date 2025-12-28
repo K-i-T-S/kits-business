@@ -62,6 +62,7 @@ const RolesAndPermissionsManager = lazy(() => import('./components/enterprise/Ro
 const WorkflowAutomation = lazy(() => import('./components/enterprise/WorkflowAutomation'));
 const MultiLocationSupport = lazy(() => import('./components/enterprise/MultiLocationSupport'));
 const ApiAndWebhooks = lazy(() => import('./components/enterprise/ApiAndWebhooks'));
+const MonitoringDashboard = lazy(() => import("./components/monitoring/MonitoringDashboard"));
 
 // Mobile components wrapper that needs access to Router context
 function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
@@ -316,6 +317,14 @@ export default function App() {
                     />
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route
+                      path="/monitoring"
+                      element={
+                        isAuthenticated ? 
+                        <MonitoringDashboard /> : 
+                        <Navigate to="/login" replace />
+                      }
+                    />
+                    <Route
                       path="*"
                       element={
                         isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
@@ -341,3 +350,4 @@ export default function App() {
     </ErrorBoundary>
   );
 };
+// Test commit

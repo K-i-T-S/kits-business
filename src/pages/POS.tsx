@@ -78,7 +78,7 @@ export default function POS() {
             .join(' - ');
 
           setCart([...(cart || []), {
-            productId: product.id,
+            productId: product.id!,
             variantId: variant.id,
             productName: product.name,
             variantAttributes: variantDesc,

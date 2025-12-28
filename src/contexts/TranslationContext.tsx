@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supportedLanguages } from '../i18n';
+import { log } from '../utils/logger';
 
 export interface TranslationKey {
   key: string;
@@ -276,7 +277,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   ): Promise<string> => {
     // This is a placeholder for future integration with translation APIs
     // For now, return the key as a fallback
-    console.log(`Auto-translation not implemented yet. Key: ${key}, Target: ${targetLanguage}`);
+    log.debug(`Auto-translation not implemented yet. Key: ${key}, Target: ${targetLanguage}`);
     return key;
   }, []);
 

@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { supabase } from '../utils/supabaseClient';
+import { log } from '../utils/logger';
 
 export interface SentryConfig {
   dsn: string;
@@ -24,7 +25,7 @@ export class SentryService {
 
   public initialize(config: SentryConfig): void {
     if (this.initialized) {
-      console.warn('Sentry already initialized');
+      log.warn('Sentry already initialized');
       return;
     }
 
@@ -51,7 +52,7 @@ export class SentryService {
     });
 
     this.initialized = true;
-    console.log('Sentry initialized successfully');
+    log.info('Sentry initialized successfully');
   }
 
   private async addUserContext(event: Sentry.Event): Promise<void> {

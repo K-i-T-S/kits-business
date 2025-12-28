@@ -1,20 +1,24 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+  getItem: vi.fn<() => string | null>(),
+  setItem: vi.fn<(key: string, value: string) => void>(),
+  removeItem: vi.fn<(key: string) => void>(),
+  clear: vi.fn<() => void>(),
+  length: 0,
+  key: vi.fn<(index: number) => string | null>(),
 };
 global.localStorage = localStorageMock;
 
 // Mock sessionStorage
 const sessionStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+  getItem: vi.fn<() => string | null>(),
+  setItem: vi.fn<(key: string, value: string) => void>(),
+  removeItem: vi.fn<(key: string) => void>(),
+  clear: vi.fn<() => void>(),
+  length: 0,
+  key: vi.fn<(index: number) => string | null>(),
 };
 global.sessionStorage = sessionStorageMock;
 
@@ -31,7 +35,7 @@ describe('Storage Utilities', () => {
     expect(localStorage.setItem).toHaveBeenCalledWith(testKey, JSON.stringify(testData));
     
     localStorageMock.getItem.mockReturnValue(JSON.stringify(testData));
-    const retrieved = JSON.parse(localStorage.getItem(testKey));
+    const retrieved = JSON.parse(localStorage.getItem(testKey) || '{}');
     expect(retrieved).toEqual(testData);
   });
 
@@ -58,7 +62,7 @@ describe('Storage Utilities', () => {
     expect(sessionStorage.setItem).toHaveBeenCalledWith(testKey, JSON.stringify(testData));
     
     sessionStorageMock.getItem.mockReturnValue(JSON.stringify(testData));
-    const retrieved = JSON.parse(sessionStorage.getItem(testKey));
+    const retrieved = JSON.parse(sessionStorage.getItem(testKey) || '{}');
     expect(retrieved).toEqual(testData);
   });
 

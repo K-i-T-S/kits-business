@@ -118,7 +118,7 @@ export async function logStoreSwitch(storeId: string, oldStoreId?: string) {
 export async function logSecurityEvent(
   eventType: string,
   description: string,
-  severity: 'low' | 'medium' | 'high' = 'medium',
+  severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
   metadata?: any
 ) {
   if (!supabaseAdmin) {
@@ -215,7 +215,7 @@ export async function getAuditLogs(
 // Security monitoring
 export async function getSecurityEvents(
   tenantId: string,
-  severity?: 'low' | 'medium' | 'high',
+  severity?: 'low' | 'medium' | 'high' | 'critical',
   hours: number = 24
 ) {
   if (!supabaseAdmin) {

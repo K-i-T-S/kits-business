@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { test as authenticatedTest } from './auth.setup';
 
 test.describe('Authentication Flow', () => {
   test('should show login page when not authenticated', async ({ page }) => {
     await page.goto('/');
     
-    // Should redirect to login or show login form
-    await expect(page.locator('h1')).toContainText(/login|sign in/i);
+    // Should show login form
+    await expect(page.locator('h1')).toContainText('Kits - Khoder\'s IT Solutions');
+    await expect(page.locator('form')).toBeVisible();
   });
 
   test('should handle login with valid credentials', async ({ page }) => {
@@ -18,12 +20,27 @@ test.describe('Authentication Flow', () => {
     // Submit form
     await page.click('button[type="submit"]');
     
+    // Wait for navigation to complete
+    await page.waitForURL('/dashboard', { timeout: 10000 });
+    
     // Should redirect to dashboard
     await expect(page).toHaveURL('/dashboard');
-    await expect(page.locator('h1')).toContainText(/dashboard|overview/i);
+    await expect(page.locator('h1')).toContainText('Welcome back');
   });
 
   test('should show error message with invalid credentials', async ({ page }) => {
+    // Mock failed login
+    await page.route('**/auth/v1/token*', route => {
+      route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Invalid login credentials',
+          error_description: 'Invalid login credentials'
+        })
+      });
+    });
+    
     await page.goto('/login');
     
     // Fill in invalid credentials
@@ -217,5 +234,12 @@ test.describe('Accessibility', () => {
     
     // Check button aria labels
     await expect(page.locator('button[aria-label*="submit"]')).toBeVisible();
+  });
+});
+
+// Use the authenticated test for tests that require authentication
+authenticatedTest.describe('Authenticated Tests', () => {
+  authenticatedTest('should show dashboard when authenticated', async ({ authenticatedPage }) => {
+    await expect(authenticatedPage.locator('h1')).toContainText('Welcome back');
   });
 });

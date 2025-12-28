@@ -97,6 +97,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'POS', href: '/pos', icon: ShoppingCart },
     { name: 'Customers', href: '/customers', icon: Users },
     { name: 'Employees', href: '/employees', icon: UserCircle },
+    { name: 'Monitoring', href: '/monitoring', icon: Activity },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
     { 
       name: 'Enterprise', 
@@ -243,12 +244,14 @@ export default function Layout({ children }: LayoutProps) {
         role="navigation"
         aria-label="Main navigation"
         id="navigation"
+        data-testid={`${mobileNavOpen ? 'mobile-navigation' : 'sidebar'}`}
       >
         <div className="flex flex-col h-full p-6 space-y-6">
           {/* Mobile Close Button */}
           <div className="flex justify-end md:hidden">
             <button
               onClick={() => setMobileNavOpen(false)}
+              data-testid="mobile-menu-button"
               className="rounded-lg border border-white/20 bg-white/10 p-2 text-white/70 hover:bg-white/20 hover:text-white transition-all duration-200"
               aria-label="Close navigation menu"
             >
@@ -319,6 +322,7 @@ export default function Layout({ children }: LayoutProps) {
             {/* Logout Button */}
             <button
               onClick={handleLogout}
+              data-testid="logout-button"
               className="group flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 hover:shadow-lg hover:shadow-red-500/20 logout-button"
               aria-label="Sign out of your account"
             >
@@ -359,6 +363,17 @@ export default function Layout({ children }: LayoutProps) {
               <div className="flex items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
                 {/* Left Section - Logo & Mobile Menu */}
                 <div className="flex items-center gap-3 flex-shrink-0">
+                  {/* Mobile Menu Toggle */}
+                  <button
+                    onClick={() => setMobileNavOpen(!mobileNavOpen)}
+                    data-testid="mobile-menu-toggle"
+                    className="md:hidden rounded-xl border border-white/20 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20 hover:scale-105 header-button flex-shrink-0"
+                    aria-label="Toggle navigation menu"
+                    aria-expanded={mobileNavOpen}
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                  
                   <div className="md:hidden w-12 h-12">
                     {/* Empty space to maintain logo positioning */}
                   </div>

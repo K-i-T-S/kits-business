@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Settings, Image, Barcode, QrCode, Plus, Trash2, Eye } from 'lucide-react';
 import type { ReceiptTemplate, ReceiptField } from '../types/pos';
+import { log } from '../utils/logger';
 
 interface ReceiptCustomizationModalProps {
   isOpen: boolean;
@@ -88,7 +89,7 @@ export default function ReceiptCustomizationModal({
 
   const previewReceipt = () => {
     // This would generate a preview of the receipt
-    console.log('Preview receipt with template:', selectedTemplate);
+    log.debug('Preview receipt with template', { selectedTemplate });
   };
 
   if (!isOpen) return null;

@@ -38,6 +38,7 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
         key={item.name}
         to={item.href}
         onClick={toggleSubmenu}
+        data-testid={`nav-${item.href.replace('/', '')}`}
         className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 sidebar-nav-item ${
           isActive || isSubItemActive
             ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-white shadow-lg border border-indigo-500/30 active'

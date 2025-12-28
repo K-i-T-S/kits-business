@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Upload } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { toast } from 'sonner';
@@ -60,8 +60,8 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
           ]
         }));
 
-        await updateProduct(product.id, { variants: updatedVariants });
-        await updateStock(product.id, variant.id, parseInt(quantity));
+        await updateProduct(product.id!, { variants: updatedVariants });
+        await updateStock(product.id!, variant.id, parseInt(quantity));
         results.updated += 1;
       } else {
         // Create new product (simplified - would need more data in real scenario)

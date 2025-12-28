@@ -1,4 +1,5 @@
 import { QueryClient, useQueryClient } from '@tanstack/react-query'
+import { log } from './logger';
 
 // Enhanced caching configuration for optimal performance
 export const cacheConfig = {
@@ -158,7 +159,7 @@ export const performanceMonitor = {
   // Track query performance metrics
   trackQuery: (queryKey: string[], duration: number, success: boolean) => {
     if (import.meta.env.DEV) {
-      console.log(`Query ${queryKey.join('/')} took ${duration}ms, success: ${success}`)
+      log.debug(`Query ${queryKey.join('/')} took ${duration}ms, success: ${success}`);
     }
     
     // In production, you could send this to analytics
@@ -174,8 +175,8 @@ export const performanceMonitor = {
   // Track cache hit/miss ratio
   trackCacheHit: (queryKey: string[], isHit: boolean) => {
     if (import.meta.env.DEV) {
-      const status = isHit ? 'HIT' : 'MISS'
-      console.log(`Cache ${status} for ${queryKey.join('/')}`)
+      const status = isHit ? 'HIT' : 'MISS';
+      log.debug(`Cache ${status} for ${queryKey.join('/')}`);
     }
   }
 }

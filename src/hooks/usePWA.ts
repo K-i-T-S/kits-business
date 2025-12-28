@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { log } from '../utils/logger';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -63,15 +64,16 @@ export function usePWA() {
       }
       return false
     } catch (error) {
-      console.error('Error during PWA installation:', error)
-      return false
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Error during PWA installation', errorObj);
+      return false;
     }
   }
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
-      console.log('This browser does not support notifications')
-      return false
+      log.warn('This browser does not support notifications');
+      return false;
     }
 
     if (Notification.permission === 'granted') {

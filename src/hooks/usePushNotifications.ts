@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { log } from '../utils/logger';
 
 interface NotificationOptions {
   title: string
@@ -6,7 +7,7 @@ interface NotificationOptions {
   icon?: string
   badge?: string
   tag?: string
-  data?: any
+  data?: unknown
   actions?: NotificationAction[]
   requireInteraction?: boolean
   silent?: boolean
@@ -46,8 +47,8 @@ export function usePushNotifications() {
   // Request notification permission
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!isSupported) {
-      console.warn('Push notifications are not supported')
-      return false
+      log.warn('Push notifications are not supported');
+      return false;
     }
 
     try {
@@ -55,16 +56,17 @@ export function usePushNotifications() {
       setPermission(result)
       return result === 'granted'
     } catch (error) {
-      console.error('Error requesting notification permission:', error)
-      return false
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Error requesting notification permission', errorObj);
+      return false;
     }
   }, [isSupported])
 
   // Subscribe to push notifications
   const subscribe = useCallback(async (): Promise<PushSubscription | null> => {
     if (!isSupported || permission !== 'granted') {
-      console.warn('Notification permission not granted')
-      return null
+      log.warn('Notification permission not granted');
+      return null;
     }
 
     try {
@@ -93,8 +95,9 @@ export function usePushNotifications() {
       
       return subscriptionData
     } catch (error) {
-      console.error('Error subscribing to push notifications:', error)
-      return null
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Error subscribing to push notifications', errorObj);
+      return null;
     }
   }, [isSupported, permission])
 
@@ -115,16 +118,17 @@ export function usePushNotifications() {
       
       return false
     } catch (error) {
-      console.error('Error unsubscribing from push notifications:', error)
-      return false
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Error unsubscribing from push notifications', errorObj);
+      return false;
     }
   }, [subscription])
 
   // Show local notification
   const showNotification = useCallback(async (options: NotificationOptions) => {
     if (!isSupported || permission !== 'granted') {
-      console.warn('Notification permission not granted')
-      return
+      log.warn('Notification permission not granted');
+      return;
     }
 
     try {
@@ -141,15 +145,16 @@ export function usePushNotifications() {
         silent: options.silent
       })
     } catch (error) {
-      console.error('Error showing notification:', error)
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Error showing notification', errorObj);
     }
   }, [isSupported, permission])
 
   // Send push message from server (this would be called from your backend)
-  const sendPushNotification = useCallback(async (subscription: PushSubscription, payload: any) => {
+  const sendPushNotification = useCallback(async (subscription: PushSubscription, payload: unknown) => {
     // This is a placeholder for server-side push notification sending
     // In a real implementation, this would be called from your backend
-    console.log('Sending push notification:', { subscription, payload })
+    log.info('Sending push notification', { subscription, payload });
   }, [])
 
   return {
@@ -201,7 +206,8 @@ async function sendSubscriptionToServer(subscription: PushSubscription) {
       body: JSON.stringify(subscription)
     })
   } catch (error) {
-    console.error('Error sending subscription to server:', error)
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    log.error('Error sending subscription to server', errorObj);
   }
 }
 
@@ -215,6 +221,7 @@ async function removeSubscriptionFromServer(subscription: PushSubscription) {
       body: JSON.stringify({ endpoint: subscription.endpoint })
     })
   } catch (error) {
-    console.error('Error removing subscription from server:', error)
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    log.error('Error removing subscription from server', errorObj);
   }
 }

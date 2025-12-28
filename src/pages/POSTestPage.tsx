@@ -10,6 +10,7 @@ import {
   getRandomProduct 
 } from '../data/sampleData';
 import type { DiscountCoupon, Promotion, LoyaltyProgram, ReceiptTemplate, EnhancedSale } from '../types/pos';
+import { log } from '../utils/logger';
 
 export default function POSTestPage() {
   const [showPromotionManagement, setShowPromotionManagement] = useState(false);
@@ -35,13 +36,13 @@ export default function POSTestPage() {
   };
 
   const handleCompleteSale = (sale: EnhancedSale) => {
-    console.log('Sale completed:', sale);
+    log.info('Sale completed', { sale });
     alert(`Sale completed! Total: $${sale.total.toFixed(2)}`);
   };
 
   const handleAddRandomProduct = () => {
     const product = getRandomProduct();
-    console.log('Adding product:', product);
+    log.info('Adding product', { product });
     // In a real implementation, this would add to cart
   };
 

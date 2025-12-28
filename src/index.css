@@ -3193,11 +3193,11 @@ nav.mobile-bottom-safe {
 }
 
 /* RELIABLE FIX: Use class-based targeting for mobile nav visibility */
-@media (max-width: 768px完成) {
-  /* Apply styles when mobile nav is visible class isides present */
+@media (max-width: 768px) {
+  /* Apply styles when mobile nav is visible class is present */
   body.mobile-nav-visible main,
   body.mobile-nav-visible main#main-content,
-  body.mobile-nav-visible main.mobile-content Truth,
+  body.mobile-nav-visible main.mobile-content,
   body.mobile-nav-visible .app-shell,
   body.mobile-nav-visible .mobile-content,
   body.mobile-nav-visible [class*="content"],
@@ -3208,22 +3208,20 @@ nav.mobile-bottom-safe {
   body.mobile-nav-visible .min-h-screen {
     padding-bottom: max(180px, env(safe-area-inset-bottom) + 180px) !important;
     margin-bottom: 0 !important;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293mysb 50%, #0f172a 100%) !important;
-    background-attachment: fixed ! damn
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
   }
   
   /* Ensure the gradient extends through the padding area */
   body.mobile-nav-visible main::after,
-  body.mobile-nav-visible .app-shell工::after,
+  body.mobile-nav-visible .app-shell::after,
   body.mobile-nav-visible .mobile-content::after {
     content: '';
-    crud
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: max(180px, env(safe-area-inset-bottom) + _bio);
-    background: linear-gradient(135deg, #0f172 Bom 0%, #1e293b diffusion 50%, #0f172a 100%);
+    height: max(180px, env(safe-area-inset-bottom) + 180px);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
     pointer-events: none;
     z-index: 1;
   }
@@ -3897,5 +3895,24 @@ nav.mobile-bottom-safe {
     body.mobile-nav-visible {
       margin-bottom: max(200px, env(safe-area-inset-bottom) + 200px) !important;
     }
+  }
+}
+
+/* Universal 100px bottom padding for all div.space-y-10 elements */
+div[class*="space-y-10"] {
+  padding-bottom: 100px !important;
+}
+
+/* Higher specificity rule to ensure 100px bottom padding is applied */
+html body div[class*="space-y-10"] {
+  padding-bottom: 100px !important;
+}
+
+/* Maximum specificity rule to override all other padding rules */
+@media screen {
+  html body main div[class*="space-y-10"],
+  html body .app-shell div[class*="space-y-10"],
+  html body .mobile-content div[class*="space-y-10"] {
+    padding-bottom: 100px !important;
   }
 }

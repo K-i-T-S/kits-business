@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { Button } from './ui/button';
+import { log } from '../utils/logger';
 
 const meta = {
   title: 'Components/ErrorBoundary',
@@ -72,8 +73,7 @@ export const WithErrorHandler: Story = {
   args: {
     children: <ThrowingComponent shouldThrow={true} />,
     onError: (error, errorInfo) => {
-      console.log('Custom error handler called:', error.message);
-      console.log('Error info:', errorInfo);
+      log.error('Custom error handler called', error, { errorInfo });
     }
   },
 };

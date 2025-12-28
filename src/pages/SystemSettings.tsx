@@ -34,6 +34,7 @@ import {
 import { useAccessibility } from '../providers/AccessibilityProvider';
 import { useApp } from '../context/AppContext';
 import { BRAND } from '../constants/branding';
+import { log } from '../utils/logger';
 
 export default function SystemSettings() {
   const navigate = useNavigate();
@@ -174,7 +175,7 @@ export default function SystemSettings() {
 
   const handleRestore = (backupId: number) => {
     // Handle restore logic
-    console.log('Restoring backup:', backupId);
+    log.info('Restoring backup', { backupId });
   };
 
   const handleDeleteBackup = (backupId: number) => {

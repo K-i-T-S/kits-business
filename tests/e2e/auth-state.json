@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "i18nextLng",
+          "value": "en-US"
+        },
+        {
+          "name": "supabase.auth.token",
+          "value": "{\"access_token\":\"mock-access-token\",\"refresh_token\":\"mock-refresh-token\",\"expires_at\":1766888554836,\"user\":{\"id\":\"test-user-id\",\"email\":\"test@example.com\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"app_metadata\":{},\"user_metadata\":{\"name\":\"Test User\"}}}"
+        }
+      ]
+    }
+  ]
+}

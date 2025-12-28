@@ -1,0 +1,49 @@
+name: Deployment Monitoring
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [production, staging]
+    steps:
+    - name: Check application health
+      run: |
+        HEALTH_URL="https://all-in-one-business-terminal-${{ matrix.environment }}.vercel.app/api/health"
+        if curl -f --max-time 30 "$HEALTH_URL"; then
+          echo "Health check passed for ${{ matrix.environment }}"
+        else
+          echo "Health check failed for ${{ matrix.environment }}"
+          exit 1
+        fi
+    
+    - name: Notify on failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#alerts'
+        text: 'Health check failed for ${{ matrix.environment }} environment'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  performance-monitoring:
+    name: Performance Monitoring
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run performance tests
+      run: |
+        npm run test:performance
+    
+    - name: Upload performance results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-results
+        path: test-results/performance/
+        retention-days: 7

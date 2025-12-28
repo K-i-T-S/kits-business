@@ -85,21 +85,19 @@ const VirtualizedTable = React.memo<VirtualizedTableProps>(({
         ))}
       </div>
       <div style={{ height }}>
-        <AutoSizer>
-          {({ width }: { width: number }) => (
+        <AutoSizer
+          Child={(props: { width?: number; height?: number }) => (
             <List
-              width={width}
-              height={height}
+              width={props.width || 800}
+              height={props.height || 400}
               itemCount={data.length}
               itemSize={rowHeight}
               overscanCount={5}
             >
-              {({ index, style }: { index: number; style: React.CSSProperties }) => (
-                <Row key={index} index={index} style={style} />
-              )}
+              {({ index, style }: { index: number; style: React.CSSProperties }) => <Row key={index} index={index} style={style} />}
             </List>
           )}
-        </AutoSizer>
+        />
       </div>
     </div>
   );

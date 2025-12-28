@@ -105,6 +105,7 @@ export default function Dashboard() {
       icon: Package,
       accent: 'from-blue-500/75 to-cyan-400/50',
       link: '/inventory',
+      testId: 'total-products'
     },
     {
       title: t('dashboard.todaysSales', "Today's Sales"),
@@ -113,6 +114,7 @@ export default function Dashboard() {
       icon: ShoppingCart,
       accent: 'from-emerald-500/70 to-lime-400/50',
       link: '/pos',
+      testId: 'total-revenue'
     },
     {
       title: t('customers.title', 'Customers'),
@@ -121,6 +123,7 @@ export default function Dashboard() {
       icon: Users,
       accent: 'from-purple-500/70 to-pink-400/50',
       link: '/customers',
+      testId: 'total-customers'
     },
     {
       title: t('dashboard.todaysProfit', "Today's Profit"),
@@ -129,6 +132,7 @@ export default function Dashboard() {
       icon: TrendingUp,
       accent: 'from-amber-500/70 to-orange-400/50',
       link: '/reports',
+      testId: 'total-orders'
     },
   ];
 
@@ -173,6 +177,7 @@ export default function Dashboard() {
             <Link
               key={stat.title}
               to={stat.link}
+              data-testid={stat.testId}
               className="hero-gradient tilt-hover rounded-3xl border border-white/30 p-5 shadow-lg shadow-slate-900/5 text-white"
             >
               <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${stat.accent}`}>
@@ -212,6 +217,7 @@ export default function Dashboard() {
               <Link
                 key={action.title}
                 to={action.link}
+                data-testid={`nav-${action.link.replace('/', '')}`}
                 className={`tilt-hover flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br ${action.accent} px-6 py-6 text-white shadow-xl shadow-slate-900/20`}
               >
                 <action.icon className="h-7 w-7" />

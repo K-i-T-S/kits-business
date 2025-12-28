@@ -7,6 +7,7 @@ import { DataValidator } from '../utils/dataValidation';
 import { TransactionManager } from '../utils/transactionManager';
 import { useOptimisticUpdates, useOptimisticStockUpdates } from '../utils/optimisticUpdates';
 import { OperationQueue, StockUpdateLock, ConcurrentOperationGuard } from '../utils/raceConditionPrevention';
+import { log } from '../utils/logger';
 
 export interface Product {
   id?: string;
@@ -91,7 +92,7 @@ interface Tenant {
   name: string;
   slug: string;
   userRole: 'owner' | 'manager' | 'cashier' | 'viewer';
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
 }
 
 interface User {
@@ -160,7 +161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ]);
 
       // Transform database products to frontend format
-      const transformedProducts = (productsRes.products || []).map(dbProduct => ({
+      const transformedProducts = (productsRes.products || []).map((dbProduct: any) => ({
         id: dbProduct.id,
         name: dbProduct.name,
         barcode: dbProduct.barcode || '',
@@ -188,7 +189,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCurrentEmployee(employeesRes.employees[0]);
       }
     } catch (error) {
-      console.error('Failed to load data:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to load data', errorObj);
       toast.error('Failed to load data', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -221,7 +223,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               });
             }
           } catch (tenantError) {
-            console.error('Failed to load tenant:', tenantError);
+            const errorObj = tenantError instanceof Error ? tenantError : new Error(String(tenantError));
+            log.error('Failed to load tenant', errorObj);
           }
           // Small delay to ensure tenant state is updated
           setTimeout(() => {
@@ -229,7 +232,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }, 100);
         }
       } catch (error) {
-        console.error('Failed to get session:', error);
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        log.error('Failed to get session', errorObj);
         if (!isMounted) return;
         setHasSession(false);
       }
@@ -252,7 +256,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             });
           }
         }).catch(error => {
-          console.error('Failed to load tenant on auth change:', error);
+          const errorObj = error instanceof Error ? error : new Error(String(error));
+          log.error('Failed to load tenant on auth change', errorObj);
         });
         // Small delay to ensure tenant state is updated
           setTimeout(() => {
@@ -290,14 +295,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      console.log('Creating product:', product);
+      log.info('Creating product', { product });
       const { product: newProduct } = await api.post('/products', product);
-      console.log('Product created successfully:', newProduct);
+      log.info('Product created successfully', { newProduct });
       setProducts([...products, newProduct]);
       toast.success('Product added', { description: newProduct.name });
       return newProduct;
     } catch (error) {
-      console.error('Failed to add product:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to add product', errorObj);
       toast.error('Failed to add product', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -312,7 +318,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.success('Product updated', { description: product.name });
       return product;
     } catch (error) {
-      console.error('Failed to update product:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to update product', errorObj);
       toast.error('Failed to update product', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -326,7 +333,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setProducts(products.filter(p => p.id !== id));
       toast.success('Product deleted');
     } catch (error) {
-      console.error('Failed to delete product:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to delete product', errorObj);
       toast.error('Failed to delete product', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -380,7 +388,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       return newSale;
     } catch (error) {
-      console.error('Failed to add sale:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to add sale', errorObj);
       toast.error('Failed to record sale', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -409,7 +418,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.success('Customer added', { description: newCustomer.name });
       return newCustomer;
     } catch (error) {
-      console.error('Failed to add customer:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to add customer', errorObj);
       toast.error('Failed to add customer', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -424,7 +434,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.success('Customer updated', { description: customer.name });
       return customer;
     } catch (error) {
-      console.error('Failed to update customer:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to update customer', errorObj);
       toast.error('Failed to update customer', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -462,7 +473,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return newEmployee;
       
     } catch (error) {
-      console.error('Failed to add employee:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to add employee', errorObj);
       toast.error('Failed to add employee', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -477,7 +489,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.success('Employee updated', { description: employee.name });
       return employee;
     } catch (error) {
-      console.error('Failed to update employee:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to update employee', errorObj);
       toast.error('Failed to update employee', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });
@@ -516,7 +529,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.success('Stock updated');
       return result;
     } catch (error) {
-      console.error('Failed to update stock:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to update stock', errorObj);
       toast.error('Failed to update stock', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',
       });

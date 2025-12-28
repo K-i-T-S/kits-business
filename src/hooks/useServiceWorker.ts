@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { log } from '../utils/logger'
 
 interface ServiceWorkerStatus {
   supported: boolean
@@ -25,7 +26,7 @@ export function useServiceWorker() {
       // Register service worker
       navigator.serviceWorker.register('/sw.js')
         .then(registration => {
-          console.log('Service Worker registered:', registration)
+          log.info('Service Worker registered', { registration });
           setStatus(prev => ({ ...prev, registered: true }))
 
           // Check if there's an active service worker
@@ -53,7 +54,8 @@ export function useServiceWorker() {
           })
         })
         .catch(error => {
-          console.error('Service Worker registration failed:', error)
+          const errorObj = error instanceof Error ? error : new Error(String(error));
+          log.error('Service Worker registration failed', errorObj);
         })
 
       // Listen for controlling service worker changes
@@ -67,7 +69,7 @@ export function useServiceWorker() {
       // Listen for messages from service worker
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'CACHE_UPDATED') {
-          console.log('Cache updated:', event.data.payload)
+          log.info('Cache updated', { payload: event.data.payload });
         }
       })
     }
@@ -84,7 +86,8 @@ export function useServiceWorker() {
         return true
       }
     } catch (error) {
-      console.error('Failed to update service worker:', error)
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Failed to update service worker', errorObj);
     }
     return false
   }
@@ -95,7 +98,8 @@ export function useServiceWorker() {
         const permission = await Notification.requestPermission()
         return permission === 'granted'
       } catch (error) {
-        console.error('Notification permission request failed:', error)
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        log.error('Notification permission request failed', errorObj);
         return false
       }
     }
@@ -110,7 +114,8 @@ export function useServiceWorker() {
           return registration.showNotification(title, options)
         }
       } catch (error) {
-        console.error('Failed to show notification:', error)
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        log.error('Failed to show notification', errorObj);
       }
     }
     return null
@@ -181,7 +186,8 @@ export function useOfflineDetection() {
 
           setOfflineActions(count)
         } catch (error) {
-          console.error('Failed to check offline actions:', error)
+          const errorObj = error instanceof Error ? error : new Error(String(error));
+          log.error('Failed to check offline actions', errorObj);
         }
       }
     }

@@ -19,6 +19,7 @@ import {
   Mail,
   MessageCircle,
   Shield,
+  Activity,
   Zap,
   MapPin,
   Key
@@ -124,6 +125,13 @@ const navItems: NavItem[] = [
     icon: UserCircle, 
     path: '/employees',
     description: 'Employee management'
+  },
+  { 
+    id: 'monitoring', 
+    label: 'Monitoring', 
+    icon: Activity, 
+    path: '/monitoring', 
+    description: 'System monitoring and alerts'
   },
   { 
     id: 'analytics', 

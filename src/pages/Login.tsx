@@ -153,8 +153,9 @@ export default function Login({ onLogin }: LoginProps) {
               <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                 {isSignup && (
                   <div>
-                    <label className="text-sm font-semibold text-slate-600">Business name</label>
+                    <label className="text-sm font-semibold text-slate-600" htmlFor="business-name-input">Business name</label>
                     <input
+                      id="business-name-input"
                       type="text"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
@@ -166,9 +167,11 @@ export default function Login({ onLogin }: LoginProps) {
                 )}
 
                 <div>
-                  <label className="text-sm font-semibold text-slate-600">{t('auth.email')}</label>
+                  <label className="text-sm font-semibold text-slate-600" htmlFor="email-input">{t('auth.email')}</label>
                   <input
+                    id="email-input"
                     type="email"
+                    data-testid="email-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
@@ -178,9 +181,11 @@ export default function Login({ onLogin }: LoginProps) {
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold text-slate-600">{t('auth.password')}</label>
+                  <label className="text-sm font-semibold text-slate-600" htmlFor="password-input">{t('auth.password')}</label>
                   <input
+                    id="password-input"
                     type="password"
+                    data-testid="password-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-inner shadow-white/60 focus:border-indigo-500 focus:outline-none"
@@ -190,13 +195,14 @@ export default function Login({ onLogin }: LoginProps) {
                 </div>
 
                 {error && (
-                  <div className="rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-600">
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-600" data-testid="error-message">
                     {error}
                   </div>
                 )}
 
                 <button
                   type="submit"
+                  data-testid="login-button"
                   disabled={loading}
                   className="tilt-hover w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60"
                 >

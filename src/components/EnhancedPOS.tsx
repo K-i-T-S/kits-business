@@ -17,6 +17,7 @@ import type {
   SaleItem 
 } from '../types/pos';
 import { POSCalculator } from '../utils/posCalculations';
+import { log } from '../utils/logger';
 
 interface EnhancedPOSProps {
   customerId?: string;
@@ -441,7 +442,7 @@ export default function EnhancedPOS({
           onSelectTemplate={setSelectedReceiptTemplate}
           onSaveTemplate={(template) => {
             // In a real app, this would save to backend
-            console.log('Save template:', template);
+            log.info('Save template', { template });
           }}
           onCancel={() => setShowReceiptCustomization(false)}
         />

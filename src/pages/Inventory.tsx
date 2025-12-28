@@ -216,7 +216,7 @@ export default function Inventory() {
                           </td>
                           <td className="px-6 py-4">
                             <button
-                              onClick={() => setSelectedProduct(isExpanded ? null : product.id)}
+                              onClick={() => setSelectedProduct(isExpanded ? null : product.id!)}
                               className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
                             >
                               {product.variants?.length || 0} variant
@@ -246,7 +246,7 @@ export default function Inventory() {
                                 <Edit className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => deleteProduct(product.id)}
+                                onClick={() => deleteProduct(product.id!)}
                                 className="rounded-full border border-white/30 bg-white/20 p-2 text-rose-300 hover:bg-white/30"
                               >
                                 <Trash2 className="h-4 w-4" />

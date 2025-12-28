@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { Percent, DollarSign, Heart } from 'lucide-react';
+import { useState } from 'react';
+
 import type { TipInfo } from '../types/pos';
 import { POSCalculator } from '../utils/posCalculations';
 
@@ -33,7 +34,7 @@ export default function TipsModal({ isOpen, subtotal, onComplete, onCancel }: Ti
     const tipInfo: TipInfo = {
       amount: calculateTip(),
       type: tipType,
-      ...(tipType === 'percentage' && { percentage })
+      ...(tipType === 'percentage' && { percentage }),
     };
     onComplete(tipInfo);
   };
@@ -47,10 +48,17 @@ export default function TipsModal({ isOpen, subtotal, onComplete, onCancel }: Ti
   const fixedOptions = [1, 2, 5, 10, 20];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-      <div className="glass-panel w-full max-w-md overflow-y-auto p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="w-full max-w-md overflow-y-auto p-6" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <h2 className="text-xl font-semibold text-white mb-6">Add Tip</h2>
-        
+
         <div className="space-y-4">
           <div className="text-center p-4 rounded-lg border border-white/30 bg-white/10">
             <div className="text-2xl font-bold text-white">${currentTip.toFixed(2)}</div>

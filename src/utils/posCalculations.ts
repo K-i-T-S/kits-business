@@ -5,26 +5,26 @@ export class POSCalculator {
   static calculateCouponDiscount(
     subtotal: number,
     coupon: DiscountCoupon,
-    cartItems: Array<{ productId: string; category?: string; price: number; quantity: number }>
+    cartItems: Array<{ productId: string; category?: string; price: number; quantity: number }>,
   ): number {
     if (!coupon.isActive) return 0;
-    
+
     const now = new Date();
     const startDate = new Date(coupon.startDate);
     const endDate = new Date(coupon.endDate);
-    
+
     if (now < startDate || now > endDate) return 0;
     if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) return 0;
     if (coupon.minPurchaseAmount && subtotal < coupon.minPurchaseAmount) return 0;
 
     let applicableAmount = 0;
-    
+
     if (coupon.applicableProducts?.length || coupon.applicableCategories?.length) {
       // Calculate discount only on applicable items
       cartItems.forEach(item => {
         const isApplicableProduct = coupon.applicableProducts?.includes(item.productId);
         const isApplicableCategory = coupon.applicableCategories?.includes(item.category || '');
-        
+
         if (isApplicableProduct || isApplicableCategory) {
           applicableAmount += item.price * item.quantity;
         }
@@ -34,7 +34,7 @@ export class POSCalculator {
     }
 
     let discount = 0;
-    
+
     switch (coupon.type) {
       case 'percentage':
         discount = applicableAmount * (coupon.value / 100);
@@ -54,21 +54,21 @@ export class POSCalculator {
         discount = applicableAmount * (coupon.value / 100);
         break;
     }
-    
+
     return discount;
   }
 
   static calculatePromotionDiscount(
     subtotal: number,
     promotion: Promotion,
-    cartItems: Array<{ productId: string; category?: string; price: number; quantity: number; totalAmount: number }>
+    cartItems: Array<{ productId: string; category?: string; price: number; quantity: number; totalAmount: number }>,
   ): number {
     if (!promotion.isActive) return 0;
-    
+
     const now = new Date();
     const startDate = new Date(promotion.startDate);
     const endDate = new Date(promotion.endDate);
-    
+
     if (now < startDate || now > endDate) return 0;
 
     // Check conditions
@@ -79,12 +79,12 @@ export class POSCalculator {
     }
 
     let applicableAmount = 0;
-    
+
     if (promotion.conditions.applicableProducts?.length || promotion.conditions.applicableCategories?.length) {
       cartItems.forEach(item => {
         const isApplicableProduct = promotion.conditions.applicableProducts?.includes(item.productId);
         const isApplicableCategory = promotion.conditions.applicableCategories?.includes(item.category || '');
-        
+
         if (isApplicableProduct || isApplicableCategory) {
           applicableAmount += item.totalAmount;
         }
@@ -94,7 +94,7 @@ export class POSCalculator {
     }
 
     let discount = 0;
-    
+
     switch (promotion.type) {
       case 'percentage':
         discount = applicableAmount * (promotion.value / 100);
@@ -111,7 +111,7 @@ export class POSCalculator {
         discount = 0;
         break;
     }
-    
+
     return discount;
   }
 
@@ -132,21 +132,21 @@ export class POSCalculator {
   // Loyalty Points Calculations
   static calculateLoyaltyPointsEarned(
     amount: number,
-    program: LoyaltyProgram
+    program: LoyaltyProgram,
   ): number {
     return Math.floor(amount * program.pointsPerDollar);
   }
 
   static calculateLoyaltyDiscount(
     pointsToRedeem: number,
-    program: LoyaltyProgram
+    program: LoyaltyProgram,
   ): number {
     return pointsToRedeem * program.redemptionRate;
   }
 
   static canRedeemPoints(
     pointsToRedeem: number,
-    customerLoyalty: CustomerLoyalty
+    customerLoyalty: CustomerLoyalty,
   ): boolean {
     return customerLoyalty.currentPoints >= pointsToRedeem;
   }
@@ -157,18 +157,18 @@ export class POSCalculator {
     error?: string;
   } {
     const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-    
+
     if (Math.abs(totalPaid - totalAmount) > 0.01) {
       return {
         isValid: false,
-        error: `Payment amounts must equal total. Required: $${totalAmount.toFixed(2)}, Paid: $${totalPaid.toFixed(2)}`
+        error: `Payment amounts must equal total. Required: $${totalAmount.toFixed(2)}, Paid: $${totalPaid.toFixed(2)}`,
       };
     }
 
     if (payments.some(payment => payment.amount <= 0)) {
       return {
         isValid: false,
-        error: 'All payment amounts must be greater than 0'
+        error: 'All payment amounts must be greater than 0',
       };
     }
 
@@ -185,7 +185,7 @@ export class POSCalculator {
     subtotal: number,
     tax: number,
     discounts: number,
-    tips: number
+    tips: number,
   ): number {
     return Math.max(0, subtotal + tax - discounts + tips);
   }
@@ -228,7 +228,7 @@ export class CouponValidator {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }

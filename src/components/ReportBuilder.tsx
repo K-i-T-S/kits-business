@@ -1,14 +1,13 @@
-import { useState } from 'react';
-import { 
-  DndContext, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
   useSensors,
   DragOverlay,
   type DragEndEvent,
-  type DragStartEvent
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -21,6 +20,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Grip, Plus, Trash2, BarChart3, LineChart, PieChart, TrendingUp, Users, DollarSign, Package } from 'lucide-react';
+import { useState } from 'react';
+
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -54,8 +55,8 @@ const widgetSizes = [
   { value: 'large', label: 'Large (2x2)' },
 ];
 
-function SortableWidget({ widget, onRemove, onSizeChange }: { 
-  widget: ReportWidget; 
+function SortableWidget({ widget, onRemove, onSizeChange }: {
+  widget: ReportWidget;
   onRemove: (id: string) => void;
   onSizeChange: (id: string, size: 'small' | 'medium' | 'large') => void;
 }) {
@@ -129,7 +130,7 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -193,7 +194,7 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
           {/* Widget Palette */}
           <div className="w-80 border-r border-gray-200 p-6 overflow-y-auto">
             <h3 className="font-semibold text-gray-900 mb-4">Add Widgets</h3>
-            
+
             <div className="space-y-4">
               <Select value={selectedWidgetType} onValueChange={setSelectedWidgetType}>
                 <SelectTrigger>
@@ -211,8 +212,8 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
                 </SelectContent>
               </Select>
 
-              <Button 
-                onClick={addWidget} 
+              <Button
+                onClick={addWidget}
                 disabled={!selectedWidgetType}
                 className="w-full"
               >
@@ -240,7 +241,7 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
           {/* Canvas Area */}
           <div className="flex-1 p-6 overflow-y-auto">
             <h3 className="font-semibold text-gray-900 mb-4">Report Canvas</h3>
-            
+
             {widgets.length === 0 ? (
               <div className="text-center py-12">
                 <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -286,7 +287,7 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
             Cancel
           </Button>
           <div className="flex gap-2">
-            <Button 
+            <Button
               variant="outline"
               onClick={() => setWidgets([])}
               disabled={widgets.length === 0}

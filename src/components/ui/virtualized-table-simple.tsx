@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FixedSizeList as List } from 'react-window';
+import { List } from 'react-window';
 import { cn } from './utils';
 
 interface VirtualizedTableProps {
@@ -89,10 +89,11 @@ const VirtualizedTable = React.memo<VirtualizedTableProps>(({
         itemSize={rowHeight}
         width="100%"
         overscanCount={5}
-        children={({ index, style }: { index: number; style: React.CSSProperties }) => (
+      >
+        {({ index, style }: { index: number; style: React.CSSProperties }) => (
           <Row key={index} index={index} style={style} />
         )}
-      />
+      </List>
     </div>
   );
 });

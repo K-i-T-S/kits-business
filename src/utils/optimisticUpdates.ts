@@ -9,7 +9,7 @@ export interface OptimisticUpdate<T> {
 
 export function useOptimisticUpdates<T extends { id: string }>(
   initialData: T[],
-  onUpdate: (data: T[]) => void
+  onUpdate: (data: T[]) => void,
 ) {
   const [optimisticUpdates, setOptimisticUpdates] = useState<OptimisticUpdate<T>[]>([]);
 
@@ -17,26 +17,26 @@ export function useOptimisticUpdates<T extends { id: string }>(
     const update: OptimisticUpdate<T> = {
       id: item.id,
       data: item,
-      status: 'pending'
+      status: 'pending',
     };
-    
+
     setOptimisticUpdates(prev => [...prev, update]);
     onUpdate([...initialData, item]);
-    
+
     return update.id;
   }, [initialData, onUpdate]);
 
   const updateOptimisticItem = useCallback((id: string, updates: Partial<T>) => {
-    setOptimisticUpdates(prev => 
-      prev.map(update => 
-        update.id === id 
+    setOptimisticUpdates(prev =>
+      prev.map(update =>
+        update.id === id
           ? { ...update, data: { ...update.data, ...updates } }
-          : update
-      )
+          : update,
+      ),
     );
-    
-    onUpdate(initialData.map(item => 
-      item.id === id ? { ...item, ...updates } : item
+
+    onUpdate(initialData.map(item =>
+      item.id === id ? { ...item, ...updates } : item,
     ));
   }, [initialData, onUpdate]);
 
@@ -46,32 +46,32 @@ export function useOptimisticUpdates<T extends { id: string }>(
   }, [initialData, onUpdate]);
 
   const markUpdateSuccess = useCallback((id: string, finalData?: T) => {
-    setOptimisticUpdates(prev => 
-      prev.map(update => 
-        update.id === id 
+    setOptimisticUpdates(prev =>
+      prev.map(update =>
+        update.id === id
           ? { ...update, status: 'success', data: finalData || update.data }
-          : update
-      )
+          : update,
+      ),
     );
-    
+
     if (finalData) {
       onUpdate(initialData.map(item => item.id === id ? finalData : item));
     }
-    
+
     setTimeout(() => {
       setOptimisticUpdates(prev => prev.filter(update => update.id !== id));
     }, 1000);
   }, [initialData, onUpdate]);
 
   const markUpdateError = useCallback((id: string, error: string) => {
-    setOptimisticUpdates(prev => 
-      prev.map(update => 
-        update.id === id 
+    setOptimisticUpdates(prev =>
+      prev.map(update =>
+        update.id === id
           ? { ...update, status: 'error', error }
-          : update
-      )
+          : update,
+      ),
     );
-    
+
     setTimeout(() => {
       setOptimisticUpdates(prev => prev.filter(update => update.id !== id));
     }, 3000);
@@ -98,34 +98,34 @@ export function useOptimisticUpdates<T extends { id: string }>(
     markUpdateError,
     getPendingUpdates,
     getErrorUpdates,
-    hasPendingUpdates
+    hasPendingUpdates,
   };
 }
 
 export function useOptimisticStockUpdates(
   products: any[],
-  onUpdate: (products: any[]) => void
+  onUpdate: (products: any[]) => void,
 ) {
   const [stockUpdates, setStockUpdates] = useState<Map<string, number>>(new Map());
 
   const updateStockOptimistically = useCallback((productId: string, variantId: string, newStock: number) => {
     const key = `${productId}-${variantId}`;
     setStockUpdates(prev => new Map(prev.set(key, newStock)));
-    
+
     const updatedProducts = products.map(product => {
       if (product.id === productId) {
         return {
           ...product,
-          variants: product.variants.map((variant: any) => 
-            variant.id === variantId 
+          variants: product.variants.map((variant: any) =>
+            variant.id === variantId
               ? { ...variant, stock: newStock }
-              : variant
-          )
+              : variant,
+          ),
         };
       }
       return product;
     });
-    
+
     onUpdate(updatedProducts);
   }, [products, onUpdate]);
 
@@ -145,21 +145,21 @@ export function useOptimisticStockUpdates(
       newMap.delete(key);
       return newMap;
     });
-    
+
     const updatedProducts = products.map(product => {
       if (product.id === productId) {
         return {
           ...product,
-          variants: product.variants.map((variant: any) => 
-            variant.id === variantId 
+          variants: product.variants.map((variant: any) =>
+            variant.id === variantId
               ? { ...variant, stock: originalStock }
-              : variant
-          )
+              : variant,
+          ),
         };
       }
       return product;
     });
-    
+
     onUpdate(updatedProducts);
   }, [products, onUpdate]);
 
@@ -173,6 +173,6 @@ export function useOptimisticStockUpdates(
     confirmStockUpdate,
     revertStockUpdate,
     getOptimisticStock,
-    hasPendingUpdates: stockUpdates.size > 0
+    hasPendingUpdates: stockUpdates.size > 0,
   };
 }

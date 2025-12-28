@@ -1,4 +1,3 @@
-import { Fragment, useMemo, useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -10,6 +9,8 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
+
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import type { Supplier, CreateSupplierForm } from '../types/inventory';
@@ -91,7 +92,7 @@ export default function SupplierManagement() {
       supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       supplier.contact_person?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       supplier.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || 
+    const matchesStatus = filterStatus === 'all' ||
       (filterStatus === 'active' && supplier.is_active) ||
       (filterStatus === 'inactive' && !supplier.is_active);
     return matchesSearch && matchesStatus;

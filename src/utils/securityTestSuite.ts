@@ -1,6 +1,6 @@
-import { enhancedSecurityMiddleware } from './enhancedSecurityMiddleware';
 import { apiSecurityWrapper } from './apiSecurityWrapper';
 import { logSecurityEvent } from './auditLogger';
+import { enhancedSecurityMiddleware } from './enhancedSecurityMiddleware';
 
 // Security Test Suite for validating all security enhancements
 export class SecurityTestSuite {
@@ -71,7 +71,7 @@ export class SecurityTestSuite {
       userId: 'test-user',
       tenantId: 'test-tenant',
       ipAddress: '127.0.0.1',
-      userAgent: 'test-agent'
+      userAgent: 'test-agent',
     };
 
     // Test normal rate limiting
@@ -116,7 +116,7 @@ export class SecurityTestSuite {
 
     // Test SQL injection prevention
     const sqlResult = enhancedSecurityMiddleware.validateInput("'; DROP TABLE users; --", 'text');
-    if (sqlResult.isValid || sqlResult.sanitized?.includes("DROP TABLE")) {
+    if (sqlResult.isValid || sqlResult.sanitized?.includes('DROP TABLE')) {
       throw new Error('SQL injection prevention failed');
     }
 
@@ -132,7 +132,7 @@ export class SecurityTestSuite {
       userId: 'test-user',
       tenantId: 'test-tenant',
       userRole: 'viewer',
-      ipAddress: '127.0.0.1'
+      ipAddress: '127.0.0.1',
     };
 
     // Test role validation through security check
@@ -140,7 +140,7 @@ export class SecurityTestSuite {
       'api',
       context,
       [],
-      'owner'
+      'owner',
     );
 
     if (ownerResult.authorized) {
@@ -151,7 +151,7 @@ export class SecurityTestSuite {
       'api',
       context,
       [],
-      'viewer'
+      'viewer',
     );
 
     if (!viewerResult.authorized) {
@@ -163,7 +163,7 @@ export class SecurityTestSuite {
       'api',
       context,
       [{ value: 'test@example.com', type: 'email' }],
-      'viewer'
+      'viewer',
     );
 
     if (!securityResult.authorized) {
@@ -176,7 +176,7 @@ export class SecurityTestSuite {
       userId: 'test-user',
       sessionId: 'test-session-123',
       tenantId: 'test-tenant',
-      ipAddress: '127.0.0.1'
+      ipAddress: '127.0.0.1',
     };
 
     // Test session validation
@@ -189,7 +189,7 @@ export class SecurityTestSuite {
     const invalidSessionResult = await enhancedSecurityMiddleware.validateSession({
       userId: 'test-user',
       sessionId: '',
-      tenantId: 'test-tenant'
+      tenantId: 'test-tenant',
     });
 
     if (invalidSessionResult.valid) {
@@ -204,7 +204,7 @@ export class SecurityTestSuite {
         'test_event',
         'Test security event',
         'low',
-        { test: true }
+        { test: true },
       );
     } catch (error) {
       throw new Error(`Audit logging failed: ${error}`);
@@ -223,7 +223,7 @@ export class SecurityTestSuite {
     const context = {
       userId: 'perf-test-user',
       tenantId: 'perf-test-tenant',
-      ipAddress: '127.0.0.1'
+      ipAddress: '127.0.0.1',
     };
 
     // Test rate limiting performance
@@ -249,7 +249,7 @@ export class SecurityTestSuite {
         'api',
         context,
         [{ value: 'test@example.com', type: 'email' }],
-        'viewer'
+        'viewer',
       );
     }
     const securityCheckTime = performance.now() - securityCheckStart;
@@ -257,7 +257,7 @@ export class SecurityTestSuite {
     return {
       rateLimitingTime,
       validationTime,
-      securityCheckTime
+      securityCheckTime,
     };
   }
 
@@ -280,34 +280,34 @@ export class SecurityTestSuite {
         type: 'text',
         vulnerability: 'XSS',
         severity: 'high' as const,
-        description: 'Cross-site scripting vulnerability'
+        description: 'Cross-site scripting vulnerability',
       },
       {
         input: "'; DROP TABLE users; --",
         type: 'text',
         vulnerability: 'SQL Injection',
         severity: 'high' as const,
-        description: 'SQL injection vulnerability'
+        description: 'SQL injection vulnerability',
       },
       {
         input: '../../../etc/passwd',
         type: 'text',
         vulnerability: 'Path Traversal',
         severity: 'medium' as const,
-        description: 'Path traversal vulnerability'
+        description: 'Path traversal vulnerability',
       },
       {
         input: '{{7*7}}',
         type: 'text',
         vulnerability: 'Template Injection',
         severity: 'medium' as const,
-        description: 'Template injection vulnerability'
-      }
+        description: 'Template injection vulnerability',
+      },
     ];
 
     for (const testCase of testCases) {
       const result = enhancedSecurityMiddleware.validateInput(testCase.input, testCase.type as any);
-      
+
       if (result.isValid || (result.sanitized && result.sanitized === testCase.input)) {
         vulnerabilities.push(testCase);
       }

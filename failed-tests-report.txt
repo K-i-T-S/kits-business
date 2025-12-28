@@ -1,0 +1,210 @@
+# FAILED PLAYWRIGHT TESTS REPORT
+# Generated: 2025-12-28T01:29:06.249Z
+# Total Duration: 467748.2ms (~7.8 minutes)
+# Expected: 27, Unexpected: 298, Skipped: 0, Flaky: 0
+
+## MAJOR PATTERNS OF FAILURES:
+
+### 1. AUTHENTICATION/LOGIN ISSUES (Most Common)
+- Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+- Tests trying to login but failing to navigate to /dashboard
+- Issue: Tests are stuck on /login page and can't proceed to dashboard
+- Affects: accessibility.spec.ts, dashboard.spec.ts, visual.spec.ts
+
+### 2. MISSING FORM ELEMENTS
+- Error: TimeoutError: page.fill: Timeout 5000ms exceeded
+- Tests can't find input[type="email"] elements
+- Issue: Login form elements not loading or not accessible
+- Affects: Multiple test files
+
+### 3. VISUAL REGRESSION FAILURES
+- Error: expect(page).toHaveScreenshot() failed
+- Pixel differences in screenshots across browsers
+- Issue: Visual snapshots don't match expected
+- Affects: visual.spec.ts, accessibility.spec.ts
+
+### 4. MISSING TEST DATA/SELECTORS
+- Error: expect(locator).toContainText() failed
+- Tests looking for elements that don't exist
+- Issue: Test selectors don't match actual UI elements
+- Affects: dashboard-optimized.spec.ts, accessibility.spec.ts
+
+## DETAILED FAILURES BY FILE:
+
+### accessibility.spec.ts
+**PATTERN: Authentication failures + Visual regressions**
+
+1. "reduced motion visual appearance" - Chromium
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Location: line 29:16 - await page.waitForURL('/dashboard')
+   - Issue: Login flow failing, stuck on login page
+
+2. "screen reader friendly structure" - Chromium  
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Location: line 59:16 - await page.waitForURL('/dashboard')
+   - Issue: Same authentication failure
+
+3. "accessible form labels" - Chromium
+   - Error: expect(await label.count()).toBe(1) - Expected: 1, Received: 0
+   - Location: line 95:35 - expect(await label.count()).toBe(1)
+   - Issue: Form inputs missing associated labels
+
+4. "ARIA landmarks and roles" - Chromium
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded  
+   - Location: line 108:16 - await page.waitForURL('/dashboard')
+   - Issue: Authentication failure
+
+5. "accessible navigation" - Chromium
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Location: line 128:16 - await page.waitForURL('/dashboard')
+   - Issue: Authentication failure
+
+6. "accessible data tables" - Chromium
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Location: line 145:16 - await page.waitForURL('/dashboard')
+   - Issue: Authentication failure
+
+7. "accessible error messages" - Chromium
+   - Error: TimeoutError: page.waitForSelector: Timeout 5000ms exceeded
+   - Location: line 176:16 - await page.waitForSelector('[data-testid="error-message"]')
+   - Issue: Error message element not found
+
+8. "high contrast mode visual appearance" - Firefox
+   - Error: expect(page).toHaveScreenshot() failed
+   - Location: line 17:24 - await expect(page).toHaveScreenshot('high-contrast-login.png')
+   - Issue: 458603 pixels different (50% of image)
+
+### dashboard.spec.ts  
+**PATTERN: Authentication failures + Missing elements**
+
+1. "should display dashboard overview" - All browsers
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Location: line 10:24 - await expect(page).toHaveURL('/dashboard')
+   - Issue: Login flow failing consistently
+
+2. "should show recent activity" - All browsers
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Issue: Same authentication problem
+
+3. "should handle date range filtering" - All browsers
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Issue: Can't get to dashboard to test filtering
+
+4. "should handle real-time updates" - All browsers
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Issue: Authentication blocking all dashboard tests
+
+### dashboard-optimized.spec.ts
+**PATTERN: Missing UI elements + Authentication issues**
+
+1. "should display dashboard overview" - All browsers
+   - Error: expect(locator).toContainText() failed
+   - Location: line 11:38 - await expect(page.locator('h1')).toContainText(/dashboard|overview/i)
+   - Issue: Looking for "dashboard" text but finding "Kits - Khoder's IT Solutions"
+
+2. "should show recent activity" - All browsers
+   - Error: expect(locator).toContainText() failed
+   - Issue: Looking for elements that don't exist
+
+### visual.spec.ts
+**PATTERN: Authentication failures + Visual regressions**
+
+1. "dashboard layout visual appearance" - All browsers
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Location: line 25:16 - await page.waitForURL('/dashboard')
+   - Issue: Can't login to take dashboard screenshots
+
+2. "products page visual appearance" - All browsers
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Issue: Authentication blocking product page tests
+
+3. "forms visual appearance" - All browsers
+   - Error: TimeoutError: page.waitForURL: Timeout 8000ms exceeded
+   - Issue: Can't access forms due to login failure
+
+4. "responsive design - mobile" - Mobile browsers
+   - Error: expect(page).toHaveScreenshot() failed
+   - Location: line 150:24 - await expect(page).toHaveScreenshot('mobile-login.png')
+   - Issue: Visual differences in mobile login screenshots
+
+### simple-dashboard.spec.ts
+**PATTERN: Element selector issues**
+
+1. "should load login page" - Webkit, Mobile Safari
+   - Error: expect(locator).toContainText() failed
+   - Location: line 6:38 - await expect(page.locator('h1')).toContainText('Kits Business Terminal')
+   - Issue: Looking for wrong text - actual is "Kits - Khoder's IT Solutions"
+
+2. "should have login form elements" - Webkit, Mobile Safari
+   - Error: TimeoutError: page.fill: Timeout 5000ms exceeded
+   - Location: line 13:55 - await expect(page.locator('input[type="email"]')).toBeVisible()
+   - Issue: Email input not found on some browsers
+
+## ROOT CAUSE ANALYSIS:
+
+### PRIMARY ISSUE: AUTHENTICATION SYSTEM
+- 90% of failures stem from login/authentication not working
+- Tests expect to login with test@example.com/password123 but this fails
+- After login, tests expect navigation to /dashboard but stay on /login
+- This blocks all dashboard, product, and navigation tests
+
+### SECONDARY ISSUE: INCORRECT SELECTORS
+- Tests look for UI elements that don't exist or have different text
+- Example: Looking for "dashboard" in h1 but finding "Kits - Khoder's IT Solutions"
+- Example: Looking for data-testid attributes that aren't in the actual UI
+
+### TERTIARY ISSUE: VISUAL REGRESSIONS
+- Screenshot tests failing due to pixel differences
+- May be due to browser rendering differences or actual UI changes
+- High contrast mode showing 50% pixel difference suggests major visual changes
+
+## RECOMMENDED FIXES:
+
+### 1. FIX AUTHENTICATION (Highest Priority)
+```typescript
+// Need to either:
+// A. Create real test users in the database
+// B. Mock authentication completely in tests
+// C. Fix the login flow to work with test credentials
+```
+
+### 2. UPDATE SELECTORS TO MATCH ACTUAL UI
+```typescript
+// Fix text expectations:
+// Change: 'Kits Business Terminal' 
+// To: 'Kits - Khoder\'s IT Solutions'
+
+// Fix dashboard heading:
+// Change: /dashboard|overview/i
+// To: 'Welcome back'
+```
+
+### 3. IMPLEMENT PROPER MOCKING
+```typescript
+// Mock Supabase auth calls
+// Mock API responses for products, sales, customers
+// Use storageState for authentication bypass
+```
+
+### 4. UPDATE VISUAL SNAPSHOTS
+```bash
+# Update screenshots to match current UI
+npx playwright test --update-snapshots
+```
+
+### 5. ADD MISSING TEST IDs
+```typescript
+// Add data-testid attributes to components
+// Example: [data-testid="error-message"]
+// Example: [data-testid="total-revenue"]
+```
+
+## IMMEDIATE ACTIONS NEEDED:
+
+1. **Create working authentication** - Either mock or real test users
+2. **Fix text selectors** - Update to match actual UI text
+3. **Add missing test IDs** - Add data-testid attributes to components
+4. **Update visual snapshots** - Regenerate screenshot tests
+5. **Implement API mocking** - Mock Supabase and backend calls
+
+This report shows that the test suite has fundamental issues with authentication and element selectors that need to be addressed before the tests can be reliable.

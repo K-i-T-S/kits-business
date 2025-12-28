@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import {
   Calendar,
   ChevronDown,
@@ -15,6 +14,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface CustomerSegment {
   id: string;
@@ -69,9 +69,9 @@ export default function CustomerSegmentation({
       segments.filter(
         (segment) =>
           segment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          segment.description.toLowerCase().includes(searchQuery.toLowerCase())
+          segment.description.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
-    [segments, searchQuery]
+    [segments, searchQuery],
   );
 
   const getSegmentCustomers = (segmentId: string) => {
@@ -82,27 +82,27 @@ export default function CustomerSegmentation({
 
   const getCriteriaDescription = (criteria: Record<string, any>) => {
     const descriptions: string[] = [];
-    
+
     if (criteria.total_purchases) {
       const { operator, value } = criteria.total_purchases;
       descriptions.push(`Total purchases ${operator} $${value}`);
     }
-    
+
     if (criteria.days_since_join) {
       const { operator, value } = criteria.days_since_join;
       descriptions.push(`Joined ${operator} ${value} days ago`);
     }
-    
+
     if (criteria.purchase_count) {
       const { operator, value } = criteria.purchase_count;
       descriptions.push(`Purchase count ${operator} ${value}`);
     }
-    
+
     if (criteria.days_since_last_purchase) {
       const { operator, value } = criteria.days_since_last_purchase;
       descriptions.push(`Last purchase ${operator} ${value} days ago`);
     }
-    
+
     return descriptions.length > 0 ? descriptions.join(', ') : 'No criteria set';
   };
 
@@ -143,7 +143,7 @@ export default function CustomerSegmentation({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 lg:pb-0">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -189,7 +189,7 @@ export default function CustomerSegmentation({
           filteredSegments.map((segment) => {
             const segmentCustomers = getSegmentCustomers(segment.id);
             const isExpanded = expandedSegments.has(segment.id);
-            
+
             return (
               <div key={segment.id} className="rounded-lg border border-gray-200 bg-white">
                 <div className="p-4">
@@ -276,7 +276,7 @@ export default function CustomerSegmentation({
                           <p className="text-lg font-semibold text-gray-900">
                             {formatCurrency(
                               segmentCustomers.reduce((sum, c) => sum + (c.totalPurchases || 0), 0) /
-                                (segmentCustomers.length || 1)
+                                (segmentCustomers.length || 1),
                             )}
                           </p>
                         </div>
@@ -284,7 +284,7 @@ export default function CustomerSegmentation({
                           <p className="text-xs text-gray-600">Total Revenue</p>
                           <p className="text-lg font-semibold text-gray-900">
                             {formatCurrency(
-                              segmentCustomers.reduce((sum, c) => sum + (c.totalPurchases || 0), 0)
+                              segmentCustomers.reduce((sum, c) => sum + (c.totalPurchases || 0), 0),
                             )}
                           </p>
                         </div>

@@ -1,4 +1,3 @@
-import { useState, useMemo } from 'react';
 import {
   ArrowRight,
   Calendar,
@@ -17,10 +16,12 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import type { Customer, CustomerSegment, Communication, MarketingCampaign } from '../types/crm';
+import { useState, useMemo } from 'react';
+
 import CustomerCommunicationHistory from '../components/crm/CustomerCommunicationHistory';
 import CustomerSegmentation from '../components/crm/CustomerSegmentation';
 import { useApp } from '../context/AppContext';
+import type { Customer, CustomerSegment, Communication, MarketingCampaign } from '../types/crm';
 
 interface CustomerManagementProps {
   customers: Customer[];
@@ -58,14 +59,14 @@ export default function CustomerManagement({
   // Filter customers based on search and filters
   const filteredCustomers = useMemo(() => {
     return customers.filter((customer) => {
-      const matchesSearch = 
+      const matchesSearch =
         customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.phone?.includes(searchQuery);
 
       const matchesStatus = filters.status === 'all' || customer.status === filters.status;
       const matchesSource = filters.source === 'all' || customer.source === filters.source;
-      const matchesSegment = filters.segment === 'all' || 
+      const matchesSegment = filters.segment === 'all' ||
         (filters.segment !== 'all' && customer.segments?.includes(filters.segment));
 
       return matchesSearch && matchesStatus && matchesSource && matchesSegment;
@@ -79,7 +80,7 @@ export default function CustomerManagement({
     const newCustomersThisMonth = customers.filter(c => {
       const joinDate = new Date(c.createdAt);
       const thisMonth = new Date();
-      return joinDate.getMonth() === thisMonth.getMonth() && 
+      return joinDate.getMonth() === thisMonth.getMonth() &&
              joinDate.getFullYear() === thisMonth.getFullYear();
     }).length;
     const totalRevenue = customers.reduce((sum, c) => sum + c.totalSpent, 0);
@@ -194,8 +195,8 @@ export default function CustomerManagement({
                   <div>
                     <label className="text-sm font-medium text-gray-500">Address</label>
                     <p className="text-sm text-gray-900">
-                      {selectedCustomer.address ? 
-                        `${selectedCustomer.address.street}, ${selectedCustomer.address.city}, ${selectedCustomer.address.state}` : 
+                      {selectedCustomer.address ?
+                        `${selectedCustomer.address.street}, ${selectedCustomer.address.city}, ${selectedCustomer.address.state}` :
                         'Not provided'
                       }
                     </p>
@@ -253,8 +254,8 @@ export default function CustomerManagement({
                   employee: {
                     id: '1',
                     name: 'Current User',
-                    email: 'user@example.com'
-                  }
+                    email: 'user@example.com',
+                  },
                 })}
               />
             </div>
@@ -265,7 +266,7 @@ export default function CustomerManagement({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -562,8 +563,8 @@ export default function CustomerManagement({
                       <h3 className="font-medium text-gray-900">{campaign.name}</h3>
                       <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
                         campaign.status === 'running' ? 'bg-green-100 text-green-700 border-green-200' :
-                        campaign.status === 'draft' ? 'bg-gray-100 text-gray-700 border-gray-200' :
-                        'bg-blue-100 text-blue-700 border-blue-200'
+                          campaign.status === 'draft' ? 'bg-gray-100 text-gray-700 border-gray-200' :
+                            'bg-blue-100 text-blue-700 border-blue-200'
                       }`}>
                         {campaign.status}
                       </span>
@@ -645,38 +646,64 @@ export default function CustomerManagement({
 
       {/* Add Customer Modal */}
       {showAddCustomerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Customer</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-lg p-6" style={{
+            backgroundColor: 'rgba(11, 15, 36, 0.98)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '1.5rem',
+            color: '#f8faff',
+            boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+            backdropFilter: 'blur(28px)'
+          }}>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: '#f8faff' }}>Add New Customer</h3>
             <form onSubmit={handleAddCustomer} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Name *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg px-3 py-2 text-sm transition-colors"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                   placeholder="Customer name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Email</label>
                 <input
                   type="email"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg px-3 py-2 text-sm transition-colors"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                   placeholder="customer@example.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Phone</label>
                 <input
                   type="tel"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg px-3 py-2 text-sm transition-colors"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <label className="block text-sm font-medium mb-1" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Source</label>
+                <select className="w-full rounded-lg px-3 py-2 text-sm transition-colors" style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#f8faff'
+                }}>
                   <option value="walk_in">Walk In</option>
                   <option value="referral">Referral</option>
                   <option value="website">Website</option>
@@ -689,13 +716,23 @@ export default function CustomerManagement({
                 <button
                   type="button"
                   onClick={() => setShowAddCustomerModal(false)}
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                  className="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none'
+                  }}
                 >
                   Add Customer
                 </button>

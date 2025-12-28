@@ -148,7 +148,7 @@ export const getResponsiveClasses = (
   sm?: string,
   md?: string,
   lg?: string,
-  xl?: string
+  xl?: string,
 ) => {
   const classes = [base];
   if (sm) classes.push(sm);
@@ -166,113 +166,113 @@ export const patterns = {
     'sm:grid-cols-2',
     'md:grid-cols-3',
     `lg:grid-cols-${Math.min(cols, 4)}`,
-    `xl:grid-cols-${cols}`
+    `xl:grid-cols-${cols}`,
   ),
-  
+
   // Stats cards
   statsGrid: (cols: number = 4) => getResponsiveClasses(
     'grid-cols-2',
     'sm:grid-cols-2',
     'md:grid-cols-3',
     `lg:grid-cols-${Math.min(cols, 4)}`,
-    `xl:grid-cols-${cols}`
+    `xl:grid-cols-${cols}`,
   ),
-  
+
   // Headers
   header: getResponsiveClasses(
     'text-xl',
     'sm:text-xl',
     'md:text-2xl',
     'lg:text-2xl',
-    'xl:text-3xl'
+    'xl:text-3xl',
   ),
-  
+
   // Subheaders
   subheader: getResponsiveClasses(
     'text-lg',
     'sm:text-lg',
     'md:text-xl',
     'lg:text-xl',
-    'xl:text-2xl'
+    'xl:text-2xl',
   ),
-  
+
   // Body text
   body: getResponsiveClasses(
     'text-sm',
     'sm:text-sm',
     'md:text-base',
     'lg:text-base',
-    'xl:text-base'
+    'xl:text-base',
   ),
-  
+
   // Padding
   sectionPadding: getResponsiveClasses(
     'p-4',
     'sm:p-4',
     'md:p-6',
     'lg:p-6',
-    'xl:p-8'
+    'xl:p-8',
   ),
-  
+
   // Card padding
   cardPadding: getResponsiveClasses(
     'p-3',
     'sm:p-4',
     'md:p-4',
     'lg:p-6',
-    'xl:p-6'
+    'xl:p-6',
   ),
-  
+
   // Gap
   sectionGap: getResponsiveClasses(
     'gap-4',
     'sm:gap-4',
     'md:gap-6',
     'lg:gap-6',
-    'xl:gap-8'
+    'xl:gap-8',
   ),
-  
+
   // Button sizes
   buttonPadding: getResponsiveClasses(
     'px-3 py-2',
     'sm:px-4 py-2',
     'md:px-4 py-3',
     'lg:px-6 py-3',
-    'xl:px-6 py-3'
+    'xl:px-6 py-3',
   ),
-  
+
   // Input padding
   inputPadding: getResponsiveClasses(
     'px-3 py-2',
     'sm:px-4 py-2',
     'md:px-4 py-3',
     'lg:px-4 py-3',
-    'xl:px-4 py-3'
+    'xl:px-4 py-3',
   ),
-  
+
   // Icon sizes
   iconSmall: getResponsiveClasses(
     'w-4 h-4',
     'sm:w-4 h-4',
     'md:w-5 h-5',
     'lg:w-5 h-5',
-    'xl:w-5 h-5'
+    'xl:w-5 h-5',
   ),
-  
+
   iconMedium: getResponsiveClasses(
     'w-5 h-5',
     'sm:w-5 h-5',
     'md:w-6 h-6',
     'lg:w-6 h-6',
-    'xl:w-6 h-6'
+    'xl:w-6 h-6',
   ),
-  
+
   iconLarge: getResponsiveClasses(
     'w-6 h-6',
     'sm:w-6 h-6',
     'md:w-8 h-8',
     'lg:w-8 h-8',
-    'xl:w-8 h-8'
+    'xl:w-8 h-8',
   ),
 } as const;
 
@@ -296,7 +296,7 @@ export const isDesktop = () => {
 export const getCurrentBreakpoint = (): Breakpoint => {
   if (typeof window === 'undefined') return 'md';
   const width = window.innerWidth;
-  
+
   if (width < parseInt(breakpoints.sm)) return 'xs';
   if (width < parseInt(breakpoints.md)) return 'sm';
   if (width < parseInt(breakpoints.lg)) return 'md';

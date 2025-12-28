@@ -17,7 +17,7 @@ export const getAuthHeaders = async () => {
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
-    'apikey': supabaseAnonKey
+    'apikey': supabaseAnonKey,
   };
 };
 
@@ -44,9 +44,9 @@ export const api = {
     const headers = await getAuthHeaders();
     const response = await fetch(url, {
       headers,
-      cache: 'no-store' // Explicitly prevent caching
+      cache: 'no-store', // Explicitly prevent caching
     });
-    return await handleResponse(response);
+    return handleResponse(response);
   },
 
   async post(endpoint: string, data: any) {
@@ -54,7 +54,7 @@ export const api = {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'POST',
       headers,
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
@@ -64,7 +64,7 @@ export const api = {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
@@ -73,9 +73,9 @@ export const api = {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
-      headers
+      headers,
     });
     return handleResponse(response);
-  }
+  },
 };
 

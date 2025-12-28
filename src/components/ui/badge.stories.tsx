@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
+
 import { Badge } from './badge';
 
 const meta = {
@@ -112,7 +113,7 @@ export const CountBadges: Story = {
 export const Interactive: Story = {
   render: () => {
     const [selected, setSelected] = React.useState('option1');
-    
+
     return (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">Selected: {selected}</p>

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card';
-import { Button } from './button';
+
 import { Badge } from './badge';
+import { Button } from './button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card';
 
 const meta = {
   title: 'UI/Card',
@@ -147,7 +148,7 @@ export const Grid: Story = {
           <p>Content for the first card.</p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Card 2</CardTitle>
@@ -157,7 +158,7 @@ export const Grid: Story = {
           <p>Content for the second card.</p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Card 3</CardTitle>

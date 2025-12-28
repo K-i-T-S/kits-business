@@ -267,25 +267,50 @@ app.post('/make-server-210e7672/products/:productId/variants/:variantId/stock', 
     const variantId = c.req.param('variantId');
     const { quantity } = await c.req.json();
 
-    const product = await kv.get(`product:${productId}`);
-    if (!product) {
+    // Update product variant stock in database
+    console.log('Looking for product:', productId, 'for tenant:', user.tenant_id);
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('variants, id, name')
+      .eq('id', productId)
+      .eq('tenant_id', user.tenant_id)
+      .single();
+
+    console.log('Product query result:', { data: product, error });
+
+    if (error || !product) {
+      console.log('Product not found details:', { productId, tenant_id: user.tenant_id, error });
       return c.json({ error: 'Product not found' }, 404);
     }
 
-    product.variants = product.variants.map((variant: any) => {
+    // Update the specific variant's stock
+    const updatedVariants = product.variants.map((variant: any) => {
       if (variant.id === variantId) {
         return {
           ...variant,
-          stock: variant.stock + quantity
+          stock: Math.max(0, variant.stock + quantity) // Ensure stock doesn't go negative
         };
       }
       return variant;
     });
 
-    product.updatedAt = new Date().toISOString();
-    await kv.set(`product:${productId}`, product);
+    // Save updated variants back to database
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from('products')
+      .update({ 
+        variants: updatedVariants,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', productId)
+      .select()
+      .single();
 
-    return c.json({ product });
+    if (updateError) {
+      console.log('Update stock error:', updateError);
+      return c.json({ error: 'Failed to update stock' }, 500);
+    }
+
+    return c.json({ product: updatedProduct });
   } catch (error) {
     console.log('Update stock error:', error);
     return c.json({ error: 'Failed to update stock' }, 500);
@@ -340,46 +365,106 @@ app.post('/make-server-210e7672/sales', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const sale = await c.req.json();
-    sale.id = sale.id || Date.now().toString();
-    sale.date = new Date().toISOString();
-    sale.employeeId = user.id;
+    // Get user's tenant
+    const { data: tenantUser, error: tenantError } = await supabase
+      .from('tenant_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+    
+    if (tenantError || !tenantUser) {
+      return c.json({ error: 'User not associated with any tenant' }, 403);
+    }
 
+    // Find the employee record for this user
+    const { data: employee, error: employeeError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('tenant_id', tenantUser.tenant_id)
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+
+    if (employeeError || !employee) {
+      return c.json({ error: 'No active employee found for user' }, 403);
+    }
+
+    const sale = await c.req.json();
+    
+    // Map frontend sale data to database schema
+    const dbSale = {
+      id: crypto.randomUUID(), // Always generate a proper UUID
+      customer_id: sale.customerId || null,
+      employee_id: employee.id, // Use the found employee ID
+      sale_date: new Date().toISOString(),
+      subtotal: sale.subtotal || 0,
+      tax_amount: sale.tax || 0,
+      total_amount: sale.total || 0,
+      payment_method: sale.paymentMethod || 'cash',
+      payment_status: 'completed',
+      notes: sale.notes || null,
+      tenant_id: tenantUser.tenant_id
+    };
+
+    // Update product stock in database for each sale item
     for (const item of sale.items) {
-      const product = await kv.get(`product:${item.productId}`);
-      if (product) {
-        product.variants = product.variants.map((variant: any) => {
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('variants')
+        .eq('id', item.productId)
+        .eq('tenant_id', tenantUser.tenant_id)
+        .single();
+
+      if (!productError && product) {
+        // Update the specific variant's stock
+        const updatedVariants = product.variants.map((variant: any) => {
           if (variant.id === item.variantId) {
             return {
               ...variant,
-              stock: variant.stock - item.quantity
+              stock: Math.max(0, variant.stock - item.quantity) // Ensure stock doesn't go negative
             };
           }
           return variant;
         });
-        product.updatedAt = new Date().toISOString();
-        await kv.set(`product:${item.productId}`, product);
+
+        // Save updated variants back to database
+        await supabase
+          .from('products')
+          .update({ 
+            variants: updatedVariants,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.productId)
+          .eq('tenant_id', tenantUser.tenant_id);
       }
     }
 
-    const employee = await kv.get(`employee:${user.id}`);
-    if (employee) {
-      employee.totalSales = (employee.totalSales || 0) + sale.total;
-      await kv.set(`employee:${user.id}`, employee);
+    // Insert sale into database
+    const { data: newSale, error: insertError } = await supabase
+      .from('sales')
+      .insert([dbSale])
+      .select()
+      .single();
+
+    if (insertError) {
+      console.log('Create sale error:', insertError);
+      return c.json({ error: insertError.message }, 500);
     }
 
+    // Update customer if specified
     if (sale.customerId) {
-      const customer = await kv.get(`customer:${sale.customerId}`);
-      if (customer) {
-        customer.totalPurchases = (customer.totalPurchases || 0) + sale.total;
-        customer.lastPurchaseDate = sale.date;
-        await kv.set(`customer:${sale.customerId}`, customer);
-      }
+      await supabase
+        .from('customers')
+        .update({ 
+          total_purchases: supabase.raw('total_purchases + ?', [sale.total]),
+          last_visit: new Date().toISOString()
+        })
+        .eq('id', sale.customerId)
+        .eq('tenant_id', tenantUser.tenant_id);
     }
 
-    await kv.set(`sale:${sale.id}`, sale);
-
-    return c.json({ sale });
+    return c.json({ sale: newSale });
   } catch (error) {
     console.log('Create sale error:', error);
     return c.json({ error: 'Failed to create sale' }, 500);

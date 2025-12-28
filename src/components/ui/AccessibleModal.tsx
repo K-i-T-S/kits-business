@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from "react";
-import { useModalAccessibility } from "../../hooks/useModalAccessibility";
-import { X } from "lucide-react";
+import { X } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 
 interface AccessibleModalProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export default function AccessibleModal({
   onClose,
   title,
   children,
-  className = ""
+  className = '',
 }: AccessibleModalProps) {
   const modalRef = useModalAccessibility(isOpen);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -29,7 +30,7 @@ export default function AccessibleModal({
   if (!isOpen) return null;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       onClose();
     }
   };
@@ -38,15 +39,24 @@ export default function AccessibleModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50"
+        className="fixed inset-0 fixed inset-0 z-50 flex items-center justify-center"
+        style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}
         onClick={onClose}
         aria-hidden="true"
       />
-      
+
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 ${className}`}
+        className={`relative w-full max-w-md w-full mx-4 p-6 ${className}`}
+        style={{
+          backgroundColor: 'rgba(11, 15, 36, 0.98)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: '1.5rem',
+          color: '#f8faff',
+          boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+          backdropFilter: 'blur(28px)'
+        }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -55,29 +65,29 @@ export default function AccessibleModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
+          <h2 id="modal-title" className="text-xl font-semibold text-white">
             {title}
           </h2>
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="p-2 text-white/60 hover:text-white rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         {/* Content */}
-        <div id="modal-description" className="text-gray-600">
+        <div id="modal-description" className="text-white/80">
           {children}
         </div>
-        
+
         {/* Footer Actions */}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 text-white/80 bg-white/10 rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             Cancel
           </button>

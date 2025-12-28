@@ -13,7 +13,7 @@ export const demoCoupons: DiscountCoupon[] = [
     usedCount: 15,
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    isActive: true
+    isActive: true,
   },
   {
     id: '2',
@@ -25,7 +25,7 @@ export const demoCoupons: DiscountCoupon[] = [
     usedCount: 8,
     startDate: '2024-01-01',
     endDate: '2024-06-30',
-    isActive: true
+    isActive: true,
   },
   {
     id: '3',
@@ -37,7 +37,7 @@ export const demoCoupons: DiscountCoupon[] = [
     usedCount: 45,
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    isActive: true
+    isActive: true,
   },
   {
     id: '4',
@@ -49,8 +49,8 @@ export const demoCoupons: DiscountCoupon[] = [
     usedCount: 5,
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 export const demoLoyaltyProgram: LoyaltyProgram = {
@@ -64,29 +64,29 @@ export const demoLoyaltyProgram: LoyaltyProgram = {
       name: 'Bronze Member',
       minPoints: 0,
       benefits: ['1 point per dollar', 'Birthday rewards'],
-      discountRate: 0
+      discountRate: 0,
     },
     {
       id: 'silver',
       name: 'Silver Member',
       minPoints: 500,
       benefits: ['1.2 points per dollar', 'Birthday rewards', 'Early access to sales'],
-      discountRate: 5
+      discountRate: 5,
     },
     {
       id: 'gold',
       name: 'Gold Member',
       minPoints: 1500,
       benefits: ['1.5 points per dollar', 'Birthday rewards', 'Early access to sales', 'Free shipping'],
-      discountRate: 10
+      discountRate: 10,
     },
     {
       id: 'platinum',
       name: 'Platinum Member',
       minPoints: 3000,
       benefits: ['2 points per dollar', 'Birthday rewards', 'Early access to sales', 'Free shipping', 'Exclusive events'],
-      discountRate: 15
-    }
+      discountRate: 15,
+    },
   ],
   rewards: [
     {
@@ -95,7 +95,7 @@ export const demoLoyaltyProgram: LoyaltyProgram = {
       pointsCost: 500,
       type: 'discount',
       value: 5,
-      description: '$5 discount on your next purchase'
+      description: '$5 discount on your next purchase',
     },
     {
       id: '2',
@@ -103,7 +103,7 @@ export const demoLoyaltyProgram: LoyaltyProgram = {
       pointsCost: 900,
       type: 'discount',
       value: 10,
-      description: '$10 discount on your next purchase'
+      description: '$10 discount on your next purchase',
     },
     {
       id: '3',
@@ -111,7 +111,7 @@ export const demoLoyaltyProgram: LoyaltyProgram = {
       pointsCost: 200,
       type: 'free_product',
       value: 0,
-      description: 'Free coffee with any purchase'
+      description: 'Free coffee with any purchase',
     },
     {
       id: '4',
@@ -119,9 +119,9 @@ export const demoLoyaltyProgram: LoyaltyProgram = {
       pointsCost: 300,
       type: 'discount',
       value: 5,
-      description: 'Free shipping on your next order'
-    }
-  ]
+      description: 'Free shipping on your next order',
+    },
+  ],
 };
 
 export const demoCustomerLoyalty: CustomerLoyalty = {
@@ -132,7 +132,7 @@ export const demoCustomerLoyalty: CustomerLoyalty = {
   totalEarned: 1200,
   totalRedeemed: 450,
   joinDate: '2024-01-15',
-  lastActivity: '2024-03-10'
+  lastActivity: '2024-03-10',
 };
 
 export const demoReceiptTemplates: ReceiptTemplate[] = [
@@ -150,17 +150,17 @@ export const demoReceiptTemplates: ReceiptTemplate[] = [
         label: 'Cashier',
         type: 'text',
         value: 'Employee Name',
-        position: 'footer'
+        position: 'footer',
       },
       {
         id: '2',
         label: 'Store Location',
         type: 'text',
         value: 'Main Street',
-        position: 'footer'
-      }
+        position: 'footer',
+      },
     ],
-    isActive: true
+    isActive: true,
   },
   {
     id: '2',
@@ -176,31 +176,31 @@ export const demoReceiptTemplates: ReceiptTemplate[] = [
         label: 'Order Number',
         type: 'text',
         value: 'ORD-',
-        position: 'header'
+        position: 'header',
       },
       {
         id: '4',
         label: 'Transaction Time',
         type: 'date',
         value: 'full',
-        position: 'body'
+        position: 'body',
       },
       {
         id: '5',
         label: 'Tax ID',
         type: 'text',
         value: 'TAX-12345',
-        position: 'footer'
+        position: 'footer',
       },
       {
         id: '6',
         label: 'Customer Service',
         type: 'text',
         value: 'support@store.com',
-        position: 'footer'
-      }
+        position: 'footer',
+      },
     ],
-    isActive: true
+    isActive: true,
   },
   {
     id: '3',
@@ -211,6 +211,6 @@ export const demoReceiptTemplates: ReceiptTemplate[] = [
     includeBarcode: false,
     includeQrCode: false,
     customFields: [],
-    isActive: false
-  }
+    isActive: false,
+  },
 ];

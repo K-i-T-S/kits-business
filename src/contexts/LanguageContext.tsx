@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { isRTL, getCurrentLanguage, supportedLanguages } from '../i18n';
 
 interface LanguageContextType {
@@ -28,11 +29,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const handleLanguageChanged = (lng: string) => {
       setCurrentLanguage(lng);
       setIsRTLDirection(isRTL(lng));
-      
+
       // Update document direction and language
       document.documentElement.dir = isRTL(lng) ? 'rtl' : 'ltr';
       document.documentElement.lang = lng;
-      
+
       // Update body class for RTL styling
       if (isRTL(lng)) {
         document.body.classList.add('rtl');

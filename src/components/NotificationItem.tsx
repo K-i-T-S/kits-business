@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
 import { Activity, Package } from 'lucide-react';
+import React, { memo } from 'react';
 
 interface NotificationItemProps {
   type: 'order' | 'stock';
@@ -11,12 +11,12 @@ interface NotificationItemProps {
 const NotificationItem = memo(({ type, title, description, time }: NotificationItemProps) => {
   const icons = {
     order: Activity,
-    stock: Package
+    stock: Package,
   };
 
   const colors = {
     order: 'bg-indigo-500/20 text-indigo-400',
-    stock: 'bg-green-500/20 text-green-400'
+    stock: 'bg-green-500/20 text-green-400',
   };
 
   const Icon = icons[type];

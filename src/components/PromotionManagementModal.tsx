@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { Tag, Percent, DollarSign, Gift, Plus, Edit, Trash2, Calendar, Users, Package } from 'lucide-react';
+import { useState } from 'react';
+
 import type { Promotion } from '../types/pos';
 
 interface PromotionManagementModalProps {
@@ -11,13 +12,13 @@ interface PromotionManagementModalProps {
   onCancel: () => void;
 }
 
-export default function PromotionManagementModal({ 
-  isOpen, 
-  promotions, 
-  onCreatePromotion, 
-  onUpdatePromotion, 
+export default function PromotionManagementModal({
+  isOpen,
+  promotions,
+  onCreatePromotion,
+  onUpdatePromotion,
   onDeletePromotion,
-  onCancel 
+  onCancel,
 }: PromotionManagementModalProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
@@ -36,8 +37,8 @@ export default function PromotionManagementModal({
       minAmount: 0,
       applicableProducts: [] as string[],
       applicableCategories: [] as string[],
-      customerSegment: [] as string[]
-    }
+      customerSegment: [] as string[],
+    },
   });
 
   const resetForm = () => {
@@ -56,8 +57,8 @@ export default function PromotionManagementModal({
         minAmount: 0,
         applicableProducts: [],
         applicableCategories: [],
-        customerSegment: []
-      }
+        customerSegment: [],
+      },
     });
     setEditingPromotion(null);
     setIsCreating(false);
@@ -65,7 +66,7 @@ export default function PromotionManagementModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const promotionData = {
       ...formData,
       startDate: formData.startDate || new Date().toISOString().split('T')[0],
@@ -75,8 +76,8 @@ export default function PromotionManagementModal({
         minAmount: formData.minAmount,
         applicableProducts: formData.conditions.applicableProducts || [],
         applicableCategories: formData.conditions.applicableCategories || [],
-        customerSegment: formData.conditions.customerSegment || []
-      }
+        customerSegment: formData.conditions.customerSegment || [],
+      },
     } as Omit<Promotion, 'id'>;
 
     if (editingPromotion) {
@@ -84,7 +85,7 @@ export default function PromotionManagementModal({
     } else {
       onCreatePromotion(promotionData);
     }
-    
+
     resetForm();
   };
 
@@ -105,8 +106,8 @@ export default function PromotionManagementModal({
         minAmount: promotion.conditions.minAmount || 0,
         applicableProducts: promotion.conditions.applicableProducts || [],
         applicableCategories: promotion.conditions.applicableCategories || [],
-        customerSegment: promotion.conditions.customerSegment || []
-      }
+        customerSegment: promotion.conditions.customerSegment || [],
+      },
     });
     setIsCreating(true);
   };
@@ -150,8 +151,15 @@ export default function PromotionManagementModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-      <div className="glass-panel w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Promotion Management</h2>
           <div className="flex gap-2">
@@ -341,7 +349,7 @@ export default function PromotionManagementModal({
                 {promotions.map((promotion) => {
                   const Icon = getPromotionIcon(promotion.type);
                   const isActive = isPromotionActive(promotion);
-                  
+
                   return (
                     <div key={promotion.id} className="p-4 rounded-lg border border-white/30 bg-white/10">
                       <div className="flex items-start justify-between">
@@ -356,20 +364,20 @@ export default function PromotionManagementModal({
                             <div className="text-sm text-emerald-300 mb-2">
                               {getPromotionDescription(promotion)}
                             </div>
-                            
+
                             <div className="flex flex-wrap gap-4 text-xs text-white/60">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
                                 {new Date(promotion.startDate).toLocaleDateString()} - {new Date(promotion.endDate).toLocaleDateString()}
                               </div>
-                              
+
                               {promotion.conditions.minQuantity && promotion.conditions.minQuantity > 0 && (
                                 <div className="flex items-center gap-1">
                                   <Package className="w-3 h-3" />
                                   Min {promotion.conditions.minQuantity} items
                                 </div>
                               )}
-                              
+
                               {promotion.conditions.minAmount && promotion.conditions.minAmount > 0 && (
                                 <div className="flex items-center gap-1">
                                   <DollarSign className="w-3 h-3" />
@@ -379,7 +387,7 @@ export default function PromotionManagementModal({
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(promotion)}

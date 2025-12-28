@@ -1,5 +1,5 @@
-import { useRef, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface TouchGestureOptions {
   onSwipeLeft?: () => void
@@ -27,126 +27,126 @@ export function useTouchGestures(options: TouchGestureOptions = {}) {
     onTap,
     onLongPress,
     threshold = 50,
-    longPressDelay = 500
-  } = options
+    longPressDelay = 500,
+  } = options;
 
-  const touchStartRef = useRef<TouchPoint | null>(null)
-  const touchEndRef = useRef<TouchPoint | null>(null)
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const touchStartRef = useRef<TouchPoint | null>(null);
+  const touchEndRef = useRef<TouchPoint | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    const touch = e.touches[0]
-    if (!touch) return
-    
+    const touch = e.touches[0];
+    if (!touch) return;
+
     touchStartRef.current = {
       x: touch.clientX,
       y: touch.clientY,
-      time: Date.now()
-    }
-    touchEndRef.current = touchStartRef.current
+      time: Date.now(),
+    };
+    touchEndRef.current = touchStartRef.current;
 
     // Start long press timer
     if (onLongPress) {
       longPressTimerRef.current = setTimeout(() => {
-        onLongPress()
-      }, longPressDelay)
+        onLongPress();
+      }, longPressDelay);
     }
-  }, [onLongPress, longPressDelay])
+  }, [onLongPress, longPressDelay]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     // Clear long press timer if finger moves
     if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current)
-      longPressTimerRef.current = null
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
 
-    const touch = e.touches[0]
-    if (!touch) return
-    
+    const touch = e.touches[0];
+    if (!touch) return;
+
     touchEndRef.current = {
       x: touch.clientX,
       y: touch.clientY,
-      time: Date.now()
-    }
-  }, [])
+      time: Date.now(),
+    };
+  }, []);
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
     // Clear long press timer
     if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current)
-      longPressTimerRef.current = null
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
 
-    if (!touchStartRef.current || !touchEndRef.current) return
+    if (!touchStartRef.current || !touchEndRef.current) return;
 
-    const deltaX = touchEndRef.current.x - touchStartRef.current.x
-    const deltaY = touchEndRef.current.y - touchStartRef.current.y
-    const deltaTime = touchEndRef.current.time - touchStartRef.current.time
-    const absDeltaX = Math.abs(deltaX)
-    const absDeltaY = Math.abs(deltaY)
+    const deltaX = touchEndRef.current.x - touchStartRef.current.x;
+    const deltaY = touchEndRef.current.y - touchStartRef.current.y;
+    const deltaTime = touchEndRef.current.time - touchStartRef.current.time;
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
 
     // Determine gesture type
     if (absDeltaX < 10 && absDeltaY < 10 && deltaTime < 200) {
       // Tap
-      onTap?.()
+      onTap?.();
     } else if (absDeltaX > absDeltaY) {
       // Horizontal swipe
       if (absDeltaX > threshold) {
         if (deltaX > 0) {
-          onSwipeRight?.()
+          onSwipeRight?.();
         } else {
-          onSwipeLeft?.()
+          onSwipeLeft?.();
         }
       }
     } else {
       // Vertical swipe
       if (absDeltaY > threshold) {
         if (deltaY > 0) {
-          onSwipeDown?.()
+          onSwipeDown?.();
         } else {
-          onSwipeUp?.()
+          onSwipeUp?.();
         }
       }
     }
 
     // Reset
-    touchStartRef.current = null
-    touchEndRef.current = null
-  }, [onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, onTap, threshold])
+    touchStartRef.current = null;
+    touchEndRef.current = null;
+  }, [onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, onTap, threshold]);
 
   const addGestureListeners = useCallback((element: HTMLElement) => {
-    element.addEventListener('touchstart', handleTouchStart, { passive: true })
-    element.addEventListener('touchmove', handleTouchMove, { passive: true })
-    element.addEventListener('touchend', handleTouchEnd, { passive: true })
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
+    element.addEventListener('touchmove', handleTouchMove, { passive: true });
+    element.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
-      element.removeEventListener('touchstart', handleTouchStart)
-      element.removeEventListener('touchmove', handleTouchMove)
-      element.removeEventListener('touchend', handleTouchEnd)
-      
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchend', handleTouchEnd);
+
       if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current)
+        clearTimeout(longPressTimerRef.current);
       }
-    }
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd])
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   return {
-    addGestureListeners
-  }
+    addGestureListeners,
+  };
 }
 
 export function useSwipeToNavigate() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return useTouchGestures({
     onSwipeLeft: () => {
       // Navigate forward or to next section
-      const currentPath = window.location.pathname
+      const currentPath = window.location.pathname;
       // Add your navigation logic here
     },
     onSwipeRight: () => {
       // Navigate back or to previous section
-      window.history.back()
-    }
-  })
+      window.history.back();
+    },
+  });
 }

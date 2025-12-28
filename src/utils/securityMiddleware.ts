@@ -1,5 +1,5 @@
-import { supabase } from './supabaseClient';
 import { logSecurityEvent } from './auditLogger';
+import { supabase } from './supabaseClient';
 
 // Rate limiting store (in production, use Redis or similar)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -40,28 +40,28 @@ export class SecurityMiddleware {
   async checkRateLimit(
     operation: string,
     context: SecurityContext,
-    customConfig?: RateLimitConfig
+    customConfig?: RateLimitConfig,
   ): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
     const config = customConfig || this.rateLimits.get(operation) || { maxRequests: 100, windowMs: 60000 };
     const key = `${context.userId || 'anonymous'}_${operation}_${context.ipAddress || 'unknown'}`;
-    
+
     const now = Date.now();
     const existing = rateLimitStore.get(key);
-    
+
     if (!existing || now > existing.resetTime) {
       // Reset or create new entry
       rateLimitStore.set(key, {
         count: 1,
-        resetTime: now + config.windowMs
+        resetTime: now + config.windowMs,
       });
-      
+
       return {
         allowed: true,
         remaining: config.maxRequests - 1,
-        resetTime: now + config.windowMs
+        resetTime: now + config.windowMs,
       };
     }
-    
+
     // Check if over limit
     if (existing.count >= config.maxRequests) {
       // Log rate limit violation
@@ -75,47 +75,47 @@ export class SecurityMiddleware {
           tenantId: context.tenantId,
           ipAddress: context.ipAddress,
           count: existing.count,
-          limit: config.maxRequests
-        }
+          limit: config.maxRequests,
+        },
       );
-      
+
       return {
         allowed: false,
         remaining: 0,
-        resetTime: existing.resetTime
+        resetTime: existing.resetTime,
       };
     }
-    
+
     // Increment counter
     existing.count++;
     rateLimitStore.set(key, existing);
-    
+
     return {
       allowed: true,
       remaining: config.maxRequests - existing.count,
-      resetTime: existing.resetTime
+      resetTime: existing.resetTime,
     };
   }
 
   // Server-side role validation
   async validateRole(
     requiredRole: 'owner' | 'manager' | 'cashier' | 'viewer',
-    context: SecurityContext
+    context: SecurityContext,
   ): Promise<{ valid: boolean; actualRole?: string }> {
     if (!context.userId || !context.tenantId) {
       await logSecurityEvent(
         'unauthorized_access',
         'Role validation failed: missing user context',
         'high',
-        { requiredRole, userId: context.userId, tenantId: context.tenantId }
+        { requiredRole, userId: context.userId, tenantId: context.tenantId },
       );
-      
+
       return { valid: false };
     }
 
     try {
       const { data, error } = await supabase.rpc('verify_role_permission', {
-        required_role: requiredRole
+        required_role: requiredRole,
       });
 
       if (error) {
@@ -123,14 +123,14 @@ export class SecurityMiddleware {
           'role_validation_error',
           'Role validation function error',
           'medium',
-          { requiredRole, error: error.message }
+          { requiredRole, error: error.message },
         );
-        
+
         return { valid: false };
       }
 
       const valid = !!data;
-      
+
       if (!valid) {
         await logSecurityEvent(
           'unauthorized_access',
@@ -140,8 +140,8 @@ export class SecurityMiddleware {
             requiredRole,
             userId: context.userId,
             tenantId: context.tenantId,
-            userRole: context.userRole
-          }
+            userRole: context.userRole,
+          },
         );
       }
 
@@ -151,9 +151,9 @@ export class SecurityMiddleware {
         'role_validation_exception',
         'Role validation exception occurred',
         'high',
-        { requiredRole, error: String(error) }
+        { requiredRole, error: String(error) },
       );
-      
+
       return { valid: false };
     }
   }
@@ -238,7 +238,7 @@ export class SecurityMiddleware {
   async auditSensitiveOperation(
     operation: string,
     context: SecurityContext,
-    details: any
+    details: any,
   ): Promise<void> {
     const sensitiveOperations = [
       'role_change',
@@ -246,7 +246,7 @@ export class SecurityMiddleware {
       'bulk_delete',
       'data_export',
       'user_creation',
-      'permission_change'
+      'permission_change',
     ];
 
     if (sensitiveOperations.includes(operation)) {
@@ -260,8 +260,8 @@ export class SecurityMiddleware {
           tenantId: context.tenantId,
           userRole: context.userRole,
           ipAddress: context.ipAddress,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       );
     }
   }
@@ -269,7 +269,7 @@ export class SecurityMiddleware {
   // Check for suspicious patterns
   async detectSuspiciousActivity(
     context: SecurityContext,
-    operation: string
+    operation: string,
   ): Promise<{ suspicious: boolean; reasons: string[] }> {
     const reasons: string[] = [];
     let suspicious = false;
@@ -277,7 +277,7 @@ export class SecurityMiddleware {
     // Check for rapid successive operations
     const recentKey = `${context.userId}_recent_ops`;
     const recent = rateLimitStore.get(recentKey);
-    
+
     if (recent && recent.count > 50) { // More than 50 operations in a short window
       reasons.push('High frequency operations detected');
       suspicious = true;
@@ -286,7 +286,7 @@ export class SecurityMiddleware {
     // Check for operations from multiple IPs (potential session hijacking)
     const ipKey = `${context.userId}_ips`;
     const ips = rateLimitStore.get(ipKey);
-    
+
     if (ips && ips.count > 3) { // More than 3 different IPs
       reasons.push('Multiple IP addresses detected');
       suspicious = true;
@@ -302,8 +302,8 @@ export class SecurityMiddleware {
           operation,
           userId: context.userId,
           tenantId: context.tenantId,
-          ipAddress: context.ipAddress
-        }
+          ipAddress: context.ipAddress,
+        },
       );
     }
 
@@ -314,7 +314,7 @@ export class SecurityMiddleware {
   async apiMiddleware(
     operation: string,
     context: SecurityContext,
-    requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer'
+    requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer',
   ): Promise<{ authorized: boolean; error?: string; rateLimit?: any }> {
     // 1. Rate limiting check
     const rateLimitResult = await this.checkRateLimit('api_call', context);
@@ -322,7 +322,7 @@ export class SecurityMiddleware {
       return {
         authorized: false,
         error: 'Rate limit exceeded. Please try again later.',
-        rateLimit: rateLimitResult
+        rateLimit: rateLimitResult,
       };
     }
 
@@ -332,7 +332,7 @@ export class SecurityMiddleware {
       if (!roleResult.valid) {
         return {
           authorized: false,
-          error: `Insufficient permissions. ${requiredRole} role required.`
+          error: `Insufficient permissions. ${requiredRole} role required.`,
         };
       }
     }

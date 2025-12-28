@@ -1,7 +1,8 @@
+import { Building2, Plus, ArrowRight } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { supabase } from '../utils/supabaseClient';
 import { createTenant } from '../utils/tenantManager';
 
@@ -32,7 +33,7 @@ export default function TenantSelection() {
       navigate('/login');
       return;
     }
-    
+
     setCurrentUser(session.user);
     await loadUserTenants(session.user.id);
   };
@@ -62,12 +63,12 @@ export default function TenantSelection() {
     try {
       const tenantId = await createTenant(tenantName, tenantSlug, currentUser.id);
       toast.success('Business created successfully!');
-      
+
       await loadUserTenants(currentUser.id);
       setShowCreateForm(false);
       setTenantName('');
       setTenantSlug('');
-      
+
       // Redirect to the new tenant
       navigate(`/app/${tenantSlug}/dashboard`);
     } catch (error: any) {
@@ -112,7 +113,7 @@ export default function TenantSelection() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4 pb-20 lg:pb-0">
       <div className="w-full max-w-4xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">

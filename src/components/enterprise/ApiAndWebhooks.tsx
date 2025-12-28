@@ -1,38 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { 
-  Key, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Copy, 
-  RefreshCw, 
-  Globe, 
-  Shield, 
-  Activity, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
-  Zap, 
+import {
+  Key,
+  Plus,
+  Edit,
+  Trash2,
+  Copy,
+  RefreshCw,
+  Globe,
+  Shield,
+  Activity,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Zap,
   Settings,
   Sparkles,
   Eye,
   EyeOff,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
 import Layout from '../Layout';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ApiKey {
   id: string;
@@ -96,14 +98,14 @@ export default function ApiAndWebhooks() {
     name: '',
     permissions: [] as string[],
     rate_limit: 1000,
-    expires_at: ''
+    expires_at: '',
   });
 
   const [newWebhookForm, setNewWebhookForm] = useState({
     name: '',
     url: '',
     events: [] as string[],
-    secret: ''
+    secret: '',
   });
 
   useEffect(() => {
@@ -125,7 +127,7 @@ export default function ApiAndWebhooks() {
           is_active: true,
           expires_at: '2024-12-31T23:59:59Z',
           last_used_at: '2024-01-15T10:30:00Z',
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: '2',
@@ -135,7 +137,7 @@ export default function ApiAndWebhooks() {
           rate_limit: 500,
           is_active: true,
           last_used_at: '2024-01-15T09:15:00Z',
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: '3',
@@ -144,8 +146,8 @@ export default function ApiAndWebhooks() {
           permissions: ['read'],
           rate_limit: 2000,
           is_active: false,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ];
 
       const mockWebhooks: Webhook[] = [
@@ -158,7 +160,7 @@ export default function ApiAndWebhooks() {
           is_active: true,
           retry_count: 3,
           created_at: '2024-01-01T00:00:00Z',
-          last_triggered_at: '2024-01-15T11:45:00Z'
+          last_triggered_at: '2024-01-15T11:45:00Z',
         },
         {
           id: '2',
@@ -168,8 +170,8 @@ export default function ApiAndWebhooks() {
           secret: 'whsec_fedcba0987654321',
           is_active: true,
           retry_count: 5,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ];
 
       const mockApiLogs: ApiLog[] = [
@@ -182,7 +184,7 @@ export default function ApiAndWebhooks() {
           response_time: 145,
           ip_address: '192.168.1.100',
           user_agent: 'MyApp/1.0',
-          created_at: '2024-01-15T10:30:00Z'
+          created_at: '2024-01-15T10:30:00Z',
         },
         {
           id: '2',
@@ -193,7 +195,7 @@ export default function ApiAndWebhooks() {
           response_time: 234,
           ip_address: '192.168.1.100',
           user_agent: 'MyApp/1.0',
-          created_at: '2024-01-15T10:25:00Z'
+          created_at: '2024-01-15T10:25:00Z',
         },
         {
           id: '3',
@@ -204,8 +206,8 @@ export default function ApiAndWebhooks() {
           response_time: 89,
           ip_address: '192.168.1.101',
           user_agent: 'DevApp/0.1',
-          created_at: '2024-01-15T09:15:00Z'
-        }
+          created_at: '2024-01-15T09:15:00Z',
+        },
       ];
 
       const mockWebhookDeliveries: WebhookDelivery[] = [
@@ -217,7 +219,7 @@ export default function ApiAndWebhooks() {
           status: 'delivered',
           attempts: 1,
           created_at: '2024-01-15T11:45:00Z',
-          delivered_at: '2024-01-15T11:45:02Z'
+          delivered_at: '2024-01-15T11:45:02Z',
         },
         {
           id: '2',
@@ -227,8 +229,8 @@ export default function ApiAndWebhooks() {
           status: 'failed',
           attempts: 3,
           created_at: '2024-01-15T10:00:00Z',
-          error: 'Connection timeout'
-        }
+          error: 'Connection timeout',
+        },
       ];
 
       setApiKeys(mockApiKeys);
@@ -254,7 +256,7 @@ export default function ApiAndWebhooks() {
         ...newApiKey,
         key_prefix: 'pk_',
         is_active: true,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       setApiKeys([...apiKeys, createdApiKey]);
@@ -262,7 +264,7 @@ export default function ApiAndWebhooks() {
         name: '',
         permissions: [],
         rate_limit: 1000,
-        expires_at: ''
+        expires_at: '',
       });
       setIsCreateApiKeyOpen(false);
       toast.success('API key created successfully');
@@ -283,7 +285,7 @@ export default function ApiAndWebhooks() {
         ...newWebhookForm,
         is_active: true,
         retry_count: 3,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       setWebhooks([...webhooks, createdWebhook]);
@@ -291,7 +293,7 @@ export default function ApiAndWebhooks() {
         name: '',
         url: '',
         events: [],
-        secret: ''
+        secret: '',
       });
       setIsCreateWebhookOpen(false);
       toast.success('Webhook created successfully');
@@ -302,8 +304,8 @@ export default function ApiAndWebhooks() {
 
   const handleToggleApiKey = async (apiKeyId: string) => {
     try {
-      setApiKeys(apiKeys.map(key => 
-        key.id === apiKeyId ? { ...key, is_active: !key.is_active } : key
+      setApiKeys(apiKeys.map(key =>
+        key.id === apiKeyId ? { ...key, is_active: !key.is_active } : key,
       ));
       toast.success('API key status updated');
     } catch (error) {
@@ -313,8 +315,8 @@ export default function ApiAndWebhooks() {
 
   const handleToggleWebhook = async (webhookId: string) => {
     try {
-      setWebhooks(webhooks.map(webhook => 
-        webhook.id === webhookId ? { ...webhook, is_active: !webhook.is_active } : webhook
+      setWebhooks(webhooks.map(webhook =>
+        webhook.id === webhookId ? { ...webhook, is_active: !webhook.is_active } : webhook,
       ));
       toast.success('Webhook status updated');
     } catch (error) {
@@ -343,8 +345,8 @@ export default function ApiAndWebhooks() {
   const handleRegenerateWebhookSecret = async (webhookId: string) => {
     try {
       const newSecret = 'whsec_' + Math.random().toString(36).substring(2, 15);
-      setWebhooks(webhooks.map(webhook => 
-        webhook.id === webhookId ? { ...webhook, secret: newSecret } : webhook
+      setWebhooks(webhooks.map(webhook =>
+        webhook.id === webhookId ? { ...webhook, secret: newSecret } : webhook,
       ));
       toast.success('Webhook secret regenerated');
     } catch (error) {
@@ -471,12 +473,12 @@ export default function ApiAndWebhooks() {
                                 if (e.target.checked) {
                                   setNewWebhookForm({
                                     ...newWebhookForm,
-                                    events: [...newWebhookForm.events, event]
+                                    events: [...newWebhookForm.events, event],
                                   });
                                 } else {
                                   setNewWebhookForm({
                                     ...newWebhookForm,
-                                    events: newWebhookForm.events.filter(e => e !== event)
+                                    events: newWebhookForm.events.filter(e => e !== event),
                                   });
                                 }
                               }}
@@ -553,12 +555,12 @@ export default function ApiAndWebhooks() {
                                 if (e.target.checked) {
                                   setNewApiKey({
                                     ...newApiKey,
-                                    permissions: [...newApiKey.permissions, permission]
+                                    permissions: [...newApiKey.permissions, permission],
                                   });
                                 } else {
                                   setNewApiKey({
                                     ...newApiKey,
-                                    permissions: newApiKey.permissions.filter(p => p !== permission)
+                                    permissions: newApiKey.permissions.filter(p => p !== permission),
                                   });
                                 }
                               }}
@@ -598,8 +600,8 @@ export default function ApiAndWebhooks() {
                       <div className="flex items-center space-x-2">
                         <Key className="h-5 w-5" />
                         <CardTitle>{apiKey.name}</CardTitle>
-                        <Badge variant={apiKey.is_active ? "default" : "secondary"}>
-                          {apiKey.is_active ? "Active" : "Inactive"}
+                        <Badge variant={apiKey.is_active ? 'default' : 'secondary'}>
+                          {apiKey.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -610,8 +612,8 @@ export default function ApiAndWebhooks() {
                         <Button variant="outline" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteApiKey(apiKey.id)}
                         >
@@ -662,8 +664,8 @@ export default function ApiAndWebhooks() {
                       <div className="flex items-center space-x-2">
                         <Zap className="h-5 w-5" />
                         <CardTitle>{webhook.name}</CardTitle>
-                        <Badge variant={webhook.is_active ? "default" : "secondary"}>
-                          {webhook.is_active ? "Active" : "Inactive"}
+                        <Badge variant={webhook.is_active ? 'default' : 'secondary'}>
+                          {webhook.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -674,15 +676,15 @@ export default function ApiAndWebhooks() {
                         <Button variant="outline" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleRegenerateWebhookSecret(webhook.id)}
                         >
                           <RefreshCw className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteWebhook(webhook.id)}
                         >
@@ -707,9 +709,9 @@ export default function ApiAndWebhooks() {
                           <span className="text-sm font-mono">
                             {showSecrets[webhook.id] ? webhook.secret : '••••••••••••'}
                           </span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => toggleSecretVisibility(webhook.id)}
                           >
                             {showSecrets[webhook.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -761,7 +763,7 @@ export default function ApiAndWebhooks() {
                     </TableCell>
                     <TableCell className="font-mono">{log.endpoint}</TableCell>
                     <TableCell>
-                      <Badge variant={log.status_code < 400 ? "default" : "destructive"}>
+                      <Badge variant={log.status_code < 400 ? 'default' : 'destructive'}>
                         {log.status_code}
                       </Badge>
                     </TableCell>
@@ -792,7 +794,7 @@ export default function ApiAndWebhooks() {
               <TableBody>
                 {webhookDeliveries.map((delivery) => {
                   const webhook = webhooks.find(w => w.id === delivery.webhook_id);
-                  
+
                   return (
                     <TableRow key={delivery.id}>
                       <TableCell className="font-medium">
@@ -810,7 +812,7 @@ export default function ApiAndWebhooks() {
                         {new Date(delivery.created_at).toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        {delivery.delivered_at 
+                        {delivery.delivered_at
                           ? new Date(delivery.delivered_at).toLocaleString()
                           : '-'
                         }

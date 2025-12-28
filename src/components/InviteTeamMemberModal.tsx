@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
 import { Mail, UserPlus, Shield, DollarSign, Check, X, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
+
 import { useApp } from '../context/AppContext';
 import { addUserToTenant, supabaseAdmin } from '../utils/tenantManager';
 
@@ -17,12 +18,12 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
     email: '',
     role: 'cashier' as 'owner' | 'manager' | 'cashier' | 'viewer',
     name: '',
-    commission: 3
+    commission: 3,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.name) {
       toast.error('Please fill in all required fields');
       return;
@@ -41,7 +42,7 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
 
       // Step 1: Create or get the user
       let userId: string;
-      
+
       // Check if user already exists
       const { data: existingUsers } = await supabaseAdmin
         .from('auth.users')
@@ -61,8 +62,8 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
           user_metadata: {
             name: formData.name,
             invited_by_tenant: currentTenant.id,
-            temp_password: tempPassword
-          }
+            temp_password: tempPassword,
+          },
         });
 
         if (createError) throw createError;
@@ -85,7 +86,7 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
           commission: formData.commission,
           totalSales: 0,
           shifts: [],
-          tenant_id: currentTenant.id
+          tenant_id: currentTenant.id,
         });
 
       if (employeeError) throw employeeError;
@@ -93,18 +94,18 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
       toast.success('Team member added successfully!');
       onSuccess();
       onClose();
-      
+
       // Reset form
       setFormData({
         email: '',
         role: 'cashier',
         name: '',
-        commission: 3
+        commission: 3,
       });
     } catch (error) {
       console.error('Failed to invite team member:', error);
       toast.error('Failed to add team member', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
       setLoading(false);
@@ -117,29 +118,36 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
       label: 'Manager',
       description: 'Can manage products, sales, and employees',
       icon: Shield,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
     },
     {
       value: 'cashier',
       label: 'Cashier',
       description: 'Can process sales and view reports',
       icon: DollarSign,
-      color: 'text-green-600'
+      color: 'text-green-600',
     },
     {
       value: 'viewer',
       label: 'Viewer',
       description: 'Read-only access to all data',
       icon: UserPlus,
-      color: 'text-gray-600'
-    }
+      color: 'text-gray-600',
+    },
   ];
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl border border-white/10 bg-slate-900/95 backdrop-blur-xl p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="w-full max-w-md p-6" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-white mb-2">Invite Team Member</h2>
           <p className="text-white/60">Add someone to your {currentTenant?.name} team</p>

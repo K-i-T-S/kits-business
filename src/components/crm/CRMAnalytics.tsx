@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   ArrowUp,
   ArrowDown,
@@ -16,6 +15,8 @@ import {
   PieChart,
   Activity,
 } from 'lucide-react';
+import { useMemo } from 'react';
+
 import type { Customer, CustomerSegment, MarketingCampaign, CRMAnalytics } from '../../types/crm';
 
 interface CRMAnalyticsProps {
@@ -40,15 +41,15 @@ export default function CRMAnalytics({
   const analytics = useMemo((): CRMAnalytics => {
     const totalCustomers = customers.length;
     const activeCustomers = customers.filter(c => c.status === 'active').length;
-    
+
     const thisMonth = new Date();
     const lastMonth = new Date(thisMonth.getFullYear(), thisMonth.getMonth() - 1);
-    
+
     const newCustomersThisMonth = customers.filter(c => {
       const joinDate = new Date(c.createdAt);
       return joinDate >= thisMonth;
     }).length;
-    
+
     const newCustomersLastMonth = customers.filter(c => {
       const joinDate = new Date(c.createdAt);
       return joinDate >= lastMonth && joinDate < thisMonth;
@@ -56,14 +57,14 @@ export default function CRMAnalytics({
 
     const totalRevenue = customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
     const averageCustomerLifetimeValue = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
-    
+
     // Calculate retention rate (simplified)
     const activeCustomersLastMonth = customers.filter(c => {
       const lastPurchase = c.lastPurchaseDate ? new Date(c.lastPurchaseDate) : null;
       return lastPurchase && lastPurchase >= lastMonth;
     }).length;
-    
-    const customerRetentionRate = activeCustomersLastMonth > 0 ? 
+
+    const customerRetentionRate = activeCustomersLastMonth > 0 ?
       (activeCustomers / activeCustomersLastMonth) * 100 : 0;
 
     // Top customers by revenue
@@ -76,7 +77,7 @@ export default function CRMAnalytics({
       const currentCount = segment.customerCount;
       // Mock previous count for demo
       const previousCount = Math.floor(currentCount * (0.8 + Math.random() * 0.4));
-      const growthRate = previousCount > 0 ? 
+      const growthRate = previousCount > 0 ?
         ((currentCount - previousCount) / previousCount) * 100 : 0;
 
       return {
@@ -89,16 +90,16 @@ export default function CRMAnalytics({
     });
 
     // Communication metrics
-    const totalCommunications = customers.reduce((sum, c) => 
+    const totalCommunications = customers.reduce((sum, c) =>
       sum + (c.communicationHistory?.length || 0), 0);
-    
-    const totalEmails = customers.reduce((sum, c) => 
+
+    const totalEmails = customers.reduce((sum, c) =>
       sum + (c.communicationHistory?.filter(comm => comm.type === 'email').length || 0), 0);
-    
-    const totalCommunicationsOpened = customers.reduce((sum, c) => 
+
+    const totalCommunicationsOpened = customers.reduce((sum, c) =>
       sum + (c.communicationHistory?.filter(comm => comm.status === 'opened').length || 0), 0);
-    
-    const totalCommunicationsReplied = customers.reduce((sum, c) => 
+
+    const totalCommunicationsReplied = customers.reduce((sum, c) =>
       sum + (c.communicationHistory?.filter(comm => comm.status === 'replied').length || 0), 0);
 
     const averageResponseTime = 2.5; // Mock data in hours
@@ -107,16 +108,16 @@ export default function CRMAnalytics({
     // Campaign metrics
     const totalCampaigns = campaigns.length;
     const activeCampaigns = campaigns.filter(c => c.status === 'running').length;
-    
+
     const totalSent = campaigns.reduce((sum, c) => sum + (c.performance?.sent || 0), 0);
     const totalOpened = campaigns.reduce((sum, c) => sum + (c.performance?.opened || 0), 0);
     const totalClicked = campaigns.reduce((sum, c) => sum + (c.performance?.clicked || 0), 0);
     const totalConverted = campaigns.reduce((sum, c) => sum + (c.performance?.converted || 0), 0);
-    
+
     const averageOpenRate = totalSent > 0 ? (totalOpened / totalSent) * 100 : 0;
     const averageClickRate = totalOpened > 0 ? (totalClicked / totalOpened) * 100 : 0;
     const averageConversionRate = totalClicked > 0 ? (totalConverted / totalClicked) * 100 : 0;
-    
+
     const campaignRevenue = campaigns.reduce((sum, c) => sum + (c.performance?.revenue || 0), 0);
     const campaignCost = campaigns.reduce((sum, c) => sum + (c.performance?.cost || 0), 0);
     const averageROI = campaignCost > 0 ? ((campaignRevenue - campaignCost) / campaignCost) * 100 : 0;
@@ -157,17 +158,17 @@ export default function CRMAnalytics({
     return `${value.toFixed(1)}%`;
   };
 
-  const MetricCard = ({ 
-    title, 
-    value, 
-    change, 
-    icon: Icon, 
-    trend 
-  }: { 
-    title: string; 
-    value: string | number; 
-    change?: number; 
-    icon: any; 
+  const MetricCard = ({
+    title,
+    value,
+    change,
+    icon: Icon,
+    trend,
+  }: {
+    title: string;
+    value: string | number;
+    change?: number;
+    icon: any;
     trend?: 'up' | 'down' | 'neutral';
   }) => (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -185,8 +186,8 @@ export default function CRMAnalytics({
           <div className={`flex items-center ${
             trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-500'
           }`}>
-            {trend === 'up' ? <ArrowUp className="h-4 w-4" /> : 
-             trend === 'down' ? <ArrowDown className="h-4 w-4" /> : null}
+            {trend === 'up' ? <ArrowUp className="h-4 w-4" /> :
+              trend === 'down' ? <ArrowDown className="h-4 w-4" /> : null}
             <span className="text-sm font-medium ml-1">
               {Math.abs(change)}%
             </span>
@@ -197,7 +198,7 @@ export default function CRMAnalytics({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 lg:pb-0">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -429,8 +430,8 @@ export default function CRMAnalytics({
                     <span className="text-sm text-gray-600 capitalize">{status}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-indigo-600 h-2 rounded-full" 
+                        <div
+                          className="bg-indigo-600 h-2 rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -453,8 +454,8 @@ export default function CRMAnalytics({
                     <span className="text-sm text-gray-600 capitalize">{source.replace('_', ' ')}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full" 
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -475,8 +476,8 @@ export default function CRMAnalytics({
                 { label: '6-10 purchases', min: 6, max: 10 },
                 { label: '10+ purchases', min: 11, max: Infinity },
               ].map((range) => {
-                const count = customers.filter(c => 
-                  (c.purchaseCount || 0) >= range.min && (c.purchaseCount || 0) <= range.max
+                const count = customers.filter(c =>
+                  (c.purchaseCount || 0) >= range.min && (c.purchaseCount || 0) <= range.max,
                 ).length;
                 const percentage = customers.length > 0 ? (count / customers.length) * 100 : 0;
                 return (
@@ -484,8 +485,8 @@ export default function CRMAnalytics({
                     <span className="text-sm text-gray-600">{range.label}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-purple-600 h-2 rounded-full" 
+                        <div
+                          className="bg-purple-600 h-2 rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>

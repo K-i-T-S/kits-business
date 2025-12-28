@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import {
   Plus,
   Search,
@@ -11,10 +10,12 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
+import { useMemo, useState } from 'react';
+
 import InviteTeamMemberModal from '../components/InviteTeamMemberModal';
+import Layout from '../components/Layout';
 import TenantSwitcher from '../components/TenantSwitcher';
+import { useApp } from '../context/AppContext';
 
 export default function Employees() {
   const { employees, sales, addEmployee, currentTenant } = useApp();
@@ -73,12 +74,12 @@ export default function Employees() {
 
   const handleAddEmployee = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const employee = {
       id: Date.now().toString(),
       ...newEmployee,
       totalSales: 0,
-      shifts: []
+      shifts: [],
     };
 
     addEmployee(employee);
@@ -90,7 +91,7 @@ export default function Employees() {
     const employeeSales = sales.filter(s => s.employeeId === employeeId);
     const totalRevenue = employeeSales.reduce((sum, s) => sum + s.total, 0);
     const totalSalesCount = employeeSales.length;
-    
+
     const employee = employees.find(e => e.id === employeeId);
     const commission = employee ? (totalRevenue * employee.commission) / 100 : 0;
 
@@ -108,7 +109,7 @@ export default function Employees() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0">
         <section className="hero-gradient glass-panel relative overflow-hidden p-6 md:p-8 text-white">
           <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -255,36 +256,58 @@ export default function Employees() {
 
       {/* Add Employee Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg sm:text-xl text-gray-900 mb-4 font-semibold">Add New Employee</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="rounded-xl max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto" style={{
+            backgroundColor: 'rgba(11, 15, 36, 0.98)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '1.5rem',
+            color: '#f8faff',
+            boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+            backdropFilter: 'blur(28px)'
+          }}>
+            <h2 className="text-lg sm:text-xl mb-4 font-semibold" style={{ color: '#f8faff' }}>Add New Employee</h2>
             <form onSubmit={handleAddEmployee} className="space-y-4">
               <div>
-                <label className="block text-sm sm:text-base text-gray-700 mb-2">Full Name</label>
+                <label className="block text-sm sm:text-base mb-2" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Full Name</label>
                 <input
                   type="text"
                   value={newEmployee.name}
                   onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                  className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 sm:py-3 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm sm:text-base text-gray-700 mb-2">Email</label>
+                <label className="block text-sm sm:text-base mb-2" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Email</label>
                 <input
                   type="email"
                   value={newEmployee.email}
                   onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                  className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 sm:py-3 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm sm:text-base text-gray-700 mb-2">Role</label>
+                <label className="block text-sm sm:text-base mb-2" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Role</label>
                 <select
                   value={newEmployee.role}
                   onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value as any })}
-                  className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 sm:py-3 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                 >
                   <option value="cashier">Cashier</option>
                   <option value="manager">Manager</option>
@@ -292,7 +315,7 @@ export default function Employees() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm sm:text-base text-gray-700 mb-2">Commission Rate (%)</label>
+                <label className="block text-sm sm:text-base mb-2" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Commission Rate (%)</label>
                 <input
                   type="number"
                   min="0"
@@ -300,7 +323,12 @@ export default function Employees() {
                   step="0.5"
                   value={newEmployee.commission}
                   onChange={(e) => setNewEmployee({ ...newEmployee, commission: parseFloat(e.target.value) })}
-                  className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full px-4 py-2 sm:py-3 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                   required
                 />
               </div>
@@ -308,13 +336,23 @@ export default function Employees() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                  className="flex-1 px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#f8faff'
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm sm:text-base"
+                  className="flex-1 px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base"
+                  style={{
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none'
+                  }}
                 >
                   Add Employee
                 </button>

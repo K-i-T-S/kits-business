@@ -1,6 +1,6 @@
+import { Stars, ChevronDown, ChevronRight } from 'lucide-react';
 import React, { memo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Stars, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface NavItemProps {
   item: {
@@ -19,7 +19,7 @@ interface NavItemProps {
 const NavItem = memo(({ item, isActive }: NavItemProps) => {
   const location = useLocation();
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(
-    item.subItems?.some(subItem => location.pathname === subItem.href) || false
+    item.subItems?.some(subItem => location.pathname === subItem.href) || false,
   );
 
   const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -38,6 +38,7 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
         key={item.name}
         to={item.href}
         onClick={toggleSubmenu}
+        data-testid={`nav-${item.href.replace('/', '')}`}
         className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 sidebar-nav-item ${
           isActive || isSubItemActive
             ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-white shadow-lg border border-indigo-500/30 active'
@@ -46,7 +47,7 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
       >
         <div className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-all sidebar-nav-icon ${
           isActive || isSubItemActive
-            ? 'bg-indigo-500/20 text-indigo-300' 
+            ? 'bg-indigo-500/20 text-indigo-300'
             : 'bg-white/5 text-white/70 group-hover:bg-white/10 group-hover:text-white'
         }`}>
           <item.icon className="h-4 w-4" />
@@ -75,7 +76,7 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
           </>
         )}
       </Link>
-      
+
       {hasSubItems && isSubmenuOpen && (
         <div className="ml-4 mt-1 space-y-1">
           {item.subItems!.map((subItem) => {
@@ -91,8 +92,8 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
                 }`}
               >
                 <div className={`flex h-6 w-6 items-center justify-center rounded transition-all ${
-                  isSubActive 
-                    ? 'bg-indigo-500/20 text-indigo-300' 
+                  isSubActive
+                    ? 'bg-indigo-500/20 text-indigo-300'
                     : 'bg-white/5 text-white/60 group-hover:bg-white/10 group-hover:text-white'
                 }`}>
                   <subItem.icon className="h-3 w-3" />

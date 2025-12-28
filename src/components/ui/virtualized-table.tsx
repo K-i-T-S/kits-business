@@ -90,7 +90,7 @@ const VirtualizedTable = React.memo<VirtualizedTableProps>(({
         width="100%"
         overscanCount={5}
       >
-        {({ index, style }) => <Row key={index} index={index} style={style} />}
+        {({ index, style }: { index: number; style: React.CSSProperties }) => <Row key={index} index={index} style={style} />}
       </List>
     </div>
   );

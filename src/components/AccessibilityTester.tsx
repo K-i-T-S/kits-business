@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { AccessibilityTester as AccessibilityUtils } from '../utils/accessibility';
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import { AccessibilityTester as AccessibilityUtils } from '../utils/accessibility';
 
 interface TestResult {
   type: 'missing-alt' | 'missing-labels' | 'heading-structure';
@@ -21,22 +22,22 @@ export default function AccessibilityTesterComponent() {
     const missingAlt = AccessibilityUtils.checkMissingAltText();
     results.push({
       type: 'missing-alt',
-      issues: missingAlt.length > 0 
-        ? [`Found ${missingAlt.length} images without alt text`] 
+      issues: missingAlt.length > 0
+        ? [`Found ${missingAlt.length} images without alt text`]
         : [],
       elements: missingAlt,
-      passed: missingAlt.length === 0
+      passed: missingAlt.length === 0,
     });
 
     // Test for missing form labels
     const missingLabels = AccessibilityUtils.checkMissingLabels();
     results.push({
       type: 'missing-labels',
-      issues: missingLabels.length > 0 
-        ? [`Found ${missingLabels.length} form inputs without labels`] 
+      issues: missingLabels.length > 0
+        ? [`Found ${missingLabels.length} form inputs without labels`]
         : [],
       elements: missingLabels,
-      passed: missingLabels.length === 0
+      passed: missingLabels.length === 0,
     });
 
     // Test heading structure
@@ -45,7 +46,7 @@ export default function AccessibilityTesterComponent() {
       type: 'heading-structure',
       issues: headingCheck.issues,
       elements: headingCheck.headings,
-      passed: headingCheck.issues.length === 0
+      passed: headingCheck.issues.length === 0,
     });
 
     setTestResults(results);
@@ -124,11 +125,11 @@ export default function AccessibilityTesterComponent() {
           <div
             key={index}
             className={`border rounded-lg p-4 ${
-              result.passed 
-                ? 'border-green-200 bg-green-50' 
+              result.passed
+                ? 'border-green-200 bg-green-50'
                 : result.issues.length > 0
-                ? 'border-yellow-200 bg-yellow-50'
-                : 'border-red-200 bg-red-50'
+                  ? 'border-yellow-200 bg-yellow-50'
+                  : 'border-red-200 bg-red-50'
             }`}
           >
             <div className="flex items-start gap-3">
@@ -140,7 +141,7 @@ export default function AccessibilityTesterComponent() {
                 <p className="text-sm text-gray-600 mb-2">
                   {getTestDescription(result.type)}
                 </p>
-                
+
                 {result.issues.length > 0 && (
                   <div className="mb-2">
                     <p className="text-sm font-medium text-gray-700 mb-1">Issues found:</p>
@@ -178,7 +179,7 @@ export default function AccessibilityTesterComponent() {
           <div>
             <h4 className="font-semibold text-blue-900 mb-1">Note</h4>
             <p className="text-sm text-blue-800">
-              These are automated checks. Manual testing with screen readers and keyboard navigation 
+              These are automated checks. Manual testing with screen readers and keyboard navigation
               is also recommended for comprehensive accessibility validation.
             </p>
           </div>

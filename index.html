@@ -18,6 +18,27 @@
       <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
       <link rel="icon" type="image/png" sizes="16x16" href="/logo.png" />
       <link rel="shortcut icon" href="/logo.png" />
+      
+      <!-- Security Headers -->
+      <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+      <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+      <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+      <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()" />
+      
+      <!-- Content Security Policy -->
+      <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.googletagmanager.com https://va.vercel-scripts.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data: blob: https:;
+        connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+        media-src 'self';
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        upgrade-insecure-requests;
+      " />
     </head>
 
     <body>

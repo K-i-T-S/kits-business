@@ -1,8 +1,9 @@
+import { Calendar, Search, Filter, Download, Eye, User, Package, DollarSign, Settings, AlertTriangle, CheckCircle, Info, X, ChevronDown, RefreshCw, Trash2, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Search, Filter, Download, Eye, User, Package, DollarSign, Settings, AlertTriangle, CheckCircle, Info, X, ChevronDown, RefreshCw, Trash2, FileText } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+
 import { BRAND } from '../constants/branding';
+import { useApp } from '../context/AppContext';
 
 interface ActivityLog {
   id: number;
@@ -28,7 +29,7 @@ export default function ActivityLog() {
   const [dateRange, setDateRange] = useState('7days');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
-  
+
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([
     {
       id: 1,
@@ -41,7 +42,7 @@ export default function ActivityLog() {
       ipAddress: '192.168.1.100',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       status: 'success',
-      severity: 'low'
+      severity: 'low',
     },
     {
       id: 2,
@@ -54,7 +55,7 @@ export default function ActivityLog() {
       ipAddress: '127.0.0.1',
       userAgent: 'System Scheduler',
       status: 'success',
-      severity: 'low'
+      severity: 'low',
     },
     {
       id: 3,
@@ -67,7 +68,7 @@ export default function ActivityLog() {
       ipAddress: '192.168.1.105',
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
       status: 'warning',
-      severity: 'medium'
+      severity: 'medium',
     },
     {
       id: 4,
@@ -80,7 +81,7 @@ export default function ActivityLog() {
       ipAddress: '192.168.1.102',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       status: 'success',
-      severity: 'medium'
+      severity: 'medium',
     },
     {
       id: 5,
@@ -93,7 +94,7 @@ export default function ActivityLog() {
       ipAddress: '192.168.1.100',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       status: 'success',
-      severity: 'medium'
+      severity: 'medium',
     },
     {
       id: 6,
@@ -106,7 +107,7 @@ export default function ActivityLog() {
       ipAddress: '127.0.0.1',
       userAgent: 'Payment Gateway',
       status: 'error',
-      severity: 'high'
+      severity: 'high',
     },
     {
       id: 7,
@@ -119,7 +120,7 @@ export default function ActivityLog() {
       ipAddress: '192.168.1.105',
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
       status: 'success',
-      severity: 'low'
+      severity: 'low',
     },
     {
       id: 8,
@@ -132,7 +133,7 @@ export default function ActivityLog() {
       ipAddress: '192.168.1.102',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       status: 'success',
-      severity: 'low'
+      severity: 'low',
     },
     {
       id: 9,
@@ -145,7 +146,7 @@ export default function ActivityLog() {
       ipAddress: '192.168.1.100',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       status: 'success',
-      severity: 'medium'
+      severity: 'medium',
     },
     {
       id: 10,
@@ -158,8 +159,8 @@ export default function ActivityLog() {
       ipAddress: '127.0.0.1',
       userAgent: 'Database Monitor',
       status: 'error',
-      severity: 'critical'
-    }
+      severity: 'critical',
+    },
   ]);
 
   const categories = [
@@ -220,7 +221,7 @@ export default function ActivityLog() {
                          log.details.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || log.category === selectedCategory;
     const matchesSeverity = selectedSeverity === 'all' || log.severity === selectedSeverity;
-    
+
     return matchesSearch && matchesCategory && matchesSeverity;
   });
 
@@ -235,8 +236,8 @@ export default function ActivityLog() {
         log.category,
         log.details,
         log.status,
-        log.severity
-      ])
+        log.severity,
+      ]),
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -262,7 +263,7 @@ export default function ActivityLog() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 pb-20 lg:pb-0">
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
@@ -485,7 +486,7 @@ export default function ActivityLog() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -526,7 +527,7 @@ export default function ActivityLog() {
                     <p className="text-white text-sm truncate">{selectedLog.userAgent}</p>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-white/60">Details</label>
                   <p className="text-white mt-1">{selectedLog.details}</p>

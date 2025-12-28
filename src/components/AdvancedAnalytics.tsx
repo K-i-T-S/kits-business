@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  Zap, 
-  AlertTriangle, 
+import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
+import {
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Zap,
+  AlertTriangle,
   CheckCircle,
   ArrowUpRight,
   ArrowDownRight,
@@ -15,13 +15,14 @@ import {
   DollarSign,
   Users,
   ShoppingCart,
-  Package
+  Package,
 } from 'lucide-react';
-import { Card } from './ui/card';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
+import { useState, useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart } from 'recharts';
-import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
+
+import { Badge } from './ui/badge';
+import { Card } from './ui/card';
+import { Progress } from './ui/progress';
 
 interface KPICard {
   title: string;
@@ -65,7 +66,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
   // Filter data by date range
   const filteredData = useMemo(() => {
     const { startDate, endDate } = getDateRange();
-    
+
     return {
       sales: data.sales.filter(sale => {
         const saleDate = parseISO(sale.date);
@@ -73,7 +74,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
       }),
       products: data.products,
       customers: data.customers,
-      employees: data.employees
+      employees: data.employees,
     };
   }, [data, selectedPeriod]);
 
@@ -81,20 +82,20 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
   const kpis = useMemo(() => {
     const { sales, customers } = filteredData;
     const previousPeriodData = getPreviousPeriodData(sales, selectedPeriod);
-    
+
     const currentRevenue = sales.reduce((sum, s) => sum + (s.total || 0), 0);
     const previousRevenue = previousPeriodData.reduce((sum, s) => sum + (s.total || 0), 0);
     const revenueChange = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
-    const currentProfit = sales.reduce((sum: number, s: any) => 
-      sum + ((s.items || []).reduce((itemSum: number, item: any) => 
+    const currentProfit = sales.reduce((sum: number, s: any) =>
+      sum + ((s.items || []).reduce((itemSum: number, item: any) =>
         itemSum + (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0)), 0)
-      ), 0
+      ), 0,
     );
-    const previousProfit = previousPeriodData.reduce((sum: number, s: any) => 
-      sum + ((s.items || []).reduce((itemSum: number, item: any) => 
+    const previousProfit = previousPeriodData.reduce((sum: number, s: any) =>
+      sum + ((s.items || []).reduce((itemSum: number, item: any) =>
         itemSum + (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0)), 0)
-      ), 0
+      ), 0,
     );
     const profitChange = previousProfit > 0 ? ((currentProfit - previousProfit) / previousProfit) * 100 : 0;
 
@@ -102,11 +103,11 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
     const previousOrders = previousPeriodData.length;
     const ordersChange = previousOrders > 0 ? ((currentOrders - previousOrders) / previousOrders) * 100 : 0;
 
-    const activeCustomers = customers.filter(c => 
-      sales.some(s => s.customerId === c.id)
+    const activeCustomers = customers.filter(c =>
+      sales.some(s => s.customerId === c.id),
     ).length;
-    const previousCustomers = previousPeriodData.reduce((acc, s) => 
-      s.customerId ? acc.add(s.customerId) : acc, new Set()
+    const previousCustomers = previousPeriodData.reduce((acc, s) =>
+      s.customerId ? acc.add(s.customerId) : acc, new Set(),
     ).size;
     const customersChange = previousCustomers > 0 ? ((activeCustomers - previousCustomers) / previousCustomers) * 100 : 0;
 
@@ -124,7 +125,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
         icon: DollarSign,
         color: 'from-indigo-600/95 via-indigo-500/85 to-sky-400/80',
         unit: 'currency',
-        description: 'Total sales revenue'
+        description: 'Total sales revenue',
       },
       {
         title: 'Net Profit',
@@ -135,7 +136,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
         icon: TrendingUp,
         color: 'from-emerald-500/95 via-emerald-400/85 to-lime-400/80',
         unit: 'currency',
-        description: 'Revenue minus costs'
+        description: 'Revenue minus costs',
       },
       {
         title: 'Total Orders',
@@ -146,7 +147,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
         icon: ShoppingCart,
         color: 'from-amber-500/95 via-amber-400/85 to-orange-400/80',
         unit: 'number',
-        description: 'Number of transactions'
+        description: 'Number of transactions',
       },
       {
         title: 'Active Customers',
@@ -157,7 +158,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
         icon: Users,
         color: 'from-purple-500/95 via-purple-400/85 to-pink-400/80',
         unit: 'number',
-        description: 'Customers with purchases'
+        description: 'Customers with purchases',
       },
       {
         title: 'Avg Order Value',
@@ -168,8 +169,8 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
         icon: Target,
         color: 'from-rose-500/95 via-rose-400/85 to-pink-400/80',
         unit: 'currency',
-        description: 'Average revenue per order'
-      }
+        description: 'Average revenue per order',
+      },
     ] as KPICard[];
   }, [filteredData, selectedPeriod]);
 
@@ -178,30 +179,30 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
     const { sales } = filteredData;
     const { startDate, endDate } = getDateRange();
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     const data = [];
     for (let i = 0; i <= daysDiff; i++) {
       const date = subDays(endDate, daysDiff - i);
       const dateStr = format(date, 'yyyy-MM-dd');
-      
+
       const daySales = sales.filter((s: any) => format(parseISO(s.date), 'yyyy-MM-dd') === dateStr);
       const revenue = daySales.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
-      const profit = daySales.reduce((sum: number, s: any) => 
-        sum + ((s.items || []).reduce((itemSum: number, item: any) => 
+      const profit = daySales.reduce((sum: number, s: any) =>
+        sum + ((s.items || []).reduce((itemSum: number, item: any) =>
           itemSum + (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0)), 0)
-        ), 0
+        ), 0,
       );
       const orders = daySales.length;
-      
+
       data.push({
         date: format(date, 'MMM dd'),
         revenue,
         profit,
         orders,
-        customers: new Set(daySales.map(s => s.customerId).filter(Boolean)).size
+        customers: new Set(daySales.map(s => s.customerId).filter(Boolean)).size,
       });
     }
-    
+
     return data;
   }, [filteredData, selectedPeriod]);
 
@@ -209,7 +210,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
   const productPerformance = useMemo(() => {
     const { sales } = filteredData;
     const productMap = new Map();
-    
+
     sales.forEach(sale => {
       (sale.items || []).forEach((item: any) => {
         const existing = productMap.get(item.productId) || {
@@ -217,18 +218,18 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
           revenue: 0,
           quantity: 0,
           profit: 0,
-          orders: 0
+          orders: 0,
         };
-        
+
         existing.revenue += (item.price || 0) * (item.quantity || 0);
         existing.quantity += (item.quantity || 0);
         existing.profit += (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0));
         existing.orders += 1;
-        
+
         productMap.set(item.productId, existing);
       });
     });
-    
+
     return Array.from(productMap.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
@@ -238,36 +239,36 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
   const customerSegmentation = useMemo(() => {
     const { sales, customers } = filteredData;
     const customerSpending = new Map();
-    
+
     sales.forEach(sale => {
       if (sale.customerId) {
         const current = customerSpending.get(sale.customerId) || 0;
         customerSpending.set(sale.customerId, current + (sale.total || 0));
       }
     });
-    
+
     const segments = {
       'High Value (> $1000)': 0,
       'Medium ($300-$1000)': 0,
       'Low (< $300)': 0,
-      'One-time': 0
+      'One-time': 0,
     };
-    
+
     customerSpending.forEach(spending => {
       if (spending > 1000) segments['High Value (> $1000)']++;
       else if (spending >= 300) segments['Medium ($300-$1000)']++;
       else segments['Low (< $300)']++;
     });
-    
+
     segments['One-time'] = customers.length - customerSpending.size;
-    
+
     return Object.entries(segments).map(([name, value]) => ({ name, value }));
   }, [filteredData]);
 
-  const formatCurrency = (value: number) => 
+  const formatCurrency = (value: number) =>
     value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
-  const formatNumber = (value: number) => 
+  const formatNumber = (value: number) =>
     value.toLocaleString('en-US');
 
   const getChangeIcon = (type: 'increase' | 'decrease' | 'neutral') => {
@@ -313,7 +314,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
         {kpis.map((kpi) => {
           const ChangeIcon = getChangeIcon(kpi.changeType || 'neutral');
           const Icon = kpi.icon;
-          
+
           return (
             <Card key={kpi.title} className="p-6 bg-white/50 backdrop-blur-sm border-white/20">
               <div className="flex items-center justify-between mb-4">
@@ -325,7 +326,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
                   {Math.abs(kpi.change || 0).toFixed(1)}%
                 </div>
               </div>
-              
+
               <div>
                 <p className="text-sm text-gray-600 mb-1">{kpi.title}</p>
                 <p className="text-2xl font-bold text-gray-900">
@@ -419,36 +420,36 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-gray-600">Profit Margin</span>
               <span className="text-sm font-medium text-gray-900">
-                {kpis[0]?.value && kpis[1]?.value ? 
+                {kpis[0]?.value && kpis[1]?.value ?
                   (((kpis[1].value as number) / (kpis[0].value as number)) * 100).toFixed(1) : '0'
                 }%
               </span>
             </div>
-            <Progress 
-              value={kpis[0]?.value && kpis[1]?.value ? 
+            <Progress
+              value={kpis[0]?.value && kpis[1]?.value ?
                 (((kpis[1].value as number) / (kpis[0].value as number)) * 100) : 0
-              } 
+              }
               className="h-2"
             />
           </div>
-          
+
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-gray-600">Customer Retention</span>
               <span className="text-sm font-medium text-gray-900">
-                {filteredData.customers.length > 0 ? 
+                {filteredData.customers.length > 0 ?
                   (((filteredData.customers.length - (customerSegmentation[3]?.value || 0)) / filteredData.customers.length) * 100).toFixed(1) : '0'
                 }%
               </span>
             </div>
-            <Progress 
-              value={filteredData.customers.length > 0 ? 
+            <Progress
+              value={filteredData.customers.length > 0 ?
                 (((filteredData.customers.length - (customerSegmentation[3]?.value || 0)) / filteredData.customers.length) * 100) : 0
-              } 
+              }
               className="h-2"
             />
           </div>
-          
+
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-gray-600">Growth Rate</span>
@@ -456,8 +457,8 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
                 {Math.abs(kpis[0]?.change || 0).toFixed(1)}%
               </span>
             </div>
-            <Progress 
-              value={Math.max(0, Math.min(100, (kpis[0]?.change || 0) + 50))} 
+            <Progress
+              value={Math.max(0, Math.min(100, (kpis[0]?.change || 0) + 50))}
               className="h-2"
             />
           </div>
@@ -472,7 +473,7 @@ function getPreviousPeriodData(sales: any[], period: '7d' | '30d' | '90d') {
   const daysBack = period === '7d' ? 14 : period === '30d' ? 60 : 180;
   const startDate = subDays(now, daysBack);
   const endDate = subDays(now, period === '7d' ? 7 : period === '30d' ? 30 : 90);
-  
+
   return sales.filter(sale => {
     const saleDate = parseISO(sale.date);
     return isWithinInterval(saleDate, { start: startOfDay(startDate), end: endOfDay(endDate) });

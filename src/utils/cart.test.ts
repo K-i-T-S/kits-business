@@ -34,7 +34,9 @@ const addToCart = (cart: Cart, item: CartItem): Cart => {
   if (existingItemIndex >= 0) {
     // Update quantity if item exists
     const updatedItems = [...cart.items];
-    updatedItems[existingItemIndex].quantity += item.quantity;
+    if (existingItemIndex >= 0 && updatedItems[existingItemIndex]) {
+      updatedItems[existingItemIndex]!.quantity += item.quantity;
+    }
     
     const newSubtotal = calculateSubtotal(updatedItems);
     const newTax = calculateTax(newSubtotal);
@@ -184,7 +186,7 @@ describe('Cart Utilities', () => {
       const result = addToCart(testCart, additionalItem);
       
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].quantity).toBe(4); // 3 + 1 = 4
+      expect(result.items[0]?.quantity).toBe(4); // 3 + 1 = 4
       expect(result.subtotal).toBe(40.00); // 10.00 * 4 = 40.00
     });
 
@@ -235,7 +237,7 @@ describe('Cart Utilities', () => {
     it('updates item quantity', () => {
       const result = updateQuantity(testCart, '1', 5);
       
-      expect(result.items[0].quantity).toBe(5);
+      expect(result.items[0]?.quantity).toBe(5);
       expect(result.subtotal).toBe(50.00);
     });
 

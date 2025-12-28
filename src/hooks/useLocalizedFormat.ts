@@ -16,11 +16,11 @@ export const useLocalizedFormat = () => {
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
     try {
-      const locale = i18n.language === 'ar' ? 'ar-SA' : 
-                     i18n.language === 'zh' ? 'zh-CN' :
-                     i18n.language === 'es' ? 'es-ES' :
-                     i18n.language === 'fr' ? 'fr-FR' : 'en-US';
-      
+      const locale = i18n.language === 'ar' ? 'ar-SA' :
+        i18n.language === 'zh' ? 'zh-CN' :
+          i18n.language === 'es' ? 'es-ES' :
+            i18n.language === 'fr' ? 'fr-FR' : 'en-US';
+
       return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
@@ -35,11 +35,11 @@ export const useLocalizedFormat = () => {
 
   const formatNumber = (number: number, options?: Intl.NumberFormatOptions) => {
     try {
-      const locale = i18n.language === 'ar' ? 'ar-SA' : 
-                     i18n.language === 'zh' ? 'zh-CN' :
-                     i18n.language === 'es' ? 'es-ES' :
-                     i18n.language === 'fr' ? 'fr-FR' : 'en-US';
-      
+      const locale = i18n.language === 'ar' ? 'ar-SA' :
+        i18n.language === 'zh' ? 'zh-CN' :
+          i18n.language === 'es' ? 'es-ES' :
+            i18n.language === 'fr' ? 'fr-FR' : 'en-US';
+
       return new Intl.NumberFormat(locale, options).format(number);
     } catch (error) {
       console.error('Number formatting error:', error);
@@ -60,9 +60,9 @@ export const useLocalizedFormat = () => {
       const dateObj = typeof date === 'string' ? parseISO(date) : date;
       const now = new Date();
       const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
-      
+
       const rtf = new Intl.RelativeTimeFormat(i18n.language, { numeric: 'auto' });
-      
+
       if (diffInSeconds < 60) {
         return rtf.format(-diffInSeconds, 'second');
       } else if (diffInSeconds < 3600) {

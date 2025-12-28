@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+
 import { supabase } from './supabaseClient';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -12,8 +13,8 @@ if (!supabaseUrl) {
 export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 }) : null;
 
 // Store management functions
@@ -26,9 +27,9 @@ export async function createStore(name: string, code: string, address?: string, 
     store_code: code,
     store_address: address,
     store_phone: phone,
-    store_email: email
+    store_email: email,
   });
-  
+
   if (error) throw error;
   return data;
 }
@@ -43,7 +44,7 @@ export async function getStoresByTenant(tenantId: string) {
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
     .order('created_at', { ascending: true });
-  
+
   if (error) throw error;
   return data;
 }
@@ -64,12 +65,12 @@ export async function updateStore(storeId: string, updates: {
     .from('stores')
     .update({
       ...updates,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq('id', storeId)
     .select()
     .single();
-  
+
   if (error) throw error;
   return data;
 }
@@ -82,7 +83,7 @@ export async function deleteStore(storeId: string) {
     .from('stores')
     .update({ is_active: false })
     .eq('id', storeId);
-  
+
   if (error) throw error;
 }
 
@@ -95,11 +96,11 @@ export async function assignUserToStore(storeId: string, userId: string, role: '
     .upsert({
       store_id: storeId,
       user_id: userId,
-      role: role
+      role: role,
     })
     .select()
     .single();
-  
+
   if (error) throw error;
   return data;
 }
@@ -113,7 +114,7 @@ export async function removeUserFromStore(storeId: string, userId: string) {
     .delete()
     .eq('store_id', storeId)
     .eq('user_id', userId);
-  
+
   if (error) throw error;
 }
 
@@ -129,7 +130,7 @@ export async function getStoreUsers(storeId: string) {
       store:stores(id, name, code)
     `)
     .eq('store_id', storeId);
-  
+
   if (error) throw error;
   return data;
 }
@@ -146,7 +147,7 @@ export async function getUserStores(userId: string) {
     `)
     .eq('user_id', userId)
     .eq('store.is_active', true);
-  
+
   if (error) throw error;
   return data;
 }
@@ -157,9 +158,9 @@ export async function setStoreContext(storeId: string) {
     throw new Error('Service role key not configured');
   }
   const { error } = await supabaseAdmin.rpc('set_store_context', {
-    store_id: storeId
+    store_id: storeId,
   });
-  
+
   if (error) throw error;
 }
 
@@ -168,7 +169,7 @@ export async function getCurrentStore() {
     throw new Error('Service role key not configured');
   }
   const { data, error } = await supabaseAdmin.rpc('get_current_store');
-  
+
   if (error) throw error;
   return data;
 }

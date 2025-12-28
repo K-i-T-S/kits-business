@@ -1,5 +1,5 @@
-import { supabase } from './supabaseClient';
 import { logSecurityEvent } from './auditLogger';
+import { supabase } from './supabaseClient';
 
 // Enhanced rate limiting with Redis-like persistence
 interface RateLimitEntry {
@@ -34,19 +34,19 @@ const SECURITY_CONFIG: SecurityConfig = {
     login: { maxRequests: 5, windowMs: 15 * 60 * 1000, blockDurationMs: 30 * 60 * 1000 },
     api: { maxRequests: 1000, windowMs: 60 * 1000, blockDurationMs: 5 * 60 * 1000 },
     export: { maxRequests: 10, windowMs: 60 * 60 * 1000, blockDurationMs: 15 * 60 * 1000 },
-    bulk: { maxRequests: 50, windowMs: 60 * 60 * 1000, blockDurationMs: 10 * 60 * 1000 }
+    bulk: { maxRequests: 50, windowMs: 60 * 60 * 1000, blockDurationMs: 10 * 60 * 1000 },
   },
   validation: {
     maxStringLength: 10000,
     maxArrayLength: 1000,
     allowedFileTypes: ['.json', '.csv', '.xlsx', '.pdf'],
-    maxFileSize: 10 * 1024 * 1024 // 10MB
+    maxFileSize: 10 * 1024 * 1024, // 10MB
   },
   monitoring: {
     suspiciousThreshold: 100,
     maxConcurrentSessions: 5,
-    sessionTimeoutMs: 30 * 60 * 1000 // 30 minutes
-  }
+    sessionTimeoutMs: 30 * 60 * 1000, // 30 minutes
+  },
 };
 
 // Enhanced rate limit store with cleanup
@@ -75,19 +75,19 @@ class EnhancedRateLimitStore {
   increment(key: string): RateLimitEntry {
     const existing = this.get(key);
     const now = Date.now();
-    
+
     if (existing) {
       existing.count++;
       existing.lastAccess = now;
       return existing;
     }
-    
+
     const newEntry: RateLimitEntry = {
       count: 1,
       resetTime: now + 60 * 1000, // Default 1 minute window
-      lastAccess: now
+      lastAccess: now,
     };
-    
+
     this.set(key, newEntry);
     return newEntry;
   }
@@ -96,9 +96,9 @@ class EnhancedRateLimitStore {
     const entry = this.get(key) || {
       count: 0,
       resetTime: Date.now() + 60 * 1000,
-      lastAccess: Date.now()
+      lastAccess: Date.now(),
     };
-    
+
     entry.blockedUntil = Date.now() + durationMs;
     this.set(key, entry);
   }
@@ -158,11 +158,11 @@ export class EnhancedSecurityMiddleware {
   // Enhanced rate limiting with progressive blocking
   async checkRateLimit(
     operation: keyof SecurityConfig['rateLimiting'],
-    context: SecurityContext
+    context: SecurityContext,
   ): Promise<{ allowed: boolean; remaining: number; resetTime: number; blocked?: boolean }> {
     const config = SECURITY_CONFIG.rateLimiting[operation];
     const key = `${context.userId || 'anonymous'}_${operation}_${context.ipAddress || 'unknown'}`;
-    
+
     // Check if currently blocked
     if (rateLimitStore.isBlocked(key)) {
       const entry = rateLimitStore.get(key);
@@ -175,15 +175,15 @@ export class EnhancedSecurityMiddleware {
           userId: context.userId,
           tenantId: context.tenantId,
           ipAddress: context.ipAddress,
-          blockedUntil: entry?.blockedUntil
-        }
+          blockedUntil: entry?.blockedUntil,
+        },
       );
-      
+
       return {
         allowed: false,
         remaining: 0,
         resetTime: entry?.blockedUntil || 0,
-        blocked: true
+        blocked: true,
       };
     }
 
@@ -200,7 +200,7 @@ export class EnhancedSecurityMiddleware {
     if (entry.count > config.maxRequests) {
       // Block for specified duration
       rateLimitStore.block(key, config.blockDurationMs);
-      
+
       await logSecurityEvent(
         'rate_limit_exceeded',
         `Rate limit exceeded for ${operation}. User blocked.`,
@@ -212,22 +212,22 @@ export class EnhancedSecurityMiddleware {
           ipAddress: context.ipAddress,
           count: entry.count,
           limit: config.maxRequests,
-          blockedUntil: entry.blockedUntil
-        }
+          blockedUntil: entry.blockedUntil,
+        },
       );
 
       return {
         allowed: false,
         remaining: 0,
         resetTime: entry.blockedUntil!,
-        blocked: true
+        blocked: true,
       };
     }
 
     return {
       allowed: true,
       remaining: config.maxRequests - entry.count,
-      resetTime: entry.resetTime
+      resetTime: entry.resetTime,
     };
   }
 
@@ -266,7 +266,7 @@ export class EnhancedSecurityMiddleware {
       return {
         isValid: false,
         errors: [`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`],
-        warnings: []
+        warnings: [],
       };
     }
   }
@@ -281,10 +281,10 @@ export class EnhancedSecurityMiddleware {
     }
 
     const email = input.trim().toLowerCase();
-    
+
     // Enhanced email validation
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    
+
     if (!emailRegex.test(email)) {
       errors.push('Invalid email format');
     }
@@ -302,7 +302,7 @@ export class EnhancedSecurityMiddleware {
       isValid: errors.length === 0,
       errors,
       warnings,
-      sanitized: errors.length === 0 ? email : undefined
+      sanitized: errors.length === 0 ? email : undefined,
     };
   }
 
@@ -316,10 +316,10 @@ export class EnhancedSecurityMiddleware {
     }
 
     const phone = input.replace(/[^\d+\-\s\(\)]/g, '').trim();
-    
+
     // Enhanced phone validation
     const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format
-    
+
     if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
       warnings.push('Phone number format may be invalid');
     }
@@ -332,7 +332,7 @@ export class EnhancedSecurityMiddleware {
       isValid: errors.length === 0,
       errors,
       warnings,
-      sanitized: phone
+      sanitized: phone,
     };
   }
 
@@ -372,7 +372,7 @@ export class EnhancedSecurityMiddleware {
       isValid: errors.length === 0,
       errors,
       warnings,
-      sanitized
+      sanitized,
     };
   }
 
@@ -385,7 +385,7 @@ export class EnhancedSecurityMiddleware {
     }
 
     const num = Number(input);
-    
+
     if (isNaN(num) || !isFinite(num)) {
       errors.push('Invalid number');
       return { isValid: false, errors, warnings };
@@ -400,7 +400,7 @@ export class EnhancedSecurityMiddleware {
       isValid: errors.length === 0,
       errors,
       warnings,
-      sanitized: num
+      sanitized: num,
     };
   }
 
@@ -419,7 +419,7 @@ export class EnhancedSecurityMiddleware {
 
     try {
       const sanitized = this.sanitizeObject(input);
-      
+
       // Check object size
       const jsonString = JSON.stringify(sanitized);
       if (jsonString.length > SECURITY_CONFIG.validation.maxStringLength) {
@@ -430,7 +430,7 @@ export class EnhancedSecurityMiddleware {
         isValid: errors.length === 0,
         errors,
         warnings,
-        sanitized
+        sanitized,
       };
     } catch (error) {
       errors.push('JSON validation failed');
@@ -469,7 +469,7 @@ export class EnhancedSecurityMiddleware {
       isValid: errors.length === 0,
       errors,
       warnings,
-      sanitized
+      sanitized,
     };
   }
 
@@ -502,7 +502,7 @@ export class EnhancedSecurityMiddleware {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -518,7 +518,7 @@ export class EnhancedSecurityMiddleware {
     for (const [key, value] of Object.entries(obj)) {
       // Sanitize key names
       const sanitizedKey = key.replace(/[<>'"&;'"\\]/g, '').trim();
-      
+
       if (typeof value === 'string') {
         sanitized[sanitizedKey] = value.replace(/[\x00-\x1F\x7F]/g, '').replace(/[<>'"&;'"\\]/g, '').trim();
       } else if (typeof value === 'object' && value !== null) {
@@ -552,8 +552,8 @@ export class EnhancedSecurityMiddleware {
           {
             userId: context.userId,
             tenantId: context.tenantId,
-            sessionCount: userSessions.length
-          }
+            sessionCount: userSessions.length,
+          },
         );
         return { valid: false, error: 'Too many active sessions' };
       }
@@ -561,7 +561,7 @@ export class EnhancedSecurityMiddleware {
       // Create new session
       this.activeSessions.set(context.sessionId, {
         lastAccess: now,
-        context
+        context,
       });
       return { valid: true };
     }
@@ -576,8 +576,8 @@ export class EnhancedSecurityMiddleware {
         {
           userId: context.userId,
           tenantId: context.tenantId,
-          sessionId: context.sessionId
-        }
+          sessionId: context.sessionId,
+        },
       );
       return { valid: false, error: 'Session expired' };
     }
@@ -592,7 +592,7 @@ export class EnhancedSecurityMiddleware {
     operation: keyof SecurityConfig['rateLimiting'],
     context: SecurityContext,
     inputs?: Array<{ value: any; type: string }>,
-    requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer'
+    requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer',
   ): Promise<{ authorized: boolean; error?: string; validations?: ValidationResult[] }> {
     const validations: ValidationResult[] = [];
 
@@ -608,9 +608,9 @@ export class EnhancedSecurityMiddleware {
       if (!rateLimitResult.allowed) {
         return {
           authorized: false,
-          error: rateLimitResult.blocked 
-            ? 'Access temporarily blocked due to repeated violations' 
-            : 'Rate limit exceeded. Please try again later.'
+          error: rateLimitResult.blocked
+            ? 'Access temporarily blocked due to repeated violations'
+            : 'Rate limit exceeded. Please try again later.',
         };
       }
 
@@ -619,7 +619,7 @@ export class EnhancedSecurityMiddleware {
         for (const input of inputs) {
           const validation = this.validateInput(input.value, input.type as any);
           validations.push(validation);
-          
+
           if (!validation.isValid) {
             await logSecurityEvent(
               'invalid_input',
@@ -630,13 +630,13 @@ export class EnhancedSecurityMiddleware {
                 userId: context.userId,
                 tenantId: context.tenantId,
                 errors: validation.errors,
-                inputType: input.type
-              }
+                inputType: input.type,
+              },
             );
             return {
               authorized: false,
               error: `Invalid input: ${validation.errors.join(', ')}`,
-              validations
+              validations,
             };
           }
         }
@@ -646,7 +646,7 @@ export class EnhancedSecurityMiddleware {
       if (requiredRole && context.userId && context.tenantId) {
         try {
           const { data, error } = await supabase.rpc('verify_role_permission', {
-            required_role: requiredRole
+            required_role: requiredRole,
           });
 
           if (error || !data) {
@@ -659,13 +659,13 @@ export class EnhancedSecurityMiddleware {
                 requiredRole,
                 userId: context.userId,
                 tenantId: context.tenantId,
-                userRole: context.userRole
-              }
+                userRole: context.userRole,
+              },
             );
             return {
               authorized: false,
               error: `Insufficient permissions. ${requiredRole} role required.`,
-              validations
+              validations,
             };
           }
         } catch (error) {
@@ -676,13 +676,13 @@ export class EnhancedSecurityMiddleware {
             {
               operation,
               requiredRole,
-              error: String(error)
-            }
+              error: String(error),
+            },
           );
           return {
             authorized: false,
             error: 'Authorization system error. Please try again.',
-            validations
+            validations,
           };
         }
       }
@@ -697,12 +697,12 @@ export class EnhancedSecurityMiddleware {
           operation,
           error: String(error),
           userId: context.userId,
-          tenantId: context.tenantId
-        }
+          tenantId: context.tenantId,
+        },
       );
       return {
         authorized: false,
-        error: 'Security validation failed. Please try again.'
+        error: 'Security validation failed. Please try again.',
       };
     }
   }

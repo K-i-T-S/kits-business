@@ -1,7 +1,7 @@
+import { logSecurityEvent } from './auditLogger';
 import type { SecurityContext } from './enhancedSecurityMiddleware';
 import { enhancedSecurityMiddleware } from './enhancedSecurityMiddleware';
 import { supabase } from './supabaseClient';
-import { logSecurityEvent } from './auditLogger';
 
 // API Security Wrapper for all database operations
 export class ApiSecurityWrapper {
@@ -19,14 +19,14 @@ export class ApiSecurityWrapper {
   private async getContext(): Promise<SecurityContext> {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     return {
       userId: user?.id,
       sessionId: session?.access_token,
       ipAddress: await this.getClientIP(),
       userAgent: navigator.userAgent,
       tenantId: session?.user?.user_metadata?.tenant_id,
-      userRole: session?.user?.user_metadata?.role
+      userRole: session?.user?.user_metadata?.role,
     };
   }
 
@@ -51,16 +51,16 @@ export class ApiSecurityWrapper {
       upsert?: boolean;
       inputs?: Array<{ value: any; type: string }>;
       requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer';
-    } = {}
+    } = {},
   ): Promise<{ data: T[] | null; error: string | null }> {
     const context = await this.getContext();
-    
+
     // Security check
     const securityResult = await enhancedSecurityMiddleware.executeSecurityCheck(
       'api',
       context,
       options.inputs,
-      options.requiredRole
+      options.requiredRole,
     );
 
     if (!securityResult.authorized) {
@@ -125,8 +125,8 @@ export class ApiSecurityWrapper {
             table,
             error: error.message,
             userId: context.userId,
-            tenantId: context.tenantId
-          }
+            tenantId: context.tenantId,
+          },
         );
         return { data: null, error: error.message };
       }
@@ -142,8 +142,8 @@ export class ApiSecurityWrapper {
           table,
           error: String(error),
           userId: context.userId,
-          tenantId: context.tenantId
-        }
+          tenantId: context.tenantId,
+        },
       );
       return { data: null, error: 'Database operation failed' };
     }
@@ -156,16 +156,16 @@ export class ApiSecurityWrapper {
     options: {
       inputs?: Array<{ value: any; type: string }>;
       requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer';
-    } = {}
+    } = {},
   ): Promise<{ data: T | null; error: string | null }> {
     const context = await this.getContext();
-    
+
     // Security check
     const securityResult = await enhancedSecurityMiddleware.executeSecurityCheck(
       'api',
       context,
       options.inputs,
-      options.requiredRole
+      options.requiredRole,
     );
 
     if (!securityResult.authorized) {
@@ -185,8 +185,8 @@ export class ApiSecurityWrapper {
             params,
             error: error.message,
             userId: context.userId,
-            tenantId: context.tenantId
-          }
+            tenantId: context.tenantId,
+          },
         );
         return { data: null, error: error.message };
       }
@@ -202,8 +202,8 @@ export class ApiSecurityWrapper {
           params,
           error: String(error),
           userId: context.userId,
-          tenantId: context.tenantId
-        }
+          tenantId: context.tenantId,
+        },
       );
       return { data: null, error: 'RPC call failed' };
     }
@@ -216,16 +216,16 @@ export class ApiSecurityWrapper {
     path: string,
     options: {
       requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer';
-    } = {}
+    } = {},
   ): Promise<{ data: { path: string } | null; error: string | null }> {
     const context = await this.getContext();
-    
+
     // Security check with file validation
     const securityResult = await enhancedSecurityMiddleware.executeSecurityCheck(
       'bulk',
       context,
       [{ value: file, type: 'file' }],
-      options.requiredRole
+      options.requiredRole,
     );
 
     if (!securityResult.authorized) {
@@ -235,11 +235,11 @@ export class ApiSecurityWrapper {
     try {
       // Add tenant context to path
       const tenantPath = context.tenantId ? `${context.tenantId}/${path}` : path;
-      
+
       const { data, error } = await supabase.storage
         .from(bucket)
         .upload(tenantPath, file, {
-          upsert: false
+          upsert: false,
         });
 
       if (error) {
@@ -254,8 +254,8 @@ export class ApiSecurityWrapper {
             fileSize: file.size,
             error: error.message,
             userId: context.userId,
-            tenantId: context.tenantId
-          }
+            tenantId: context.tenantId,
+          },
         );
         return { data: null, error: error.message };
       }
@@ -270,8 +270,8 @@ export class ApiSecurityWrapper {
           fileName: file.name,
           fileSize: file.size,
           userId: context.userId,
-          tenantId: context.tenantId
-        }
+          tenantId: context.tenantId,
+        },
       );
 
       return { data, error: null };
@@ -286,8 +286,8 @@ export class ApiSecurityWrapper {
           fileName: file.name,
           error: String(error),
           userId: context.userId,
-          tenantId: context.tenantId
-        }
+          tenantId: context.tenantId,
+        },
       );
       return { data: null, error: 'File upload failed' };
     }
@@ -301,10 +301,10 @@ export class ApiSecurityWrapper {
       password?: string;
       newPassword?: string;
       options?: Record<string, any>;
-    }
+    },
   ): Promise<{ data: any; error: string | null }> {
     const context = await this.getContext();
-    
+
     // Validate inputs
     const inputs: Array<{ value: any; type: string }> = [];
     if (credentials.email) inputs.push({ value: credentials.email, type: 'email' });
@@ -314,7 +314,7 @@ export class ApiSecurityWrapper {
     const securityResult = await enhancedSecurityMiddleware.executeSecurityCheck(
       'login',
       context,
-      inputs
+      inputs,
     );
 
     if (!securityResult.authorized) {
@@ -328,7 +328,7 @@ export class ApiSecurityWrapper {
         case 'signIn':
           result = await supabase.auth.signInWithPassword({
             email: credentials.email!,
-            password: credentials.password!
+            password: credentials.password!,
           });
           break;
 
@@ -336,7 +336,7 @@ export class ApiSecurityWrapper {
           result = await supabase.auth.signUp({
             email: credentials.email!,
             password: credentials.password!,
-            options: credentials.options
+            options: credentials.options,
           });
           break;
 
@@ -346,7 +346,7 @@ export class ApiSecurityWrapper {
 
         case 'updatePassword':
           result = await supabase.auth.updateUser({
-            password: credentials.newPassword
+            password: credentials.newPassword,
           });
           break;
 
@@ -364,8 +364,8 @@ export class ApiSecurityWrapper {
             error: result.error.message,
             userId: context.userId,
             tenantId: context.tenantId,
-            email: credentials.email
-          }
+            email: credentials.email,
+          },
         );
         return { data: null, error: result.error.message };
       }
@@ -379,8 +379,8 @@ export class ApiSecurityWrapper {
           {
             userId: (result as any).data.user.id,
             email: (result as any).data.user.email,
-            tenantId: context.tenantId
-          }
+            tenantId: context.tenantId,
+          },
         );
       }
 
@@ -395,8 +395,8 @@ export class ApiSecurityWrapper {
           error: String(error),
           userId: context.userId,
           tenantId: context.tenantId,
-          email: credentials.email
-        }
+          email: credentials.email,
+        },
       );
       return { data: null, error: 'Authentication failed' };
     }

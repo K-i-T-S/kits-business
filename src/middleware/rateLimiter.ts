@@ -24,7 +24,7 @@ export class RateLimiter {
     this.config = {
       skipSuccessfulRequests: false,
       skipFailedRequests: false,
-      ...config
+      ...config,
     };
 
     // Cleanup expired entries every 5 minutes
@@ -39,20 +39,21 @@ export class RateLimiter {
     }
 
     // Default key generation based on IP and user agent
-    const ip = request.headers?.['x-forwarded-for'] || 
-               request.headers?.['x-real-ip'] || 
-               request.connection?.remoteAddress || 
+    const ip = request.headers?.['x-forwarded-for'] ||
+               request.headers?.['x-real-ip'] ||
+               request.connection?.remoteAddress ||
                'unknown';
-    
+
     const userAgent = request.headers?.['user-agent'] || 'unknown';
-    
+
     return `${ip}:${userAgent}`;
   }
 
   private cleanup(): void {
     const now = Date.now();
     Object.keys(this.store).forEach(key => {
-      if (this.store[key].resetTime <= now) {
+      const entry = this.store[key];
+      if (entry && entry.resetTime <= now) {
         delete this.store[key];
       }
     });
@@ -61,13 +62,13 @@ export class RateLimiter {
   public middleware = (request: any, response: any, next?: Function) => {
     const key = this.getKey(request);
     const now = Date.now();
-    
+
     // Initialize or reset if window expired
     if (!this.store[key] || this.store[key].resetTime <= now) {
       this.store[key] = {
         count: 0,
         resetTime: now + this.config.windowMs,
-        lastAccess: now
+        lastAccess: now,
       };
     }
 
@@ -77,7 +78,7 @@ export class RateLimiter {
     // Check if limit exceeded
     if (this.store[key].count >= this.config.maxRequests) {
       const resetIn = Math.ceil((this.store[key].resetTime - now) / 1000);
-      
+
       // Set rate limit headers
       response.setHeader('X-RateLimit-Limit', this.config.maxRequests);
       response.setHeader('X-RateLimit-Remaining', 0);
@@ -94,7 +95,7 @@ export class RateLimiter {
         limit: this.config.maxRequests,
         current: this.store[key].count,
         resetTime: this.store[key].resetTime,
-        resetIn
+        resetIn,
       };
 
       if (next) {
@@ -124,7 +125,7 @@ export class RateLimiter {
         limit: this.config.maxRequests,
         remaining: this.config.maxRequests,
         resetTime: Date.now() + this.config.windowMs,
-        resetIn: Math.ceil(this.config.windowMs / 1000)
+        resetIn: Math.ceil(this.config.windowMs / 1000),
       };
     }
 
@@ -134,7 +135,7 @@ export class RateLimiter {
         limit: this.config.maxRequests,
         remaining: this.config.maxRequests,
         resetTime: now + this.config.windowMs,
-        resetIn: Math.ceil(this.config.windowMs / 1000)
+        resetIn: Math.ceil(this.config.windowMs / 1000),
       };
     }
 
@@ -142,7 +143,7 @@ export class RateLimiter {
       limit: this.config.maxRequests,
       remaining: this.config.maxRequests - entry.count,
       resetTime: entry.resetTime,
-      resetIn: Math.ceil((entry.resetTime - now) / 1000)
+      resetIn: Math.ceil((entry.resetTime - now) / 1000),
     };
   }
 
@@ -170,7 +171,7 @@ export const createApiRateLimiter = () => new RateLimiter({
     const userId = request.user?.id;
     const ip = request.headers?.['x-forwarded-for'] || request.connection?.remoteAddress;
     return userId ? `user:${userId}` : `ip:${ip}`;
-  }
+  },
 });
 
 export const createAuthRateLimiter = () => new RateLimiter({
@@ -183,7 +184,7 @@ export const createAuthRateLimiter = () => new RateLimiter({
   },
   onLimitReached: (request: any, response: any) => {
     console.warn(`Rate limit exceeded for auth attempt from IP: ${request.headers?.['x-forwarded-for']}`);
-  }
+  },
 });
 
 export const createUploadRateLimiter = () => new RateLimiter({
@@ -192,5 +193,5 @@ export const createUploadRateLimiter = () => new RateLimiter({
   keyGenerator: (request: any) => {
     const userId = request.user?.id;
     return userId ? `upload:user:${userId}` : `upload:ip:${request.connection?.remoteAddress}`;
-  }
+  },
 });

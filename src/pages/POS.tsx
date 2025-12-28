@@ -1,17 +1,18 @@
-import { useState } from 'react';
 import { Barcode, Minus, Plus, Trash2, CreditCard, DollarSign, Receipt, User, Tag, Star, Settings, Split } from 'lucide-react';
-import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
-import type { Sale } from '../context/AppContext';
-import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
-import { POSCalculator } from '../utils/posCalculations';
-import SplitPaymentModal from '../components/SplitPaymentModal';
-import TipsModal from '../components/TipsModal';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
 import DiscountModal from '../components/DiscountModal';
+import Layout from '../components/Layout';
 import LoyaltyModal from '../components/LoyaltyModal';
 import ReceiptCustomizationModal from '../components/ReceiptCustomizationModal';
+import SplitPaymentModal from '../components/SplitPaymentModal';
+import TipsModal from '../components/TipsModal';
+import { useApp } from '../context/AppContext';
+import type { Sale } from '../context/AppContext';
 import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
-import { toast } from 'sonner';
+import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
+import { POSCalculator } from '../utils/posCalculations';
 
 interface CartItem {
   productId: string;
@@ -31,7 +32,7 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
-  
+
   // Enhanced POS states
   const [showSplitPayment, setShowSplitPayment] = useState(false);
   const [showTipsModal, setShowTipsModal] = useState(false);
@@ -47,10 +48,10 @@ export default function POS() {
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Find product by barcode
     const product = products.find(p => p.barcode === barcode);
-    
+
     if (product) {
       // For simplicity, add first variant
       const variant = product.variants[0];
@@ -60,17 +61,17 @@ export default function POS() {
         });
         return;
       }
-      
+
       if (variant.stock > 0) {
         const existingItem = cart.find(
-          item => item.productId === product.id && item.variantId === variant.id
+          item => item.productId === product.id && item.variantId === variant.id,
         );
 
         if (existingItem) {
           setCart(cart?.map(item =>
             item.productId === product.id && item.variantId === variant.id
               ? { ...item, quantity: item.quantity + 1 }
-              : item
+              : item,
           ) || []);
         } else {
           const variantDesc = Object.entries(variant.attributes)
@@ -78,13 +79,13 @@ export default function POS() {
             .join(' - ');
 
           setCart([...(cart || []), {
-            productId: product.id,
+            productId: product.id!,
             variantId: variant.id,
             productName: product.name,
             variantAttributes: variantDesc,
             price: variant.price,
             cost: variant.cost,
-            quantity: 1
+            quantity: 1,
           }]);
         }
         setBarcode('');
@@ -105,13 +106,13 @@ export default function POS() {
     const target = newCart[index];
     if (!target) return;
     const newQuantity = target.quantity + change;
-    
+
     if (newQuantity <= 0) {
       newCart.splice(index, 1);
     } else {
       target.quantity = newQuantity;
     }
-    
+
     setCart(newCart);
   };
 
@@ -129,21 +130,21 @@ export default function POS() {
 
   const calculateDiscounts = () => {
     let totalDiscount = 0;
-    
+
     if (appliedCoupon) {
       const cartItemsForDiscount = (cart || [])?.map(item => ({
         productId: item.productId,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
       })) || [];
       totalDiscount += POSCalculator.calculateCouponDiscount(calculateSubtotal(), appliedCoupon, cartItemsForDiscount);
     }
-    
+
     if (loyaltyPointsRedeemed > 0) {
       // Assuming loyalty program with 100 points = $1
       totalDiscount += loyaltyPointsRedeemed * 0.01;
     }
-    
+
     return totalDiscount;
   };
 
@@ -190,13 +191,13 @@ export default function POS() {
         productName: item.productName,
         quantity: item.quantity,
         price: item.price,
-        cost: item.cost
+        cost: item.cost,
       })),
       subtotal,
       total,
       paymentMethod: 'cash' as const,
       employeeId: currentEmployee?.id || '',
-      ...(selectedCustomer ? { customerId: selectedCustomer } : {})
+      ...(selectedCustomer ? { customerId: selectedCustomer } : {}),
     } satisfies Sale;
 
     try {
@@ -208,11 +209,11 @@ export default function POS() {
         if (customer) {
           await updateCustomer(selectedCustomer, {
             totalPurchases: customer.totalPurchases + sale.total,
-            lastPurchaseDate: new Date().toISOString()
+            lastPurchaseDate: new Date().toISOString(),
           });
         }
       }
-  
+
       setLastSale(sale);
       setShowReceipt(true);
       setCart([]);
@@ -222,7 +223,7 @@ export default function POS() {
       setTipInfo(null);
       setAppliedCoupon(null);
       setLoyaltyPointsRedeemed(0);
-      
+
       toast.success('Sale completed', {
         description: `Total ${sale.total.toFixed(2)} charged via ${payments.map(p => p.method).join(', ')}.`,
       });
@@ -240,7 +241,7 @@ export default function POS() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0">
         <section className="hero-gradient glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between text-white">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-white/80">Point of sale</p>
@@ -312,7 +313,7 @@ export default function POS() {
                         </p>
                         <p className="text-sm text-white/80">${(item.price || 0).toFixed(2)}</p>
                       </div>
-                      
+
                       <div className="flex flex-col items-center gap-2 sm:flex-row">
                         <div className="flex items-center gap-2">
                           <button
@@ -375,7 +376,7 @@ export default function POS() {
             <section className="hero-gradient glass-panel p-6 text-white">
               <p className="text-xs uppercase tracking-[0.3em] text-white/70">Tender</p>
               <h2 className="text-lg font-semibold text-white">Payment options</h2>
-              
+
               {/* Enhanced Payment Options */}
               <div className="mt-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -409,7 +410,7 @@ export default function POS() {
                     <span className="text-sm">Loyalty</span>
                   </button>
                 </div>
-                
+
                 <button
                   onClick={() => setShowReceiptCustomization(true)}
                   className="w-full p-3 rounded-lg border border-white/30 bg-white/10 text-white/80 hover:border-white/50 flex items-center justify-center gap-2"
@@ -418,7 +419,7 @@ export default function POS() {
                   <span className="text-sm">Receipt Settings</span>
                 </button>
               </div>
-              
+
               {/* Applied Discounts and Tips Display */}
               {(appliedCoupon || tipInfo || loyaltyPointsRedeemed > 0) && (
                 <div className="mt-4 space-y-2">
@@ -493,7 +494,7 @@ export default function POS() {
         onComplete={completeSale}
         onCancel={() => setShowSplitPayment(false)}
       />
-      
+
       <TipsModal
         isOpen={showTipsModal}
         subtotal={calculateSubtotal()}
@@ -501,26 +502,26 @@ export default function POS() {
           setTipInfo(tip);
           setShowTipsModal(false);
           toast.success('Tip added', {
-            description: `Tip of $${tip.amount.toFixed(2)} added to order.`
+            description: `Tip of $${tip.amount.toFixed(2)} added to order.`,
           });
         }}
         onCancel={() => setShowTipsModal(false)}
       />
-      
+
       <DiscountModal
         isOpen={showDiscountModal}
         subtotal={calculateSubtotal()}
         cartItems={(cart || [])?.map(item => ({
           productId: item.productId,
           price: item.price,
-          quantity: item.quantity
+          quantity: item.quantity,
         })) || []}
         availableCoupons={demoCoupons}
         onApplyCoupon={(coupon) => {
           setAppliedCoupon(coupon);
           setShowDiscountModal(false);
           toast.success('Coupon applied', {
-            description: `${coupon.code} discount applied.`
+            description: `${coupon.code} discount applied.`,
           });
         }}
         onRemoveCoupon={() => {
@@ -530,7 +531,7 @@ export default function POS() {
         onCancel={() => setShowDiscountModal(false)}
         appliedCoupon={appliedCoupon || undefined}
       />
-      
+
       <LoyaltyModal
         isOpen={showLoyaltyModal}
         subtotal={calculateSubtotal()}
@@ -540,12 +541,12 @@ export default function POS() {
           setLoyaltyPointsRedeemed(points);
           setShowLoyaltyModal(false);
           toast.success('Points redeemed', {
-            description: `${points} points redeemed for discount.`
+            description: `${points} points redeemed for discount.`,
           });
         }}
         onCancel={() => setShowLoyaltyModal(false)}
       />
-      
+
       <ReceiptCustomizationModal
         isOpen={showReceiptCustomization}
         templates={demoReceiptTemplates}
@@ -554,7 +555,7 @@ export default function POS() {
           setSelectedReceiptTemplate(template);
           setShowReceiptCustomization(false);
           toast.success('Receipt template selected', {
-            description: `${template.name} template applied.`
+            description: `${template.name} template applied.`,
           });
         }}
         onSaveTemplate={(template) => {

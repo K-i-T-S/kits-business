@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { Tag, Percent, DollarSign, Gift, Check, X } from 'lucide-react';
+import { useState } from 'react';
+
 import type { DiscountCoupon } from '../types/pos';
 import { POSCalculator, CouponValidator } from '../utils/posCalculations';
 
@@ -14,15 +15,15 @@ interface DiscountModalProps {
   appliedCoupon?: DiscountCoupon;
 }
 
-export default function DiscountModal({ 
-  isOpen, 
-  subtotal, 
-  cartItems, 
-  availableCoupons, 
-  onApplyCoupon, 
+export default function DiscountModal({
+  isOpen,
+  subtotal,
+  cartItems,
+  availableCoupons,
+  onApplyCoupon,
   onRemoveCoupon,
   onCancel,
-  appliedCoupon 
+  appliedCoupon,
 }: DiscountModalProps) {
   const [couponCode, setCouponCode] = useState('');
   const [selectedCoupon, setSelectedCoupon] = useState<DiscountCoupon | null>(null);
@@ -32,7 +33,7 @@ export default function DiscountModal({
     e.preventDefault();
     const code = couponCode?.trim() || '';
     const coupon = availableCoupons.find(c => c.code.toLowerCase() === code.toLowerCase());
-    
+
     if (!coupon) {
       setValidationError('Coupon code not found');
       return;
@@ -95,15 +96,22 @@ export default function DiscountModal({
 
   if (!isOpen) return null;
 
-  const applicableCoupons = availableCoupons.filter(coupon => 
-    calculateDiscount(coupon) > 0
+  const applicableCoupons = availableCoupons.filter(coupon =>
+    calculateDiscount(coupon) > 0,
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-      <div className="glass-panel w-full max-w-lg overflow-y-auto p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="w-full max-w-lg overflow-y-auto p-6" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <h2 className="text-xl font-semibold text-white mb-6">Apply Discount</h2>
-        
+
         {appliedCoupon ? (
           <div className="space-y-4">
             <div className="p-4 rounded-lg border border-emerald-400 bg-emerald-500/20">
@@ -125,7 +133,7 @@ export default function DiscountModal({
                 <div className="text-sm text-emerald-300">-${calculateDiscount(appliedCoupon).toFixed(2)}</div>
               </div>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={onCancel}
@@ -174,7 +182,7 @@ export default function DiscountModal({
                     const Icon = getCouponIcon(coupon.type);
                     const discount = calculateDiscount(coupon);
                     const isSelected = selectedCoupon?.id === coupon.id;
-                    
+
                     return (
                       <button
                         key={coupon.id}

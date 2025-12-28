@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, TrendingUp, Clock, Cpu } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import React, { useEffect, useRef, useState, type ReactNode } from 'react';
+
 import { Badge } from './ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 interface PerformanceMetrics {
   renderTime: number;
@@ -18,20 +19,20 @@ interface PerformanceMonitorProps {
   onMetricsUpdate?: (metrics: PerformanceMetrics) => void;
 }
 
-export function PerformanceMonitor({ 
-  children, 
-  componentName = 'Unknown', 
+export function PerformanceMonitor({
+  children,
+  componentName = 'Unknown',
   enabled = process.env.NODE_ENV === 'development',
-  onMetricsUpdate 
+  onMetricsUpdate,
 }: PerformanceMonitorProps) {
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     renderTime: 0,
     componentCount: 0,
     reRenderCount: 0,
     memoryUsage: 0,
-    lastUpdate: new Date()
+    lastUpdate: new Date(),
   });
-  
+
   const renderStartTime = useRef<number>(0);
   const renderCount = useRef(0);
   const observerRef = useRef<PerformanceObserver | null>(null);
@@ -58,7 +59,7 @@ export function PerformanceMonitor({
       componentCount,
       reRenderCount: renderCount.current,
       memoryUsage,
-      lastUpdate: new Date()
+      lastUpdate: new Date(),
     };
 
     setMetrics(newMetrics);
@@ -73,7 +74,7 @@ export function PerformanceMonitor({
             console.warn(`Long task detected in ${componentName}:`, {
               duration: entry.duration,
               startTime: entry.startTime,
-              name: entry.name
+              name: entry.name,
             });
           }
         });
@@ -120,13 +121,13 @@ export function PerformanceMonitor({
                 Render Time
               </div>
               <span className={`font-mono ${
-                metrics.renderTime > 16 ? 'text-red-600' : 
-                metrics.renderTime > 8 ? 'text-yellow-600' : 'text-green-600'
+                metrics.renderTime > 16 ? 'text-red-600' :
+                  metrics.renderTime > 8 ? 'text-yellow-600' : 'text-green-600'
               }`}>
                 {metrics.renderTime.toFixed(2)}ms
               </span>
             </div>
-            
+
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1">
                 <Cpu className="h-3 w-3" />
@@ -134,12 +135,12 @@ export function PerformanceMonitor({
               </div>
               <span className="font-mono">{metrics.reRenderCount}</span>
             </div>
-            
+
             <div className="flex items-center justify-between text-xs">
               <div>Components</div>
               <span className="font-mono">{metrics.componentCount}</span>
             </div>
-            
+
             {metrics.memoryUsage > 0 && (
               <div className="flex items-center justify-between text-xs">
                 <div>Memory</div>
@@ -148,7 +149,7 @@ export function PerformanceMonitor({
                 </span>
               </div>
             )}
-            
+
             {metrics.renderTime > 16 && (
               <div className="flex items-center gap-1 text-xs text-red-600">
                 <AlertTriangle className="h-3 w-3" />
@@ -165,7 +166,7 @@ export function PerformanceMonitor({
 // Hook for performance monitoring
 export function usePerformanceMonitor(componentName?: string) {
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
-  
+
   const updateMetrics = React.useCallback((newMetrics: PerformanceMetrics) => {
     setMetrics(newMetrics);
   }, []);
@@ -176,7 +177,7 @@ export function usePerformanceMonitor(componentName?: string) {
 // Higher-order component for automatic performance monitoring
 export function withPerformanceMonitoring<P extends object>(
   Component: React.ComponentType<P>,
-  componentName?: string
+  componentName?: string,
 ) {
   const WrappedComponent = (props: P) => (
     <PerformanceMonitor componentName={componentName || Component.name}>
@@ -185,6 +186,6 @@ export function withPerformanceMonitoring<P extends object>(
   );
 
   WrappedComponent.displayName = `withPerformanceMonitoring(${Component.displayName || Component.name})`;
-  
+
   return WrappedComponent;
 }

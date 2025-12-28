@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+
 import { supabase } from './supabaseClient';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -12,8 +13,8 @@ if (!supabaseUrl) {
 export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 }) : null;
 
 // Audit logging functions
@@ -23,21 +24,21 @@ export async function logAudit(
   entityId?: string,
   oldValues?: any,
   newValues?: any,
-  metadata?: any
+  metadata?: any,
 ) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const { data, error } = await supabaseAdmin.rpc('log_audit', {
     p_action: action,
     p_entity_type: entityType,
     p_entity_id: entityId,
     p_old_values: oldValues,
     p_new_values: newValues,
-    p_metadata: metadata || {}
+    p_metadata: metadata || {},
   });
-  
+
   if (error) throw error;
   return data;
 }
@@ -47,20 +48,20 @@ export async function logActivity(
   description: string,
   entityType?: string,
   entityId?: string,
-  metadata?: any
+  metadata?: any,
 ) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const { data, error } = await supabaseAdmin.rpc('log_activity', {
     p_action: action,
     p_description: description,
     p_entity_type: entityType,
     p_entity_id: entityId,
-    p_metadata: metadata || {}
+    p_metadata: metadata || {},
   });
-  
+
   if (error) throw error;
   return data;
 }
@@ -69,11 +70,11 @@ export async function logUserLogin(userId: string) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const { error } = await supabaseAdmin.rpc('log_user_login', {
-    user_id: userId
+    user_id: userId,
   });
-  
+
   if (error) throw error;
 }
 
@@ -81,11 +82,11 @@ export async function logUserLogout(userId: string) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const { error } = await supabaseAdmin.rpc('log_user_logout', {
-    user_id: userId
+    user_id: userId,
   });
-  
+
   if (error) throw error;
 }
 
@@ -93,12 +94,12 @@ export async function logTenantSwitch(tenantId: string, oldTenantId?: string) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const { error } = await supabaseAdmin.rpc('log_tenant_switch', {
     tenant_id: tenantId,
-    old_tenant_id: oldTenantId
+    old_tenant_id: oldTenantId,
   });
-  
+
   if (error) throw error;
 }
 
@@ -106,32 +107,32 @@ export async function logStoreSwitch(storeId: string, oldStoreId?: string) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const { error } = await supabaseAdmin.rpc('log_store_switch', {
     store_id: storeId,
-    old_store_id: oldStoreId
+    old_store_id: oldStoreId,
   });
-  
+
   if (error) throw error;
 }
 
 export async function logSecurityEvent(
   eventType: string,
   description: string,
-  severity: 'low' | 'medium' | 'high' = 'medium',
-  metadata?: any
+  severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
+  metadata?: any,
 ) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const { data, error } = await supabaseAdmin.rpc('log_security_event', {
     event_type: eventType,
     description: description,
     severity: severity,
-    metadata: metadata || {}
+    metadata: metadata || {},
   });
-  
+
   if (error) throw error;
   return data;
 }
@@ -140,12 +141,12 @@ export async function logSecurityEvent(
 export async function getActivityFeed(
   tenantId: string,
   limit: number = 50,
-  offset: number = 0
+  offset: number = 0,
 ) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const { data, error } = await supabaseAdmin
     .from('activity_log')
     .select(`
@@ -155,7 +156,7 @@ export async function getActivityFeed(
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
-  
+
   if (error) throw error;
   return data;
 }
@@ -170,12 +171,12 @@ export async function getAuditLogs(
     endDate?: string;
   },
   limit: number = 100,
-  offset: number = 0
+  offset: number = 0,
 ) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   let query = supabaseAdmin
     .from('audit_logs')
     .select(`
@@ -183,31 +184,31 @@ export async function getAuditLogs(
       user:auth.users(id, email, user_metadata)
     `)
     .eq('tenant_id', tenantId);
-  
+
   if (filters?.action) {
     query = query.eq('action', filters.action);
   }
-  
+
   if (filters?.entityType) {
     query = query.eq('entity_type', filters.entityType);
   }
-  
+
   if (filters?.userId) {
     query = query.eq('user_id', filters.userId);
   }
-  
+
   if (filters?.startDate) {
     query = query.gte('created_at', filters.startDate);
   }
-  
+
   if (filters?.endDate) {
     query = query.lte('created_at', filters.endDate);
   }
-  
+
   const { data, error } = await query
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
-  
+
   if (error) throw error;
   return data;
 }
@@ -215,30 +216,30 @@ export async function getAuditLogs(
 // Security monitoring
 export async function getSecurityEvents(
   tenantId: string,
-  severity?: 'low' | 'medium' | 'high',
-  hours: number = 24
+  severity?: 'low' | 'medium' | 'high' | 'critical',
+  hours: number = 24,
 ) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const startDate = new Date();
   startDate.setHours(startDate.getHours() - hours);
-  
+
   let query = supabaseAdmin
     .from('audit_logs')
     .select('*')
     .eq('tenant_id', tenantId)
     .like('action', 'security.%')
     .gte('created_at', startDate.toISOString());
-  
+
   if (severity) {
     query = query.contains('metadata', { severity });
   }
-  
+
   const { data, error } = await query
     .order('created_at', { ascending: false });
-  
+
   if (error) throw error;
   return data;
 }
@@ -247,15 +248,15 @@ export async function getSecurityEvents(
 export async function getUserActivitySummary(
   tenantId: string,
   userId: string,
-  days: number = 30
+  days: number = 30,
 ) {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
-  
+
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   const { data, error } = await supabaseAdmin
     .from('activity_log')
     .select('action, created_at')
@@ -263,9 +264,9 @@ export async function getUserActivitySummary(
     .eq('user_id', userId)
     .gte('created_at', startDate.toISOString())
     .order('created_at', { ascending: false });
-  
+
   if (error) throw error;
-  
+
   // Group activities by action type
   const summary = data?.reduce((acc: any, activity: any) => {
     if (!acc[activity.action]) {
@@ -274,10 +275,10 @@ export async function getUserActivitySummary(
     acc[activity.action]++;
     return acc;
   }, {});
-  
+
   return {
     totalActivities: data?.length || 0,
     summary: summary || {},
-    recentActivities: data?.slice(0, 10) || []
+    recentActivities: data?.slice(0, 10) || [],
   };
 }

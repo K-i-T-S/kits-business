@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { CreditCard, DollarSign, Smartphone, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+
 import type { SplitPayment } from '../types/pos';
 import { POSCalculator } from '../utils/posCalculations';
 
@@ -12,7 +13,7 @@ interface SplitPaymentModalProps {
 
 export default function SplitPaymentModal({ isOpen, totalAmount, onComplete, onCancel }: SplitPaymentModalProps) {
   const [payments, setPayments] = useState<SplitPayment[]>([
-    { id: '1', method: 'cash', amount: totalAmount, status: 'pending' }
+    { id: '1', method: 'cash', amount: totalAmount, status: 'pending' },
   ]);
   const [newPaymentMethod, setNewPaymentMethod] = useState<'cash' | 'card' | 'digital'>('cash');
 
@@ -24,15 +25,15 @@ export default function SplitPaymentModal({ isOpen, totalAmount, onComplete, onC
       id: Date.now().toString(),
       method: newPaymentMethod,
       amount: Math.min(remainingAmount, 0),
-      status: 'pending'
+      status: 'pending',
     };
 
     setPayments([...payments, newPayment]);
   };
 
   const updatePayment = (id: string, amount: number) => {
-    setPayments(payments.map(p => 
-      p.id === id ? { ...p, amount: Math.max(0, amount) } : p
+    setPayments(payments.map(p =>
+      p.id === id ? { ...p, amount: Math.max(0, amount) } : p,
     ));
   };
 
@@ -56,14 +57,21 @@ export default function SplitPaymentModal({ isOpen, totalAmount, onComplete, onC
   const paymentIcons = {
     cash: DollarSign,
     card: CreditCard,
-    digital: Smartphone
+    digital: Smartphone,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-      <div className="glass-panel w-full max-w-lg overflow-y-auto p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="w-full max-w-lg overflow-y-auto p-6" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <h2 className="text-xl font-semibold text-white mb-6">Split Payment</h2>
-        
+
         <div className="space-y-4">
           <div className="flex justify-between items-center p-3 rounded-lg border border-white/30 bg-white/10">
             <span className="text-white/80">Total Amount:</span>

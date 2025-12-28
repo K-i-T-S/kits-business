@@ -1,6 +1,7 @@
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import * as Sentry from '@sentry/react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
@@ -28,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ error, errorInfo });
-    
+
     // Send error to Sentry
     Sentry.captureException(error, {
       contexts: {
@@ -37,12 +38,12 @@ export class ErrorBoundary extends Component<Props, State> {
         },
       },
     });
-    
+
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
       console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
-    
+
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
   }
@@ -83,7 +84,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   </p>
                 </div>
               )}
-              
+
               <div className="flex gap-2">
                 <Button onClick={this.handleReset} className="flex-1">
                   <RefreshCw className="h-4 w-4 mr-2" />
@@ -115,7 +116,7 @@ export function useErrorHandler() {
   const captureError = React.useCallback((error: Error) => {
     console.error('Error captured by useErrorHandler:', error);
     setError(error);
-    
+
     // Send to Sentry
     Sentry.captureException(error);
   }, []);
@@ -132,7 +133,7 @@ export function useErrorHandler() {
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
   fallback?: ReactNode,
-  onError?: (error: Error, errorInfo: ErrorInfo) => void
+  onError?: (error: Error, errorInfo: ErrorInfo) => void,
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary fallback={fallback} onError={onError}>
@@ -141,6 +142,6 @@ export function withErrorBoundary<P extends object>(
   );
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
+
   return WrappedComponent;
 }

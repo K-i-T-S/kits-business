@@ -1,14 +1,16 @@
+import { Globe } from 'lucide-react';
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { useLanguage } from '../contexts/LanguageContext';
+
 import { Button } from './ui/button';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { Globe } from 'lucide-react';
 
 export const LanguageSelector = memo(() => {
   const { t } = useTranslation();

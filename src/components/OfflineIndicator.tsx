@@ -1,93 +1,100 @@
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Wifi, WifiOff, RefreshCw, AlertTriangle, Database, Clock, CheckCircle } from 'lucide-react'
-import { useOfflineSync } from '@/hooks/useOfflineSync'
-import { useState, useEffect } from 'react'
+import { Wifi, WifiOff, RefreshCw, AlertTriangle, Database, Clock, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 export function OfflineIndicator() {
-  const { syncStatus, syncActions } = useOfflineSync()
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [lastSyncTime, setLastSyncTime] = useState<string>('')
+  const { syncStatus, syncActions } = useOfflineSync();
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
 
   useEffect(() => {
     if (syncStatus.isOnline && syncStatus.pendingActions === 0) {
-      setLastSyncTime(new Date().toLocaleTimeString())
+      setLastSyncTime(new Date().toLocaleTimeString());
     }
-  }, [syncStatus.isOnline, syncStatus.pendingActions])
+  }, [syncStatus.isOnline, syncStatus.pendingActions]);
 
   useEffect(() => {
     if (!syncStatus.isOnline || syncStatus.pendingActions > 0) {
-      setIsAnimating(true)
+      setIsAnimating(true);
     }
-  }, [syncStatus.isOnline, syncStatus.pendingActions])
+  }, [syncStatus.isOnline, syncStatus.pendingActions]);
 
   if (syncStatus.isOnline && syncStatus.pendingActions === 0) {
-    return null
+    return null;
   }
 
   const handleSync = async () => {
-    await syncActions()
-  }
+    await syncActions();
+  };
 
   const getStatusColor = () => {
-    if (!syncStatus.isOnline) return 'orange'
-    if (syncStatus.isSyncing) return 'blue'
-    if (syncStatus.pendingActions > 0) return 'yellow'
-    return 'green'
-  }
+    if (!syncStatus.isOnline) return 'orange';
+    if (syncStatus.isSyncing) return 'blue';
+    if (syncStatus.pendingActions > 0) return 'yellow';
+    return 'green';
+  };
 
   const getStatusIcon = () => {
-    if (!syncStatus.isOnline) return WifiOff
-    if (syncStatus.isSyncing) return RefreshCw
-    return Wifi
-  }
+    if (!syncStatus.isOnline) return WifiOff;
+    if (syncStatus.isSyncing) return RefreshCw;
+    return Wifi;
+  };
 
   const getStatusText = () => {
-    if (!syncStatus.isOnline) return 'Offline Mode'
-    if (syncStatus.isSyncing) return 'Syncing Data'
-    return 'Syncing Pending'
-  }
+    if (!syncStatus.isOnline) return 'Offline Mode';
+    if (syncStatus.isSyncing) return 'Syncing Data';
+    return 'Syncing Pending';
+  };
 
   const getStatusDescription = () => {
     if (!syncStatus.isOnline) {
-      return 'Working offline. Changes will sync when connection is restored.'
+      return 'Working offline. Changes will sync when connection is restored.';
     }
     if (syncStatus.isSyncing) {
-      return `Syncing ${syncStatus.pendingActions} actions to server...`
+      return `Syncing ${syncStatus.pendingActions} actions to server...`;
     }
-    return `${syncStatus.pendingActions} actions pending sync`
-  }
+    return `${syncStatus.pendingActions} actions pending sync`;
+  };
 
-  const Icon = getStatusIcon()
-  const statusColor = getStatusColor()
+  const Icon = getStatusIcon();
+  const statusColor = getStatusColor();
 
   return (
     <div className={`fixed top-4 right-4 left-4 md:left-auto md:w-80 z-40 transition-all duration-500 ease-out ${
       isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
     }`}>
-      <Card className="bg-gray-900/98 backdrop-blur-xl border-gray-700/30 shadow-2xl overflow-hidden">
+      <Card className="backdrop-blur-xl border-white/15 shadow-2xl overflow-hidden" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        boxShadow: '0 10px 40px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(12px)'
+      }}>
         {/* Status Header */}
         <div className={`h-1 bg-gradient-to-r ${
-          statusColor === 'green' ? 'from-green-600 to-green-700' :
-          statusColor === 'blue' ? 'from-blue-600 to-blue-700' :
-          statusColor === 'yellow' ? 'from-yellow-600 to-yellow-700' :
-          'from-orange-600 to-orange-700'
+          statusColor === 'green' ? 'from-emerald-600 to-emerald-700' :
+            statusColor === 'blue' ? 'from-blue-600 to-blue-700' :
+              statusColor === 'yellow' ? 'from-amber-600 to-amber-700' :
+                'from-orange-600 to-orange-700'
         }`} />
-        
+
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
             <div className={`relative p-2.5 rounded-2xl border ${
-              statusColor === 'green' ? 'bg-green-600/20 border-green-600/30' :
-              statusColor === 'blue' ? 'bg-blue-600/20 border-blue-600/30' :
-              statusColor === 'yellow' ? 'bg-yellow-600/20 border-yellow-600/30' :
-              'bg-orange-600/20 border-orange-600/30'
+              statusColor === 'green' ? 'bg-emerald-600/20 border-emerald-600/30' :
+                statusColor === 'blue' ? 'bg-blue-600/20 border-blue-600/30' :
+                  statusColor === 'yellow' ? 'bg-amber-600/20 border-amber-600/30' :
+                    'bg-orange-600/20 border-orange-600/30'
             }`}>
               <Icon className={`h-5 w-5 ${
-                statusColor === 'green' ? 'text-green-400' :
-                statusColor === 'blue' ? 'text-blue-400' :
-                statusColor === 'yellow' ? 'text-yellow-400' :
-                'text-orange-400'
+                statusColor === 'green' ? 'text-emerald-400' :
+                  statusColor === 'blue' ? 'text-blue-400' :
+                    statusColor === 'yellow' ? 'text-yellow-400' :
+                      'text-orange-400'
               }`} />
               {syncStatus.isSyncing && (
                 <div className="absolute inset-0 rounded-2xl border-2 border-blue-400 animate-pulse" />
@@ -97,27 +104,33 @@ export function OfflineIndicator() {
               <CardTitle className="text-base font-semibold text-white">
                 {getStatusText()}
               </CardTitle>
-              <CardDescription className="text-sm text-gray-400">
+              <CardDescription className="text-sm text-white/60">
                 {getStatusDescription()}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="pt-0 space-y-4">
           {/* Status Details */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 p-3 bg-gray-800/30 rounded-xl">
+            <div className="flex items-center gap-2 p-3 rounded-xl" style={{
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.2)'
+            }}>
               <Database className="h-4 w-4 text-blue-400" />
               <div>
-                <div className="text-xs text-gray-400">Pending</div>
+                <div className="text-xs text-white/60">Pending</div>
                 <div className="text-sm font-medium text-white">{syncStatus.pendingActions}</div>
               </div>
             </div>
-            <div className="flex items-center gap-2 p-3 bg-gray-800/30 rounded-xl">
-              <Clock className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-2 p-3 rounded-xl" style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <Clock className="h-4 w-4 text-white/60" />
               <div>
-                <div className="text-xs text-gray-400">Last Sync</div>
+                <div className="text-xs text-white/60">Last Sync</div>
                 <div className="text-sm font-medium text-white">{lastSyncTime || 'Never'}</div>
               </div>
             </div>
@@ -128,7 +141,11 @@ export function OfflineIndicator() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs bg-blue-600/20 text-blue-400 border-blue-600/30">
+                  <Badge variant="secondary" className="text-xs" style={{
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    color: '#60a5fa',
+                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                  }}>
                     {syncStatus.pendingActions} items
                   </Badge>
                   {syncStatus.isSyncing && (
@@ -142,7 +159,12 @@ export function OfflineIndicator() {
                   onClick={handleSync}
                   disabled={syncStatus.isSyncing}
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 active:scale-95"
+                  className="transition-all duration-200 active:scale-95"
+                  style={{
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none'
+                  }}
                 >
                   {syncStatus.isSyncing ? (
                     <>
@@ -168,7 +190,7 @@ export function OfflineIndicator() {
                   All changes are saved locally and will sync automatically when connection is restored
                 </span>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <CheckCircle className="h-3 w-3 text-green-400" />
@@ -201,5 +223,5 @@ export function OfflineIndicator() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
+
+import { log } from '../utils/logger';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -10,81 +12,82 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function usePWA() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [isInstallable, setIsInstallable] = useState(false)
-  const [isInstalled, setIsInstalled] = useState(false)
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
-      setIsInstallable(true)
-    }
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setIsInstallable(true);
+    };
 
     const handleAppInstalled = () => {
-      setIsInstalled(true)
-      setIsInstallable(false)
-      setDeferredPrompt(null)
-    }
+      setIsInstalled(true);
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    };
 
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    window.addEventListener('appinstalled', handleAppInstalled)
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true)
+      setIsInstalled(true);
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      window.removeEventListener('appinstalled', handleAppInstalled)
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const install = async () => {
-    if (!deferredPrompt) return false
+    if (!deferredPrompt) return false;
 
     try {
-      await deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+
       if (outcome === 'accepted') {
-        setDeferredPrompt(null)
-        setIsInstallable(false)
-        return true
+        setDeferredPrompt(null);
+        setIsInstallable(false);
+        return true;
       }
-      return false
+      return false;
     } catch (error) {
-      console.error('Error during PWA installation:', error)
-      return false
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      log.error('Error during PWA installation', errorObj);
+      return false;
     }
-  }
+  };
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
-      console.log('This browser does not support notifications')
-      return false
+      log.warn('This browser does not support notifications');
+      return false;
     }
 
     if (Notification.permission === 'granted') {
-      return true
+      return true;
     }
 
     if (Notification.permission !== 'denied') {
-      const permission = await Notification.requestPermission()
-      return permission === 'granted'
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
     }
 
-    return false
-  }
+    return false;
+  };
 
   const showNotification = (title: string, options?: NotificationOptions) => {
     if (Notification.permission === 'granted' && 'serviceWorker' in navigator) {
@@ -92,11 +95,11 @@ export function usePWA() {
         registration.showNotification(title, {
           icon: '/logo.png',
           badge: '/logo.png',
-          ...options
-        })
-      })
+          ...options,
+        });
+      });
     }
-  }
+  };
 
   return {
     isInstallable,
@@ -104,6 +107,6 @@ export function usePWA() {
     isOnline,
     install,
     requestNotificationPermission,
-    showNotification
-  }
+    showNotification,
+  };
 }

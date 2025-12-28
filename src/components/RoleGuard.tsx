@@ -1,5 +1,6 @@
-import React from 'react';
 import { Shield, Lock, Eye, Settings } from 'lucide-react';
+import React from 'react';
+
 import { useApp } from '../context/AppContext';
 
 interface RoleGuardProps {
@@ -36,16 +37,16 @@ export default function RoleGuard({ children, allowedRoles, fallback }: RoleGuar
 export const PERMISSIONS = {
   // Owner permissions - full access
   OWNER: ['owner'] as string[],
-  
+
   // Management permissions - can manage most things
   MANAGEMENT: ['owner', 'manager'] as string[],
-  
+
   // Staff permissions - can process sales and view basic reports
   STAFF: ['owner', 'manager', 'cashier'] as string[],
-  
+
   // All users - including viewers
   ALL: ['owner', 'manager', 'cashier', 'viewer'] as string[],
-  
+
   // Specific permissions
   CAN_MANAGE_EMPLOYEES: ['owner', 'manager'] as string[],
   CAN_MANAGE_PRODUCTS: ['owner', 'manager'] as string[],
@@ -89,35 +90,35 @@ export function RoleBadge({ role }: { role: string }) {
           label: 'Owner',
           color: 'bg-purple-100 text-purple-700 border-purple-200',
           icon: Settings,
-          description: 'Full access to all features'
+          description: 'Full access to all features',
         };
       case 'manager':
         return {
           label: 'Manager',
           color: 'bg-blue-100 text-blue-700 border-blue-200',
           icon: Shield,
-          description: 'Can manage team and operations'
+          description: 'Can manage team and operations',
         };
       case 'cashier':
         return {
           label: 'Cashier',
           color: 'bg-green-100 text-green-700 border-green-200',
           icon: Eye,
-          description: 'Can process sales and view reports'
+          description: 'Can process sales and view reports',
         };
       case 'viewer':
         return {
           label: 'Viewer',
           color: 'bg-gray-100 text-gray-700 border-gray-200',
           icon: Lock,
-          description: 'Read-only access to data'
+          description: 'Read-only access to data',
         };
       default:
         return {
           label: role,
           color: 'bg-gray-100 text-gray-700 border-gray-200',
           icon: Lock,
-          description: 'Unknown role'
+          description: 'Unknown role',
         };
     }
   };

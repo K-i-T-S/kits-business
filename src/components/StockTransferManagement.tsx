@@ -1,4 +1,3 @@
-import { Fragment, useMemo, useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -11,6 +10,8 @@ import {
   CheckCircle,
   AlertTriangle,
 } from 'lucide-react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
+
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import type { StockTransfer } from '../types/inventory';
@@ -62,8 +63,8 @@ export default function StockTransferManagement() {
               created_at: '2024-01-15T10:00:00Z',
               product_name: 'Fresh Milk',
               batch_number: 'BATCH-001',
-            }
-          ]
+            },
+          ],
         },
         {
           id: 'transfer-2',
@@ -90,8 +91,8 @@ export default function StockTransferManagement() {
               created_at: '2024-01-18T09:00:00Z',
               product_name: 'Computer Parts',
               batch_number: 'BATCH-002',
-            }
-          ]
+            },
+          ],
         },
       ];
       setTransfers(mockTransfers);
@@ -106,9 +107,9 @@ export default function StockTransferManagement() {
     const matchesSearch =
       transfer.transfer_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       transfer.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.items?.some(item => 
+      transfer.items?.some(item =>
         item.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.batch_number?.toLowerCase().includes(searchQuery.toLowerCase())
+        item.batch_number?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     const matchesStatus = filterStatus === 'all' || transfer.status === filterStatus;
     return matchesSearch && matchesStatus;

@@ -14,7 +14,7 @@ export const calculateSubtotal = (items: CartLikeItem[]): number => {
 
 export const calculateTotal = (
   items: CartLikeItem[],
-  options: CalculateTotalOptions = {}
+  options: CalculateTotalOptions = {},
 ): number => {
   const subtotal = calculateSubtotal(items);
   const taxMultiplier = 1 + (options.taxRate ?? 0);

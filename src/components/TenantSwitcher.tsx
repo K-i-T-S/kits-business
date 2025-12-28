@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
 import { Building2, ChevronDown, Check, Users, Settings, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+
 import { useApp } from '../context/AppContext';
-import { getTenantsByUser, supabaseAdmin } from '../utils/tenantManager';
 import { supabase } from '../utils/supabaseClient';
+import { getTenantsByUser, supabaseAdmin } from '../utils/tenantManager';
 
 interface Tenant {
   id: string;
@@ -46,10 +47,10 @@ export default function TenantSwitcher() {
     try {
       // Update frontend context
       await switchTenantContext(tenant.id);
-      
+
       toast.success(`Switched to ${tenant.name}`);
       setIsOpen(false);
-      
+
       // Reload the page to ensure all data is refreshed
       window.location.reload();
     } catch (error) {
@@ -114,11 +115,11 @@ export default function TenantSwitcher() {
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Dropdown Content */}
           <div className="absolute top-full left-0 mt-2 w-80 bg-slate-900 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
             <div className="p-3 border-b border-white/10">
@@ -154,7 +155,7 @@ export default function TenantSwitcher() {
                       </span>
                     </div>
                   </div>
-                  
+
                   {tenant.id !== currentTenant.id && (
                     <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white/60 transition-colors" />
                   )}

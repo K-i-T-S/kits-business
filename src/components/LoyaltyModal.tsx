@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { Star, Gift, TrendingUp, Award, Check } from 'lucide-react';
+import { useState } from 'react';
+
 import type { LoyaltyProgram, CustomerLoyalty, LoyaltyTier, LoyaltyReward } from '../types/pos';
 import { POSCalculator } from '../utils/posCalculations';
 
@@ -12,24 +13,24 @@ interface LoyaltyModalProps {
   onCancel: () => void;
 }
 
-export default function LoyaltyModal({ 
-  isOpen, 
-  subtotal, 
-  customerLoyalty, 
+export default function LoyaltyModal({
+  isOpen,
+  subtotal,
+  customerLoyalty,
   loyaltyProgram,
   onRedeemPoints,
-  onCancel 
+  onCancel,
 }: LoyaltyModalProps) {
   const [selectedReward, setSelectedReward] = useState<LoyaltyReward | null>(null);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
 
-  const pointsEarned = loyaltyProgram 
+  const pointsEarned = loyaltyProgram
     ? POSCalculator.calculateLoyaltyPointsEarned(subtotal, loyaltyProgram)
     : 0;
 
   const currentTier = loyaltyProgram?.tiers.find(tier => tier.id === customerLoyalty?.tierId);
-  
-  const canRedeemPoints = customerLoyalty && loyaltyProgram && 
+
+  const canRedeemPoints = customerLoyalty && loyaltyProgram &&
     POSCalculator.canRedeemPoints(pointsToRedeem, customerLoyalty);
 
   const handleRedeemPoints = () => {
@@ -53,10 +54,17 @@ export default function LoyaltyModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-      <div className="glass-panel w-full max-w-lg overflow-y-auto p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="w-full max-w-lg overflow-y-auto p-6" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <h2 className="text-xl font-semibold text-white mb-6">Loyalty Program</h2>
-        
+
         {!customerLoyalty || !loyaltyProgram ? (
           <div className="text-center py-8 text-white/60">
             <Star className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -77,7 +85,7 @@ export default function LoyaltyModal({
                   <div className="text-xs text-white/60">Points</div>
                 </div>
               </div>
-              
+
               {currentTier && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
@@ -117,7 +125,7 @@ export default function LoyaltyModal({
             {/* Redeem Points */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-white/80">Redeem Points</h3>
-              
+
               {/* Custom Points Redemption */}
               <div className="p-3 rounded-lg border border-white/30 bg-white/10">
                 <div className="flex items-center gap-3">
@@ -153,7 +161,7 @@ export default function LoyaltyModal({
                   {loyaltyProgram.rewards.map((reward) => {
                     const canAfford = customerLoyalty.currentPoints >= reward.pointsCost;
                     const isSelected = selectedReward?.id === reward.id;
-                    
+
                     return (
                       <button
                         key={reward.id}
@@ -163,8 +171,8 @@ export default function LoyaltyModal({
                           isSelected
                             ? 'border-amber-400 bg-amber-500/20'
                             : canAfford
-                            ? 'border-white/30 bg-white/10 hover:border-white/50'
-                            : 'border-white/10 bg-white/5 opacity-50 cursor-not-allowed'
+                              ? 'border-white/30 bg-white/10 hover:border-white/50'
+                              : 'border-white/10 bg-white/5 opacity-50 cursor-not-allowed'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -194,13 +202,13 @@ export default function LoyaltyModal({
                 {(() => {
                   const currentIndex = loyaltyProgram.tiers.findIndex(t => t.id === currentTier.id);
                   const nextTier = loyaltyProgram.tiers[currentIndex + 1];
-                  
+
                   if (!nextTier) {
                     return <div className="text-xs text-white/80">You're at the highest tier!</div>;
                   }
-                  
+
                   const progress = (customerLoyalty.currentPoints / nextTier.minPoints) * 100;
-                  
+
                   return (
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
@@ -208,7 +216,7 @@ export default function LoyaltyModal({
                         <span className="text-white/80">{nextTier.name}</span>
                       </div>
                       <div className="w-full bg-white/20 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-gradient-to-r from-amber-400 to-amber-300 h-2 rounded-full transition-all"
                           style={{ width: `${Math.min(progress, 100)}%` }}
                         />

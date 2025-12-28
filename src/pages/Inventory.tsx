@@ -1,4 +1,3 @@
-import { Fragment, useMemo, useState } from 'react';
 import {
   Plus,
   Search,
@@ -11,10 +10,12 @@ import {
   Layers3,
   Filter,
 } from 'lucide-react';
-import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
+import { Fragment, useMemo, useState } from 'react';
+
 import AddProductModal from '../components/AddProductModal';
 import ImportInventoryModal from '../components/ImportInventoryModal';
+import Layout from '../components/Layout';
+import { useApp } from '../context/AppContext';
 
 export default function Inventory() {
   const { products, deleteProduct } = useApp();
@@ -42,7 +43,7 @@ export default function Inventory() {
     if (!product.variants || product.variants.length === 0) {
       return { totalStock: 0, avgCost: 0, avgPrice: 0, isLowStock: false };
     }
-    
+
     const totalStock = product.variants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
     const avgCost =
       product.variants.reduce((sum: number, v: any) => sum + (v.cost || 0), 0) / product.variants.length;
@@ -94,7 +95,7 @@ export default function Inventory() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0">
         <section className="hero-gradient glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between text-white">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-white/80">Inventory HQ</p>
@@ -216,7 +217,7 @@ export default function Inventory() {
                           </td>
                           <td className="px-6 py-4">
                             <button
-                              onClick={() => setSelectedProduct(isExpanded ? null : product.id)}
+                              onClick={() => setSelectedProduct(isExpanded ? null : product.id!)}
                               className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
                             >
                               {product.variants?.length || 0} variant
@@ -246,7 +247,7 @@ export default function Inventory() {
                                 <Edit className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => deleteProduct(product.id)}
+                                onClick={() => deleteProduct(product.id!)}
                                 className="rounded-full border border-white/30 bg-white/20 p-2 text-rose-300 hover:bg-white/30"
                               >
                                 <Trash2 className="h-4 w-4" />

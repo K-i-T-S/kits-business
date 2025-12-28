@@ -72,10 +72,11 @@ html {
 
 .glass-panel {
   border-radius: 1.5rem;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: #ffffff;
-  box-shadow: 0 25px 65px rgba(12, 19, 51, 0.12);
-  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(11, 15, 36, 0.95);
+  color: #f8faff;
+  box-shadow: 0 35px 85px rgba(2, 3, 12, 0.5);
+  backdrop-filter: blur(28px);
 }
 
 .glass-panel-dark {
@@ -85,6 +86,107 @@ html {
   color: #e2e8f0;
   box-shadow: 0 35px 85px rgba(2, 3, 12, 0.5);
   backdrop-filter: blur(28px);
+}
+
+.modal-backdrop {
+  background: rgba(10, 14, 26, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.modal-content {
+  border-radius: 1.5rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(11, 15, 36, 0.98) !important;
+  color: #f8faff !important;
+  box-shadow: 0 35px 85px rgba(2, 3, 12, 0.6) !important;
+  backdrop-filter: blur(28px) !important;
+}
+
+/* Toast/Notification styling */
+.toaster {
+  position: fixed !important;
+  bottom: 1rem !important;
+  left: 1rem !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+  z-index: 9999 !important;
+}
+
+.toaster[data-position] {
+  position: fixed !important;
+  bottom: 1rem !important;
+  left: 1rem !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+[data-sonner-toaster] {
+  position: fixed !important;
+  bottom: 1rem !important;
+  left: 1rem !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+[data-sonner-toaster][data-position="bottom-right"] {
+  left: 1rem !important;
+  right: auto !important;
+}
+
+[data-sonner-toaster][data-position="bottom-left"] {
+  left: 1rem !important;
+  right: auto !important;
+}
+
+/* Override any inline styles from Sonner */
+div[style*="right:"] {
+  right: auto !important;
+  left: 1rem !important;
+}
+
+.sonner-toaster {
+  position: fixed !important;
+  bottom: 1rem !important;
+  left: 1rem !important;
+  right: auto !important;
+  top: auto !important;
+}
+
+.dark-toast {
+  background: rgba(11, 15, 36, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 0.75rem !important;
+  color: #f8faff !important;
+  box-shadow: 0 10px 40px rgba(2, 3, 12, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  font-weight: 500 !important;
+}
+
+.dark-toast [data-sonner-toast] {
+  background: rgba(11, 15, 36, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #f8faff !important;
+}
+
+.dark-toast [data-sonner-toast][data-type="success"] {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #10b981 !important;
+}
+
+.dark-toast [data-sonner-toast][data-type="error"] {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #ef4444 !important;
+}
+
+.dark-toast [data-sonner-toast][data-type="warning"] {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: #f59e0b !important;
 }
 
 .tilt-hover {

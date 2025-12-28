@@ -1,4 +1,3 @@
-import { Fragment, useMemo, useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -12,6 +11,8 @@ import {
   XCircle,
   AlertTriangle,
 } from 'lucide-react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
+
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import type { PurchaseOrder } from '../types/inventory';

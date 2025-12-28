@@ -53,7 +53,7 @@ export const AccessibilityConstants = {
     IMG: 'img',
     HEADING: 'heading',
     NONE: 'none',
-    PRESENTATION: 'presentation'
+    PRESENTATION: 'presentation',
   } as const,
 
   // ARIA properties
@@ -91,14 +91,14 @@ export const AccessibilityConstants = {
     FLOWTO: 'aria-flowto',
     OWNED: 'aria-owns',
     ACTIVEDESCENDANT: 'aria-activedescendant',
-    LEVEL: 'aria-level'
+    LEVEL: 'aria-level',
   } as const,
 
   // Live regions
   LIVE_REGIONS: {
     OFF: 'off',
     POLITE: 'polite',
-    ASSERTIVE: 'assertive'
+    ASSERTIVE: 'assertive',
   } as const,
 
   // Keyboard navigation
@@ -114,15 +114,15 @@ export const AccessibilityConstants = {
     HOME: 'Home',
     END: 'End',
     PAGE_UP: 'PageUp',
-    PAGE_DOWN: 'PageDown'
+    PAGE_DOWN: 'PageDown',
   } as const,
 
   // Focus management
   TRAPS: {
     NONE: 'none',
     TAB: 'tab',
-    MODAL: 'modal'
-  } as const
+    MODAL: 'modal',
+  } as const,
 };
 
 // Focus management utilities
@@ -146,7 +146,7 @@ export class FocusManager {
       'summary',
       'iframe',
       'embed',
-      'object'
+      'object',
     ].join(', ');
 
     return Array.from(container.querySelectorAll(selector)) as HTMLElement[];
@@ -158,7 +158,7 @@ export class FocusManager {
   static trapFocus(container: HTMLElement): void {
     this.focusableElements = this.getFocusableElements(container);
     this.previousFocus = document.activeElement as HTMLElement;
-    
+
     if (this.focusableElements.length > 0) {
       this.focusableElements[0]?.focus();
     }
@@ -223,11 +223,11 @@ export class ScreenReaderAnnouncer {
    */
   static announce(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
     this.initialize();
-    
+
     if (this.announcementElement) {
       this.announcementElement.setAttribute('aria-live', priority);
       this.announcementElement.textContent = message;
-      
+
       // Clear after announcement
       setTimeout(() => {
         if (this.announcementElement) {
@@ -256,7 +256,7 @@ export class KeyboardNavigation {
       'Home',
       'End',
       'PageUp',
-      'PageDown'
+      'PageDown',
     ];
     return navigationKeys.includes(key as any);
   }
@@ -268,7 +268,7 @@ export class KeyboardNavigation {
     event: KeyboardEvent,
     items: HTMLElement[],
     currentIndex: number,
-    orientation: 'horizontal' | 'vertical' = 'vertical'
+    orientation: 'horizontal' | 'vertical' = 'vertical',
   ): number {
     let newIndex = currentIndex;
 
@@ -278,18 +278,18 @@ export class KeyboardNavigation {
         event.preventDefault();
         newIndex = (currentIndex + 1) % items.length;
         break;
-      
+
       case 'ArrowUp':
       case 'ArrowLeft':
         event.preventDefault();
         newIndex = currentIndex === 0 ? items.length - 1 : currentIndex - 1;
         break;
-      
+
       case 'Home':
         event.preventDefault();
         newIndex = 0;
         break;
-      
+
       case 'End':
         event.preventDefault();
         newIndex = items.length - 1;
@@ -325,11 +325,11 @@ export class HighContrastMode {
   static toggle(): void {
     this.isHighContrast = !this.isHighContrast;
     document.documentElement.setAttribute('data-high-contrast', this.isHighContrast.toString());
-    
+
     // Announce to screen readers
     ScreenReaderAnnouncer.announce(
       `High contrast mode ${this.isHighContrast ? 'enabled' : 'disabled'}`,
-      'polite'
+      'polite',
     );
   }
 
@@ -360,11 +360,11 @@ export class SkipLinks {
   static createSkipLinks(): HTMLElement {
     const skipLinksContainer = document.createElement('div');
     skipLinksContainer.className = 'skip-links';
-    
+
     const skipLinks = [
       { href: '#main-content', text: 'Skip to main content' },
       { href: '#navigation', text: 'Skip to navigation' },
-      { href: '#search', text: 'Skip to search' }
+      { href: '#search', text: 'Skip to search' },
     ];
 
     skipLinks.forEach(link => {
@@ -387,13 +387,13 @@ export class AccessibilityTester {
   static checkMissingAltText(): HTMLElement[] {
     const images = document.querySelectorAll('img');
     const missingAlt: HTMLElement[] = [];
-    
+
     images.forEach(img => {
       if (!img.alt && !img.getAttribute('aria-label')) {
         missingAlt.push(img as HTMLElement);
       }
     });
-    
+
     return missingAlt;
   }
 
@@ -403,17 +403,17 @@ export class AccessibilityTester {
   static checkMissingLabels(): HTMLElement[] {
     const inputs = document.querySelectorAll('input, select, textarea');
     const missingLabels: HTMLElement[] = [];
-    
+
     inputs.forEach(input => {
       const hasLabel = document.querySelector(`label[for="${input.id}"]`) ||
                       input.getAttribute('aria-label') ||
                       input.getAttribute('aria-labelledby');
-      
+
       if (!hasLabel) {
         missingLabels.push(input as HTMLElement);
       }
     });
-    
+
     return missingLabels;
   }
 
@@ -427,15 +427,15 @@ export class AccessibilityTester {
 
     headings.forEach((heading, index) => {
       const level = parseInt(heading.tagName.charAt(1));
-      
+
       if (index === 0 && level !== 1) {
         issues.push(`First heading should be h1, found h${level}`);
       }
-      
+
       if (level > lastLevel + 1) {
         issues.push(`Heading level skipped: h${lastLevel} to h${level}`);
       }
-      
+
       lastLevel = level;
     });
 
@@ -474,5 +474,5 @@ export default {
   KeyboardNavigation,
   HighContrastMode,
   SkipLinks,
-  AccessibilityTester
+  AccessibilityTester,
 };

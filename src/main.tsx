@@ -1,16 +1,19 @@
-import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./tailwind.css";
+import { createRoot } from 'react-dom/client';
+
+import App from './App';
+import './tailwind.css';
+import { log } from './utils/logger';
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
     .then((registration) => {
-      console.log('SW registered: ', registration);
+      log.info('SW registered', { registration });
     })
     .catch((registrationError) => {
-      console.log('SW registration failed: ', registrationError);
+      const errorObj = registrationError instanceof Error ? registrationError : new Error(String(registrationError));
+      log.error('SW registration failed', errorObj);
     });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById('root')!).render(<App />);

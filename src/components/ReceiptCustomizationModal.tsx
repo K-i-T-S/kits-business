@@ -1,6 +1,8 @@
-import { useState } from 'react';
 import { Settings, Image, Barcode, QrCode, Plus, Trash2, Eye } from 'lucide-react';
+import { useState } from 'react';
+
 import type { ReceiptTemplate, ReceiptField } from '../types/pos';
+import { log } from '../utils/logger';
 
 interface ReceiptCustomizationModalProps {
   isOpen: boolean;
@@ -11,13 +13,13 @@ interface ReceiptCustomizationModalProps {
   onCancel: () => void;
 }
 
-export default function ReceiptCustomizationModal({ 
-  isOpen, 
-  templates, 
+export default function ReceiptCustomizationModal({
+  isOpen,
+  templates,
   currentTemplate,
   onSelectTemplate,
   onSaveTemplate,
-  onCancel 
+  onCancel,
 }: ReceiptCustomizationModalProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState(currentTemplate?.id || '');
   const [isEditing, setIsEditing] = useState(false);
@@ -31,8 +33,8 @@ export default function ReceiptCustomizationModal({
       includeBarcode: true,
       includeQrCode: false,
       customFields: [],
-      isActive: true
-    }
+      isActive: true,
+    },
   );
 
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId) || editingTemplate;
@@ -43,12 +45,12 @@ export default function ReceiptCustomizationModal({
       label: 'Custom Field',
       type: 'text',
       value: '',
-      position: 'footer'
+      position: 'footer',
     };
-    
+
     setEditingTemplate({
       ...editingTemplate,
-      customFields: [...editingTemplate.customFields, newField]
+      customFields: [...editingTemplate.customFields, newField],
     });
   };
 
@@ -56,22 +58,22 @@ export default function ReceiptCustomizationModal({
     setEditingTemplate({
       ...editingTemplate,
       customFields: editingTemplate.customFields.map(field =>
-        field.id === fieldId ? { ...field, ...updates } : field
-      )
+        field.id === fieldId ? { ...field, ...updates } : field,
+      ),
     });
   };
 
   const removeCustomField = (fieldId: string) => {
     setEditingTemplate({
       ...editingTemplate,
-      customFields: editingTemplate.customFields.filter(field => field.id !== fieldId)
+      customFields: editingTemplate.customFields.filter(field => field.id !== fieldId),
     });
   };
 
   const handleSaveTemplate = () => {
     const templateToSave = {
       ...editingTemplate,
-      id: editingTemplate.id || Date.now().toString()
+      id: editingTemplate.id || Date.now().toString(),
     };
     onSaveTemplate(templateToSave);
     setIsEditing(false);
@@ -88,16 +90,23 @@ export default function ReceiptCustomizationModal({
 
   const previewReceipt = () => {
     // This would generate a preview of the receipt
-    console.log('Preview receipt with template:', selectedTemplate);
+    log.debug('Preview receipt with template', { selectedTemplate });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-      <div className="glass-panel w-full max-w-2xl overflow-y-auto p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="w-full max-w-2xl overflow-y-auto p-6" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <h2 className="text-xl font-semibold text-white mb-6">Receipt Customization</h2>
-        
+
         <div className="space-y-6">
           {/* Template Selection */}
           <div className="space-y-3">
@@ -235,7 +244,7 @@ export default function ReceiptCustomizationModal({
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
-                  
+
                   <div className="space-y-2">
                     {editingTemplate.customFields.map((field) => (
                       <div key={field.id} className="flex items-center gap-2 p-2 rounded-lg border border-white/30 bg-white/10">
@@ -300,7 +309,7 @@ export default function ReceiptCustomizationModal({
                       {selectedTemplate.header}
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     {selectedTemplate.includeLogo && (
                       <span className="px-2 py-1 rounded bg-white/20 text-xs text-white">Logo</span>

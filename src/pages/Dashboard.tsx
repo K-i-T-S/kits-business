@@ -1,6 +1,3 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   Package,
   ShoppingCart,
@@ -12,6 +9,10 @@ import {
   BarChart3,
   Sparkles,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from 'react-router-dom';
+
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
@@ -51,7 +52,7 @@ export default function Dashboard() {
             name: firstTenant.tenant_name,
             slug: firstTenant.tenant_slug,
             userRole: firstTenant.user_role,
-            settings: firstTenant.settings || {}
+            settings: firstTenant.settings || {},
           };
           setCurrentTenant(tenantObj);
         }
@@ -105,6 +106,7 @@ export default function Dashboard() {
       icon: Package,
       accent: 'from-blue-500/75 to-cyan-400/50',
       link: '/inventory',
+      testId: 'total-products',
     },
     {
       title: t('dashboard.todaysSales', "Today's Sales"),
@@ -113,6 +115,7 @@ export default function Dashboard() {
       icon: ShoppingCart,
       accent: 'from-emerald-500/70 to-lime-400/50',
       link: '/pos',
+      testId: 'total-revenue',
     },
     {
       title: t('customers.title', 'Customers'),
@@ -121,6 +124,7 @@ export default function Dashboard() {
       icon: Users,
       accent: 'from-purple-500/70 to-pink-400/50',
       link: '/customers',
+      testId: 'total-customers',
     },
     {
       title: t('dashboard.todaysProfit', "Today's Profit"),
@@ -129,6 +133,7 @@ export default function Dashboard() {
       icon: TrendingUp,
       accent: 'from-amber-500/70 to-orange-400/50',
       link: '/reports',
+      testId: 'total-orders',
     },
   ];
 
@@ -141,7 +146,7 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0">
         <section className="hero-gradient glass-panel relative overflow-hidden p-6 sm:p-8 text-white">
           <Sparkles className="pointer-events-none absolute right-8 top-6 h-16 w-16 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -173,6 +178,7 @@ export default function Dashboard() {
             <Link
               key={stat.title}
               to={stat.link}
+              data-testid={stat.testId}
               className="hero-gradient tilt-hover rounded-3xl border border-white/30 p-5 shadow-lg shadow-slate-900/5 text-white"
             >
               <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${stat.accent}`}>
@@ -212,6 +218,7 @@ export default function Dashboard() {
               <Link
                 key={action.title}
                 to={action.link}
+                data-testid={`nav-${action.link.replace('/', '')}`}
                 className={`tilt-hover flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br ${action.accent} px-6 py-6 text-white shadow-xl shadow-slate-900/20`}
               >
                 <action.icon className="h-7 w-7" />

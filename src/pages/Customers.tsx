@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import {
   AlertCircle,
   DollarSign,
@@ -12,13 +11,15 @@ import {
   Target,
   Mail,
 } from 'lucide-react';
-import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
-import CustomerSegmentation from '../components/crm/CustomerSegmentation';
-import CustomerCommunicationHistory from '../components/crm/CustomerCommunicationHistory';
+import { useMemo, useState } from 'react';
+
 import AutomatedMarketing from '../components/crm/AutomatedMarketing';
 import CRMAnalytics from '../components/crm/CRMAnalytics';
+import CustomerCommunicationHistory from '../components/crm/CustomerCommunicationHistory';
+import CustomerSegmentation from '../components/crm/CustomerSegmentation';
 import MarketingCampaigns from '../components/crm/MarketingCampaigns';
+import Layout from '../components/Layout';
+import { useApp } from '../context/AppContext';
 
 export default function Customers() {
   const { customers, addCustomer, updateCustomer } = useApp();
@@ -40,13 +41,13 @@ export default function Customers() {
 
   const handleAddCustomer = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const customer = {
       id: Date.now().toString(),
       name: newCustomer.name,
       phone: newCustomer.phone,
       debtBalance: 0,
-      totalPurchases: 0
+      totalPurchases: 0,
     };
 
     addCustomer(customer);
@@ -97,7 +98,7 @@ export default function Customers() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0 pb-[100px]">
         {/* Hero */}
         <section className="hero-gradient glass-panel relative overflow-hidden rounded-2xl p-4 sm:p-6 md:p-8 text-white">
           <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 text-white/20" />
@@ -159,7 +160,7 @@ export default function Customers() {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="space-y-6 lg:space-y-8">
+          <div className="space-y-6 lg:space-y-8 pb-[100px]">
             {/* Stats */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {statCards.map((card) => (
@@ -459,34 +460,51 @@ export default function Customers() {
 
         {/* Add Customer Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-            <div className="hero-gradient glass-panel w-full max-w-md space-y-6 p-6 sm:p-8 text-white max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+            <div className="w-full max-w-md space-y-6 p-6 sm:p-8 max-h-[90vh] overflow-y-auto" style={{
+              backgroundColor: 'rgba(11, 15, 36, 0.98)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '1.5rem',
+              color: '#f8faff',
+              boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+              backdropFilter: 'blur(28px)'
+            }}>
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-white/80 font-medium">New loyalty profile</p>
-                <h2 className="text-xl sm:text-2xl font-bold text-white mt-1">Add customer</h2>
-                <p className="text-sm text-white/90 mt-2">
+                <p className="text-xs uppercase tracking-[0.3em] font-medium" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>New loyalty profile</p>
+                <h2 className="text-xl sm:text-2xl font-bold mt-1" style={{ color: '#f8faff' }}>Add customer</h2>
+                <p className="text-sm mt-2" style={{ color: 'rgba(248, 250, 255, 0.9)' }}>
                   Save customer details to speed up service, warranties, and follow-ups.
                 </p>
               </div>
               <form onSubmit={handleAddCustomer} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Customer name</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#f8faff' }}>Customer name</label>
                   <input
                     type="text"
                     value={newCustomer.name}
                     onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                    className="w-full rounded-xl border border-white/30 bg-white/20 px-4 py-3 text-sm text-white placeholder-white/60 shadow-inner focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
+                    className="w-full rounded-xl px-4 py-3 text-sm transition-all duration-200"
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#f8faff'
+                    }}
                     placeholder="Enter customer name"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Phone number</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#f8faff' }}>Phone number</label>
                   <input
                     type="tel"
                     value={newCustomer.phone}
                     onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                    className="w-full rounded-xl border border-white/30 bg-white/20 px-4 py-3 text-sm text-white placeholder-white/60 shadow-inner focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
+                    className="w-full rounded-xl px-4 py-3 text-sm transition-all duration-200"
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#f8faff'
+                    }}
                     placeholder="Enter phone number"
                     required
                   />
@@ -495,15 +513,25 @@ export default function Customers() {
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="flex-1 rounded-xl border border-white/30 bg-slate-800/50 px-4 py-3 text-sm font-medium text-white hover:bg-slate-700/50 transition-all duration-200"
+                    className="flex-1 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200"
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#f8faff'
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-all duration-200"
+                    className="flex-1 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200"
+                    style={{
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      border: 'none'
+                    }}
                   >
-                    Add customer
+                    Add Customer
                   </button>
                 </div>
               </form>

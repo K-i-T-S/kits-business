@@ -1,6 +1,7 @@
+import { Mail, MessageCircle, Instagram, PhoneCall } from 'lucide-react';
 import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, MessageCircle, Instagram, PhoneCall } from 'lucide-react';
+
 import { BRAND } from '../constants/branding';
 
 interface SupportCardProps {
@@ -14,22 +15,22 @@ const SupportCard = memo(({ type }: SupportCardProps) => {
       icon: Mail,
       title: 'Email Support',
       description: BRAND.supportEmail,
-      accent: 'from-blue-500/20 to-blue-600/20 text-blue-400'
+      accent: 'from-blue-500/20 to-blue-600/20 text-blue-400',
     },
     whatsapp: {
       href: `https://wa.me/${BRAND.supportWhatsApp.replace(/\D/g, '')}`,
       icon: MessageCircle,
       title: 'WhatsApp',
       description: BRAND.supportWhatsApp,
-      accent: 'from-green-500/20 to-green-600/20 text-green-400'
+      accent: 'from-green-500/20 to-green-600/20 text-green-400',
     },
     instagram: {
       href: `https://instagram.com/${BRAND.supportInstagram.replace('@', '')}`,
       icon: Instagram,
       title: 'Instagram',
       description: BRAND.supportInstagram,
-      accent: 'from-pink-500/20 to-purple-600/20 text-pink-400'
-    }
+      accent: 'from-pink-500/20 to-purple-600/20 text-pink-400',
+    },
   };
 
   const config = configs[type];

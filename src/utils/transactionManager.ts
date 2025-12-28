@@ -1,5 +1,6 @@
+import type { Product } from '../context/AppContext';
+
 import { api } from './supabaseClient';
-import type { Product, Sale, Customer, Employee } from '../context/AppContext';
 
 export interface TransactionOperation {
   type: 'create' | 'update' | 'delete';
@@ -28,30 +29,30 @@ export class TransactionManager {
       for (let i = 0; i < operations.length; i++) {
         const operation = operations[i];
         if (!operation) continue;
-        
+
         const result = await this.executeOperation(operation);
-        
+
         if (operation.type !== 'delete') {
           this.rollbackData.push({
             operation: operation.type === 'create' ? 'delete' : 'update',
             entity: operation.entity,
             data: result,
-            id: result.id
+            id: result.id,
           });
         } else {
           this.rollbackData.push({
             operation: 'create',
             entity: operation.entity,
-            data: operation.data
+            data: operation.data,
           });
         }
-        
+
         results.push(result);
       }
 
       return {
         success: true,
-        results
+        results,
       };
     } catch (error) {
       console.error('Transaction failed, attempting rollback:', error);
@@ -60,7 +61,7 @@ export class TransactionManager {
         success: false,
         results,
         rollbackData: this.rollbackData,
-        error: error instanceof Error ? error.message : 'Transaction failed'
+        error: error instanceof Error ? error.message : 'Transaction failed',
       };
     }
   }
@@ -85,11 +86,11 @@ export class TransactionManager {
   private static async executeProductOperation(operation: TransactionOperation): Promise<any> {
     switch (operation.type) {
       case 'create':
-        return await api.post('/products', operation.data);
+        return api.post('/products', operation.data);
       case 'update':
-        return await api.put(`/products/${operation.id}`, operation.data);
+        return api.put(`/products/${operation.id}`, operation.data);
       case 'delete':
-        return await api.delete(`/products/${operation.id}`);
+        return api.delete(`/products/${operation.id}`);
       default:
         throw new Error(`Unknown operation type: ${operation.type}`);
     }
@@ -98,7 +99,7 @@ export class TransactionManager {
   private static async executeSaleOperation(operation: TransactionOperation): Promise<any> {
     switch (operation.type) {
       case 'create':
-        return await api.post('/sales', operation.data);
+        return api.post('/sales', operation.data);
       default:
         throw new Error(`Unknown operation type: ${operation.type}`);
     }
@@ -107,11 +108,11 @@ export class TransactionManager {
   private static async executeCustomerOperation(operation: TransactionOperation): Promise<any> {
     switch (operation.type) {
       case 'create':
-        return await api.post('/customers', operation.data);
+        return api.post('/customers', operation.data);
       case 'update':
-        return await api.put(`/customers/${operation.id}`, operation.data);
+        return api.put(`/customers/${operation.id}`, operation.data);
       case 'delete':
-        return await api.delete(`/customers/${operation.id}`);
+        return api.delete(`/customers/${operation.id}`);
       default:
         throw new Error(`Unknown operation type: ${operation.type}`);
     }
@@ -120,11 +121,11 @@ export class TransactionManager {
   private static async executeEmployeeOperation(operation: TransactionOperation): Promise<any> {
     switch (operation.type) {
       case 'create':
-        return await api.post('/employees', operation.data);
+        return api.post('/employees', operation.data);
       case 'update':
-        return await api.put(`/employees/${operation.id}`, operation.data);
+        return api.put(`/employees/${operation.id}`, operation.data);
       case 'delete':
-        return await api.delete(`/employees/${operation.id}`);
+        return api.delete(`/employees/${operation.id}`);
       default:
         throw new Error(`Unknown operation type: ${operation.type}`);
     }
@@ -133,8 +134,8 @@ export class TransactionManager {
   private static async executeStockOperation(operation: TransactionOperation): Promise<any> {
     switch (operation.type) {
       case 'update':
-        return await api.post(`/products/${operation.data.productId}/variants/${operation.data.variantId}/stock`, {
-          quantity: operation.data.quantity
+        return api.post(`/products/${operation.data.productId}/variants/${operation.data.variantId}/stock`, {
+          quantity: operation.data.quantity,
         });
       default:
         throw new Error(`Unknown operation type: ${operation.type}`);
@@ -143,9 +144,13 @@ export class TransactionManager {
 
   private static async rollback(): Promise<void> {
     const rollbackOperations = [...this.rollbackData].reverse();
-    
+
     for (const rollbackOp of rollbackOperations) {
       try {
+        if (!rollbackOp || !rollbackOp.type || !rollbackOp.entity) {
+          console.warn('Skipping invalid rollback operation:', rollbackOp);
+          continue;
+        }
         await this.executeOperation(rollbackOp);
       } catch (rollbackError) {
         console.error('Rollback operation failed:', rollbackError, rollbackOp);
@@ -158,25 +163,29 @@ export class TransactionManager {
       {
         type: 'create',
         entity: 'sale',
-        data: saleData
-      }
+        data: saleData,
+      },
     ];
 
     for (const item of saleData.items) {
       const product = products.find(p => p.id === item.productId);
-      if (product) {
-        const variant = product.variants.find(v => v.id === item.variantId);
-        if (variant) {
-          operations.push({
-            type: 'update',
-            entity: 'stock',
-            data: {
-              productId: item.productId,
-              variantId: item.variantId,
-              quantity: variant.stock - item.quantity
-            }
-          });
-        }
+      if (!product) {
+        console.error('Available products:', products.map(p => ({ id: p.id, name: p.name })));
+        console.error('Looking for product ID:', item.productId);
+        throw new Error(`Product not found: ${item.productId}`);
+      }
+      
+      const variant = product.variants.find(v => v.id === item.variantId);
+      if (variant) {
+        operations.push({
+          type: 'update',
+          entity: 'stock',
+          data: {
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: -item.quantity, // Negative to subtract from stock
+          },
+        });
       }
     }
 
@@ -186,9 +195,9 @@ export class TransactionManager {
         entity: 'customer',
         id: saleData.customerId,
         data: {
-          totalPurchases: saleData.total,
-          lastPurchaseDate: new Date().toISOString()
-        }
+          total_purchases: saleData.total,
+          last_visit: new Date().toISOString(),
+        },
       });
     }
 
@@ -199,7 +208,7 @@ export class TransactionManager {
     const operations: TransactionOperation[] = updates.map(update => ({
       type: 'update' as const,
       entity: 'stock' as const,
-      data: update
+      data: update,
     }));
 
     return this.executeTransaction(operations);

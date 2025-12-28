@@ -1,5 +1,5 @@
-import React, { memo, useMemo } from 'react';
 import { AlertTriangle, Package } from 'lucide-react';
+import React, { memo, useMemo } from 'react';
 
 interface VirtualizedListProps {
   items: any[];
@@ -9,12 +9,12 @@ interface VirtualizedListProps {
   className?: string;
 }
 
-const VirtualizedList = memo(({ 
-  items, 
-  height, 
-  itemHeight, 
-  renderItem, 
-  className
+const VirtualizedList = memo(({
+  items,
+  height,
+  itemHeight,
+  renderItem,
+  className,
 }: VirtualizedListProps) => {
   const [scrollTop, setScrollTop] = React.useState(0);
 
@@ -22,11 +22,11 @@ const VirtualizedList = memo(({
     const startIndex = Math.floor(scrollTop / itemHeight);
     const endIndex = Math.min(
       startIndex + Math.ceil(height / itemHeight) + 1,
-      items.length
+      items.length,
     );
     return items.slice(startIndex, endIndex).map((item, index) => ({
       item,
-      index: startIndex + index
+      index: startIndex + index,
     }));
   }, [items, scrollTop, height, itemHeight]);
 
@@ -40,20 +40,20 @@ const VirtualizedList = memo(({
   }
 
   return (
-    <div 
+    <div
       className={className}
       style={{ height, overflowY: 'auto' }}
       onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
     >
       <div style={{ height: items.length * itemHeight, position: 'relative' }}>
         {visibleItems.map(({ item, index }) => (
-          <div 
+          <div
             key={index}
-            style={{ 
+            style={{
               position: 'absolute',
               top: index * itemHeight,
               height: itemHeight,
-              width: '100%'
+              width: '100%',
             }}
             className="px-2"
           >

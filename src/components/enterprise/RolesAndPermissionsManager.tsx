@@ -1,19 +1,21 @@
+import { Shield, Users, Settings, Plus, Edit, Trash2, Key, Lock, CheckCircle, XCircle, AlertTriangle, UserPlus, Sparkles } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+import Layout from '../Layout';
+
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { Shield, Users, Settings, Plus, Edit, Trash2, Key, Lock, CheckCircle, XCircle, AlertTriangle, UserPlus, Sparkles } from 'lucide-react';
-import Layout from '../Layout';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Permission {
   id: string;
@@ -50,12 +52,12 @@ export default function RolesAndPermissionsManager() {
   const [newRole, setNewRole] = useState({
     name: '',
     description: '',
-    permissions: [] as string[]
+    permissions: [] as string[],
   });
 
   const [roleAssignment, setRoleAssignment] = useState({
     userId: '',
-    roleId: ''
+    roleId: '',
   });
 
   useEffect(() => {
@@ -81,7 +83,7 @@ export default function RolesAndPermissionsManager() {
         { id: '11', name: 'locations.read', description: 'View locations', resource: 'locations', action: 'read' },
         { id: '12', name: 'locations.create', description: 'Create locations', resource: 'locations', action: 'create' },
         { id: '13', name: 'reports.view', description: 'View reports', resource: 'reports', action: 'view' },
-        { id: '14', name: 'api.admin', description: 'Admin API access', resource: 'api', action: 'admin' }
+        { id: '14', name: 'api.admin', description: 'Admin API access', resource: 'api', action: 'admin' },
       ];
 
       const mockRoles: Role[] = [
@@ -91,7 +93,7 @@ export default function RolesAndPermissionsManager() {
           description: 'Full system access',
           permissions: mockPermissions.map(p => p.id),
           is_active: true,
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: '2',
@@ -99,7 +101,7 @@ export default function RolesAndPermissionsManager() {
           description: 'Business management access',
           permissions: ['1', '2', '3', '5', '6', '7', '8', '9', '10', '13'],
           is_active: true,
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: '3',
@@ -107,8 +109,8 @@ export default function RolesAndPermissionsManager() {
           description: 'Point of sale access',
           permissions: ['1', '5', '6', '7', '8'],
           is_active: true,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ];
 
       const mockUsers: User[] = [
@@ -116,20 +118,20 @@ export default function RolesAndPermissionsManager() {
           id: '1',
           email: 'admin@example.com',
           name: 'Admin User',
-          roles: [mockRoles[0]!]
+          roles: [mockRoles[0]!],
         },
         {
           id: '2',
           email: 'manager@example.com',
           name: 'Manager User',
-          roles: [mockRoles[1]!]
+          roles: [mockRoles[1]!],
         },
         {
           id: '3',
           email: 'cashier@example.com',
           name: 'Cashier User',
-          roles: [mockRoles[2]!]
-        }
+          roles: [mockRoles[2]!],
+        },
       ];
 
       setPermissions(mockPermissions);
@@ -153,7 +155,7 @@ export default function RolesAndPermissionsManager() {
         id: Date.now().toString(),
         ...newRole,
         is_active: true,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       setRoles([...roles, createdRole]);
@@ -176,10 +178,10 @@ export default function RolesAndPermissionsManager() {
       const user = users.find(u => u.id === roleAssignment.userId);
 
       if (role && user) {
-        const updatedUsers = users.map(u => 
-          u.id === roleAssignment.userId 
+        const updatedUsers = users.map(u =>
+          u.id === roleAssignment.userId
             ? { ...u, roles: [...u.roles.filter(r => r.id !== role!.id), role!] }
-            : u
+            : u,
         );
         setUsers(updatedUsers);
         setRoleAssignment({ userId: '', roleId: '' });
@@ -193,8 +195,8 @@ export default function RolesAndPermissionsManager() {
 
   const handleToggleRole = async (roleId: string) => {
     try {
-      setRoles(roles.map(role => 
-        role.id === roleId ? { ...role, is_active: !role.is_active } : role
+      setRoles(roles.map(role =>
+        role.id === roleId ? { ...role, is_active: !role.is_active } : role,
       ));
       toast.success('Role status updated');
     } catch (error) {
@@ -231,7 +233,7 @@ export default function RolesAndPermissionsManager() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0">
         <section className="hero-gradient glass-panel relative overflow-hidden p-6 sm:p-8 text-white">
           <Sparkles className="pointer-events-none absolute right-8 top-6 h-16 w-16 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -262,7 +264,7 @@ export default function RolesAndPermissionsManager() {
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="user">User</Label>
-                      <Select value={roleAssignment.userId} onValueChange={(value) => 
+                      <Select value={roleAssignment.userId} onValueChange={(value) =>
                         setRoleAssignment({ ...roleAssignment, userId: value })
                       }>
                         <SelectTrigger>
@@ -279,7 +281,7 @@ export default function RolesAndPermissionsManager() {
                     </div>
                     <div>
                       <Label htmlFor="role">Role</Label>
-                      <Select value={roleAssignment.roleId} onValueChange={(value) => 
+                      <Select value={roleAssignment.roleId} onValueChange={(value) =>
                         setRoleAssignment({ ...roleAssignment, roleId: value })
                       }>
                         <SelectTrigger>
@@ -353,12 +355,12 @@ export default function RolesAndPermissionsManager() {
                                       if (checked) {
                                         setNewRole({
                                           ...newRole,
-                                          permissions: [...newRole.permissions, permission.id]
+                                          permissions: [...newRole.permissions, permission.id],
                                         });
                                       } else {
                                         setNewRole({
                                           ...newRole,
-                                          permissions: newRole.permissions.filter(p => p !== permission.id)
+                                          permissions: newRole.permissions.filter(p => p !== permission.id),
                                         });
                                       }
                                     }}
@@ -402,8 +404,8 @@ export default function RolesAndPermissionsManager() {
                       <div className="flex items-center space-x-2">
                         <Shield className="h-5 w-5" />
                         <CardTitle>{role.name}</CardTitle>
-                        <Badge variant={role.is_active ? "default" : "secondary"}>
-                          {role.is_active ? "Active" : "Inactive"}
+                        <Badge variant={role.is_active ? 'default' : 'secondary'}>
+                          {role.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -414,8 +416,8 @@ export default function RolesAndPermissionsManager() {
                         <Button variant="outline" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteRole(role.id)}
                         >

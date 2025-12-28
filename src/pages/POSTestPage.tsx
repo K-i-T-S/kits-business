@@ -1,15 +1,17 @@
+import { Settings, Tag } from 'lucide-react';
 import { useState } from 'react';
+
 import EnhancedPOS from '../components/EnhancedPOS';
 import PromotionManagementModal from '../components/PromotionManagementModal';
-import { Settings, Tag } from 'lucide-react';
-import { 
-  sampleCoupons, 
-  samplePromotions, 
-  sampleLoyaltyProgram, 
+import {
+  sampleCoupons,
+  samplePromotions,
+  sampleLoyaltyProgram,
   sampleReceiptTemplates,
-  getRandomProduct 
+  getRandomProduct,
 } from '../data/sampleData';
 import type { DiscountCoupon, Promotion, LoyaltyProgram, ReceiptTemplate, EnhancedSale } from '../types/pos';
+import { log } from '../utils/logger';
 
 export default function POSTestPage() {
   const [showPromotionManagement, setShowPromotionManagement] = useState(false);
@@ -21,7 +23,7 @@ export default function POSTestPage() {
   const handleCreatePromotion = (promotion: Omit<Promotion, 'id'>) => {
     const newPromotion: Promotion = {
       ...promotion,
-      id: `promo-${Date.now()}`
+      id: `promo-${Date.now()}`,
     };
     setPromotions(prev => [...prev, newPromotion]);
   };
@@ -35,18 +37,18 @@ export default function POSTestPage() {
   };
 
   const handleCompleteSale = (sale: EnhancedSale) => {
-    console.log('Sale completed:', sale);
+    log.info('Sale completed', { sale });
     alert(`Sale completed! Total: $${sale.total.toFixed(2)}`);
   };
 
   const handleAddRandomProduct = () => {
     const product = getRandomProduct();
-    console.log('Adding product:', product);
+    log.info('Adding product', { product });
     // In a real implementation, this would add to cart
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white pb-20 lg:pb-0">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">POS System Test Page</h1>

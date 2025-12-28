@@ -1,16 +1,17 @@
-import { useState } from 'react';
 import { Calendar, TrendingUp, DollarSign, Package, Users, BarChart3, Download, Sparkles, Settings, FileText, Brain, Target } from 'lucide-react';
-import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
+import { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
-import ReportBuilder from '../components/ReportBuilder';
+
 import AdvancedAnalytics from '../components/AdvancedAnalytics';
 import Forecasting from '../components/Forecasting';
-import { ExportService } from '../utils/exportService';
+import Layout from '../components/Layout';
+import ReportBuilder from '../components/ReportBuilder';
 import { Button } from '../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { useApp } from '../context/AppContext';
+import { ExportService } from '../utils/exportService';
 
 export default function Reports() {
   const { products, sales, customers, employees } = useApp();
@@ -24,10 +25,10 @@ export default function Reports() {
   const getFilteredSales = () => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     return (sales || [])?.filter(sale => {
       const saleDate = new Date(sale.date);
-      
+
       switch (dateRange) {
         case 'today':
           return saleDate >= today;
@@ -49,24 +50,24 @@ export default function Reports() {
 
   // Calculate metrics
   const totalRevenue = (filteredSales || [])?.reduce((sum, s) => sum + (s.total || 0), 0) || 0;
-  const totalProfit = (filteredSales || [])?.reduce((sum, s) => 
-    sum + ((s.items || [])?.reduce((itemSum, item) => 
+  const totalProfit = (filteredSales || [])?.reduce((sum, s) =>
+    sum + ((s.items || [])?.reduce((itemSum, item) =>
       itemSum + (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0)), 0)
-    ), 0
+    ), 0,
   ) || 0;
   const totalTransactions = filteredSales?.length || 0;
   const avgTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
   // Top products by revenue
   const productSales = new Map<string, { name: string; revenue: number; quantity: number; profit: number }>();
-  
+
   (filteredSales || [])?.forEach(sale => {
     (sale.items || [])?.forEach(item => {
-      const existing = productSales.get(item.productId) || { 
-        name: item.productName, 
-        revenue: 0, 
+      const existing = productSales.get(item.productId) || {
+        name: item.productName,
+        revenue: 0,
         quantity: 0,
-        profit: 0
+        profit: 0,
       };
       existing.revenue += (item.price || 0) * (item.quantity || 0);
       existing.quantity += (item.quantity || 0);
@@ -86,47 +87,47 @@ export default function Reports() {
     return {
       name: emp.name || 'Unknown',
       sales: revenue,
-      transactions: empSales.length
+      transactions: empSales.length,
     };
   }).filter(e => e.transactions > 0) || [];
 
   // Sales by payment method
   const paymentMethods = [
-    { 
-      name: 'Cash', 
-      value: (filteredSales || [])?.filter(s => s.paymentMethod === 'cash').reduce((sum, s) => sum + (s.total || 0), 0) || 0
+    {
+      name: 'Cash',
+      value: (filteredSales || [])?.filter(s => s.paymentMethod === 'cash').reduce((sum, s) => sum + (s.total || 0), 0) || 0,
     },
-    { 
-      name: 'Card', 
-      value: (filteredSales || [])?.filter(s => s.paymentMethod === 'card').reduce((sum, s) => sum + (s.total || 0), 0) || 0
-    }
+    {
+      name: 'Card',
+      value: (filteredSales || [])?.filter(s => s.paymentMethod === 'card').reduce((sum, s) => sum + (s.total || 0), 0) || 0,
+    },
   ];
 
   // Daily sales trend (last 7 days)
   const getDailySales = () => {
     const dailyData = [];
     const now = new Date();
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toDateString();
-      
+
       const daySales = (sales || [])?.filter(s => new Date(s.date).toDateString() === dateStr) || [];
       const revenue = daySales.reduce((sum, s) => sum + (s.total || 0), 0);
-      const profit = daySales.reduce((sum, s) => 
-        sum + ((s.items || [])?.reduce((itemSum, item) => 
+      const profit = daySales.reduce((sum, s) =>
+        sum + ((s.items || [])?.reduce((itemSum, item) =>
           itemSum + (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0)), 0)
-        ), 0
+        ), 0,
       );
-      
+
       dailyData.push({
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         revenue: revenue,
-        profit: profit
+        profit: profit,
       });
     }
-    
+
     return dailyData;
   };
 
@@ -152,7 +153,7 @@ export default function Reports() {
             change,
           };
         })
-        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry)),
     )
     .flat();
 
@@ -237,7 +238,7 @@ export default function Reports() {
           await ExportService.exportToPDF('reports-content', `sales-report-${dateRange}-${new Date().toISOString().split('T')[0]}.pdf`);
           break;
       }
-      
+
       toast.success('Report exported successfully', {
         description: `Downloaded ${rows.length} row${rows.length === 1 ? '' : 's'} as ${format.toUpperCase()}`,
       });
@@ -286,7 +287,7 @@ export default function Reports() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0">
         <section className="hero-gradient glass-panel relative overflow-hidden p-6 md:p-8 text-white">
           <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -568,23 +569,23 @@ export default function Reports() {
         )}
 
         {reportType === 'analytics' && (
-          <AdvancedAnalytics 
+          <AdvancedAnalytics
             data={{
               sales: filteredSales || [],
               products: products || [],
               customers: customers || [],
               employees: employees || [],
-              dateRange
+              dateRange,
             }}
           />
         )}
 
         {reportType === 'forecasting' && (
-          <Forecasting 
+          <Forecasting
             data={{
               sales: sales || [],
               products: products || [],
-              customers: customers || []
+              customers: customers || [],
             }}
           />
         )}
@@ -616,7 +617,7 @@ export default function Reports() {
                 Choose the format for your report export. The current date range ({dateRange}) will be used.
               </p>
               <div className="grid grid-cols-1 gap-3">
-                <Button 
+                <Button
                   onClick={() => handleExport('csv')}
                   className="justify-start"
                   variant="outline"
@@ -624,7 +625,7 @@ export default function Reports() {
                   <FileText className="h-4 w-4 mr-2" />
                   Export as CSV
                 </Button>
-                <Button 
+                <Button
                   onClick={() => handleExport('excel')}
                   className="justify-start"
                   variant="outline"
@@ -632,7 +633,7 @@ export default function Reports() {
                   <FileText className="h-4 w-4 mr-2" />
                   Export as Excel
                 </Button>
-                <Button 
+                <Button
                   onClick={() => handleExport('pdf')}
                   className="justify-start"
                   variant="outline"

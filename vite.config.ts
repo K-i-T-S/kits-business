@@ -6,11 +6,16 @@ import path from 'path';
 import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { playwright } from '@vitest/browser-playwright';
+import { securityHeaders } from './src/utils/securityHeaders';
+// Production-specific configuration
+const isProduction = process.env.NODE_ENV === 'production';
+const isTest = process.env.NODE_ENV === 'test';
+
 const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), securityHeaders()],
   test: {
     environment: 'jsdom',
     globals: true,
@@ -20,6 +25,7 @@ export default defineConfig({
       'tests/**',
       'tests/e2e/**',
       'tests/e2e.disabled/**',
+      '**/e2e.disabled/**',
     ],
     coverage: {
       provider: 'v8',
@@ -29,6 +35,7 @@ export default defineConfig({
         'tests/**',
         'tests/e2e/**',
         'tests/e2e.disabled/**',
+        '**/e2e.disabled/**',
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
         'vitest.config.ts',
@@ -115,6 +122,15 @@ export default defineConfig({
   build: {
     target: 'esnext',
     outDir: 'build',
+    sourcemap: isProduction ? false : true,
+    minify: isProduction ? 'terser' : false,
+    terserOptions: isProduction ? {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug']
+      }
+    } : {},
     rollupOptions: {
       output: {
         manualChunks: {
@@ -161,10 +177,24 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    // Production-specific optimizations
+    reportCompressedSize: isProduction,
+    cssCodeSplit: true
   },
   server: {
     port: 3000,
-    open: true
+    open: false,
+    hmr: {
+      overlay: false
+    }
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    'process.env.PLAYWRIGHT_TEST': isTest ? '"true"' : '"false"'
+  },
+  // Production-specific optimizations
+  esbuild: {
+    drop: isProduction ? ['console', 'debugger'] : []
   }
 });

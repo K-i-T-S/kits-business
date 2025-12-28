@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { supabase } from './supabaseClient';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
@@ -12,8 +11,8 @@ if (!supabaseUrl) {
 export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 }) : null;
 
 // Tenant management functions
@@ -25,9 +24,9 @@ export async function createTenant(name: string, slug: string, ownerUserId: stri
     tenant_name: name,
     tenant_slug: slug,
     owner_user_id: ownerUserId,
-    settings
+    settings,
   });
-  
+
   if (error) throw error;
   return data;
 }
@@ -39,9 +38,9 @@ export async function addUserToTenant(tenantId: string, userId: string, role: 'o
   const { data, error } = await supabaseAdmin.rpc('add_user_to_tenant', {
     tenant_id_param: tenantId,
     user_id_param: userId,
-    user_role: role
+    user_role: role,
   });
-  
+
   if (error) throw error;
   return data;
 }
@@ -52,9 +51,9 @@ export async function removeUserFromTenant(tenantId: string, userId: string) {
   }
   const { data, error } = await supabaseAdmin.rpc('remove_user_from_tenant', {
     tenant_id_param: tenantId,
-    user_id_param: userId
+    user_id_param: userId,
   });
-  
+
   if (error) throw error;
   return data;
 }
@@ -64,7 +63,7 @@ export async function getCurrentUserTenant() {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }
   const { data, error } = await supabaseAdmin.rpc('get_current_user_tenant');
-  
+
   if (error) throw error;
   return data?.[0] || null;
 }
@@ -74,9 +73,9 @@ export async function checkUserRole(requiredRole: string) {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }
   const { data, error } = await supabaseAdmin.rpc('user_has_role', {
-    required_role: requiredRole
+    required_role: requiredRole,
   });
-  
+
   if (error) throw error;
   return data;
 }
@@ -90,7 +89,7 @@ export async function getTenantUsers(tenantId: string) {
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('user_active', true);
-  
+
   if (error) throw error;
   return data;
 }
@@ -105,7 +104,7 @@ export async function getTenantsByUser(userId: string) {
     .eq('user_id', userId)
     .eq('user_active', true)
     .eq('tenant_active', true);
-  
+
   if (error) throw error;
   return data;
 }

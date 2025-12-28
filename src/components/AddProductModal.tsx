@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
 import { useApp } from '../context/AppContext';
 
 interface AddProductModalProps {
@@ -20,7 +21,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
     cost: '',
     price: '',
     stock: '',
-    reorderLevel: ''
+    reorderLevel: '',
   });
 
   useEffect(() => {
@@ -47,14 +48,14 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
             {
               date: new Date().toISOString(),
               cost: parseFloat(formData.cost),
-              quantity: parseInt(formData.stock)
-            }
+              quantity: parseInt(formData.stock),
+            },
           ],
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock),
-          reorderLevel: parseInt(formData.reorderLevel)
-        }
-      ]
+          reorderLevel: parseInt(formData.reorderLevel),
+        },
+      ],
     };
 
     addProduct(product);
@@ -62,12 +63,19 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="hero-gradient rounded-xl shadow-xl max-w-2xl w-full p-6 my-8 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
+      <div className="rounded-xl max-w-2xl w-full p-6 my-8" style={{
+        backgroundColor: 'rgba(11, 15, 36, 0.98)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        borderRadius: '1.5rem',
+        color: '#f8faff',
+        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+        backdropFilter: 'blur(28px)'
+      }}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-white">Add New Product</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
-            <X className="w-5 h-5 text-white" />
+          <h2 className="text-white text-xl font-semibold">Add New Product</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-white/80" />
           </button>
         </div>
 
@@ -79,7 +87,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                 required
               />
             </div>
@@ -90,7 +98,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                 type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                 placeholder="e.g., Beverages"
                 required
               />
@@ -102,7 +110,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                 type="text"
                 value={formData.barcode}
                 onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                 required
               />
             </div>
@@ -113,7 +121,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                 type="text"
                 value={formData.sku}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                 required
               />
             </div>
@@ -124,7 +132,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                 type="text"
                 value={formData.supplier}
                 onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                 required
               />
             </div>
@@ -141,14 +149,14 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
           </div>
 
           <div className="border-t border-white/30 pt-4">
-            <h3 className="text-white mb-4">Variant Details</h3>
+            <h3 className="text-white mb-4 font-medium">Variant Details</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-white/80 mb-2">Variant Type</label>
                 <select
                   value={formData.variantAttribute}
                   onChange={(e) => setFormData({ ...formData, variantAttribute: e.target.value })}
-                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white"
+                  className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white"
                 >
                   <option value="size">Size</option>
                   <option value="color">Color</option>
@@ -163,7 +171,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                   type="text"
                   value={formData.variantValue}
                   onChange={(e) => setFormData({ ...formData, variantValue: e.target.value })}
-                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                  className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                   placeholder="e.g., 250g, Red, Large"
                   required
                 />
@@ -177,7 +185,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                   min="0"
                   value={formData.cost}
                   onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                  className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                   required
                 />
               </div>
@@ -190,7 +198,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                   min="0"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                  className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                   required
                 />
               </div>
@@ -202,7 +210,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                   min="0"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                  className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                   required
                 />
               </div>
@@ -214,7 +222,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                   min="0"
                   value={formData.reorderLevel}
                   onChange={(e) => setFormData({ ...formData, reorderLevel: e.target.value })}
-                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50"
+                  className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                   required
                 />
               </div>
@@ -225,13 +233,13 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-slate-800/50 border border-white/30 rounded-lg hover:bg-slate-700/50 transition-colors text-white"
+              className="flex-1 px-4 py-3 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-colors text-white/80"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white rounded-lg font-medium"
             >
               Add Product
             </button>

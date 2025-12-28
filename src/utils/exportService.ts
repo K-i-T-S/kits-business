@@ -1,6 +1,6 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import * as ExcelJS from 'exceljs';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export interface ExportData {
   headers: string[];
@@ -15,9 +15,9 @@ export interface ExportData {
 
 export class ExportService {
   static async exportToPDF(
-    elementId: string, 
+    elementId: string,
     filename: string = 'report.pdf',
-    options: { scale?: number; format?: 'a4' | 'letter' } = {}
+    options: { scale?: number; format?: 'a4' | 'letter' } = {},
   ): Promise<void> {
     const element = document.getElementById(elementId);
     if (!element) {
@@ -35,7 +35,7 @@ export class ExportService {
     const pdf = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
-      format: options.format || 'a4'
+      format: options.format || 'a4',
     });
 
     const imgWidth = 297; // A4 width in mm (landscape)
@@ -68,12 +68,12 @@ export class ExportService {
     };
 
     let csvContent = '';
-    
+
     // Add title and metadata if provided
     if (data.title) {
       csvContent += `"${data.title}"\n\n`;
     }
-    
+
     if (data.metadata) {
       csvContent += `"Generated: ${data.metadata.generatedAt}"\n`;
       csvContent += `"Date Range: ${data.metadata.dateRange}"\n`;
@@ -82,7 +82,7 @@ export class ExportService {
 
     // Add headers
     csvContent += data.headers.map(escapeCsv).join(',') + '\n';
-    
+
     // Add rows
     csvContent += data.rows
       .map(row => row.map(escapeCsv).join(','))
@@ -102,16 +102,16 @@ export class ExportService {
   static async exportToExcel(data: ExportData, filename: string = 'report.xlsx'): Promise<void> {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Report');
-    
+
     // Add title and metadata if provided
     let currentRow = 1;
-    
+
     if (data.title) {
       worksheet.getCell(`A${currentRow}`).value = data.title;
       worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 16 };
       currentRow += 2;
     }
-    
+
     if (data.metadata) {
       worksheet.getCell(`A${currentRow}`).value = `Generated: ${data.metadata.generatedAt}`;
       currentRow++;
@@ -129,7 +129,7 @@ export class ExportService {
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FFE6E6FA' }
+        fgColor: { argb: 'FFE6E6FA' },
       };
       cell.alignment = { horizontal: 'center' };
     });
@@ -159,7 +159,7 @@ export class ExportService {
   static async exportChartToPDF(
     chartElementId: string,
     title: string,
-    filename: string = 'chart-report.pdf'
+    filename: string = 'chart-report.pdf',
   ): Promise<void> {
     const element = document.getElementById(chartElementId);
     if (!element) {
@@ -174,15 +174,15 @@ export class ExportService {
 
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF();
-    
+
     // Add title
     pdf.setFontSize(16);
     pdf.text(title, 20, 20);
-    
+
     // Add timestamp
     pdf.setFontSize(10);
     pdf.text(`Generated: ${new Date().toLocaleString()}`, 20, 30);
-    
+
     // Add chart image
     const imgWidth = 170; // PDF width in mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -196,16 +196,16 @@ export class ExportService {
 
     reports.forEach(report => {
       const worksheet = workbook.addWorksheet(report.name.substring(0, 31)); // Excel sheet name limit
-      
+
       let currentRow = 1;
-      
+
       // Add title and metadata
       if (report.data.title) {
         worksheet.getCell(`A${currentRow}`).value = report.data.title;
         worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 16 };
         currentRow += 2;
       }
-      
+
       if (report.data.metadata) {
         worksheet.getCell(`A${currentRow}`).value = `Generated: ${report.data.metadata.generatedAt}`;
         currentRow++;
@@ -223,7 +223,7 @@ export class ExportService {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE6E6FA' }
+          fgColor: { argb: 'FFE6E6FA' },
         };
         cell.alignment = { horizontal: 'center' };
       });

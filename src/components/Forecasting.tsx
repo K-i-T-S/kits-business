@@ -1,21 +1,22 @@
-import { useState, useMemo } from 'react';
-import { 
-  TrendingUp, 
-  Brain, 
-  Calendar, 
-  Target, 
+import { format, subDays, addDays, startOfDay, endOfDay, parseISO } from 'date-fns';
+import {
+  TrendingUp,
+  Brain,
+  Calendar,
+  Target,
   AlertTriangle,
   CheckCircle,
   Info,
   BarChart3,
-  Activity
+  Activity,
 } from 'lucide-react';
-import { Card } from './ui/card';
+import { useState, useMemo } from 'react';
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart, ReferenceLine } from 'recharts';
+
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Card } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart, ReferenceLine } from 'recharts';
-import { format, subDays, addDays, startOfDay, endOfDay, parseISO } from 'date-fns';
 
 interface ForecastData {
   date: string;
@@ -56,7 +57,7 @@ export default function Forecasting({ data }: ForecastingProps) {
     const sales = data.sales.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const daysBack = 90; // Use last 90 days for training
     const forecastDays = forecastPeriod === '30d' ? 30 : forecastPeriod === '60d' ? 60 : 90;
-    
+
     // Get historical data
     const historicalData = sales.slice(-daysBack);
     const values = historicalData.map(s => {
@@ -76,7 +77,7 @@ export default function Forecasting({ data }: ForecastingProps) {
     const sumY = values.reduce((a, b) => a + b, 0);
     const sumXY = x.reduce((acc, xi, i) => acc + xi * values[i], 0);
     const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
-    
+
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
     const intercept = (sumY - slope * sumX) / n;
 
@@ -86,7 +87,7 @@ export default function Forecasting({ data }: ForecastingProps) {
       const dayOfWeek = new Date(sale.date).getDay();
       seasonalityPattern[dayOfWeek] += values[i];
     });
-    
+
     // Normalize seasonality
     const avgSeasonality = seasonalityPattern.reduce((a, b) => a + b, 0) / 7;
     const normalizedSeasonality = seasonalityPattern.map(s => s / avgSeasonality);
@@ -94,19 +95,19 @@ export default function Forecasting({ data }: ForecastingProps) {
     // Generate forecast
     const forecast: ForecastData[] = [];
     const now = new Date();
-    
+
     // Add historical data with predictions
     historicalData.forEach((sale, i) => {
       const predicted = slope * i + intercept;
       const seasonalFactor = normalizedSeasonality[new Date(sale.date).getDay()];
       const seasonalPredicted = predicted * (seasonalFactor || 1);
-      
+
       forecast.push({
         date: format(new Date(sale.date), 'MMM dd'),
         actual: values[i],
         predicted: seasonalPredicted,
         trend: predicted,
-        seasonality: seasonalFactor
+        seasonality: seasonalFactor,
       });
     });
 
@@ -117,19 +118,19 @@ export default function Forecasting({ data }: ForecastingProps) {
       const predicted = slope * xValue + intercept;
       const seasonalFactor = normalizedSeasonality[futureDate.getDay()];
       const seasonalPredicted = predicted * (seasonalFactor || 1);
-      
+
       // Calculate confidence intervals (simplified)
       const confidence = confidenceLevel === '80' ? 1.28 : confidenceLevel === '90' ? 1.64 : 1.96;
       const stdError = Math.sqrt(values.reduce((acc, val) => acc + Math.pow(val - (slope * values.indexOf(val) + intercept), 2), 0) / n);
-      const margin = confidence * stdError * Math.sqrt(1 + 1/n + Math.pow(xValue - sumX/n, 2) / (sumX2 - sumX * sumX / n));
-      
+      const margin = confidence * stdError * Math.sqrt(1 + 1 / n + Math.pow(xValue - sumX / n, 2) / (sumX2 - sumX * sumX / n));
+
       forecast.push({
         date: format(futureDate, 'MMM dd'),
         predicted: seasonalPredicted,
         confidenceMin: Math.max(0, seasonalPredicted - margin),
         confidenceMax: seasonalPredicted + margin,
         trend: predicted,
-        seasonality: seasonalFactor
+        seasonality: seasonalFactor,
       });
     }
 
@@ -140,11 +141,11 @@ export default function Forecasting({ data }: ForecastingProps) {
   const trendAnalysis = useMemo(() => {
     const analyses: TrendAnalysis[] = [];
     const metrics = ['revenue', 'orders', 'customers', 'products'] as const;
-    
+
     metrics.forEach(metric => {
       const recentData = data.sales.slice(-30);
       const olderData = data.sales.slice(-60, -30);
-      
+
       const recentValue = recentData.reduce((sum, s) => {
         switch (metric) {
           case 'revenue': return sum + (s.total || 0);
@@ -154,7 +155,7 @@ export default function Forecasting({ data }: ForecastingProps) {
           default: return sum + (s.total || 0);
         }
       }, 0);
-      
+
       const olderValue = olderData.reduce((sum, s) => {
         switch (metric) {
           case 'revenue': return sum + (s.total || 0);
@@ -164,10 +165,10 @@ export default function Forecasting({ data }: ForecastingProps) {
           default: return sum + (s.total || 0);
         }
       }, 0);
-      
+
       const change = olderValue > 0 ? ((recentValue - olderValue) / olderValue) * 100 : 0;
       const trend = change > 5 ? 'upward' : change < -5 ? 'downward' : 'stable';
-      
+
       // Simple confidence calculation based on variance
       const values = data.sales.slice(-90).map(s => {
         switch (metric) {
@@ -178,42 +179,42 @@ export default function Forecasting({ data }: ForecastingProps) {
           default: return s.total || 0;
         }
       });
-      
+
       const mean = values.reduce((a, b) => a + b, 0) / values.length;
       const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
       const confidence = Math.max(0, Math.min(100, 100 - (Math.sqrt(variance) / mean) * 100));
-      
+
       // Seasonality detection (simplified)
       const weeklyPattern = Array.from({ length: 7 }, () => 0);
       data.sales.slice(-56).forEach((sale, i) => {
         const dayOfWeek = new Date(sale.date).getDay();
-        const value = metric === 'revenue' ? sale.total || 0 : 
-                     metric === 'orders' ? 1 : 
-                     metric === 'customers' ? (sale.customerId ? 1 : 0) : 
-                     (sale.items || []).length;
+        const value = metric === 'revenue' ? sale.total || 0 :
+          metric === 'orders' ? 1 :
+            metric === 'customers' ? (sale.customerId ? 1 : 0) :
+              (sale.items || []).length;
         weeklyPattern[dayOfWeek] += value;
       });
-      
+
       const avgWeekly = weeklyPattern.reduce((a, b) => a + b, 0) / 7;
       const seasonalityVariance = weeklyPattern.reduce((acc, val) => acc + Math.pow(val - avgWeekly, 2), 0) / 7;
-      const seasonality = seasonalityVariance > avgWeekly * 0.5 ? 'high' : 
-                         seasonalityVariance > avgWeekly * 0.2 ? 'medium' : 'low';
-      
+      const seasonality = seasonalityVariance > avgWeekly * 0.5 ? 'high' :
+        seasonalityVariance > avgWeekly * 0.2 ? 'medium' : 'low';
+
       const recommendations = {
         revenue: trend === 'upward' ? 'Consider scaling operations and marketing efforts' :
-                 trend === 'downward' ? 'Review pricing strategy and customer acquisition' :
-                 'Maintain current strategy and monitor for changes',
+          trend === 'downward' ? 'Review pricing strategy and customer acquisition' :
+            'Maintain current strategy and monitor for changes',
         orders: trend === 'upward' ? 'Ensure inventory and staffing can handle increased volume' :
-               trend === 'downward' ? 'Investigate conversion funnel and user experience' :
-               'Optimize order processing and customer service',
+          trend === 'downward' ? 'Investigate conversion funnel and user experience' :
+            'Optimize order processing and customer service',
         customers: trend === 'upward' ? 'Focus on customer retention and upselling' :
-                  trend === 'downward' ? 'Enhance marketing and improve customer experience' :
-                  'Implement loyalty programs and gather feedback',
+          trend === 'downward' ? 'Enhance marketing and improve customer experience' :
+            'Implement loyalty programs and gather feedback',
         products: trend === 'upward' ? 'Expand product line and optimize inventory' :
-                 trend === 'downward' ? 'Review product mix and pricing' :
-                 'Analyze product performance and customer preferences'
+          trend === 'downward' ? 'Review product mix and pricing' :
+            'Analyze product performance and customer preferences',
       };
-      
+
       analyses.push({
         metric: metric.charAt(0).toUpperCase() + metric.slice(1),
         current: recentValue,
@@ -222,10 +223,10 @@ export default function Forecasting({ data }: ForecastingProps) {
         confidence,
         trend,
         seasonality,
-        recommendation: recommendations[metric]
+        recommendation: recommendations[metric],
       });
     });
-    
+
     return analyses;
   }, [data.sales]);
 
@@ -233,22 +234,22 @@ export default function Forecasting({ data }: ForecastingProps) {
   const insights = useMemo(() => {
     const forecast = forecastData.filter(d => d.predicted && !d.actual);
     const historical = forecastData.filter(d => d.actual);
-    
+
     if (forecast.length === 0 || historical.length === 0) return [];
-    
+
     const avgHistorical = historical.reduce((sum, d) => sum + (d.actual || 0), 0) / historical.length;
     const avgForecast = forecast.reduce((sum, d) => sum + (d.predicted || 0), 0) / forecast.length;
     const growth = ((avgForecast - avgHistorical) / avgHistorical) * 100;
-    
+
     const insights = [];
-    
+
     if (growth > 10) {
       insights.push({
         type: 'positive',
         title: 'Strong Growth Expected',
         description: `Forecast shows ${growth.toFixed(1)}% growth in ${selectedMetric}. Prepare for increased demand.`,
         icon: TrendingUp,
-        color: 'text-emerald-600'
+        color: 'text-emerald-600',
       });
     } else if (growth < -10) {
       insights.push({
@@ -256,12 +257,12 @@ export default function Forecasting({ data }: ForecastingProps) {
         title: 'Decline Forecasted',
         description: `Forecast shows ${Math.abs(growth).toFixed(1)}% decline in ${selectedMetric}. Consider intervention strategies.`,
         icon: AlertTriangle,
-        color: 'text-amber-600'
+        color: 'text-amber-600',
       });
     }
-    
+
     // Check for seasonality
-    const seasonalVariation = Math.max(...forecast.map(d => d.seasonality || 1)) - 
+    const seasonalVariation = Math.max(...forecast.map(d => d.seasonality || 1)) -
                              Math.min(...forecast.map(d => d.seasonality || 1));
     if (seasonalVariation > 0.3) {
       insights.push({
@@ -269,10 +270,10 @@ export default function Forecasting({ data }: ForecastingProps) {
         title: 'Strong Seasonality Detected',
         description: `${selectedMetric} shows significant weekly patterns. Plan accordingly.`,
         icon: Calendar,
-        color: 'text-blue-600'
+        color: 'text-blue-600',
       });
     }
-    
+
     // Confidence check
     const avgConfidence = trendAnalysis.reduce((sum, t) => sum + t.confidence, 0) / trendAnalysis.length;
     if (avgConfidence < 70) {
@@ -281,10 +282,10 @@ export default function Forecasting({ data }: ForecastingProps) {
         title: 'Low Forecast Confidence',
         description: 'High variability in data. Consider collecting more data or using different models.',
         icon: Info,
-        color: 'text-amber-600'
+        color: 'text-amber-600',
       });
     }
-    
+
     return insights;
   }, [forecastData, selectedMetric, trendAnalysis]);
 
@@ -334,7 +335,7 @@ export default function Forecasting({ data }: ForecastingProps) {
               <SelectItem value="products">Products</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={forecastPeriod} onValueChange={(value: any) => setForecastPeriod(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -345,7 +346,7 @@ export default function Forecasting({ data }: ForecastingProps) {
               <SelectItem value="90d">90 Days</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={confidenceLevel} onValueChange={(value: any) => setConfidenceLevel(value)}>
             <SelectTrigger className="w-24">
               <SelectValue />
@@ -393,7 +394,7 @@ export default function Forecasting({ data }: ForecastingProps) {
             <YAxis tickFormatter={(value) => formatValue(value)} />
             <Tooltip formatter={(value) => formatValue(value as number)} />
             <Legend />
-            
+
             {/* Actual values */}
             <Area
               type="monotone"
@@ -403,7 +404,7 @@ export default function Forecasting({ data }: ForecastingProps) {
               fillOpacity={0.6}
               name="Actual"
             />
-            
+
             {/* Predicted values */}
             <Area
               type="monotone"
@@ -414,7 +415,7 @@ export default function Forecasting({ data }: ForecastingProps) {
               strokeDasharray="5 5"
               name="Predicted"
             />
-            
+
             {/* Confidence intervals */}
             <Area
               type="monotone"
@@ -432,11 +433,11 @@ export default function Forecasting({ data }: ForecastingProps) {
               fillOpacity={0.8}
               name="Lower Bound"
             />
-            
+
             {/* Reference line for today */}
-            <ReferenceLine 
-              x={forecastData.find(d => d.actual)?.date} 
-              stroke="#EF4444" 
+            <ReferenceLine
+              x={forecastData.find(d => d.actual)?.date}
+              stroke="#EF4444"
               strokeDasharray="5 5"
               label="Today"
             />
@@ -457,7 +458,7 @@ export default function Forecasting({ data }: ForecastingProps) {
                     {analysis.trend}
                   </Badge>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Current: </span>
@@ -478,13 +479,13 @@ export default function Forecasting({ data }: ForecastingProps) {
                     <span className="font-medium">{analysis.confidence.toFixed(0)}%</span>
                   </div>
                 </div>
-                
+
                 <div className="mt-2">
                   <Badge variant="outline" className={getSeasonalityColor(analysis.seasonality)}>
                     Seasonality: {analysis.seasonality}
                   </Badge>
                 </div>
-                
+
                 <p className="text-sm text-gray-600 mt-2">{analysis.recommendation}</p>
               </div>
             ))}
@@ -499,7 +500,7 @@ export default function Forecasting({ data }: ForecastingProps) {
               day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i],
               actual: d.actual || 0,
               predicted: d.predicted || 0,
-              seasonality: (d.seasonality || 1) * 100
+              seasonality: (d.seasonality || 1) * 100,
             }))}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="day" />
@@ -530,7 +531,7 @@ export default function Forecasting({ data }: ForecastingProps) {
             <p className="text-sm text-gray-600">{confidenceLevel}% confidence intervals</p>
           </div>
         </div>
-        
+
         <div className="mt-4 p-4 bg-blue-50 rounded-lg">
           <div className="flex items-start gap-2">
             <Info className="h-5 w-5 text-blue-600 mt-0.5" />

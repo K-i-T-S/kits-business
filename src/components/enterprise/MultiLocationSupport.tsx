@@ -1,21 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { 
-  MapPin, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  MapPin,
+  Plus,
+  Edit,
+  Trash2,
   Settings,
   Users,
   Package,
@@ -28,9 +15,24 @@ import {
   XCircle,
   AlertTriangle,
   Sparkles,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
 import Layout from '../Layout';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Location {
   id: string;
@@ -98,13 +100,13 @@ export default function MultiLocationSupport() {
       city: '',
       state: '',
       country: '',
-      postal_code: ''
+      postal_code: '',
     },
     contact: {
       phone: '',
       email: '',
-      manager: ''
-    }
+      manager: '',
+    },
   });
 
   const [newTransfer, setNewTransfer] = useState({
@@ -112,7 +114,7 @@ export default function MultiLocationSupport() {
     to_location_id: '',
     product_id: '',
     product_name: '',
-    quantity: 1
+    quantity: 1,
   });
 
   useEffect(() => {
@@ -135,12 +137,12 @@ export default function MultiLocationSupport() {
             city: 'New York',
             state: 'NY',
             country: 'USA',
-            postal_code: '10001'
+            postal_code: '10001',
           },
           contact: {
             phone: '+1-555-0101',
             email: 'main@store.com',
-            manager: 'John Smith'
+            manager: 'John Smith',
           },
           status: 'active',
           created_at: '2024-01-01T00:00:00Z',
@@ -148,8 +150,8 @@ export default function MultiLocationSupport() {
             total_sales: 150000,
             total_inventory: 5000,
             total_customers: 1200,
-            total_staff: 15
-          }
+            total_staff: 15,
+          },
         },
         {
           id: '2',
@@ -161,12 +163,12 @@ export default function MultiLocationSupport() {
             city: 'New York',
             state: 'NY',
             country: 'USA',
-            postal_code: '10002'
+            postal_code: '10002',
           },
           contact: {
             phone: '+1-555-0102',
             email: 'warehouse@store.com',
-            manager: 'Sarah Johnson'
+            manager: 'Sarah Johnson',
           },
           status: 'active',
           created_at: '2024-01-01T00:00:00Z',
@@ -174,8 +176,8 @@ export default function MultiLocationSupport() {
             total_sales: 0,
             total_inventory: 25000,
             total_customers: 0,
-            total_staff: 8
-          }
+            total_staff: 8,
+          },
         },
         {
           id: '3',
@@ -187,12 +189,12 @@ export default function MultiLocationSupport() {
             city: 'Los Angeles',
             state: 'CA',
             country: 'USA',
-            postal_code: '90001'
+            postal_code: '90001',
           },
           contact: {
             phone: '+1-555-0103',
             email: 'west@store.com',
-            manager: 'Mike Davis'
+            manager: 'Mike Davis',
           },
           status: 'active',
           created_at: '2024-01-01T00:00:00Z',
@@ -200,9 +202,9 @@ export default function MultiLocationSupport() {
             total_sales: 85000,
             total_inventory: 3000,
             total_customers: 800,
-            total_staff: 10
-          }
-        }
+            total_staff: 10,
+          },
+        },
       ];
 
       const mockTransfers: InventoryTransfer[] = [
@@ -215,7 +217,7 @@ export default function MultiLocationSupport() {
           quantity: 100,
           status: 'in_transit',
           created_at: '2024-01-15T10:00:00Z',
-          estimated_arrival: '2024-01-16T14:00:00Z'
+          estimated_arrival: '2024-01-16T14:00:00Z',
         },
         {
           id: '2',
@@ -225,8 +227,8 @@ export default function MultiLocationSupport() {
           product_name: 'Standard Widget',
           quantity: 50,
           status: 'completed',
-          created_at: '2024-01-14T09:00:00Z'
-        }
+          created_at: '2024-01-14T09:00:00Z',
+        },
       ];
 
       const mockStaff: LocationStaff[] = [
@@ -237,7 +239,7 @@ export default function MultiLocationSupport() {
           user_name: 'Alice Brown',
           user_email: 'alice@store.com',
           role: 'Store Manager',
-          is_active: true
+          is_active: true,
         },
         {
           id: '2',
@@ -246,7 +248,7 @@ export default function MultiLocationSupport() {
           user_name: 'Bob Wilson',
           user_email: 'bob@store.com',
           role: 'Sales Associate',
-          is_active: true
+          is_active: true,
         },
         {
           id: '3',
@@ -255,8 +257,8 @@ export default function MultiLocationSupport() {
           user_name: 'Charlie Davis',
           user_email: 'charlie@store.com',
           role: 'Warehouse Manager',
-          is_active: true
-        }
+          is_active: true,
+        },
       ];
 
       setLocations(mockLocations);
@@ -285,8 +287,8 @@ export default function MultiLocationSupport() {
           total_sales: 0,
           total_inventory: 0,
           total_customers: 0,
-          total_staff: 0
-        }
+          total_staff: 0,
+        },
       };
 
       setLocations([...locations, createdLocation]);
@@ -299,13 +301,13 @@ export default function MultiLocationSupport() {
           city: '',
           state: '',
           country: '',
-          postal_code: ''
+          postal_code: '',
         },
         contact: {
           phone: '',
           email: '',
-          manager: ''
-        }
+          manager: '',
+        },
       });
       setIsCreateLocationOpen(false);
       toast.success('Location created successfully');
@@ -332,7 +334,7 @@ export default function MultiLocationSupport() {
         product_id: Date.now().toString(),
         status: 'pending',
         created_at: new Date().toISOString(),
-        estimated_arrival: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        estimated_arrival: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       };
 
       setTransfers([...transfers, createdTransfer]);
@@ -341,7 +343,7 @@ export default function MultiLocationSupport() {
         to_location_id: '',
         product_id: '',
         product_name: '',
-        quantity: 1
+        quantity: 1,
       });
       setIsTransferOpen(false);
       toast.success('Transfer created successfully');
@@ -352,10 +354,10 @@ export default function MultiLocationSupport() {
 
   const handleToggleLocationStatus = async (locationId: string) => {
     try {
-      setLocations(locations.map(location => 
-        location.id === locationId 
+      setLocations(locations.map(location =>
+        location.id === locationId
           ? { ...location, status: location.status === 'active' ? 'inactive' : 'active' }
-          : location
+          : location,
       ));
       toast.success('Location status updated');
     } catch (error) {
@@ -455,7 +457,7 @@ export default function MultiLocationSupport() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="fromLocation">From Location</Label>
-                        <Select value={newTransfer.from_location_id} onValueChange={(value) => 
+                        <Select value={newTransfer.from_location_id} onValueChange={(value) =>
                           setNewTransfer({ ...newTransfer, from_location_id: value })
                         }>
                           <SelectTrigger>
@@ -472,7 +474,7 @@ export default function MultiLocationSupport() {
                       </div>
                       <div>
                         <Label htmlFor="toLocation">To Location</Label>
-                        <Select value={newTransfer.to_location_id} onValueChange={(value) => 
+                        <Select value={newTransfer.to_location_id} onValueChange={(value) =>
                           setNewTransfer({ ...newTransfer, to_location_id: value })
                         }>
                           <SelectTrigger>
@@ -555,7 +557,7 @@ export default function MultiLocationSupport() {
                     </div>
                     <div>
                       <Label htmlFor="locationType">Location Type</Label>
-                      <Select value={newLocation.type} onValueChange={(value: Location['type']) => 
+                      <Select value={newLocation.type} onValueChange={(value: Location['type']) =>
                         setNewLocation({ ...newLocation, type: value })
                       }>
                         <SelectTrigger>
@@ -578,7 +580,7 @@ export default function MultiLocationSupport() {
                           value={newLocation.address.street}
                           onChange={(e) => setNewLocation({
                             ...newLocation,
-                            address: { ...newLocation.address, street: e.target.value }
+                            address: { ...newLocation.address, street: e.target.value },
                           })}
                         />
                         <Input
@@ -586,7 +588,7 @@ export default function MultiLocationSupport() {
                           value={newLocation.address.city}
                           onChange={(e) => setNewLocation({
                             ...newLocation,
-                            address: { ...newLocation.address, city: e.target.value }
+                            address: { ...newLocation.address, city: e.target.value },
                           })}
                         />
                         <Input
@@ -594,7 +596,7 @@ export default function MultiLocationSupport() {
                           value={newLocation.address.state}
                           onChange={(e) => setNewLocation({
                             ...newLocation,
-                            address: { ...newLocation.address, state: e.target.value }
+                            address: { ...newLocation.address, state: e.target.value },
                           })}
                         />
                         <Input
@@ -602,7 +604,7 @@ export default function MultiLocationSupport() {
                           value={newLocation.address.postal_code}
                           onChange={(e) => setNewLocation({
                             ...newLocation,
-                            address: { ...newLocation.address, postal_code: e.target.value }
+                            address: { ...newLocation.address, postal_code: e.target.value },
                           })}
                         />
                       </div>
@@ -611,7 +613,7 @@ export default function MultiLocationSupport() {
                         value={newLocation.address.country}
                         onChange={(e) => setNewLocation({
                           ...newLocation,
-                          address: { ...newLocation.address, country: e.target.value }
+                          address: { ...newLocation.address, country: e.target.value },
                         })}
                       />
                     </div>
@@ -623,7 +625,7 @@ export default function MultiLocationSupport() {
                           value={newLocation.contact.phone}
                           onChange={(e) => setNewLocation({
                             ...newLocation,
-                            contact: { ...newLocation.contact, phone: e.target.value }
+                            contact: { ...newLocation.contact, phone: e.target.value },
                           })}
                         />
                         <Input
@@ -632,7 +634,7 @@ export default function MultiLocationSupport() {
                           value={newLocation.contact.email}
                           onChange={(e) => setNewLocation({
                             ...newLocation,
-                            contact: { ...newLocation.contact, email: e.target.value }
+                            contact: { ...newLocation.contact, email: e.target.value },
                           })}
                         />
                       </div>
@@ -641,7 +643,7 @@ export default function MultiLocationSupport() {
                         value={newLocation.contact.manager}
                         onChange={(e) => setNewLocation({
                           ...newLocation,
-                          contact: { ...newLocation.contact, manager: e.target.value }
+                          contact: { ...newLocation.contact, manager: e.target.value },
                         })}
                       />
                     </div>
@@ -714,8 +716,8 @@ export default function MultiLocationSupport() {
                         <Button variant="outline" size="sm" className="flex-1">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteLocation(location.id)}
                         >
@@ -746,7 +748,7 @@ export default function MultiLocationSupport() {
                 {transfers.map((transfer) => {
                   const fromLocation = locations.find(l => l.id === transfer.from_location_id);
                   const toLocation = locations.find(l => l.id === transfer.to_location_id);
-                  
+
                   return (
                     <TableRow key={transfer.id}>
                       <TableCell className="font-medium">{transfer.product_name}</TableCell>
@@ -789,7 +791,7 @@ export default function MultiLocationSupport() {
               <TableBody>
                 {staff.map((staffMember) => {
                   const location = locations.find(l => l.id === staffMember.location_id);
-                  
+
                   return (
                     <TableRow key={staffMember.id}>
                       <TableCell className="font-medium">{staffMember.user_name}</TableCell>
@@ -797,8 +799,8 @@ export default function MultiLocationSupport() {
                       <TableCell>{location?.name || 'Unknown'}</TableCell>
                       <TableCell>{staffMember.role}</TableCell>
                       <TableCell>
-                        <Badge variant={staffMember.is_active ? "default" : "secondary"}>
-                          {staffMember.is_active ? "Active" : "Inactive"}
+                        <Badge variant={staffMember.is_active ? 'default' : 'secondary'}>
+                          {staffMember.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell>

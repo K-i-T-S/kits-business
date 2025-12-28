@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import { 
-  Home, 
-  ShoppingCart, 
-  Package, 
-  Users, 
-  BarChart3, 
-  Settings, 
+import {
+  Home,
+  ShoppingCart,
+  Package,
+  Users,
+  BarChart3,
+  Settings,
   Menu,
   X,
   ChevronRight,
@@ -14,13 +14,19 @@ import {
   Truck,
   AlertTriangle,
   UserCircle,
+  LogOut,
+  PhoneCall,
+  Mail,
+  MessageCircle,
   Shield,
   Zap,
   MapPin,
-  Key,
-  Globe
+  Key
 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
+import { supabase } from '../utils/supabaseClient'
+import { BRAND } from '../constants/branding'
 
 interface NavItem {
   id: string
@@ -199,33 +205,35 @@ export function MobileNavigation() {
     }
   }, [isDrawerOpen])
 
-  // Dynamically adjust main content padding based on bottom nav height
-  useEffect(() => {
-    const adjustContentPadding = () => {
-      const bottomNav = document.querySelector('nav.mobile-bottom-safe') as HTMLElement
-      const mainContent = document.querySelector('main#main-content') as HTMLElement
-      
-      if (bottomNav && mainContent && window.innerWidth <= 768) {
-        const navHeight = bottomNav.getBoundingClientRect().height
-        const safeAreaBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-bottom')) || 0
-        const totalPadding = Math.max(navHeight + 20, safeAreaBottom + 120)
-        
-        mainContent.style.paddingBottom = `${totalPadding}px`
-      }
-    }
+  // Disable aggressive padding adjustment to avoid layout issues
+  // useEffect(() => {
+  //   const adjustContentPadding = () => {
+  //     // ... disabled
+  //   }
+  // }, [])
 
-    // Initial adjustment
-    adjustContentPadding()
-    
-    // Adjust on resize and orientation change
-    window.addEventListener('resize', adjustContentPadding)
-    window.addEventListener('orientationchange', adjustContentPadding)
-    
-    return () => {
-      window.removeEventListener('resize', adjustContentPadding)
-      window.removeEventListener('orientationchange', adjustContentPadding)
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      navigate('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
     }
-  }, [])
+  }
+
+  const handleSupportAction = (type: string) => {
+    switch (type) {
+      case 'whatsapp':
+        window.open(`https://wa.me/${BRAND.supportWhatsApp?.replace(/[^0-9]/g, '')}`, '_blank')
+        break
+      case 'instagram':
+        window.open(BRAND.supportInstagram, '_blank')
+        break
+      case 'email':
+        window.open(`mailto:${BRAND.supportEmail}`, '_blank')
+        break
+    }
+  }
 
   const handleNavClick = (path: string) => {
     setIsAnimating(true)
@@ -405,7 +413,53 @@ export function MobileNavigation() {
 
           {/* Enhanced Drawer Footer */}
           <div className="mt-auto p-6 border-t border-gray-800/30 bg-gradient-to-t from-gray-900/50 to-transparent">
-            <div className="flex items-center justify-between mb-3">
+            {/* Support Links */}
+            <div className="grid grid-cols-1 gap-3 mb-4">
+              <button
+                onClick={() => handleSupportAction('whatsapp')}
+                className="flex items-center gap-3 p-3 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 transition-all hover:bg-green-500/20 hover:border-green-500/50"
+              >
+                <PhoneCall className="h-4 w-4" />
+                <div className="text-left">
+                  <div className="text-sm font-medium">WhatsApp Support</div>
+                  <div className="text-xs opacity-70">Chat with support team</div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => handleSupportAction('instagram')}
+                className="flex items-center gap-3 p-3 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 transition-all hover:bg-purple-500/20 hover:border-purple-500/50"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <div className="text-left">
+                  <div className="text-sm font-medium">Instagram</div>
+                  <div className="text-xs opacity-70">Follow us for updates</div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => handleSupportAction('email')}
+                className="flex items-center gap-3 p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 transition-all hover:bg-blue-500/20 hover:border-blue-500/50"
+              >
+                <Mail className="h-4 w-4" />
+                <div className="text-left">
+                  <div className="text-sm font-medium">Email Support</div>
+                  <div className="text-xs opacity-70">Send us a message</div>
+                </div>
+              </button>
+            </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 hover:shadow-lg hover:shadow-red-500/20"
+            >
+              <LogOut className="h-4 w-4" />
+              Secure Logout
+            </button>
+
+            {/* Version Info */}
+            <div className="flex items-center justify-between mb-3 mt-4">
               <div className="text-xs text-gray-500">Version 1.0.0</div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />

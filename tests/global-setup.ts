@@ -1,27 +1,20 @@
-export default async function globalSetup() {
+import { chromium, FullConfig } from '@playwright/test';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+async function globalSetup(config: FullConfig) {
   console.log('Setting up visual regression tests...');
   
-  // Create directories for screenshots
-  const fs = await import('fs/promises');
-  const path = await import('path');
-  
+  // Ensure screenshot directories exist
   const screenshotDir = path.join(process.cwd(), 'test-results', 'screenshots');
-  const baselineDir = path.join(process.cwd(), 'test-results', 'baseline');
-  
   try {
+    await fs.access(screenshotDir);
+  } catch {
     await fs.mkdir(screenshotDir, { recursive: true });
-    await fs.mkdir(baselineDir, { recursive: true });
-    console.log('Screenshot directories created');
-  } catch (error) {
-    console.error('Error creating directories:', error);
   }
   
-  // Set up any global test data or state
-  process.env.VISUAL_TESTING = 'true';
-  
-  return async () => {
-    // Global cleanup
-    console.log('Cleaning up visual regression tests...');
-    delete process.env.VISUAL_TESTING;
-  };
+  // Set up any global test data or services
+  console.log('Visual regression test setup complete');
 }
+
+export default globalSetup;

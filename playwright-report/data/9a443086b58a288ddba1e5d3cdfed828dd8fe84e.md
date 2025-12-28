@@ -1,0 +1,104 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - img "Kits - Khoder's IT Solutions logo" [ref=e11]
+          - paragraph [ref=e12]: Sign In
+          - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e13]
+          - paragraph [ref=e14]: Our tech. empowering your success
+        - generic [ref=e15]:
+          - paragraph [ref=e16]: Sign In
+          - generic [ref=e17]:
+            - generic [ref=e18]:
+              - text: Email
+              - textbox "your@email.com" [ref=e19]: test@example.com
+            - generic [ref=e20]:
+              - text: Password
+              - textbox "••••••••" [ref=e21]: password123
+            - button "Loading..." [disabled] [ref=e22]
+            - button "Don't have an account?" [ref=e23]
+        - generic [ref=e24]:
+          - paragraph [ref=e25]: Need help onboarding?
+          - generic [ref=e26]:
+            - link "+961 81 290 662" [ref=e27] [cursor=pointer]:
+              - /url: https://wa.me/96181290662
+              - img [ref=e28]
+              - generic [ref=e30]: +961 81 290 662
+            - generic [ref=e31]: •
+            - link "@kits_solutions" [ref=e32] [cursor=pointer]:
+              - /url: https://instagram.com/kits_solutions
+              - img [ref=e33]
+              - generic [ref=e37]: "@kits_solutions"
+          - link "kits.tech.co@gmail.com" [ref=e39] [cursor=pointer]:
+            - /url: mailto:kits.tech.co@gmail.com
+            - img [ref=e40]
+            - generic [ref=e43]: kits.tech.co@gmail.com
+      - generic [ref=e44]:
+        - img [ref=e46]
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - paragraph [ref=e54]: Kits Solutions
+            - heading "Hardware, software, POS, and custom development—under one roof." [level=2] [ref=e55]
+            - paragraph [ref=e56]:
+              - text: Our tech. empowering your success. Reach us on
+              - link "WhatsApp" [ref=e57] [cursor=pointer]:
+                - /url: https://wa.me/96181290662
+                - img [ref=e58]
+                - text: WhatsApp
+              - text: or
+              - link "Instagram" [ref=e60] [cursor=pointer]:
+                - /url: https://instagram.com/kits_solutions
+                - img [ref=e61]
+                - text: Instagram
+              - text: .
+          - generic [ref=e65]:
+            - generic [ref=e66]:
+              - img [ref=e68]
+              - generic [ref=e73]:
+                - heading "Inventory Management" [level=3] [ref=e74]
+                - paragraph [ref=e75]: Track products, variants, costs, and stock levels in real-time
+            - generic [ref=e76]:
+              - img [ref=e78]
+              - generic [ref=e82]:
+                - heading "Point of Sale" [level=3] [ref=e83]
+                - paragraph [ref=e84]: Fast checkout with barcode scanning, receipts, and payment processing
+            - generic [ref=e85]:
+              - img [ref=e87]
+              - generic [ref=e92]:
+                - heading "Customer & Employee Management" [level=3] [ref=e93]
+                - paragraph [ref=e94]: Manage customer debts, employee roles, and sales commissions
+            - generic [ref=e95]:
+              - img [ref=e97]
+              - generic [ref=e100]:
+                - heading "Advanced Analytics" [level=3] [ref=e101]
+                - paragraph [ref=e102]: Daily sales reports, profit tracking, and cost shift analysis
+            - generic [ref=e103]:
+              - img [ref=e105]
+              - generic [ref=e110]:
+                - heading "Multi-Supplier Tracking" [level=3] [ref=e111]
+                - paragraph [ref=e112]: Import inventory from multiple suppliers with automatic cost calculations
+            - generic [ref=e113]:
+              - img [ref=e115]
+              - generic [ref=e117]:
+                - heading "Secure & Scalable" [level=3] [ref=e118]
+                - paragraph [ref=e119]: Role-based access control and enterprise-grade security
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - img [ref=e122]
+              - generic [ref=e125]: On-site support, training, and reliable after-sales service.
+            - paragraph [ref=e126]: Kits - Khoder's IT Solutions
+    - button "Show keyboard shortcuts" [ref=e128]:
+      - img [ref=e129]
+    - button "Show accessibility audit" [ref=e140]:
+      - img [ref=e141]
+      - generic [ref=e144]: A11y Audit
+    - region "Notifications alt+T"
+  - generic [ref=e145]:
+    - img [ref=e147]
+    - button "Open Tanstack query devtools" [ref=e196] [cursor=pointer]:
+      - img [ref=e197]
+```

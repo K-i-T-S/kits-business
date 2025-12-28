@@ -126,7 +126,7 @@ export default function Login({ onLogin }: LoginProps) {
       <div className="pointer-events-none blur-blob top-10 left-10 bg-indigo-500/40" aria-hidden="true" />
       <div className="pointer-events-none blur-blob bottom-12 right-0 bg-orange-400/30" aria-hidden="true" />
       <div className="relative flex min-h-screen flex-col lg:flex-row">
-        <section className="flex w-full flex-col justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 px-6 py-10 text-slate-900 lg:w-1/2 lg:px-16">
+        <section className="flex w-full flex-col justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 px-6 py-10 text-slate-900 lg:w-1/2 lg:px-16 pb-20 lg:pb-10">
           <div className="mx-auto w-full max-w-md space-y-8">
             <div className="text-center">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-900/5">
@@ -249,7 +249,7 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
         </section>
 
-        <section className="relative hidden w-full items-center justify-center overflow-hidden bg-slate-950 px-10 py-14 text-white lg:flex lg:w-1/2">
+        <section className="relative hidden w-full items-center justify-center overflow-hidden bg-slate-950 px-10 py-14 text-white lg:flex lg:w-1/2 pb-20 lg:pb-14">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/70 via-indigo-700/70 to-slate-900/80" />
           <Sparkles className="absolute right-10 top-10 h-28 w-28 text-white/20" />
           <div className="relative z-10 flex w-full max-w-lg flex-col gap-10">

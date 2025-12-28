@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import Login from './pages/Login';
@@ -63,6 +63,24 @@ const WorkflowAutomation = lazy(() => import('./components/enterprise/WorkflowAu
 const MultiLocationSupport = lazy(() => import('./components/enterprise/MultiLocationSupport'));
 const ApiAndWebhooks = lazy(() => import('./components/enterprise/ApiAndWebhooks'));
 
+// Mobile components wrapper that needs access to Router context
+function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
+  const location = useLocation();
+  
+  // Only show mobile components after authentication and loading is complete, and not on login/tenant-selection pages
+  if (!loading && isAuthenticated && !['/login', '/tenant-selection'].includes(location.pathname)) {
+    return (
+      <>
+        <PWAInstallPrompt />
+        <OfflineIndicator />
+        <MobileNavigation />
+      </>
+    );
+  }
+  
+  return null;
+}
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -126,13 +144,13 @@ export default function App() {
                 <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
                   <Suspense fallback={<LoadingSpinner />}>
                     <Routes>
-                    <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)} />} />
+                    <Route path="/login" element={<Login />} />
                     <Route path="/tenant-selection" element={<TenantSelection />} />
                     <Route
                       path="/dashboard"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><Dashboard /></div> : 
+                        <Dashboard /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -140,7 +158,7 @@ export default function App() {
                       path="/pos"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><POS /></div> : 
+                        <POS /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -148,7 +166,7 @@ export default function App() {
                       path="/inventory"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><Inventory /></div> : 
+                        <Inventory /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -156,7 +174,7 @@ export default function App() {
                       path="/inventory/batch-tracking"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><BatchTracking /></div> : 
+                        <BatchTracking /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -164,7 +182,7 @@ export default function App() {
                       path="/inventory/suppliers" 
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><SupplierManagement /></div> : 
+                        <SupplierManagement /> : 
                         <Navigate to="/login" replace />
                       } 
                     />
@@ -172,7 +190,7 @@ export default function App() {
                       path="/inventory/purchase-orders" 
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><PurchaseOrderManagement /></div> : 
+                        <PurchaseOrderManagement /> : 
                         <Navigate to="/login" replace />
                       } 
                     />
@@ -180,7 +198,7 @@ export default function App() {
                       path="/inventory/stock-transfers" 
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><StockTransferManagement /></div> : 
+                        <StockTransferManagement /> : 
                         <Navigate to="/login" replace />
                       } 
                     />
@@ -188,7 +206,7 @@ export default function App() {
                       path="/inventory/reorder-points" 
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><ReorderPointManagement /></div> : 
+                        <ReorderPointManagement /> : 
                         <Navigate to="/login" replace />
                       } 
                     />
@@ -196,7 +214,7 @@ export default function App() {
                       path="/customers"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><Customers /></div> : 
+                        <Customers /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -204,7 +222,7 @@ export default function App() {
                       path="/employees"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><Employees /></div> : 
+                        <Employees /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -212,7 +230,7 @@ export default function App() {
                       path="/reports"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><Reports /></div> : 
+                        <Reports /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -220,7 +238,7 @@ export default function App() {
                       path="/profile-settings"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><ProfileSettings /></div> : 
+                        <ProfileSettings /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -228,7 +246,7 @@ export default function App() {
                       path="/system-settings"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><SystemSettings /></div> : 
+                        <SystemSettings /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -236,7 +254,7 @@ export default function App() {
                       path="/activity-log"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><ActivityLog /></div> : 
+                        <ActivityLog /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -244,7 +262,7 @@ export default function App() {
                       path="/help-support"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><HelpSupport /></div> : 
+                        <HelpSupport /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -252,7 +270,7 @@ export default function App() {
                       path="/translation-manager"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><TranslationManager /></div> : 
+                        <TranslationManager /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -260,7 +278,7 @@ export default function App() {
                       path="/enterprise"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><EnterpriseDashboard /></div> : 
+                        <EnterpriseDashboard /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -268,7 +286,7 @@ export default function App() {
                       path="/enterprise/roles"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><RolesAndPermissionsManager /></div> : 
+                        <RolesAndPermissionsManager /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -276,7 +294,7 @@ export default function App() {
                       path="/enterprise/workflows"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><WorkflowAutomation /></div> : 
+                        <WorkflowAutomation /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -284,7 +302,7 @@ export default function App() {
                       path="/enterprise/locations"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><MultiLocationSupport /></div> : 
+                        <MultiLocationSupport /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -292,7 +310,7 @@ export default function App() {
                       path="/enterprise/api"
                       element={
                         isAuthenticated ? 
-                        <div className="mobile-content"><ApiAndWebhooks /></div> : 
+                        <ApiAndWebhooks /> : 
                         <Navigate to="/login" replace />
                       }
                     />
@@ -305,9 +323,10 @@ export default function App() {
                     />
                   </Routes>
                 </Suspense>
-                <PWAInstallPrompt />
-                <OfflineIndicator />
-                <MobileNavigation />
+                
+                {/* Mobile components wrapper inside Router context */}
+                <MobileComponents isAuthenticated={isAuthenticated} loading={loading} />
+                
                 <KeyboardNavigationHelper />
                 <AccessibilityAudit />
                 <Toaster />

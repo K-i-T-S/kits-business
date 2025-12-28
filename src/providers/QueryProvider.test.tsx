@@ -2,26 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryProvider } from '../providers/QueryProvider';
 
-// Mock React Query
-const mockQueryClient = {
-  queryCache: {
-    subscribe: vi.fn(),
-    clear: vi.fn()
-  },
-  mutationCache: {
-    subscribe: vi.fn(),
-    clear: vi.fn()
-  }
-};
-
-vi.mock('@tanstack/react-query', () => ({
-  QueryClient: vi.fn(() => mockQueryClient),
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
-  useQuery: vi.fn(),
-  useMutation: vi.fn(),
-  useInfiniteQuery: vi.fn(),
-  useQueryClient: vi.fn(() => mockQueryClient)
-}));
+// Use the global mock from vitest.setup.ts
 
 describe('QueryProvider', () => {
   beforeEach(() => {

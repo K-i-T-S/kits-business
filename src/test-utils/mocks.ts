@@ -30,9 +30,12 @@ export const createSupabaseMock = () => {
   };
 };
 
-// Mock tenant manager
+// Mock tenant manager with session simulation
 export const tenantManagerMock = {
-  getCurrentUserTenant: vi.fn(),
+  getCurrentUserTenant: vi.fn().mockImplementation(() => {
+    // Return null by default to simulate no authenticated user
+    return Promise.resolve(null);
+  }),
 };
 
 // Helper to create mock tenant
@@ -64,3 +67,24 @@ export const createMockSession = (overrides = {}) => ({
   refresh_token: 'test-refresh-token',
   expires_at: Date.now() / 1000 + 3600,
 });
+
+// Helper to mock authenticated session
+export const setupMockSession = (tenant?: any) => {
+  const mockSession = createMockSession();
+  const mockSupabase = createSupabaseMock().supabase;
+  
+  // Mock getSession to return authenticated session
+  mockSupabase.auth.getSession.mockResolvedValue({ 
+    data: { session: mockSession }, 
+    error: null 
+  });
+  
+  // Mock tenant manager to return tenant if provided
+  if (tenant) {
+    tenantManagerMock.getCurrentUserTenant.mockResolvedValue(tenant);
+  } else {
+    tenantManagerMock.getCurrentUserTenant.mockResolvedValue(null);
+  }
+  
+  return { mockSession, mockSupabase };
+};

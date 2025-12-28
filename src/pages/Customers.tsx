@@ -97,7 +97,7 @@ export default function Customers() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0 pb-[100px]">
         {/* Hero */}
         <section className="hero-gradient glass-panel relative overflow-hidden rounded-2xl p-4 sm:p-6 md:p-8 text-white">
           <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 text-white/20" />
@@ -159,7 +159,7 @@ export default function Customers() {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="space-y-6 lg:space-y-8">
+          <div className="space-y-6 lg:space-y-8 pb-[100px]">
             {/* Stats */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {statCards.map((card) => (

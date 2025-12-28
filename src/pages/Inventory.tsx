@@ -94,7 +94,7 @@ export default function Inventory() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-10 pb-20 lg:pb-0">
         <section className="hero-gradient glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between text-white">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-white/80">Inventory HQ</p>

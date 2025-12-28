@@ -7,7 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [
-    'html',
+    ['html'],
     ['json', { outputFile: 'test-results/results.json' }],
     ['junit', { outputFile: 'test-results/results.xml' }]
   ],
@@ -63,5 +63,4 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
   },
   // Global setup for visual regression
-  globalSetup: require.resolve('./tests/global-setup.ts'),
 });

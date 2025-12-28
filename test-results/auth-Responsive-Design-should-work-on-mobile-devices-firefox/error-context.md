@@ -1,0 +1,133 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - img "Kits - Khoder's IT Solutions logo" [ref=e11]
+        - paragraph [ref=e12]: Sign In
+        - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e13]
+        - paragraph [ref=e14]: Our tech. empowering your success
+      - generic [ref=e15]:
+        - paragraph [ref=e16]: Sign In
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - text: Email
+            - textbox "your@email.com" [ref=e19]: test@example.com
+          - generic [ref=e20]:
+            - text: Password
+            - textbox "••••••••" [ref=e21]: password123
+          - generic [ref=e22]: Invalid login credentials
+          - button "Sign In" [ref=e23]
+          - button "Don't have an account?" [ref=e24]
+      - generic [ref=e25]:
+        - paragraph [ref=e26]: Need help onboarding?
+        - generic [ref=e27]:
+          - link "WhatsApp" [ref=e28] [cursor=pointer]:
+            - /url: https://wa.me/96181290662
+            - img [ref=e29]
+            - generic [ref=e31]: WhatsApp
+          - generic [ref=e32]: •
+          - link "Instagram" [ref=e33] [cursor=pointer]:
+            - /url: https://instagram.com/kits_solutions
+            - img [ref=e34]
+            - generic [ref=e38]: Instagram
+        - link "Email" [ref=e40] [cursor=pointer]:
+          - /url: mailto:kits.tech.co@gmail.com
+          - img [ref=e41]
+          - generic [ref=e44]: Email
+    - button "Open navigation menu" [ref=e46]:
+      - img [ref=e47]
+    - complementary [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e58]: BT
+            - generic [ref=e60]:
+              - heading "Business Terminal" [level=2] [ref=e61]
+              - paragraph [ref=e62]: Professional Management
+          - button "Close menu" [ref=e63]:
+            - img [ref=e64]
+        - navigation [ref=e67]:
+          - button "Dashboard Overview and quick actions" [ref=e69]:
+            - img [ref=e71]
+            - generic [ref=e74]:
+              - generic [ref=e75]: Dashboard
+              - generic [ref=e76]: Overview and quick actions
+            - img [ref=e77]
+          - button "POS Point of Sale system" [ref=e80]:
+            - img [ref=e82]
+            - generic [ref=e86]:
+              - generic [ref=e87]: POS
+              - generic [ref=e88]: Point of Sale system
+            - img [ref=e89]
+          - button "Inventory Manage products and stock" [ref=e92]:
+            - img [ref=e94]
+            - generic [ref=e99]:
+              - generic [ref=e100]: Inventory
+              - generic [ref=e101]: Manage products and stock
+            - img [ref=e102]
+          - button "Customers Customer management" [ref=e105]:
+            - img [ref=e107]
+            - generic [ref=e112]:
+              - generic [ref=e113]: Customers
+              - generic [ref=e114]: Customer management
+            - img [ref=e115]
+          - button "Employees Employee management" [ref=e118]:
+            - img [ref=e120]
+            - generic [ref=e124]:
+              - generic [ref=e125]: Employees
+              - generic [ref=e126]: Employee management
+            - img [ref=e127]
+          - button "Analytics Reports and insights" [ref=e130]:
+            - img [ref=e132]
+            - generic [ref=e137]:
+              - generic [ref=e138]: Analytics
+              - generic [ref=e139]: Reports and insights
+            - img [ref=e140]
+          - button "Enterprise Advanced enterprise features" [ref=e143]:
+            - img [ref=e145]
+            - generic [ref=e147]:
+              - generic [ref=e148]: Enterprise
+              - generic [ref=e149]: Advanced enterprise features
+            - img [ref=e150]
+          - button "Settings App preferences" [ref=e153]:
+            - img [ref=e155]
+            - generic [ref=e158]:
+              - generic [ref=e159]: Settings
+              - generic [ref=e160]: App preferences
+            - img [ref=e161]
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - generic [ref=e165]: Version 1.0.0
+            - generic [ref=e168]: Online
+          - generic [ref=e169]: © 2024 Business Terminal
+    - navigation [ref=e170]:
+      - generic [ref=e171]:
+        - button "Dashboard" [ref=e172]:
+          - img [ref=e174]
+          - text: Dashboard
+        - button "POS" [ref=e177]:
+          - img [ref=e179]
+          - text: POS
+        - button "Inventory" [ref=e183]:
+          - img [ref=e185]
+          - text: Inventory
+        - button "Customers" [ref=e190]:
+          - img [ref=e192]
+          - text: Customers
+        - button "Employees" [ref=e197]:
+          - img [ref=e199]
+          - text: Employees
+    - button "Show keyboard shortcuts" [ref=e204]:
+      - img [ref=e205]
+    - button "Show accessibility audit" [ref=e216]:
+      - img [ref=e217]
+      - generic [ref=e220]: A11y Audit
+    - region "Notifications alt+T"
+  - generic [ref=e221]:
+    - img [ref=e223]
+    - button "Open Tanstack query devtools" [ref=e272] [cursor=pointer]:
+      - img [ref=e273]
+```

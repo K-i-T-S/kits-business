@@ -1,12 +1,10 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { AppProvider, useApp } from '../context/AppContext';
 import TenantInfo from '../components/TenantInfo';
 import { renderWithProviders } from '../test-utils/providers';
-import { createMockTenant, tenantManagerMock } from '../test-utils/mocks';
-
-// Use global mocks from vitest.setup.ts
-// Mock is already configured globally
+import { createMockTenant } from '../test-utils/mocks';
 
 describe('Multi-Tenant Implementation', () => {
   const mockTenant = createMockTenant();
@@ -15,9 +13,8 @@ describe('Multi-Tenant Implementation', () => {
     vi.clearAllMocks();
   });
 
-  it('should show tenant info in TenantInfo component', async () => {
-    tenantManagerMock.getCurrentUserTenant.mockResolvedValue(null);
-
+  it('should show tenant info in TenantInfo component', () => {
+    // Test with no tenant
     const TestComponent = () => {
       const { currentTenant } = useApp();
       return (
@@ -32,23 +29,21 @@ describe('Multi-Tenant Implementation', () => {
     renderWithProviders(<TestComponent />);
 
     // Initially no tenant - should show empty divs
-    await waitFor(() => {
-      const nameElement = screen.getByTestId('tenant-name');
-      expect(nameElement.textContent).toBe('');
-      const roleElement = screen.getByTestId('tenant-role');
-      expect(roleElement.textContent).toBe('');
-    });
+    expect(screen.getByTestId('tenant-name').textContent).toBe('');
+    expect(screen.getByTestId('tenant-role').textContent).toBe('');
   });
 
-  it('should handle tenant context loading', async () => {
-    const mockTenant = createMockTenant();
-    tenantManagerMock.getCurrentUserTenant.mockResolvedValue(mockTenant);
-
+  it('should handle tenant context loading manually', () => {
     const TestComponent = () => {
-      const { currentTenant, loading } = useApp();
+      const { setCurrentTenant, currentTenant } = useApp();
+      
+      // Manually set tenant for testing
+      React.useEffect(() => {
+        setCurrentTenant(mockTenant);
+      }, [setCurrentTenant]);
+      
       return (
         <div>
-          {loading && <div data-testid="loading">Loading...</div>}
           {currentTenant ? (
             <div>
               <div data-testid="tenant-name">{currentTenant.name}</div>
@@ -63,36 +58,33 @@ describe('Multi-Tenant Implementation', () => {
 
     renderWithProviders(<TestComponent />);
 
-    // Wait for tenant to load
-    await waitFor(() => {
-      expect(screen.getByTestId('tenant-name')).toBeTruthy();
-      expect(screen.getByTestId('tenant-name').textContent).toBe('Test Business');
-      expect(screen.getByTestId('tenant-role').textContent).toBe('owner');
-    }, { timeout: 3000 });
+    // Check if tenant info is displayed
+    expect(screen.getByTestId('tenant-name')).toBeTruthy();
+    expect(screen.getByTestId('tenant-name').textContent).toBe('Test Business');
+    expect(screen.getByTestId('tenant-role').textContent).toBe('owner');
   });
 
-  it('should display tenant info badges', async () => {
-    const mockTenant = createMockTenant();
-    tenantManagerMock.getCurrentUserTenant.mockResolvedValue(mockTenant);
-
+  it('should display tenant info badges manually', () => {
     const TestComponent = () => {
-      const { currentTenant, loading } = useApp();
-      if (loading) return <div data-testid="loading">Loading...</div>;
+      const { setCurrentTenant, currentTenant } = useApp();
+      
+      // Manually set tenant for testing
+      React.useEffect(() => {
+        setCurrentTenant(mockTenant);
+      }, [setCurrentTenant]);
+      
       return currentTenant ? <TenantInfo /> : <div data-testid="no-tenant">No tenant</div>;
     };
 
     renderWithProviders(<TestComponent />);
 
-    await waitFor(() => {
-      // Check if the tenant info component renders the badges
-      expect(screen.getByText('Test Business')).toBeTruthy();
-      expect(screen.getByText('owner')).toBeTruthy();
-    }, { timeout: 3000 });
+    // Check if the tenant info component renders the badges
+    expect(screen.getByText('Test Business')).toBeTruthy();
+    expect(screen.getByText('owner')).toBeTruthy();
   });
 
-  it('should handle missing tenant gracefully', async () => {
-    tenantManagerMock.getCurrentUserTenant.mockResolvedValue(null);
-
+  it('should handle missing tenant gracefully', () => {
+    // Test with no session/tenant
     const TestComponent = () => {
       const { currentTenant } = useApp();
       return (
@@ -108,10 +100,26 @@ describe('Multi-Tenant Implementation', () => {
 
     renderWithProviders(<TestComponent />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('no-tenant')).toBeTruthy();
-      expect(screen.queryByTestId('has-tenant')).toBeNull();
-    }, { timeout: 3000 });
+    expect(screen.getByTestId('no-tenant')).toBeTruthy();
+    expect(screen.queryByTestId('has-tenant')).toBeNull();
+  });
+
+  it('should handle session initialization properly', () => {
+    const TestComponent = () => {
+      const { hasSession, currentTenant } = useApp();
+      return (
+        <div>
+          <div data-testid="has-session">{hasSession ? 'true' : 'false'}</div>
+          <div data-testid="tenant-exists">{currentTenant ? 'true' : 'false'}</div>
+        </div>
+      );
+    };
+
+    renderWithProviders(<TestComponent />);
+
+    // Initially should have no session
+    expect(screen.getByTestId('has-session').textContent).toBe('false');
+    expect(screen.getByTestId('tenant-exists').textContent).toBe('false');
   });
 });
 

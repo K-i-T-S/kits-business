@@ -119,7 +119,9 @@
     "test:all": "npm run test && npm run test:e2e && npm run test:visual",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "verify": "npm run typecheck && npm run build"
+    "verify": "npm run typecheck && npm run build",
+    "test:storybook": "test-storybook",
+    "test:visual:all": "npm run test:visual && npm run test:storybook"
   },
   "engines": {
     "node": "20.x"

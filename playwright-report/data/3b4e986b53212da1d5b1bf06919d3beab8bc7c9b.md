@@ -1,0 +1,49 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - img "Kits - Khoder's IT Solutions logo" [ref=e11]
+        - paragraph [ref=e12]: Sign In
+        - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e13]
+        - paragraph [ref=e14]: Our tech. empowering your success
+      - generic [ref=e15]:
+        - paragraph [ref=e16]: Sign In
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - text: Email
+            - textbox "your@email.com" [ref=e19]
+          - generic [ref=e20]:
+            - text: Password
+            - textbox "••••••••" [ref=e21]
+          - button "Sign In" [ref=e22]
+          - button "Don't have an account?" [ref=e23]
+      - generic [ref=e24]:
+        - paragraph [ref=e25]: Need help onboarding?
+        - generic [ref=e26]:
+          - link "WhatsApp" [ref=e27]:
+            - /url: https://wa.me/96181290662
+            - img [ref=e28]
+            - generic [ref=e30]: WhatsApp
+          - generic [ref=e31]: •
+          - link "Instagram" [ref=e32]:
+            - /url: https://instagram.com/kits_solutions
+            - img [ref=e33]
+            - generic [ref=e36]: Instagram
+        - link "Email" [ref=e38]:
+          - /url: mailto:kits.tech.co@gmail.com
+          - img [ref=e39]
+          - generic [ref=e42]: Email
+    - button "Show keyboard shortcuts" [ref=e44]:
+      - img [ref=e45]
+    - button "Show accessibility audit" [ref=e48]:
+      - img [ref=e49]
+      - generic [ref=e52]: A11y Audit
+    - region "Notifications alt+T"
+  - generic [ref=e53]:
+    - img [ref=e55]
+    - button "Open Tanstack query devtools" [ref=e123] [cursor=pointer]:
+      - img [ref=e124]
+```

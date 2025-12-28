@@ -20,6 +20,7 @@ export default defineConfig({
       'tests/**',
       'tests/e2e/**',
       'tests/e2e.disabled/**',
+      '**/e2e.disabled/**',
     ],
     coverage: {
       provider: 'v8',
@@ -29,6 +30,7 @@ export default defineConfig({
         'tests/**',
         'tests/e2e/**',
         'tests/e2e.disabled/**',
+        '**/e2e.disabled/**',
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
         'vitest.config.ts',

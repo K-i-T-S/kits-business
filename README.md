@@ -1,110 +1,106 @@
-# All-in-One Business Terminal
+# KiTS Business Terminal
 
-Modern POS + business terminal built with React 18, Vite, TypeScript, Supabase, Hono, Radix UI, and Tailwind utilities.
+Multi-tenant POS and business management platform for Lebanese/MENA SMBs. Built with React 18, Vite, TypeScript, Supabase, and Tailwind CSS. Deployed on Vercel.
 
-## Requirements
+## Features
 
-- Node.js 20+
-- npm 10+
-- Supabase project with:
-  - Edge Functions enabled
-  - Table `kv_store_210e7672` (columns: `key` text PK, `value` jsonb)
-  - Environment variables:
-    - `VITE_SUPABASE_URL`
-    - `VITE_SUPABASE_ANON_KEY`
-    - For Edge Function deploys: `SUPABASE_SERVICE_ROLE_KEY`
+| Module | Status |
+|---|---|
+| Point of Sale (barcode search, cart, checkout, receipts) | Live |
+| Inventory (CRUD, batch tracking, reorder points) | Live |
+| Customers (CRUD, debt tracking, purchase history) | Live |
+| Employees (CRUD, roles, commission rates) | Live |
+| Reports (sales, profit, export to Excel/PDF) | Live |
+| Dashboard (live stats) | Live |
+| CRM (customer data, segmentation) | Partial — campaigns/automation coming soon |
+| Enterprise dashboard + role management | Live (real data) |
+| Monitoring (Web Vitals, health checks, error tracking) | Live |
+| Stock transfers, supplier management, purchase orders | Coming soon |
+| Stripe billing | Coming soon |
+| Multi-location | Coming soon |
 
-## Install & Local Development
-
-### Option 1: Local Development (No Supabase Required)
-
-For development and testing without setting up Supabase:
+## Quick Start — Local Development (No Supabase)
 
 ```bash
 npm install
-cp .env.local .env
-npm run dev         # Vite dev server on http://localhost:5173
+cp .env.local .env   # sets VITE_USE_LOCAL_MODE=true
+npm run dev          # http://localhost:5173
 ```
 
-This uses local browser storage to mimic Supabase functionality. Perfect for development, testing, and demos.
+All data is stored in browser localStorage. No credentials needed. Suitable for development and demos.
 
-### Option 2: Docker Local Development
-
-Using Docker for containerized local development:
-
-```bash
-docker-compose up
-```
-
-The app will be available at http://localhost:5173
-
-### Option 3: Supabase Production Mode
-
-For production with Supabase backend:
+## Quick Start — Supabase (Production)
 
 ```bash
 npm install
 cp .env.example .env
-# Edit .env with your Supabase credentials
-npm run dev         # Vite dev server on http://localhost:5173
+# fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+npm run dev
 ```
 
-## Verification Pipeline
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_SUPABASE_URL` | Yes (prod) | Your Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Yes (prod) | Supabase anon/public key |
+| `VITE_USE_LOCAL_MODE` | Dev only | Set `true` to skip Supabase entirely |
+| `VITE_SENTRY_DSN` | Optional | Sentry error tracking |
+
+## Database Setup
+
+Run these migrations in order in **Supabase Dashboard → SQL Editor**:
+
+1. `supabase/migrations/20250617_000000_initial_schema.sql`
+2. `supabase/migrations/20250617_000001_views_and_functions.sql`
+3. `supabase/migrations/20250617_000002_auth_triggers.sql`
+4. `supabase/migrations/20250617_000003_safe_domain_setup.sql`
+5. `supabase/migrations/20260617_000004_onboarding.sql`
+6. `supabase/migrations/20260618_000005_subscription_tiers.sql`
+
+Migration 3 is safe to re-run on any existing schema state.
+
+## Verification
 
 ```bash
-npm run typecheck   # Strict TS validation
-npm run build       # Production build (vite)
-npm run verify      # Runs typecheck + build
+npm run typecheck    # TypeScript strict check
+npm run lint         # ESLint (zero warnings)
+npm run build        # Production build → build/
+npm run verify       # All three above
 ```
 
-## Supabase Edge Function
+## Deployment
 
-Source: `supabase/functions/make-server-210e7672`
+**Frontend** — Vercel auto-deploys on push to `main`. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel project settings.
 
-Deploy:
+**Database** — Supabase (manual migrations via SQL Editor, see above).
 
-```bash
-cd supabase/functions/make-server-210e7672
-npx supabase functions deploy make-server-210e7672 --project-ref <YOUR_PROJECT_ID>
-```
+**CI** — GitHub Actions runs typecheck + build on every push and PR (`.github/workflows/ci.yml`).
 
-> **Tip:** Use `--debug` if Supabase CLI reports missing entrypoint paths. Ensure you run the command from this directory so the CLI finds `index.ts`.
+**Supabase keep-alive** — A scheduled workflow pings Supabase every 3 days to prevent free-tier auto-pause (`.github/workflows/keep-alive.yml`). Requires GitHub secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
 
-### Supabase Schema & Ops Notes
+## Subscription Tiers
 
-**Environment**
+| Tier | Price | Products | Customers | Employees |
+|---|---|---|---|---|
+| Starter | Free | 50 | 100 | 1 |
+| Growth | $29/mo | Unlimited | Unlimited | 10 |
+| Business | $79/mo | Unlimited | Unlimited | Unlimited |
 
-Copy `.env.example` → `.env` and fill in:
+Growth adds: Advanced Analytics, Forecasting, CRM, Inventory Management.  
+Business adds: Enterprise Dashboard, Monitoring, API/Webhooks, Multi-location.
 
-```
-VITE_SUPABASE_URL=https://<project-ref>.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key> # only for CLI deploys
-```
+## User Roles
 
-**KV Table (stores products/sales/customers/employees)**
+| Role | POS | Edit Products | Manage Employees | Settings |
+|---|---|---|---|---|
+| Viewer | — | — | — | — |
+| Cashier | ✓ | — | — | — |
+| Manager | ✓ | ✓ | View only | — |
+| Owner | ✓ | ✓ | ✓ | ✓ |
 
-```sql
-create table if not exists kv_store_210e7672 (
-  key text primary key,
-  value jsonb not null,
-  inserted_at timestamptz default now()
-);
+## Support
 
-create index if not exists kv_store_210e7672_key_prefix_idx
-  on kv_store_210e7672 (key text_pattern_ops);
-```
-
-**Operational Runbook**
-
-1. `npm run verify` – ensures frontend typechecks & builds.
-2. `cd supabase/functions/make-server-210e7672`
-3. `npx supabase functions deploy make-server-210e7672 --project-ref <PROJECT_REF>`
-4. Monitor the deployment at `https://supabase.com/dashboard/project/<PROJECT_REF>/functions`.
-
-## Running End-to-End
-
-1. Set `.env` (or `.env.local`) with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
-2. Deploy the Edge Function (see above).
-3. Start the frontend: `npm run dev`.
-4. Log in or sign up via the UI, then use Dashboard / POS / Reports pages.
+- WhatsApp: [+961 81 290 662](https://wa.me/96181290662)
+- Email: kits.tech.co@gmail.com
+- Built and maintained by **KiTS — Khoder's IT Solutions**, Tripoli, Lebanon

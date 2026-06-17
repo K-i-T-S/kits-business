@@ -175,17 +175,17 @@ export default function AccessibilityAudit() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-30 bg-white rounded-lg shadow-xl p-4 w-80 border border-gray-200 max-h-[70vh] overflow-y-auto">
+    <div className="fixed bottom-4 right-4 z-30 bg-slate-900 rounded-lg shadow-xl p-4 w-80 border border-white/10 max-h-[70vh] overflow-y-auto">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex-1">
-          <h2 className="text-base font-bold text-gray-900 mb-1">Accessibility Audit</h2>
-          <p className="text-xs text-gray-600">
+          <h2 className="text-base font-bold text-white mb-1">Accessibility Audit</h2>
+          <p className="text-xs text-white/60">
             WCAG 2.1 AA compliance check
           </p>
         </div>
         <button
           onClick={() => setIsVisible(false)}
-          className="text-gray-400 hover:text-gray-600 ml-2"
+          className="text-white/40 hover:text-white ml-2"
           aria-label="Close accessibility audit"
         >
           <XCircle className="w-4 h-4" />
@@ -198,7 +198,7 @@ export default function AccessibilityAudit() {
             <div className={`text-xl font-bold ${getScoreColor(getOverallScore())}`}>
               {getOverallScore()}%
             </div>
-            <div className="text-xs text-gray-600">Score</div>
+            <div className="text-xs text-white/60">Score</div>
           </div>
         </div>
 
@@ -218,7 +218,7 @@ export default function AccessibilityAudit() {
           </button>
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 flex items-center gap-1"
+            className="px-2 py-1 bg-white/10 text-white rounded text-xs hover:bg-white/20 flex items-center gap-1"
           >
             {showDetails ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
           </button>
@@ -228,8 +228,8 @@ export default function AccessibilityAudit() {
       {showDetails && (
         <div className="space-y-3 mb-3">
           {auditResults.map((category, catIndex) => (
-            <div key={catIndex} className="border rounded-lg p-2">
-              <h3 className="font-semibold text-gray-900 mb-2 text-xs">{category.category}</h3>
+            <div key={catIndex} className="border border-white/10 rounded-lg p-2">
+              <h3 className="font-semibold text-white mb-2 text-xs">{category.category}</h3>
               <div className="space-y-1">
                 {category.checks.map((check, checkIndex) => (
                   <div key={checkIndex} className="flex items-start gap-1">
@@ -239,8 +239,8 @@ export default function AccessibilityAudit() {
                       <XCircle className="w-3 h-3 text-red-500 mt-0.5 flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 text-xs">{check.name}</div>
-                      <div className="text-xs text-gray-500">{check.description}</div>
+                      <div className="font-medium text-white text-xs">{check.name}</div>
+                      <div className="text-xs text-white/50">{check.description}</div>
                     </div>
                   </div>
                 ))}
@@ -250,12 +250,12 @@ export default function AccessibilityAudit() {
         </div>
       )}
 
-      <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="mt-3 p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
         <div className="flex items-start gap-1">
-          <AlertTriangle className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="w-3 h-3 text-indigo-400 mt-0.5 flex-shrink-0" />
           <div>
-            <h4 className="font-semibold text-blue-900 mb-1 text-xs">Note</h4>
-            <p className="text-xs text-blue-800">
+            <h4 className="font-semibold text-indigo-300 mb-1 text-xs">Note</h4>
+            <p className="text-xs text-white/60">
               Automated audit - manual testing recommended
             </p>
           </div>
@@ -278,14 +278,14 @@ export default function AccessibilityAudit() {
           <input
             type="text"
             placeholder="Test input 1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <input
             type="text"
             placeholder="Test input 2"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          <button className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+          <button className="w-full px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
             Test Button Inside Modal
           </button>
         </div>

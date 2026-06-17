@@ -49,17 +49,17 @@ export function PWAInstallPrompt() {
         backdropFilter: 'blur(12px)'
       }}>
         {/* Gradient Header */}
-        <div className="h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 animate-gradient" />
+        <div className="h-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 animate-gradient" />
 
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <div className="p-3 rounded-2xl border" style={{
-                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2))',
-                  borderColor: 'rgba(59, 130, 246, 0.3)'
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(147, 51, 234, 0.2))',
+                  borderColor: 'rgba(99, 102, 241, 0.3)'
                 }}>
-                  <Smartphone className="h-6 w-6 text-blue-400" />
+                  <Smartphone className="h-6 w-6 text-indigo-400" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white/10 flex items-center justify-center">
                   <Star className="h-2 w-2 text-white" />
@@ -89,10 +89,10 @@ export function PWAInstallPrompt() {
           {/* Feature Highlights */}
           <div className="grid grid-cols-3 gap-3">
             <div className="flex flex-col items-center gap-2 p-3 rounded-xl" style={{
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.2)'
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              border: '1px solid rgba(99, 102, 241, 0.2)'
             }}>
-              <Wifi className="h-4 w-4 text-blue-400" />
+              <Wifi className="h-4 w-4 text-indigo-400" />
               <span className="text-xs text-white/80 text-center">Works Offline</span>
             </div>
             <div className="flex flex-col items-center gap-2 p-3 rounded-xl" style={{
@@ -114,15 +114,15 @@ export function PWAInstallPrompt() {
           {/* Benefits List */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs text-white/60">
-              <div className="w-1 h-1 bg-blue-400 rounded-full" />
+              <div className="w-1 h-1 bg-indigo-400 rounded-full" />
               <span>Instant access from your home screen</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-white/60">
-              <div className="w-1 h-1 bg-blue-400 rounded-full" />
+              <div className="w-1 h-1 bg-indigo-400 rounded-full" />
               <span>Push notifications for important updates</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-white/60">
-              <div className="w-1 h-1 bg-blue-400 rounded-full" />
+              <div className="w-1 h-1 bg-indigo-400 rounded-full" />
               <span>Offline mode for uninterrupted workflow</span>
             </div>
           </div>
@@ -132,7 +132,7 @@ export function PWAInstallPrompt() {
             <Button
               onClick={handleInstall}
               size="sm"
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg transition-all duration-200 active:scale-95"
+              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium shadow-lg transition-all duration-200 active:scale-95"
             >
               <Download className="h-4 w-4 mr-2" />
               Install App

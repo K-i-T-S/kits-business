@@ -184,16 +184,16 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Custom Report Builder</h2>
-          <p className="text-gray-600 mt-1">Drag and drop widgets to create your custom report</p>
+      <div className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/10">
+        <div className="p-6 border-b border-white/10">
+          <h2 className="text-2xl font-bold text-white">Custom Report Builder</h2>
+          <p className="text-white/60 mt-1">Drag and drop widgets to create your custom report</p>
         </div>
 
         <div className="flex h-[calc(90vh-200px)]">
           {/* Widget Palette */}
-          <div className="w-80 border-r border-gray-200 p-6 overflow-y-auto">
-            <h3 className="font-semibold text-gray-900 mb-4">Add Widgets</h3>
+          <div className="w-80 border-r border-white/10 p-6 overflow-y-auto">
+            <h3 className="font-semibold text-white mb-4">Add Widgets</h3>
 
             <div className="space-y-4">
               <Select value={selectedWidgetType} onValueChange={setSelectedWidgetType}>
@@ -222,15 +222,15 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
               </Button>
 
               <div className="mt-6">
-                <h4 className="font-medium text-gray-900 mb-2">Available Widgets</h4>
+                <h4 className="font-medium text-white mb-2">Available Widgets</h4>
                 <div className="space-y-2">
                   {widgetTypes.map(type => (
-                    <div key={type.value} className="p-3 bg-gray-50 rounded-lg">
+                    <div key={type.value} className="p-3 bg-white/5 rounded-lg border border-white/10">
                       <div className="flex items-center gap-2">
-                        <type.icon className="h-4 w-4 text-indigo-600" />
-                        <span className="font-medium text-sm">{type.label}</span>
+                        <type.icon className="h-4 w-4 text-indigo-400" />
+                        <span className="font-medium text-sm text-white">{type.label}</span>
                       </div>
-                      <p className="text-xs text-gray-600 mt-1">{type.description}</p>
+                      <p className="text-xs text-white/60 mt-1">{type.description}</p>
                     </div>
                   ))}
                 </div>
@@ -240,13 +240,13 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
 
           {/* Canvas Area */}
           <div className="flex-1 p-6 overflow-y-auto">
-            <h3 className="font-semibold text-gray-900 mb-4">Report Canvas</h3>
+            <h3 className="font-semibold text-white mb-4">Report Canvas</h3>
 
             {widgets.length === 0 ? (
               <div className="text-center py-12">
-                <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No widgets added yet</p>
-                <p className="text-sm text-gray-400 mt-1">Select a widget type and click "Add Widget" to get started</p>
+                <BarChart3 className="h-12 w-12 text-white/20 mx-auto mb-4" />
+                <p className="text-white/60">No widgets added yet</p>
+                <p className="text-sm text-white/40 mt-1">Select a widget type and click "Add Widget" to get started</p>
               </div>
             ) : (
               <DndContext
@@ -268,10 +268,10 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
                 <DragOverlay>
                   {activeId ? (
                     <div className="opacity-50">
-                      <Card className="p-4 bg-white/50 backdrop-blur-sm border-white/20">
+                      <Card className="p-4 bg-white/10 backdrop-blur-sm border-white/20">
                         <div className="flex items-center gap-3">
-                          <Grip className="h-4 w-4 text-gray-400" />
-                          <span>Dragging...</span>
+                          <Grip className="h-4 w-4 text-white/40" />
+                          <span className="text-white/80">Dragging...</span>
                         </div>
                       </Card>
                     </div>
@@ -282,7 +282,7 @@ export default function ReportBuilder({ onSave, onCancel, initialWidgets = [] }:
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-200 flex justify-between">
+        <div className="p-6 border-t border-white/10 flex justify-between">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>

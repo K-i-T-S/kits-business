@@ -52,15 +52,15 @@ export default function KeyboardNavigationHelper() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 z-40 bg-white rounded-lg shadow-xl p-3 w-64 border border-gray-200">
+    <div className="fixed bottom-4 left-4 z-40 bg-slate-900 rounded-lg shadow-xl p-3 w-64 border border-white/10">
       <div className="flex justify-between items-center mb-2">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-1 text-sm">
+        <h3 className="font-semibold text-white flex items-center gap-1 text-sm">
           <Keyboard className="w-3 h-3" />
           Keyboard Shortcuts
         </h3>
         <button
           onClick={() => setIsVisible(false)}
-          className="text-gray-400 hover:text-gray-600"
+          className="text-white/40 hover:text-white"
           aria-label="Close keyboard helper"
         >
           ×
@@ -70,19 +70,19 @@ export default function KeyboardNavigationHelper() {
       <div className="space-y-1 mb-2">
         {keyboardShortcuts.map((shortcut, index) => (
           <div key={index} className="flex justify-between items-center text-xs">
-            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono">
+            <kbd className="px-1 py-0.5 bg-white/10 border border-white/20 rounded text-xs font-mono text-white/80">
               {shortcut.key}
             </kbd>
-            <span className="text-gray-600 text-xs">{shortcut.description}</span>
+            <span className="text-white/60 text-xs">{shortcut.description}</span>
           </div>
         ))}
       </div>
 
-      <div className="border-t pt-2">
-        <div className="flex items-center gap-1 text-xs text-gray-500">
+      <div className="border-t border-white/10 pt-2">
+        <div className="flex items-center gap-1 text-xs text-white/50">
           <Info className="w-3 h-3" />
           <div>
-            Focus: <code className="bg-gray-100 px-1 rounded text-xs">{currentFocus || 'None'}</code>
+            Focus: <code className="bg-white/10 px-1 rounded text-xs text-white/80">{currentFocus || 'None'}</code>
           </div>
         </div>
       </div>

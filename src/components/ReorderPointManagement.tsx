@@ -35,10 +35,10 @@ function computeStatus(qty: number, min: number): StockStatus {
 }
 
 const STATUS_COLORS: Record<StockStatus, string> = {
-  out_of_stock: 'bg-red-500/20 text-red-300 border border-red-500/30',
-  low_stock:    'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
-  optimal:      'bg-green-500/20 text-green-300 border border-green-500/30',
-  overstock:    'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+  out_of_stock: 'bg-rose-500/20 text-rose-300 border border-rose-500/30',
+  low_stock:    'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+  optimal:      'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+  overstock:    'bg-sky-500/20 text-sky-300 border border-sky-500/30',
 };
 
 const STATUS_ICONS: Record<StockStatus, React.ReactNode> = {
@@ -245,7 +245,7 @@ export default function ReorderPointManagement() {
                       </td>
                       <td className="py-4 text-sm text-white/70">{p.category ?? '—'}</td>
                       <td className="py-4">
-                        <span className={`font-medium ${p.stock_quantity === 0 ? 'text-red-400' : p.stock_quantity <= p.min_stock_level ? 'text-yellow-400' : 'text-white'}`}>
+                        <span className={`font-medium ${p.stock_quantity === 0 ? 'text-rose-400' : p.stock_quantity <= p.min_stock_level ? 'text-amber-400' : 'text-white'}`}>
                           {p.stock_quantity} units
                         </span>
                       </td>

@@ -34,7 +34,7 @@ export function OfflineIndicator() {
 
   const getStatusColor = () => {
     if (!syncStatus.isOnline) return 'orange';
-    if (syncStatus.isSyncing) return 'blue';
+    if (syncStatus.isSyncing) return 'indigo';
     if (syncStatus.pendingActions > 0) return 'yellow';
     return 'green';
   };
@@ -77,7 +77,7 @@ export function OfflineIndicator() {
         {/* Status Header */}
         <div className={`h-1 bg-gradient-to-r ${
           statusColor === 'green' ? 'from-emerald-600 to-emerald-700' :
-            statusColor === 'blue' ? 'from-blue-600 to-blue-700' :
+            statusColor === 'indigo' ? 'from-indigo-600 to-indigo-700' :
               statusColor === 'yellow' ? 'from-amber-600 to-amber-700' :
                 'from-orange-600 to-orange-700'
         }`} />
@@ -86,18 +86,18 @@ export function OfflineIndicator() {
           <div className="flex items-center gap-3">
             <div className={`relative p-2.5 rounded-2xl border ${
               statusColor === 'green' ? 'bg-emerald-600/20 border-emerald-600/30' :
-                statusColor === 'blue' ? 'bg-blue-600/20 border-blue-600/30' :
+                statusColor === 'indigo' ? 'bg-indigo-600/20 border-indigo-600/30' :
                   statusColor === 'yellow' ? 'bg-amber-600/20 border-amber-600/30' :
                     'bg-orange-600/20 border-orange-600/30'
             }`}>
               <Icon className={`h-5 w-5 ${
                 statusColor === 'green' ? 'text-emerald-400' :
-                  statusColor === 'blue' ? 'text-blue-400' :
-                    statusColor === 'yellow' ? 'text-yellow-400' :
+                  statusColor === 'indigo' ? 'text-indigo-400' :
+                    statusColor === 'yellow' ? 'text-amber-400' :
                       'text-orange-400'
               }`} />
               {syncStatus.isSyncing && (
-                <div className="absolute inset-0 rounded-2xl border-2 border-blue-400 animate-pulse" />
+                <div className="absolute inset-0 rounded-2xl border-2 border-indigo-400 animate-pulse" />
               )}
             </div>
             <div className="flex-1">
@@ -149,7 +149,7 @@ export function OfflineIndicator() {
                     {syncStatus.pendingActions} items
                   </Badge>
                   {syncStatus.isSyncing && (
-                    <div className="flex items-center gap-1 text-xs text-blue-400">
+                    <div className="flex items-center gap-1 text-xs text-indigo-400">
                       <RefreshCw className="h-3 w-3 animate-spin" />
                       <span>Syncing...</span>
                     </div>
@@ -161,7 +161,7 @@ export function OfflineIndicator() {
                   size="sm"
                   className="transition-all duration-200 active:scale-95"
                   style={{
-                    backgroundColor: '#3b82f6',
+                    backgroundColor: '#6366f1',
                     color: 'white',
                     border: 'none'
                   }}
@@ -216,7 +216,7 @@ export function OfflineIndicator() {
                 <span>Processing...</span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-1.5">
-                <div className="bg-blue-600 h-1.5 rounded-full animate-pulse" style={{ width: '60%' }} />
+                <div className="bg-indigo-600 h-1.5 rounded-full animate-pulse" style={{ width: '60%' }} />
               </div>
             </div>
           )}

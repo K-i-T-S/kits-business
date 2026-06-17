@@ -1,0 +1,31 @@
+name: Supabase Keep-Alive
+
+# Pings the Supabase project every 3 days to prevent the 7-day auto-pause.
+# Required secrets: SUPABASE_URL, SUPABASE_ANON_KEY
+
+on:
+  schedule:
+    - cron: '0 6 */3 * *'   # 06:00 UTC every 3 days
+  workflow_dispatch:          # allow manual trigger
+
+jobs:
+  ping:
+    name: Ping Supabase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up Supabase project
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/")
+
+          echo "Supabase responded with HTTP $STATUS"
+
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 500 ]; then
+            echo "Unexpected status — project may be paused or unreachable."
+            exit 1
+          fi
+
+          echo "Project is active."

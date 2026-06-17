@@ -1,4 +1,4 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 import { localStorageClient, localApi, getAuthHeaders as localGetAuthHeaders } from './localStorageClient';
 import { apiClient, getAuthHeaders as apiGetAuthHeaders } from './apiClient';
 
@@ -12,7 +12,9 @@ if (!useLocalMode && !useApiMode && (!supabaseUrl || !supabaseAnonKey)) {
   throw new Error('Missing configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, set VITE_USE_LOCAL_MODE=true, or set VITE_API_URL for local development.');
 }
 
-export const supabase = useLocalMode ? localStorageClient : (useApiMode ? apiClient : createSupabaseClient(supabaseUrl, supabaseAnonKey));
+export const supabase = (
+  useLocalMode ? localStorageClient : (useApiMode ? apiClient : createSupabaseClient(supabaseUrl, supabaseAnonKey))
+) as unknown as SupabaseClient;
 
 const API_URL = useLocalMode ? '/api/local' : (useApiMode ? apiUrl : new URL('/functions/v1/make-server-210e7672', supabaseUrl).toString());
 

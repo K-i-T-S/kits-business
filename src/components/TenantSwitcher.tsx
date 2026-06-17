@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
-import { getTenantsByUser, supabaseAdmin } from '../utils/tenantManager';
+import { getTenantsByUser } from '../utils/tenantManager';
 
 interface Tenant {
   id: string;

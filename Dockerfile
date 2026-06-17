@@ -7,17 +7,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies for building)
-RUN npm ci
+# Install dependencies with timeout and cache optimization
+RUN npm install --production --silent --no-audit --no-fund
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
-
 # Expose port 5173
 EXPOSE 5173
 
-# Start the application
-CMD ["npm", "run", "dev", "--", "--host"]
+# Start the application in development mode
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

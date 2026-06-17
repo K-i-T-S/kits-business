@@ -1,95 +1,85 @@
--- Database schema for Business Terminal
--- This schema matches the localStorage structure
+-- Database schema for Business Terminal (self-hosted Docker mode)
+-- Passwords are stored as bcrypt hashes (cost=12). Never store plaintext.
+-- Auth uses JWT tokens issued by server/index.js — no external auth service required.
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(50) PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    aud VARCHAR(50) DEFAULT 'authenticated',
-    role VARCHAR(50) DEFAULT 'authenticated',
+    password VARCHAR(255) NOT NULL, -- bcrypt hash, never plaintext
     app_metadata JSONB DEFAULT '{}',
     user_metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Sessions table
-CREATE TABLE IF NOT EXISTS sessions (
-    id VARCHAR(50) PRIMARY KEY,
-    user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    access_token VARCHAR(255),
-    refresh_token VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Products table
 CREATE TABLE IF NOT EXISTS products (
-    id VARCHAR(50) PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL DEFAULT 0,
     cost DECIMAL(10, 2) NOT NULL DEFAULT 0,
-    sku VARCHAR(100) UNIQUE,
+    sku VARCHAR(100),
     stock_quantity INTEGER DEFAULT 0,
     category VARCHAR(100),
-    tenant_id VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    tenant_id UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(sku, tenant_id)
 );
 
 -- Sales table
 CREATE TABLE IF NOT EXISTS sales (
-    id VARCHAR(50) PRIMARY KEY,
-    customer_id VARCHAR(50),
-    employee_id VARCHAR(50),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id UUID,
+    employee_id UUID,
     total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
     status VARCHAR(50) DEFAULT 'completed',
-    sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    tenant_id VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    sale_date TIMESTAMPTZ DEFAULT NOW(),
+    tenant_id UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Customers table
 CREATE TABLE IF NOT EXISTS customers (
-    id VARCHAR(50) PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     phone VARCHAR(50),
     address TEXT,
-    tenant_id VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    tenant_id UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Employees table
 CREATE TABLE IF NOT EXISTS employees (
-    id VARCHAR(50) PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     phone VARCHAR(50),
     position VARCHAR(100),
     hire_date DATE,
-    tenant_id VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    tenant_id UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Tenant user details table
 CREATE TABLE IF NOT EXISTS tenant_user_details (
-    id SERIAL PRIMARY KEY,
-    tenant_id VARCHAR(50) NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL,
     tenant_name VARCHAR(255) NOT NULL,
     tenant_slug VARCHAR(100) NOT NULL,
-    user_id VARCHAR(50) NOT NULL,
-    user_role VARCHAR(50) DEFAULT 'owner',
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_role VARCHAR(50) DEFAULT 'owner' CHECK (user_role IN ('owner', 'manager', 'cashier', 'viewer')),
     user_active BOOLEAN DEFAULT true,
     tenant_active BOOLEAN DEFAULT true,
     settings JSONB DEFAULT '{}',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(tenant_id, user_id)
 );
 

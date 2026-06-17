@@ -1,0 +1,20 @@
+# Use Node.js 20 as base image for backend
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies for backend
+RUN npm install --production
+
+# Copy backend source code
+COPY server ./server
+
+# Expose port 3001
+EXPOSE 3001
+
+# Start the backend server
+CMD ["node", "server/index.js"]

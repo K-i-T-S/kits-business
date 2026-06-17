@@ -13,6 +13,8 @@ import {
 import { useState, useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart, ReferenceLine } from 'recharts';
 
+import type { Sale, Product, Customer } from '../context/AppContext';
+
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -41,9 +43,9 @@ interface TrendAnalysis {
 
 interface ForecastingProps {
   data: {
-    sales: any[];
-    products: any[];
-    customers: any[];
+    sales: Sale[];
+    products: Product[];
+    customers: Customer[];
   };
 }
 
@@ -54,6 +56,8 @@ export default function Forecasting({ data }: ForecastingProps) {
 
   // Generate forecast data using simple linear regression and seasonality
   const forecastData = useMemo(() => {
+    if (data.sales.length < 7) return [];
+
     const sales = data.sales.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const daysBack = 90; // Use last 90 days for training
     const forecastDays = forecastPeriod === '30d' ? 30 : forecastPeriod === '60d' ? 60 : 90;
@@ -75,7 +79,7 @@ export default function Forecasting({ data }: ForecastingProps) {
     const x = Array.from({ length: n }, (_, i) => i);
     const sumX = x.reduce((a, b) => a + b, 0);
     const sumY = values.reduce((a, b) => a + b, 0);
-    const sumXY = x.reduce((acc, xi, i) => acc + xi * values[i], 0);
+    const sumXY = x.reduce((acc, xi, i) => acc + xi * (values[i] ?? 0), 0);
     const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
@@ -85,7 +89,7 @@ export default function Forecasting({ data }: ForecastingProps) {
     const seasonalityPattern = Array.from({ length: 7 }, () => 0);
     historicalData.forEach((sale, i) => {
       const dayOfWeek = new Date(sale.date).getDay();
-      seasonalityPattern[dayOfWeek] += values[i];
+      seasonalityPattern[dayOfWeek] = (seasonalityPattern[dayOfWeek] ?? 0) + (values[i] ?? 0);
     });
 
     // Normalize seasonality
@@ -192,7 +196,7 @@ export default function Forecasting({ data }: ForecastingProps) {
           metric === 'orders' ? 1 :
             metric === 'customers' ? (sale.customerId ? 1 : 0) :
               (sale.items || []).length;
-        weeklyPattern[dayOfWeek] += value;
+        weeklyPattern[dayOfWeek] = (weeklyPattern[dayOfWeek] ?? 0) + value;
       });
 
       const avgWeekly = weeklyPattern.reduce((a, b) => a + b, 0) / 7;
@@ -318,13 +322,23 @@ export default function Forecasting({ data }: ForecastingProps) {
     }
   };
 
+  if (data.sales.length < 7) {
+    return (
+      <div className="py-20 text-center">
+        <BarChart3 className="h-12 w-12 text-white/30 mx-auto mb-4" />
+        <h2 className="text-2xl font-semibold text-white mb-2">Forecasting & Trend Analysis</h2>
+        <p className="text-white/60 max-w-md mx-auto">Need at least 7 days of sales data for forecasting. Make more sales and check back later.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Forecasting & Trend Analysis</h2>
+        <h2 className="text-2xl font-bold text-white">Forecasting & Trend Analysis</h2>
         <div className="flex gap-3">
-          <Select value={selectedMetric} onValueChange={(value: any) => setSelectedMetric(value)}>
+          <Select value={selectedMetric} onValueChange={(value: 'revenue' | 'orders' | 'customers' | 'products') => setSelectedMetric(value)}>
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
@@ -336,7 +350,7 @@ export default function Forecasting({ data }: ForecastingProps) {
             </SelectContent>
           </Select>
 
-          <Select value={forecastPeriod} onValueChange={(value: any) => setForecastPeriod(value)}>
+          <Select value={forecastPeriod} onValueChange={(value: '30d' | '60d' | '90d') => setForecastPeriod(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -347,7 +361,7 @@ export default function Forecasting({ data }: ForecastingProps) {
             </SelectContent>
           </Select>
 
-          <Select value={confidenceLevel} onValueChange={(value: any) => setConfidenceLevel(value)}>
+          <Select value={confidenceLevel} onValueChange={(value: '80' | '90' | '95') => setConfidenceLevel(value)}>
             <SelectTrigger className="w-24">
               <SelectValue />
             </SelectTrigger>

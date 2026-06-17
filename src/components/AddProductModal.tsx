@@ -1,5 +1,5 @@
-import { X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { X, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 import { useApp } from '../context/AppContext';
 
@@ -9,6 +9,7 @@ interface AddProductModalProps {
 
 export default function AddProductModal({ onClose }: AddProductModalProps) {
   const { addProduct, setModalOpen } = useApp();
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     barcode: '',
@@ -29,37 +30,43 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
     return () => setModalOpen(false);
   }, [setModalOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const product = {
-      name: formData.name,
-      barcode: formData.barcode,
-      sku: formData.sku,
-      category: formData.category,
-      supplier: formData.supplier,
-      validityDate: formData.validityDate || undefined,
-      variants: [
-        {
-          id: `${Date.now()}-1`,
-          attributes: { [formData.variantAttribute]: formData.variantValue },
-          cost: parseFloat(formData.cost),
-          costHistory: [
-            {
-              date: new Date().toISOString(),
-              cost: parseFloat(formData.cost),
-              quantity: parseInt(formData.stock),
-            },
-          ],
-          price: parseFloat(formData.price),
-          stock: parseInt(formData.stock),
-          reorderLevel: parseInt(formData.reorderLevel),
-        },
-      ],
-    };
-
-    addProduct(product);
-    onClose();
+    setSubmitting(true);
+    try {
+      const costVal = parseFloat(formData.cost) || 0;
+      const stockVal = parseInt(formData.stock) || 0;
+      const reorderVal = parseInt(formData.reorderLevel) || 0;
+      const product = {
+        name: formData.name,
+        barcode: formData.barcode,
+        sku: formData.sku,
+        category: formData.category,
+        supplier: formData.supplier,
+        validityDate: formData.validityDate || undefined,
+        variants: [
+          {
+            id: crypto.randomUUID(),
+            attributes: formData.variantValue
+              ? { [formData.variantAttribute]: formData.variantValue }
+              : {},
+            cost: costVal,
+            costHistory: costVal > 0
+              ? [{ date: new Date().toISOString(), cost: costVal, quantity: stockVal }]
+              : [],
+            price: parseFloat(formData.price),
+            stock: stockVal,
+            reorderLevel: reorderVal,
+          },
+        ],
+      };
+      await addProduct(product);
+      onClose();
+    } catch {
+      // addProduct already shows a toast on failure
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -93,47 +100,43 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
             </div>
 
             <div>
-              <label className="block text-white/80 mb-2">Category *</label>
+              <label className="block text-white/80 mb-2">Category</label>
               <input
                 type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                 placeholder="e.g., Beverages"
-                required
               />
             </div>
 
             <div>
-              <label className="block text-white/80 mb-2">Barcode *</label>
+              <label className="block text-white/80 mb-2">Barcode</label>
               <input
                 type="text"
                 value={formData.barcode}
                 onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                 className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
-                required
               />
             </div>
 
             <div>
-              <label className="block text-white/80 mb-2">SKU *</label>
+              <label className="block text-white/80 mb-2">SKU</label>
               <input
                 type="text"
                 value={formData.sku}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                 className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
-                required
               />
             </div>
 
             <div>
-              <label className="block text-white/80 mb-2">Supplier *</label>
+              <label className="block text-white/80 mb-2">Supplier</label>
               <input
                 type="text"
                 value={formData.supplier}
                 onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
                 className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
-                required
               />
             </div>
 
@@ -173,7 +176,6 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
                   onChange={(e) => setFormData({ ...formData, variantValue: e.target.value })}
                   className="w-full px-4 py-2 border border-white/20 bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-white/50"
                   placeholder="e.g., 250g, Red, Large"
-                  required
                 />
               </div>
 
@@ -233,15 +235,18 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-colors text-white/80"
+              disabled={submitting}
+              className="flex-1 px-4 py-3 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-colors text-white/80 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white rounded-lg font-medium"
+              disabled={submitting}
+              className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Add Product
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {submitting ? 'Adding…' : 'Add Product'}
             </button>
           </div>
         </form>

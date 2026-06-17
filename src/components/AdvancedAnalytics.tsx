@@ -20,6 +20,8 @@ import {
 import { useState, useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart } from 'recharts';
 
+import type { Sale, Product, Customer, Employee } from '../context/AppContext';
+
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
@@ -38,10 +40,10 @@ interface KPICard {
 }
 
 interface AnalyticsData {
-  sales: any[];
-  products: any[];
-  customers: any[];
-  employees: any[];
+  sales: Sale[];
+  products: Product[];
+  customers: Customer[];
+  employees: Employee[];
   dateRange: string;
 }
 
@@ -87,13 +89,13 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
     const previousRevenue = previousPeriodData.reduce((sum, s) => sum + (s.total || 0), 0);
     const revenueChange = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
-    const currentProfit = sales.reduce((sum: number, s: any) =>
-      sum + ((s.items || []).reduce((itemSum: number, item: any) =>
+    const currentProfit = sales.reduce((sum, s) =>
+      sum + ((s.items || []).reduce((itemSum, item) =>
         itemSum + (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0)), 0)
       ), 0,
     );
-    const previousProfit = previousPeriodData.reduce((sum: number, s: any) =>
-      sum + ((s.items || []).reduce((itemSum: number, item: any) =>
+    const previousProfit = previousPeriodData.reduce((sum, s) =>
+      sum + ((s.items || []).reduce((itemSum, item) =>
         itemSum + (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0)), 0)
       ), 0,
     );
@@ -185,10 +187,10 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
       const date = subDays(endDate, daysDiff - i);
       const dateStr = format(date, 'yyyy-MM-dd');
 
-      const daySales = sales.filter((s: any) => format(parseISO(s.date), 'yyyy-MM-dd') === dateStr);
-      const revenue = daySales.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
-      const profit = daySales.reduce((sum: number, s: any) =>
-        sum + ((s.items || []).reduce((itemSum: number, item: any) =>
+      const daySales = sales.filter(s => format(parseISO(s.date), 'yyyy-MM-dd') === dateStr);
+      const revenue = daySales.reduce((sum, s) => sum + (s.total || 0), 0);
+      const profit = daySales.reduce((sum, s) =>
+        sum + ((s.items || []).reduce((itemSum, item) =>
           itemSum + (((item.price || 0) - (item.cost || 0)) * (item.quantity || 0)), 0)
         ), 0,
       );
@@ -212,7 +214,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
     const productMap = new Map();
 
     sales.forEach(sale => {
-      (sale.items || []).forEach((item: any) => {
+      (sale.items || []).forEach((item) => {
         const existing = productMap.get(item.productId) || {
           name: item.productName,
           revenue: 0,
@@ -287,11 +289,21 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
     }
   };
 
+  if (filteredData.sales.length === 0) {
+    return (
+      <div className="py-20 text-center">
+        <BarChart3 className="h-12 w-12 text-white/30 mx-auto mb-4" />
+        <h2 className="text-2xl font-semibold text-white mb-2">Advanced Analytics</h2>
+        <p className="text-white/60">No sales data for this period. Make some sales and check back.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Period Selector */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Advanced Analytics</h2>
+        <h2 className="text-2xl font-bold text-white">Advanced Analytics</h2>
         <div className="flex gap-2">
           {(['7d', '30d', '90d'] as const).map(period => (
             <button
@@ -468,7 +480,7 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
   );
 }
 
-function getPreviousPeriodData(sales: any[], period: '7d' | '30d' | '90d') {
+function getPreviousPeriodData(sales: Sale[], period: '7d' | '30d' | '90d') {
   const now = new Date();
   const daysBack = period === '7d' ? 14 : period === '30d' ? 60 : 180;
   const startDate = subDays(now, daysBack);

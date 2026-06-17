@@ -26,7 +26,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
-interface ReportWidget {
+export interface ReportWidget {
   id: string;
   type: 'revenue' | 'sales-trend' | 'top-products' | 'payment-methods' | 'employee-performance' | 'kpi-cards';
   title: string;

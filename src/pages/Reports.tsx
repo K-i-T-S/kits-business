@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import AdvancedAnalytics from '../components/AdvancedAnalytics';
 import Forecasting from '../components/Forecasting';
 import Layout from '../components/Layout';
-import ReportBuilder from '../components/ReportBuilder';
+import ReportBuilder, { type ReportWidget } from '../components/ReportBuilder';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -19,7 +19,13 @@ export default function Reports() {
   const [reportType, setReportType] = useState('overview');
   const [showReportBuilder, setShowReportBuilder] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const [customWidgets, setCustomWidgets] = useState<any[]>([]);
+  const [customWidgets, setCustomWidgets] = useState<ReportWidget[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('kits_report_configs') ?? '[]') as ReportWidget[];
+    } catch {
+      return [];
+    }
+  });
 
   // Filter sales by date range
   const getFilteredSales = () => {
@@ -352,6 +358,12 @@ export default function Reports() {
                 </select>
               </div>
 
+              {filteredSales.length === 0 && (
+                <div className="py-12 text-center">
+                  <p className="text-slate-400 text-sm">No sales data for this period. Start making sales from the POS terminal.</p>
+                </div>
+              )}
+
               {/* Original Overview Content */}
               <section className="grid grid-cols-2 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
                 {statCards.map((card) => (
@@ -532,7 +544,7 @@ export default function Reports() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/20 bg-white/10">
-                        {costShifts.slice(0, 5).map((shift: any, index) => (
+                        {costShifts.slice(0, 5).map((shift, index) => (
                           <tr key={index}>
                             <td className="px-4 py-3">
                               <p className="font-semibold text-white">{shift.product}</p>
@@ -651,6 +663,7 @@ export default function Reports() {
           <ReportBuilder
             onSave={(widgets) => {
               setCustomWidgets(widgets);
+              localStorage.setItem('kits_report_configs', JSON.stringify(widgets));
               setShowReportBuilder(false);
               setReportType('custom');
               toast.success('Custom report created', {

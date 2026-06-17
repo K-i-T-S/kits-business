@@ -1,5 +1,5 @@
-import { Building2, Plus, ArrowRight } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
+import { Building2, Plus, ArrowRight, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -13,58 +13,59 @@ interface Tenant {
   user_role: string;
 }
 
+interface AuthUser {
+  id: string;
+  email?: string;
+}
+
 export default function TenantSelection() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loadingTenants, setLoadingTenants] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tenantName, setTenantName] = useState('');
   const [tenantSlug, setTenantSlug] = useState('');
   const [userTenants, setUserTenants] = useState<Tenant[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const hasRedirected = useRef(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    let mounted = true;
-    if (!hasRedirected.current) {
-      checkAuthAndLoadTenants();
-    }
-    return () => {
-      mounted = false;
-    };
+    checkAuthAndLoadTenants();
   }, []);
 
   const checkAuthAndLoadTenants = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/login');
-      return;
-    }
+    setLoadingTenants(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/login');
+        return;
+      }
 
-    setCurrentUser(session.user);
-    const tenants = await loadUserTenants(session.user.id);
-    
-    // Auto-redirect to dashboard if user has tenants
-    if (tenants && tenants.length > 0 && !hasRedirected.current) {
-      hasRedirected.current = true;
-      navigate('/dashboard');
+      setCurrentUser({ id: session.user.id, email: session.user.email });
+      await loadUserTenants(session.user.id);
+    } catch {
+      toast.error('Failed to load account data');
+    } finally {
+      setLoadingTenants(false);
     }
   };
 
   const loadUserTenants = async (userId: string): Promise<Tenant[]> => {
     try {
-      const { data: tenants, error } = await supabase
+      const { data: tenants, error: queryError } = await supabase
         .from('tenant_user_details')
         .select('*')
         .eq('user_id', userId)
         .eq('user_active', true)
         .eq('tenant_active', true);
 
-      if (error) throw error;
-      const tenantList = tenants || [];
+      if (queryError) throw queryError;
+      const tenantList = (tenants ?? []) as Tenant[];
       setUserTenants(tenantList);
       return tenantList;
-    } catch (error) {
-      console.error('Error loading tenants:', error);
+    } catch (err) {
+      console.error('Error loading tenants:', err);
       return [];
     }
   };
@@ -73,36 +74,37 @@ export default function TenantSelection() {
     e.preventDefault();
     if (!currentUser) return;
 
-    setLoading(true);
+    if (tenantName.trim().length < 2) {
+      setError('Business name must be at least 2 characters.');
+      return;
+    }
+    if (!/^[a-z0-9-]+$/.test(tenantSlug)) {
+      setError('Slug may only contain lowercase letters, numbers, and hyphens.');
+      return;
+    }
+
+    setError('');
+    setSubmitting(true);
 
     try {
-      const tenantId = await createTenant(tenantName, tenantSlug, currentUser.id);
-      toast.success('Business created successfully!');
-
-      await loadUserTenants(currentUser.id);
-      setShowCreateForm(false);
-      setTenantName('');
-      setTenantSlug('');
-
-      // Redirect to the new tenant
+      await createTenant(tenantName.trim(), tenantSlug, currentUser.id);
+      toast.success('Business created!');
       navigate('/dashboard');
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create business.';
+      setError(message);
+      toast.error(message);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleSelectTenant = (tenant: Tenant) => {
+  const handleSelectTenant = () => {
     navigate('/dashboard');
   };
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-  };
+  const generateSlug = (name: string) =>
+    name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
@@ -110,6 +112,16 @@ export default function TenantSelection() {
     setTenantSlug(generateSlug(name));
   };
 
+  if (loadingTenants) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-white/60">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
+          <p className="text-sm">Loading your account…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4 pb-20 lg:pb-0">
@@ -119,7 +131,7 @@ export default function TenantSelection() {
             <Building2 className="h-12 w-12 text-indigo-500" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Choose Your Business</h1>
-          <p className="text-gray-400">Select an existing business or create a new one</p>
+          <p className="text-white/50">Select an existing business or create a new one</p>
         </div>
 
         {/* Existing Tenants */}
@@ -130,18 +142,21 @@ export default function TenantSelection() {
               {userTenants.map((tenant) => (
                 <div
                   key={tenant.tenant_id}
-                  className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-indigo-500 transition-colors cursor-pointer group"
-                  onClick={() => handleSelectTenant(tenant)}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/60 transition-colors cursor-pointer group"
+                  onClick={() => handleSelectTenant()}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                      <h3 className="text-lg font-semibold text-white group-hover:text-indigo-300 transition-colors">
                         {tenant.tenant_name}
                       </h3>
-                      <p className="text-gray-400 text-sm">{tenant.tenant_slug}</p>
-                      <p className="text-indigo-400 text-sm mt-1">Role: {tenant.user_role}</p>
+                      <p className="text-white/40 text-sm">{tenant.tenant_slug}</p>
+                      <p className="text-indigo-400 text-sm mt-1 capitalize">{tenant.user_role}</p>
                     </div>
-                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-indigo-400 transition-colors" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white/50 group-hover:text-indigo-300 transition-colors font-medium">Enter</span>
+                      <ArrowRight className="h-5 w-5 text-white/40 group-hover:text-indigo-300 transition-colors" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -150,23 +165,27 @@ export default function TenantSelection() {
         )}
 
         {/* Create New Tenant */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
           {!showCreateForm ? (
             <button
               onClick={() => setShowCreateForm(true)}
-              className="w-full flex items-center justify-center gap-3 text-white hover:text-indigo-400 transition-colors py-4"
+              className="w-full flex items-center justify-center gap-3 text-white/70 hover:text-indigo-300 transition-colors py-4"
             >
               <Plus className="h-5 w-5" />
               <span className="font-medium">Create New Business</span>
             </button>
           ) : (
             <form onSubmit={handleCreateTenant} className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Create New Business</h3>
-              </div>
+              <h3 className="text-lg font-semibold text-white">Create New Business</h3>
+
+              {error && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                  {error}
+                </div>
+              )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   Business Name
                 </label>
                 <input
@@ -174,46 +193,46 @@ export default function TenantSelection() {
                   value={tenantName}
                   onChange={handleNameChange}
                   placeholder="My Business"
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Business URL (slug)
+                <label className="block text-sm font-medium text-white/70 mb-2">
+                  Business Slug
                 </label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 text-gray-400 bg-slate-700 border border-r-0 border-slate-600 rounded-l-lg">
-                    your-app.com/
-                  </span>
-                  <input
-                    type="text"
-                    value={tenantSlug}
-                    onChange={(e) => setTenantSlug(e.target.value)}
-                    placeholder="my-business"
-                    className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-r-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    required
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={tenantSlug}
+                  onChange={(e) => setTenantSlug(e.target.value)}
+                  placeholder="my-business"
+                  pattern="[a-z0-9-]+"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+                  required
+                />
+                <p className="mt-1 text-xs text-white/40">Lowercase letters, numbers, and hyphens only</p>
               </div>
 
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  disabled={submitting}
+                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
                 >
-                  {loading ? 'Creating...' : 'Create Business'}
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submitting ? 'Creating…' : 'Create Business'}
                 </button>
                 <button
                   type="button"
+                  disabled={submitting}
                   onClick={() => {
                     setShowCreateForm(false);
                     setTenantName('');
                     setTenantSlug('');
+                    setError('');
                   }}
-                  className="px-4 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors font-medium"
+                  className="px-4 py-3 bg-white/5 border border-white/10 text-white/70 rounded-xl hover:bg-white/10 transition-colors font-medium"
                 >
                   Cancel
                 </button>
@@ -222,11 +241,10 @@ export default function TenantSelection() {
           )}
         </div>
 
-        {/* Sign Out */}
         <div className="text-center mt-8">
           <button
-            onClick={() => supabase.auth.signOut()}
-            className="text-gray-400 hover:text-white transition-colors text-sm"
+            onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
+            className="text-white/40 hover:text-white/70 transition-colors text-sm"
           >
             Sign out
           </button>

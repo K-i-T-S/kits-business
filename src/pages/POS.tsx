@@ -9,7 +9,7 @@ import ReceiptCustomizationModal from '../components/ReceiptCustomizationModal';
 import SplitPaymentModal from '../components/SplitPaymentModal';
 import TipsModal from '../components/TipsModal';
 import { useApp } from '../context/AppContext';
-import type { Sale } from '../context/AppContext';
+import type { Sale, Product } from '../context/AppContext';
 import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
 import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
 import { POSCalculator } from '../utils/posCalculations';
@@ -54,6 +54,7 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSale, setLastSale] = useState<ReceiptData | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Enhanced POS states
   const [showSplitPayment, setShowSplitPayment] = useState(false);
@@ -67,6 +68,45 @@ export default function POS() {
   const [loyaltyPointsRedeemed, setLoyaltyPointsRedeemed] = useState(0);
   const [selectedReceiptTemplate, setSelectedReceiptTemplate] = useState<ReceiptTemplate | null>(null);
   const [taxRate] = useState(0.08); // 8% tax rate
+
+  const filteredProducts = (products || []).filter(p => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return p.name.toLowerCase().includes(q)
+      || (p.sku?.toLowerCase() ?? '').includes(q)
+      || (p.barcode?.toLowerCase() ?? '').includes(q);
+  });
+
+  const addProductToCart = (product: Product) => {
+    const variant = product.variants[0];
+    if (!variant) {
+      toast.error('Product missing variants', { description: 'Please configure at least one variant before selling.' });
+      return;
+    }
+    if (variant.stock <= 0) {
+      toast.error('Out of stock', { description: `${product.name} has no remaining inventory.` });
+      return;
+    }
+    const existing = cart.find(item => item.productId === product.id && item.variantId === variant.id);
+    if (existing) {
+      setCart(cart.map(item =>
+        item.productId === product.id && item.variantId === variant.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item,
+      ));
+    } else {
+      const variantDesc = Object.values(variant.attributes).join(' - ');
+      setCart([...cart, {
+        productId: product.id!,
+        variantId: variant.id,
+        productName: product.name,
+        variantAttributes: variantDesc,
+        price: variant.price,
+        cost: variant.cost,
+        quantity: 1,
+      }]);
+    }
+  };
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,7 +260,7 @@ export default function POS() {
     }));
 
     const sale: Sale = {
-      id: `sale_${Date.now()}`,
+      id: crypto.randomUUID(),
       date: new Date().toISOString(),
       items: saleItems,
       subtotal,
@@ -299,6 +339,48 @@ export default function POS() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
+            <section className="hero-gradient glass-panel p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-white/70">Products</p>
+                  <h2 className="text-lg font-semibold text-white">Select or search</h2>
+                </div>
+                <span className="text-xs text-white/60">{filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}</span>
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, SKU, or barcode…"
+                className="mt-4 w-full rounded-2xl border border-white/30 bg-white/20 py-3 px-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
+              />
+              {filteredProducts.length === 0 ? (
+                <p className="mt-4 text-center text-sm text-white/60 py-4">
+                  {searchQuery.trim() ? 'No products match your search.' : 'No products found. Add products in the Inventory section.'}
+                </p>
+              ) : (
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-1">
+                  {(searchQuery.trim() ? filteredProducts : filteredProducts.slice(0, 24)).map(product => {
+                    const v = product.variants[0];
+                    if (!v) return null;
+                    return (
+                      <button
+                        key={product.id}
+                        onClick={() => addProductToCart(product)}
+                        disabled={v.stock <= 0}
+                        className="rounded-2xl border border-white/30 bg-white/10 p-3 text-left hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      >
+                        <p className="text-sm font-semibold text-white truncate">{product.name}</p>
+                        <p className="text-xs text-white/80">${v.price.toFixed(2)}</p>
+                        <p className={`text-xs ${v.stock > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                          {v.stock > 0 ? `${v.stock} in stock` : 'Out of stock'}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
             <section className="hero-gradient glass-panel p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>

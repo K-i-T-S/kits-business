@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
-import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
 import { createTenant } from '../utils/tenantManager';
 
@@ -12,7 +11,6 @@ interface CreateTenantModalProps {
 }
 
 export default function CreateTenantModal({ isOpen, onClose, onSuccess }: CreateTenantModalProps) {
-  const { currentTenant } = useApp();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -23,8 +21,13 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.slug) {
-      toast.error('Please fill in all required fields');
+    if (!formData.name || formData.name.trim().length < 2) {
+      toast.error('Business name must be at least 2 characters');
+      return;
+    }
+    const cleanSlug = formData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!cleanSlug || !/^[a-z0-9-]+$/.test(cleanSlug)) {
+      toast.error('Slug may only contain lowercase letters, numbers, and hyphens');
       return;
     }
 
@@ -36,13 +39,8 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
         throw new Error('User not authenticated');
       }
 
-      // Create the tenant
-      const tenantId = await createTenant(
-        formData.name,
-        formData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        user.id,
-        { description: formData.description },
-      );
+      const finalSlug = formData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      await createTenant(formData.name.trim(), finalSlug, user.id, {});
 
       toast.success('Business created successfully!');
       onSuccess();

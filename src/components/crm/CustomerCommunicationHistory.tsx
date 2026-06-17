@@ -1,5 +1,4 @@
 import {
-  AlertCircle,
   ArrowRight,
   Calendar,
   CheckCircle2,
@@ -13,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 interface Communication {
   id: string;
@@ -27,7 +27,7 @@ interface Communication {
     id: string;
     name: string;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -38,7 +38,7 @@ interface CustomerCommunicationHistoryProps {
 }
 
 export default function CustomerCommunicationHistory({
-  customerId,
+  customerId: _customerId,
   communications,
   onAddCommunication,
 }: CustomerCommunicationHistoryProps) {
@@ -61,56 +61,36 @@ export default function CustomerCommunicationHistory({
 
   const getTypeIcon = (type: Communication['type']) => {
     switch (type) {
-      case 'email':
-        return <Mail className="h-4 w-4" />;
-      case 'sms':
-        return <MessageSquare className="h-4 w-4" />;
-      case 'phone':
-        return <Phone className="h-4 w-4" />;
-      case 'in_person':
-        return <User className="h-4 w-4" />;
-      case 'social_media':
-        return <MessageSquare className="h-4 w-4" />;
-      default:
-        return <MessageSquare className="h-4 w-4" />;
+      case 'email':        return <Mail className="h-4 w-4" />;
+      case 'sms':          return <MessageSquare className="h-4 w-4" />;
+      case 'phone':        return <Phone className="h-4 w-4" />;
+      case 'in_person':    return <User className="h-4 w-4" />;
+      case 'social_media': return <MessageSquare className="h-4 w-4" />;
+      default:             return <MessageSquare className="h-4 w-4" />;
     }
   };
 
   const getStatusColor = (status: Communication['status']) => {
     switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-      case 'sent':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'delivered':
-        return 'bg-green-100 text-green-700 border-green-200';
-      case 'failed':
-        return 'bg-red-100 text-red-700 border-red-200';
-      case 'opened':
-        return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'replied':
-        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'draft':     return 'bg-white/10 text-white/60 border-white/20';
+      case 'sent':      return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'delivered': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'failed':    return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'opened':    return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'replied':   return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      default:          return 'bg-white/10 text-white/60 border-white/20';
     }
   };
 
   const getStatusIcon = (status: Communication['status']) => {
     switch (status) {
-      case 'draft':
-        return <Clock className="h-3 w-3" />;
-      case 'sent':
-        return <Send className="h-3 w-3" />;
-      case 'delivered':
-        return <CheckCircle2 className="h-3 w-3" />;
-      case 'failed':
-        return <XCircle className="h-3 w-3" />;
-      case 'opened':
-        return <Mail className="h-3 w-3" />;
-      case 'replied':
-        return <ArrowRight className="h-3 w-3" />;
-      default:
-        return <Clock className="h-3 w-3" />;
+      case 'draft':     return <Clock className="h-3 w-3" />;
+      case 'sent':      return <Send className="h-3 w-3" />;
+      case 'delivered': return <CheckCircle2 className="h-3 w-3" />;
+      case 'failed':    return <XCircle className="h-3 w-3" />;
+      case 'opened':    return <Mail className="h-3 w-3" />;
+      case 'replied':   return <ArrowRight className="h-3 w-3" />;
+      default:          return <Clock className="h-3 w-3" />;
     }
   };
 
@@ -120,44 +100,36 @@ export default function CustomerCommunicationHistory({
       onAddCommunication({
         type: newCommunication.type,
         direction: newCommunication.direction,
-        subject: newCommunication.subject,
+        subject: newCommunication.subject || undefined,
         content: newCommunication.content,
         status: 'draft',
         scheduledAt: newCommunication.scheduledAt || undefined,
       });
-      setNewCommunication({
-        type: 'email',
-        direction: 'outbound',
-        subject: '',
-        content: '',
-        scheduledAt: '',
-      });
+      setNewCommunication({ type: 'email', direction: 'outbound', subject: '', content: '', scheduledAt: '' });
+      setShowAddModal(false);
+    } else {
+      toast.info('Communication history coming soon');
       setShowAddModal(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
-  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 lg:pb-0">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Communication History</h3>
-          <p className="text-sm text-gray-600">Track all interactions with this customer</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-white/70 font-medium">History</p>
+          <h2 className="mt-1 text-xl font-bold text-white">Communication History</h2>
+          <p className="text-sm text-white/60">Track all interactions with this customer</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
           <Plus className="h-4 w-4" />
           Add Communication
@@ -167,64 +139,55 @@ export default function CustomerCommunicationHistory({
       {/* Timeline */}
       <div className="relative">
         {sortedCommunications.length === 0 ? (
-          <div className="text-center py-12">
-            <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No communications</h3>
-            <p className="mt-1 text-sm text-gray-500">Start tracking customer interactions</p>
+          <div className="rounded-2xl border border-white/10 bg-white/5 py-16 text-center">
+            <MessageSquare className="mx-auto h-12 w-12 text-white/20" />
+            <h3 className="mt-3 text-sm font-semibold text-white">No communications yet</h3>
+            <p className="mt-1 text-sm text-white/50">
+              Communication history will be available in a future update.
+              <br />
+              Track emails, calls, in-person visits, and more per customer.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
             {sortedCommunications.map((communication, index) => (
               <div key={communication.id} className="relative flex items-start space-x-4">
-                {/* Timeline line */}
                 {index < sortedCommunications.length - 1 && (
-                  <div className="absolute left-4 top-8 h-full w-0.5 bg-gray-200" />
+                  <div className="absolute left-4 top-8 h-full w-0.5 bg-white/10" />
                 )}
 
-                {/* Icon */}
-                <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white border-2 border-gray-300">
+                <div className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/60">
                   {getTypeIcon(communication.type)}
                 </div>
 
-                {/* Content */}
-                <div className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="min-w-0 flex-1 rounded-2xl border border-white/15 bg-white/5 p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-gray-900 capitalize">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium capitalize text-white">
                           {communication.type.replace('_', ' ')}
                         </span>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(
-                            communication.status,
-                          )}`}
-                        >
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(communication.status)}`}>
                           {getStatusIcon(communication.status)}
                           {communication.status}
                         </span>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                            communication.direction === 'inbound'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          <ArrowRight
-                            className={`h-3 w-3 ${
-                              communication.direction === 'inbound' ? 'rotate-180' : ''
-                            }`}
-                          />
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                          communication.direction === 'inbound'
+                            ? 'bg-blue-500/20 text-blue-400'
+                            : 'bg-white/10 text-white/60'
+                        }`}>
+                          <ArrowRight className={`h-3 w-3 ${communication.direction === 'inbound' ? 'rotate-180' : ''}`} />
                           {communication.direction}
                         </span>
                       </div>
 
                       {communication.subject && (
-                        <h4 className="font-medium text-gray-900 mb-1">{communication.subject}</h4>
+                        <h4 className="mb-1 font-medium text-white">{communication.subject}</h4>
                       )}
 
-                      <p className="text-sm text-gray-600 mb-2">{communication.content}</p>
+                      <p className="mb-2 text-sm text-white/70">{communication.content}</p>
 
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-white/40">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           {formatDate(communication.createdAt)}
@@ -253,21 +216,18 @@ export default function CustomerCommunicationHistory({
 
       {/* Add Communication Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Communication</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-lg rounded-3xl border border-white/15 bg-slate-900 p-6 shadow-2xl">
+            <h3 className="mb-4 text-lg font-semibold text-white">Add Communication</h3>
             <form onSubmit={handleAddCommunication} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <label className="mb-1 block text-sm font-medium text-white/70">Type</label>
                 <select
                   value={newCommunication.type}
                   onChange={(e) =>
-                    setNewCommunication({
-                      ...newCommunication,
-                      type: e.target.value as Communication['type'],
-                    })
+                    setNewCommunication({ ...newCommunication, type: e.target.value as Communication['type'] })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
                 >
                   <option value="email">Email</option>
                   <option value="sms">SMS</option>
@@ -279,35 +239,29 @@ export default function CustomerCommunicationHistory({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Direction</label>
+                <label className="mb-2 block text-sm font-medium text-white/70">Direction</label>
                 <div className="flex gap-4">
-                  <label className="flex items-center">
+                  <label className="flex items-center gap-2 text-sm text-white/70">
                     <input
                       type="radio"
                       value="outbound"
                       checked={newCommunication.direction === 'outbound'}
                       onChange={(e) =>
-                        setNewCommunication({
-                          ...newCommunication,
-                          direction: e.target.value as Communication['direction'],
-                        })
+                        setNewCommunication({ ...newCommunication, direction: e.target.value as Communication['direction'] })
                       }
-                      className="mr-2"
+                      className="accent-indigo-500"
                     />
                     Outbound
                   </label>
-                  <label className="flex items-center">
+                  <label className="flex items-center gap-2 text-sm text-white/70">
                     <input
                       type="radio"
                       value="inbound"
                       checked={newCommunication.direction === 'inbound'}
                       onChange={(e) =>
-                        setNewCommunication({
-                          ...newCommunication,
-                          direction: e.target.value as Communication['direction'],
-                        })
+                        setNewCommunication({ ...newCommunication, direction: e.target.value as Communication['direction'] })
                       }
-                      className="mr-2"
+                      className="accent-indigo-500"
                     />
                     Inbound
                   </label>
@@ -315,55 +269,49 @@ export default function CustomerCommunicationHistory({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <label className="mb-1 block text-sm font-medium text-white/70">Subject</label>
                 <input
                   type="text"
                   value={newCommunication.subject}
-                  onChange={(e) =>
-                    setNewCommunication({ ...newCommunication, subject: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  onChange={(e) => setNewCommunication({ ...newCommunication, subject: e.target.value })}
+                  className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none"
                   placeholder="Communication subject (optional)"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                <label className="mb-1 block text-sm font-medium text-white/70">Content</label>
                 <textarea
                   value={newCommunication.content}
-                  onChange={(e) =>
-                    setNewCommunication({ ...newCommunication, content: e.target.value })
-                  }
+                  onChange={(e) => setNewCommunication({ ...newCommunication, content: e.target.value })}
                   rows={4}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none"
                   placeholder="Communication content"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Schedule (optional)</label>
+                <label className="mb-1 block text-sm font-medium text-white/70">Schedule (optional)</label>
                 <input
                   type="datetime-local"
                   value={newCommunication.scheduledAt}
-                  onChange={(e) =>
-                    setNewCommunication({ ...newCommunication, scheduledAt: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  onChange={(e) => setNewCommunication({ ...newCommunication, scheduledAt: e.target.value })}
+                  className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="flex-1 rounded-2xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/10"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                  className="flex-1 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
                 >
                   Add Communication
                 </button>

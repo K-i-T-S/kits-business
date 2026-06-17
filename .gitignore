@@ -25,3 +25,12 @@ yarn-debug.log*
 yarn-error.log*
 .vercel
 .env*.local
+
+# Test artifacts
+playwright-report/
+test-results/
+*.backup
+coverage/
+
+# Dev artifacts
+visual-tests/

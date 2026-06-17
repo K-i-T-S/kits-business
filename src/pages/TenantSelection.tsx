@@ -1,5 +1,5 @@
 import { Building2, Plus, ArrowRight } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -16,15 +16,21 @@ interface Tenant {
 export default function TenantSelection() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tenantName, setTenantName] = useState('');
   const [tenantSlug, setTenantSlug] = useState('');
   const [userTenants, setUserTenants] = useState<Tenant[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    checkAuthAndLoadTenants();
+    let mounted = true;
+    if (!hasRedirected.current) {
+      checkAuthAndLoadTenants();
+    }
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const checkAuthAndLoadTenants = async () => {
@@ -35,10 +41,16 @@ export default function TenantSelection() {
     }
 
     setCurrentUser(session.user);
-    await loadUserTenants(session.user.id);
+    const tenants = await loadUserTenants(session.user.id);
+    
+    // Auto-redirect to dashboard if user has tenants
+    if (tenants && tenants.length > 0 && !hasRedirected.current) {
+      hasRedirected.current = true;
+      navigate('/dashboard');
+    }
   };
 
-  const loadUserTenants = async (userId: string) => {
+  const loadUserTenants = async (userId: string): Promise<Tenant[]> => {
     try {
       const { data: tenants, error } = await supabase
         .from('tenant_user_details')
@@ -48,9 +60,12 @@ export default function TenantSelection() {
         .eq('tenant_active', true);
 
       if (error) throw error;
-      setUserTenants(tenants || []);
+      const tenantList = tenants || [];
+      setUserTenants(tenantList);
+      return tenantList;
     } catch (error) {
       console.error('Error loading tenants:', error);
+      return [];
     }
   };
 
@@ -70,7 +85,7 @@ export default function TenantSelection() {
       setTenantSlug('');
 
       // Redirect to the new tenant
-      navigate(`/app/${tenantSlug}/dashboard`);
+      navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -79,7 +94,7 @@ export default function TenantSelection() {
   };
 
   const handleSelectTenant = (tenant: Tenant) => {
-    navigate(`/app/${tenant.tenant_slug}/dashboard`);
+    navigate('/dashboard');
   };
 
   const generateSlug = (name: string) => {
@@ -95,22 +110,6 @@ export default function TenantSelection() {
     setTenantSlug(generateSlug(name));
   };
 
-  // Auto-redirect effect
-  useEffect(() => {
-    if (userTenants.length === 1 && !showCreateForm && !redirecting) {
-      const singleTenant = userTenants[0];
-      if (singleTenant) {
-        setRedirecting(true);
-        handleSelectTenant(singleTenant);
-      }
-    }
-  }, [userTenants, showCreateForm, redirecting]);
-
-  if (userTenants.length === 1 && !showCreateForm && !redirecting) {
-    return <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-      <div className="text-white">Redirecting to your business...</div>
-    </div>;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4 pb-20 lg:pb-0">

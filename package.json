@@ -71,7 +71,9 @@
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
     "vaul": "^1.1.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "pg": "^8.11.3",
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.3",

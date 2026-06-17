@@ -16,8 +16,36 @@ Modern POS + business terminal built with React 18, Vite, TypeScript, Supabase, 
 
 ## Install & Local Development
 
+### Option 1: Local Development (No Supabase Required)
+
+For development and testing without setting up Supabase:
+
 ```bash
 npm install
+cp .env.local .env
+npm run dev         # Vite dev server on http://localhost:5173
+```
+
+This uses local browser storage to mimic Supabase functionality. Perfect for development, testing, and demos.
+
+### Option 2: Docker Local Development
+
+Using Docker for containerized local development:
+
+```bash
+docker-compose up
+```
+
+The app will be available at http://localhost:5173
+
+### Option 3: Supabase Production Mode
+
+For production with Supabase backend:
+
+```bash
+npm install
+cp .env.example .env
+# Edit .env with your Supabase credentials
 npm run dev         # Vite dev server on http://localhost:5173
 ```
 

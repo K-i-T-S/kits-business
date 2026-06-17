@@ -9,69 +9,15 @@ import {
   BarChart3,
   Sparkles,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
-import { supabase } from '../utils/supabaseClient';
-import { getCurrentUserTenant } from '../utils/tenantManager';
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { products, sales, customers, currentEmployee, setCurrentTenant } = useApp();
-  const [checkingTenants, setCheckingTenants] = useState(true);
-
-  // Check if user has tenants and load context
-  useEffect(() => {
-    let cancelled = false;
-    const checkUserTenants = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && !cancelled) {
-        const { data: tenants } = await supabase
-          .from('tenant_user_details')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('user_active', true)
-          .eq('tenant_active', true);
-
-        if (cancelled) return;
-
-        if (!tenants || tenants.length === 0) {
-          navigate('/select-tenant');
-          return;
-        }
-
-        // Set current tenant context from the first tenant found
-        if (tenants && tenants.length > 0) {
-          const firstTenant = tenants[0];
-          const tenantObj = {
-            id: firstTenant.tenant_id,
-            name: firstTenant.tenant_name,
-            slug: firstTenant.tenant_slug,
-            userRole: firstTenant.user_role,
-            settings: firstTenant.settings || {},
-          };
-          setCurrentTenant(tenantObj);
-        }
-      }
-      if (!cancelled) {
-        setCheckingTenants(false);
-      }
-    };
-    checkUserTenants();
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate, setCurrentTenant]);
-
-  if (checkingTenants) {
-    return <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-      <div className="text-white">Loading...</div>
-    </div>;
-  }
+  const { products, sales, customers, currentEmployee } = useApp();
 
   const totalProducts = products?.reduce((acc, p) => acc + (p.variants?.length || 0), 0) || 0;
   const totalStock = products?.reduce(

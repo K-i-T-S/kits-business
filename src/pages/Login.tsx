@@ -69,10 +69,8 @@ export default function Login({ onLogin }: LoginProps) {
 
         toast.success('Welcome back!');
 
-        // Use programmatic navigation instead of relying on onLogin prop
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 500);
+        // Navigate to tenant selection
+        navigate('/tenant-selection');
 
         // Still call onLogin if provided for backward compatibility
         if (onLogin) {

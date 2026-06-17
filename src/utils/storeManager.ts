@@ -4,13 +4,10 @@ import { supabase } from './supabaseClient';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL');
-}
+const useLocalMode = import.meta.env.VITE_USE_LOCAL_MODE === 'true';
 
 // Service role client for admin operations
-export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
+export const supabaseAdmin = (!useLocalMode && supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -19,6 +16,9 @@ export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supa
 
 // Store management functions
 export async function createStore(name: string, code: string, address?: string, phone?: string, email?: string) {
+  if (useLocalMode) {
+    return { id: 'local-store', name, code, address, phone, email };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -35,6 +35,9 @@ export async function createStore(name: string, code: string, address?: string, 
 }
 
 export async function getStoresByTenant(tenantId: string) {
+  if (useLocalMode) {
+    return [{ id: 'local-store', name: 'Local Store', code: 'LOCAL', is_active: true }];
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -58,6 +61,9 @@ export async function updateStore(storeId: string, updates: {
   is_active?: boolean;
   settings?: any;
 }) {
+  if (useLocalMode) {
+    return { id: storeId, ...updates };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -76,6 +82,9 @@ export async function updateStore(storeId: string, updates: {
 }
 
 export async function deleteStore(storeId: string) {
+  if (useLocalMode) {
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -88,6 +97,9 @@ export async function deleteStore(storeId: string) {
 }
 
 export async function assignUserToStore(storeId: string, userId: string, role: 'manager' | 'cashier' | 'viewer') {
+  if (useLocalMode) {
+    return { store_id: storeId, user_id: userId, role };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -106,6 +118,9 @@ export async function assignUserToStore(storeId: string, userId: string, role: '
 }
 
 export async function removeUserFromStore(storeId: string, userId: string) {
+  if (useLocalMode) {
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -119,6 +134,9 @@ export async function removeUserFromStore(storeId: string, userId: string) {
 }
 
 export async function getStoreUsers(storeId: string) {
+  if (useLocalMode) {
+    return [];
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -136,6 +154,9 @@ export async function getStoreUsers(storeId: string) {
 }
 
 export async function getUserStores(userId: string) {
+  if (useLocalMode) {
+    return [{ store: { id: 'local-store', name: 'Local Store', code: 'LOCAL', is_active: true } }];
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -154,6 +175,9 @@ export async function getUserStores(userId: string) {
 
 // Store context functions for API
 export async function setStoreContext(storeId: string) {
+  if (useLocalMode) {
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -165,6 +189,9 @@ export async function setStoreContext(storeId: string) {
 }
 
 export async function getCurrentStore() {
+  if (useLocalMode) {
+    return { id: 'local-store', name: 'Local Store', code: 'LOCAL' };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }

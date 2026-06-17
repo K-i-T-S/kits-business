@@ -4,13 +4,10 @@ import { supabase } from './supabaseClient';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL');
-}
+const useLocalMode = import.meta.env.VITE_USE_LOCAL_MODE === 'true';
 
 // Service role client for admin operations
-export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
+export const supabaseAdmin = (!useLocalMode && supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -26,6 +23,10 @@ export async function logAudit(
   newValues?: any,
   metadata?: any,
 ) {
+  if (useLocalMode) {
+    console.warn('Audit logging is not available in local mode');
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -50,6 +51,10 @@ export async function logActivity(
   entityId?: string,
   metadata?: any,
 ) {
+  if (useLocalMode) {
+    console.warn('Activity logging is not available in local mode');
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -67,6 +72,10 @@ export async function logActivity(
 }
 
 export async function logUserLogin(userId: string) {
+  if (useLocalMode) {
+    console.warn('User login logging is not available in local mode');
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -79,6 +88,10 @@ export async function logUserLogin(userId: string) {
 }
 
 export async function logUserLogout(userId: string) {
+  if (useLocalMode) {
+    console.warn('User logout logging is not available in local mode');
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -91,6 +104,10 @@ export async function logUserLogout(userId: string) {
 }
 
 export async function logTenantSwitch(tenantId: string, oldTenantId?: string) {
+  if (useLocalMode) {
+    console.warn('Tenant switch logging is not available in local mode');
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -104,6 +121,10 @@ export async function logTenantSwitch(tenantId: string, oldTenantId?: string) {
 }
 
 export async function logStoreSwitch(storeId: string, oldStoreId?: string) {
+  if (useLocalMode) {
+    console.warn('Store switch logging is not available in local mode');
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -122,6 +143,10 @@ export async function logSecurityEvent(
   severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
   metadata?: any,
 ) {
+  if (useLocalMode) {
+    console.warn('Security event logging is not available in local mode');
+    return;
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -143,6 +168,10 @@ export async function getActivityFeed(
   limit: number = 50,
   offset: number = 0,
 ) {
+  if (useLocalMode) {
+    console.warn('Activity feed is not available in local mode');
+    return [];
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -173,6 +202,10 @@ export async function getAuditLogs(
   limit: number = 100,
   offset: number = 0,
 ) {
+  if (useLocalMode) {
+    console.warn('Audit logs are not available in local mode');
+    return [];
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -219,6 +252,10 @@ export async function getSecurityEvents(
   severity?: 'low' | 'medium' | 'high' | 'critical',
   hours: number = 24,
 ) {
+  if (useLocalMode) {
+    console.warn('Security events are not available in local mode');
+    return [];
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
@@ -250,6 +287,14 @@ export async function getUserActivitySummary(
   userId: string,
   days: number = 30,
 ) {
+  if (useLocalMode) {
+    console.warn('User activity summary is not available in local mode');
+    return {
+      totalActivities: 0,
+      summary: {},
+      recentActivities: [],
+    };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }

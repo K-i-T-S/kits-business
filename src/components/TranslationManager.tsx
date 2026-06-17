@@ -13,7 +13,7 @@ import {
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useTranslationManager } from '../contexts/TranslationContext';
+import { useTranslationManager } from '../context/TranslationContext';
 import { supportedLanguages } from '../i18n';
 
 import { Badge } from './ui/badge';

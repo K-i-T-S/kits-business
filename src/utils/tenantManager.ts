@@ -2,13 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL');
-}
+const useLocalMode = import.meta.env.VITE_USE_LOCAL_MODE === 'true';
 
 // Service role client for admin operations (optional for tenant management)
-export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
+export const supabaseAdmin = (!useLocalMode && supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -17,6 +14,9 @@ export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supa
 
 // Tenant management functions
 export async function createTenant(name: string, slug: string, ownerUserId: string, settings = {}) {
+  if (useLocalMode) {
+    return { id: 'local-tenant', name, slug, ownerUserId, settings };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }
@@ -32,6 +32,9 @@ export async function createTenant(name: string, slug: string, ownerUserId: stri
 }
 
 export async function addUserToTenant(tenantId: string, userId: string, role: 'owner' | 'manager' | 'cashier' | 'viewer') {
+  if (useLocalMode) {
+    return { success: true };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }
@@ -46,6 +49,9 @@ export async function addUserToTenant(tenantId: string, userId: string, role: 'o
 }
 
 export async function removeUserFromTenant(tenantId: string, userId: string) {
+  if (useLocalMode) {
+    return { success: true };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }
@@ -59,6 +65,9 @@ export async function removeUserFromTenant(tenantId: string, userId: string) {
 }
 
 export async function getCurrentUserTenant() {
+  if (useLocalMode) {
+    return { id: 'local-tenant', name: 'Local Business', slug: 'local' };
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }
@@ -69,6 +78,9 @@ export async function getCurrentUserTenant() {
 }
 
 export async function checkUserRole(requiredRole: string) {
+  if (useLocalMode) {
+    return true; // Grant all permissions in local mode
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }
@@ -81,6 +93,9 @@ export async function checkUserRole(requiredRole: string) {
 }
 
 export async function getTenantUsers(tenantId: string) {
+  if (useLocalMode) {
+    return [];
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }
@@ -95,6 +110,9 @@ export async function getTenantUsers(tenantId: string) {
 }
 
 export async function getTenantsByUser(userId: string) {
+  if (useLocalMode) {
+    return [{ id: 'local-tenant', name: 'Local Business', slug: 'local' }];
+  }
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured. Please set VITE_SUPABASE_SERVICE_ROLE_KEY.');
   }

@@ -32,34 +32,29 @@ export default function Login({ onLogin }: LoginProps) {
 
     try {
       if (isSignup) {
-        // Sign up with Supabase
         const { error: signupError, data } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: {
-              name: businessName,
-              role: 'owner',
-              commission: 5,
-            },
+            data: { name: businessName, role: 'owner' },
           },
         });
 
         if (signupError) throw signupError;
 
-        // Auto sign in after signup
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (signInError) throw signInError;
-
-        toast.success('Account created! Please sign in to continue');
-        setIsSignup(false);
-        setError('');
+        if (data.session) {
+          // Email confirmation not required — signed in immediately
+          toast.success('Account created! Setting up your workspace…');
+          navigate('/tenant-selection');
+          if (onLogin) onLogin();
+        } else {
+          // Email confirmation required
+          toast.success('Almost there!', {
+            description: 'Check your email and click the confirmation link, then sign in.',
+          });
+          setIsSignup(false);
+        }
       } else {
-        // Sign in with Supabase
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -68,20 +63,21 @@ export default function Login({ onLogin }: LoginProps) {
         if (signInError) throw signInError;
 
         toast.success('Welcome back!');
-
-        // Navigate to tenant selection
         navigate('/tenant-selection');
-
-        // Still call onLogin if provided for backward compatibility
-        if (onLogin) {
-          onLogin();
-        }
+        if (onLogin) onLogin();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auth error:', err);
-      const message = err?.message || 'Authentication failed';
+      let message = 'Authentication failed. Please try again.';
+      if (err && typeof err === 'object') {
+        const e = err as Record<string, unknown>;
+        message = (e.message as string)
+          || (e.error_description as string)
+          || (e.error as string)
+          || message;
+      }
       setError(message);
-      toast.error('Authentication failed', { description: message });
+      toast.error(isSignup ? 'Sign up failed' : 'Sign in failed', { description: message });
     } finally {
       setLoading(false);
     }
@@ -194,7 +190,7 @@ export default function Login({ onLogin }: LoginProps) {
                 </div>
 
                 {error && (
-                  <div className="rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-600" data-testid="error-message">
+                  <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-300" data-testid="error-message">
                     {error}
                   </div>
                 )}

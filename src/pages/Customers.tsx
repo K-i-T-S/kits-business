@@ -448,7 +448,6 @@ export default function Customers() {
                 updatedAt: new Date().toISOString(),
               }))}
               segments={[]}
-              campaigns={[]}
               dateRange={{
                 start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
                 end: new Date().toISOString(),

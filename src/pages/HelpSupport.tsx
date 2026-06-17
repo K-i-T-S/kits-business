@@ -1,6 +1,7 @@
-import { HelpCircle, Search, Book, MessageCircle, Mail, Phone, ExternalLink, Star, Clock, CheckCircle, X, Send, FileText, Video, Download, ChevronDown, Eye } from 'lucide-react';
+import { HelpCircle, Search, Book, MessageCircle, Mail, Phone, ExternalLink, Star, Clock, CheckCircle, X, Send, FileText, Video, Download, ChevronDown, Eye, PlayCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { BRAND } from '../constants/branding';
 import { useApp } from '../context/AppContext';
@@ -88,14 +89,13 @@ export default function HelpSupport() {
     },
   ]);
 
-  const [tutorials, setTutorials] = useState([
+  const [tutorials] = useState([
     {
       id: 1,
       title: 'Getting Started with Inventory Management',
       description: 'Learn the basics of managing your inventory, adding products, and tracking stock levels.',
       duration: '5 min',
       level: 'Beginner',
-      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 2,
@@ -103,7 +103,6 @@ export default function HelpSupport() {
       description: 'Complete guide to using the Point of Sale system, including payment processing and receipts.',
       duration: '8 min',
       level: 'Beginner',
-      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 3,
@@ -111,7 +110,6 @@ export default function HelpSupport() {
       description: 'Tips and tricks for effectively managing customer relationships and data.',
       duration: '6 min',
       level: 'Intermediate',
-      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 4,
@@ -119,7 +117,6 @@ export default function HelpSupport() {
       description: 'How to create comprehensive reports and use data to make business decisions.',
       duration: '10 min',
       level: 'Intermediate',
-      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 5,
@@ -127,7 +124,6 @@ export default function HelpSupport() {
       description: 'Setting up employee accounts and managing access levels and permissions.',
       duration: '7 min',
       level: 'Advanced',
-      thumbnail: '/api/placeholder/300/200',
     },
     {
       id: 6,
@@ -135,7 +131,6 @@ export default function HelpSupport() {
       description: 'Customizing the system to meet your specific business needs and preferences.',
       duration: '12 min',
       level: 'Advanced',
-      thumbnail: '/api/placeholder/300/200',
     },
   ]);
 
@@ -193,24 +188,21 @@ export default function HelpSupport() {
 
   const handleTicketSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supportTicket.subject || !supportTicket.description) {
+      toast.error('Please fill in subject and description');
+      return;
+    }
     setLoading(true);
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    setTicketSubmitted(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     setLoading(false);
-
-    // Reset form after 3 seconds
+    setTicketSubmitted(true);
+    // Open mailto as fallback so message is never lost
+    const mailto = `mailto:kits.tech.co@gmail.com?subject=${encodeURIComponent(`[Support] ${supportTicket.subject}`)}&body=${encodeURIComponent(`Category: ${supportTicket.category}\nPriority: ${supportTicket.priority}\n\n${supportTicket.description}`)}`;
+    window.open(mailto, '_blank');
     setTimeout(() => {
       setTicketSubmitted(false);
-      setSupportTicket({
-        subject: '',
-        category: 'general',
-        priority: 'medium',
-        description: '',
-      });
-    }, 3000);
+      setSupportTicket({ subject: '', category: 'general', priority: 'medium', description: '' });
+    }, 4000);
   };
 
   const handleFaqHelpful = async (faqId: number, helpful: boolean) => {
@@ -400,9 +392,13 @@ export default function HelpSupport() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {tutorials.map((tutorial) => (
                     <div key={tutorial.id} className="border border-white/10 rounded-lg overflow-hidden hover:border-white/20 transition-colors">
-                      <div className="aspect-video bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-                        <Video className="h-12 w-12 text-white/60" />
-                      </div>
+                      <button
+                        className="w-full aspect-video bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex flex-col items-center justify-center gap-2 group"
+                        onClick={() => toast.info('Video coming soon', { description: 'We\'re preparing tutorial videos. Check back soon!' })}
+                      >
+                        <PlayCircle className="h-12 w-12 text-white/50 group-hover:text-white/80 transition-colors" />
+                        <span className="text-xs text-white/40 group-hover:text-white/60 transition-colors">Coming soon</span>
+                      </button>
                       <div className="p-4">
                         <h3 className="text-white font-medium mb-2">{tutorial.title}</h3>
                         <p className="text-white/60 text-sm mb-4">{tutorial.description}</p>
@@ -419,7 +415,10 @@ export default function HelpSupport() {
                             {tutorial.level}
                           </span>
                         </div>
-                        <button className="w-full mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
+                        <button
+                          className="w-full mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+                          onClick={() => toast.info('Video coming soon', { description: 'We\'re preparing tutorial videos. Check back soon!' })}
+                        >
                           Watch Tutorial
                         </button>
                       </div>
@@ -530,8 +529,11 @@ export default function HelpSupport() {
                     </div>
                     <p className="text-white/60 mb-4">Complete guide to using all features of the Kits business management system.</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-white/60">PDF • 2.4 MB</span>
-                      <button className="flex items-center gap-2 px-3 py-1 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
+                      <span className="text-sm text-white/60">Coming soon</span>
+                      <button
+                        onClick={() => toast.info('Coming soon', { description: 'The user manual is being prepared.' })}
+                        className="flex items-center gap-2 px-3 py-1 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+                      >
                         <Download className="h-3 w-3" />
                         Download
                       </button>
@@ -546,7 +548,10 @@ export default function HelpSupport() {
                     <p className="text-white/60 mb-4">Technical documentation for developers integrating with our API.</p>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-white/60">Online • Interactive</span>
-                      <button className="flex items-center gap-2 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                      <button
+                        onClick={() => toast.info('Coming soon', { description: 'API documentation is being prepared.' })}
+                        className="flex items-center gap-2 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      >
                         <ExternalLink className="h-3 w-3" />
                         View Online
                       </button>
@@ -560,8 +565,11 @@ export default function HelpSupport() {
                     </div>
                     <p className="text-white/60 mb-4">Collection of video tutorials and walkthroughs for all major features.</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-white/60">25 videos • 2.5 hours</span>
-                      <button className="flex items-center gap-2 px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                      <span className="text-sm text-white/60">Coming soon</span>
+                      <button
+                        onClick={() => toast.info('Coming soon', { description: 'Tutorial videos are being recorded.' })}
+                        className="flex items-center gap-2 px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                      >
                         <Video className="h-3 w-3" />
                         Watch Now
                       </button>
@@ -575,8 +583,11 @@ export default function HelpSupport() {
                     </div>
                     <p className="text-white/60 mb-4">Get up and running quickly with our step-by-step setup guide.</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-white/60">PDF • 856 KB</span>
-                      <button className="flex items-center gap-2 px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">
+                      <span className="text-sm text-white/60">Coming soon</span>
+                      <button
+                        onClick={() => toast.info('Coming soon', { description: 'The quick start guide is being prepared.' })}
+                        className="flex items-center gap-2 px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+                      >
                         <Download className="h-3 w-3" />
                         Download
                       </button>

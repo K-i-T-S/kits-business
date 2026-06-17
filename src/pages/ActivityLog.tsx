@@ -30,138 +30,7 @@ export default function ActivityLog() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
 
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([
-    {
-      id: 1,
-      timestamp: '2024-01-15 15:45:23',
-      userId: 'user_123',
-      userName: 'John Doe',
-      action: 'Login',
-      category: 'user',
-      details: 'User logged in successfully from IP 192.168.1.100',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success',
-      severity: 'low',
-    },
-    {
-      id: 2,
-      timestamp: '2024-01-15 15:30:12',
-      userId: 'system',
-      userName: 'System',
-      action: 'Backup Completed',
-      category: 'system',
-      details: 'Automatic backup completed successfully. File size: 2.4MB',
-      ipAddress: '127.0.0.1',
-      userAgent: 'System Scheduler',
-      status: 'success',
-      severity: 'low',
-    },
-    {
-      id: 3,
-      timestamp: '2024-01-15 15:15:45',
-      userId: 'user_456',
-      userName: 'Jane Smith',
-      action: 'Low Stock Alert',
-      category: 'inventory',
-      details: 'Product "Laptop Dell XPS 15" is below minimum stock level (5 units remaining)',
-      ipAddress: '192.168.1.105',
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      status: 'warning',
-      severity: 'medium',
-    },
-    {
-      id: 4,
-      timestamp: '2024-01-15 14:30:00',
-      userId: 'user_789',
-      userName: 'Mike Johnson',
-      action: 'New Order',
-      category: 'sales',
-      details: 'Order #1234 created for $1,250.00 - Customer: ABC Corporation',
-      ipAddress: '192.168.1.102',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success',
-      severity: 'medium',
-    },
-    {
-      id: 5,
-      timestamp: '2024-01-15 14:15:22',
-      userId: 'user_123',
-      userName: 'John Doe',
-      action: 'Password Changed',
-      category: 'user',
-      details: 'User changed their password successfully',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success',
-      severity: 'medium',
-    },
-    {
-      id: 6,
-      timestamp: '2024-01-15 13:45:18',
-      userId: 'system',
-      userName: 'System',
-      action: 'Payment Failed',
-      category: 'sales',
-      details: 'Payment processing failed for Order #1233 - Error: Insufficient funds',
-      ipAddress: '127.0.0.1',
-      userAgent: 'Payment Gateway',
-      status: 'error',
-      severity: 'high',
-    },
-    {
-      id: 7,
-      timestamp: '2024-01-15 13:30:45',
-      userId: 'user_456',
-      userName: 'Jane Smith',
-      action: 'Product Added',
-      category: 'inventory',
-      details: 'New product "iPhone 15 Pro" added to inventory - Quantity: 50',
-      ipAddress: '192.168.1.105',
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      status: 'success',
-      severity: 'low',
-    },
-    {
-      id: 8,
-      timestamp: '2024-01-15 13:15:30',
-      userId: 'user_789',
-      userName: 'Mike Johnson',
-      action: 'Customer Updated',
-      category: 'customer',
-      details: 'Customer information updated for "ABC Corporation"',
-      ipAddress: '192.168.1.102',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success',
-      severity: 'low',
-    },
-    {
-      id: 9,
-      timestamp: '2024-01-15 12:45:15',
-      userId: 'user_123',
-      userName: 'John Doe',
-      action: 'Settings Modified',
-      category: 'settings',
-      details: 'System settings updated - Email configuration changed',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success',
-      severity: 'medium',
-    },
-    {
-      id: 10,
-      timestamp: '2024-01-15 12:30:00',
-      userId: 'system',
-      userName: 'System',
-      action: 'Database Error',
-      category: 'system',
-      details: 'Database connection timeout - Retrying connection...',
-      ipAddress: '127.0.0.1',
-      userAgent: 'Database Monitor',
-      status: 'error',
-      severity: 'critical',
-    },
-  ]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
 
   const categories = [
     { value: 'all', label: 'All Categories', icon: FileText },
@@ -464,9 +333,12 @@ export default function ActivityLog() {
           </div>
 
           {filteredLogs.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-16">
               <FileText className="h-12 w-12 text-white/20 mx-auto mb-4" />
-              <p className="text-white/60">No activity logs found matching your criteria</p>
+              <p className="text-white font-medium mb-2">No activity logs yet</p>
+              <p className="text-white/50 text-sm max-w-sm mx-auto">
+                Activity logging will record business events — sales, inventory changes, logins, and more — as they happen.
+              </p>
             </div>
           )}
         </div>

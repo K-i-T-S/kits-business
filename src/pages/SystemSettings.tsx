@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { BRAND } from '../constants/branding';
 import { useApp } from '../context/AppContext';
@@ -101,18 +102,21 @@ export default function SystemSettings() {
     apiKey: '',
   });
 
-  const [backupHistory, setBackupHistory] = useState([
-    { id: 1, date: '2024-01-15 14:30', size: '2.4 MB', type: 'Automatic', status: 'completed' },
-    { id: 2, date: '2024-01-14 14:30', size: '2.3 MB', type: 'Automatic', status: 'completed' },
-    { id: 3, date: '2024-01-13 14:30', size: '2.3 MB', type: 'Manual', status: 'completed' },
-  ]);
+  const [backupHistory, setBackupHistory] = useState<Array<{ id: number; date: string; size: string; type: string; status: string }>>([]);
 
-  const [systemLogs, setSystemLogs] = useState([
-    { id: 1, timestamp: '2024-01-15 15:45:23', level: 'info', message: 'System backup completed successfully', user: 'System' },
-    { id: 2, timestamp: '2024-01-15 15:30:12', level: 'warning', message: 'High memory usage detected', user: 'System' },
-    { id: 3, timestamp: '2024-01-15 15:15:45', level: 'error', message: 'Failed to send email notification', user: 'System' },
-    { id: 4, timestamp: '2024-01-15 14:30:00', level: 'info', message: 'User John Doe logged in', user: 'John Doe' },
-  ]);
+  const [systemLogs] = useState<Array<{ id: number; timestamp: string; level: string; message: string; user: string }>>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('kits_system_settings');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as typeof settings;
+        setSettings(prev => ({ ...prev, ...parsed }));
+      } catch {
+        // ignore malformed localStorage data
+      }
+    }
+  }, []);
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
@@ -125,7 +129,7 @@ export default function SystemSettings() {
     { id: 'api', label: 'API', icon: Settings },
   ];
 
-  const handleSettingChange = (category: string, field: string, value: any) => {
+  const handleSettingChange = (_category: string, field: keyof typeof settings, value: string | number | boolean) => {
     setSettings(prev => ({
       ...prev,
       [field]: value,
@@ -136,19 +140,16 @@ export default function SystemSettings() {
     try {
       setSaveStatus('saving');
       announce('Saving settings...', 'polite');
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
+      localStorage.setItem('kits_system_settings', JSON.stringify(settings));
       setSaveStatus('success');
       announce('Settings saved successfully!', 'polite');
-
-      // Reset status after 3 seconds
+      toast.success('Settings saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (error) {
       console.error('Failed to save settings:', error);
       setSaveStatus('error');
       announce('Failed to save settings. Please try again.', 'assertive');
+      toast.error('Failed to save settings');
     }
   };
 
@@ -175,8 +176,8 @@ export default function SystemSettings() {
   };
 
   const handleRestore = (backupId: number) => {
-    // Handle restore logic
     log.info('Restoring backup', { backupId });
+    toast.info('Restore requested', { description: 'Contact your administrator to restore from this backup.' });
   };
 
   const handleDeleteBackup = (backupId: number) => {

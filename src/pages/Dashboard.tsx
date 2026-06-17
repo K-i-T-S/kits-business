@@ -97,13 +97,14 @@ export default function Dashboard() {
           <Sparkles className="pointer-events-none absolute right-8 top-6 h-16 w-16 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="stat-chip bg-white/10 text-white/80">Executive command</p>
+              <p className="text-xs uppercase tracking-wider px-3 py-1 rounded-full bg-white/10 text-white/80 inline-block">Operations dashboard</p>
               <h1 className="mt-3 text-3xl font-semibold">
                 Welcome back, {currentEmployee?.name ?? 'Operator'}
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-white/80">
-                Swap this paragraph with your daily leadership note or operations creed. Everything
-                here is optimized for touch, so you can run the business from anywhere.
+                {todaySales.length > 0
+                  ? `${todaySales.length} transaction${todaySales.length !== 1 ? 's' : ''} completed today · $${todayRevenue.toFixed(2)} in revenue`
+                  : 'No transactions recorded yet today. Start a new sale from the POS terminal.'}
               </p>
             </div>
             <div className="rounded-3xl border border-white/25 bg-white/10 px-6 py-4 text-center text-white/90">
@@ -138,18 +139,18 @@ export default function Dashboard() {
         </section>
 
         {lowStockItems > 0 && (
-          <section className="glass-panel border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-5">
+          <section className="glass-panel border border-amber-500/30 bg-amber-500/10 p-5">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-3 text-amber-600">
+              <div className="flex items-center gap-3 text-amber-400">
                 <AlertTriangle className="h-5 w-5" />
                 <p className="text-sm font-semibold uppercase tracking-[0.2em]">
                   Low stock detected
                 </p>
               </div>
-              <p className="text-sm text-slate-700">
+              <p className="text-sm text-white/70">
                 {lowStockItems} variant{lowStockItems > 1 ? 's are' : ' is'} approaching the reorder
                 threshold.{' '}
-                <Link to="/inventory" className="text-amber-700 underline">
+                <Link to="/inventory" className="text-amber-400 underline">
                   Review inventory
                 </Link>
               </p>

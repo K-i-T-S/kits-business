@@ -24,6 +24,28 @@ interface CartItem {
   quantity: number;
 }
 
+interface ReceiptData {
+  id: string;
+  date: string;
+  items: Array<{
+    productId: string;
+    variantId: string;
+    productName: string;
+    quantity: number;
+    price: number;
+    cost: number;
+  }>;
+  subtotal: number;
+  tax: number;
+  discounts: number;
+  tips: number;
+  total: number;
+  paymentMethod: 'cash' | 'card';
+  payments: SplitPayment[];
+  appliedCoupon: DiscountCoupon | null;
+  loyaltyPointsRedeemed: number;
+}
+
 export default function POS() {
   const { products, customers, currentEmployee, addSale, updateCustomer } = useApp();
   const [barcode, setBarcode] = useState('');
@@ -31,7 +53,7 @@ export default function POS() {
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [showReceipt, setShowReceipt] = useState(false);
-  const [lastSale, setLastSale] = useState<any>(null);
+  const [lastSale, setLastSale] = useState<ReceiptData | null>(null);
 
   // Enhanced POS states
   const [showSplitPayment, setShowSplitPayment] = useState(false);
@@ -182,23 +204,41 @@ export default function POS() {
     const tips = calculateTips();
     const total = calculateTotal();
 
-    const sale = {
+    const primaryMethod: 'cash' | 'card' = (() => {
+      const m = payments[0]?.method;
+      if (payments.length === 1 && (m === 'cash' || m === 'card')) return m;
+      return 'cash';
+    })();
+
+    const saleItems = cart.map(item => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      productName: item.productName,
+      quantity: item.quantity,
+      price: item.price,
+      cost: item.cost,
+    }));
+
+    const sale: Sale = {
       id: `sale_${Date.now()}`,
       date: new Date().toISOString(),
-      items: cart.map(item => ({
-        productId: item.productId,
-        variantId: item.variantId,
-        productName: item.productName,
-        quantity: item.quantity,
-        price: item.price,
-        cost: item.cost,
-      })),
+      items: saleItems,
       subtotal,
       total,
-      paymentMethod: 'cash' as const,
+      paymentMethod: primaryMethod,
       employeeId: currentEmployee?.id || '',
       ...(selectedCustomer ? { customerId: selectedCustomer } : {}),
-    } satisfies Sale;
+    };
+
+    const receiptData: ReceiptData = {
+      ...sale,
+      tax,
+      discounts,
+      tips,
+      payments,
+      appliedCoupon,
+      loyaltyPointsRedeemed,
+    };
 
     try {
       await addSale(sale);
@@ -214,7 +254,7 @@ export default function POS() {
         }
       }
 
-      setLastSale(sale);
+      setLastSale(receiptData);
       setShowReceipt(true);
       setCart([]);
       setBarcode('');
@@ -247,8 +287,9 @@ export default function POS() {
             <p className="text-xs uppercase tracking-[0.3em] text-white/80">Point of sale</p>
             <h1 className="mt-2 text-3xl font-semibold text-white">Live sales cockpit</h1>
             <p className="mt-2 max-w-2xl text-sm text-white/80">
-              Run fast, touch-friendly checkouts with barcode search, loyalty linking, and smart
-              receipt handling. Replace this copy with your in-store experience promise.
+              {cart.length > 0
+                ? `${cart.length} item${cart.length !== 1 ? 's' : ''} in cart · $${calculateTotal().toFixed(2)} total`
+                : 'Scan a barcode or select a product to begin a new transaction.'}
             </p>
           </div>
           <div className="rounded-3xl border border-white/50 bg-white/20 px-6 py-4 text-right text-xs uppercase tracking-[0.3em] text-white/80">
@@ -559,7 +600,8 @@ export default function POS() {
           });
         }}
         onSaveTemplate={(template) => {
-          // TODO: Save to API
+          localStorage.setItem('pos_receipt_template', JSON.stringify(template));
+          setSelectedReceiptTemplate(template);
           toast.success('Receipt template saved');
         }}
         onCancel={() => setShowReceiptCustomization(false)}
@@ -576,7 +618,7 @@ export default function POS() {
             </div>
 
             <div className="mt-6 space-y-3 rounded-2xl border border-white/30 bg-white/20 px-4 py-3 text-sm">
-              {(lastSale?.items || [])?.map((item: any, index: number) => (
+              {(lastSale?.items || []).map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <span className="text-white/80">
                     {item.productName} x{item.quantity}
@@ -614,7 +656,7 @@ export default function POS() {
               <div className="flex items-center justify-between">
                 <span className="text-white/60">Payment</span>
                 <span className="capitalize text-white">
-                  {lastSale.payments ? lastSale.payments.map((p: any) => p.method).join(', ') : lastSale.paymentMethod}
+                  {lastSale.payments.length > 0 ? lastSale.payments.map(p => p.method).join(', ') : lastSale.paymentMethod}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -629,7 +671,7 @@ export default function POS() {
                   <span className="text-emerald-300">{lastSale.appliedCoupon.code}</span>
                 </div>
               )}
-              {lastSale.loyaltyPointsRedeemed && (
+              {lastSale.loyaltyPointsRedeemed > 0 && (
                 <div className="flex items-center justify-between">
                   <span className="text-amber-300">Points Redeemed</span>
                   <span className="text-amber-300">{lastSale.loyaltyPointsRedeemed}</span>

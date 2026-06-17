@@ -1,9 +1,10 @@
-import { User, Mail, Phone, Calendar, Shield, Camera, Save, X, Eye, EyeOff, Key, Globe, Bell, Palette } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { User, Mail, Phone, Shield, Camera, Save, X, Eye, EyeOff, Key, Bell, Palette, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { BRAND } from '../constants/branding';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../utils/supabaseClient';
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
@@ -14,18 +15,19 @@ export default function ProfileSettings() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
+  const nameParts = currentEmployee?.name?.split(' ') ?? [];
   const [formData, setFormData] = useState({
-    firstName: currentEmployee?.name?.split(' ')[0] || '',
-    lastName: currentEmployee?.name?.split(' ')[1] || '',
-    email: currentEmployee?.email || '',
-    phone: '+961 81 290 662',
-    role: currentEmployee?.role || 'Staff',
-    department: 'IT Solutions',
-    bio: 'Passionate about technology and helping businesses succeed.',
+    firstName: nameParts[0] ?? '',
+    lastName: nameParts.slice(1).join(' ') ?? '',
+    email: currentEmployee?.email ?? '',
+    phone: '',
+    role: currentEmployee?.role ?? '',
+    department: '',
+    bio: '',
     timezone: 'Asia/Beirut',
     language: 'English',
-    dateFormat: 'MM/DD/YYYY',
-    timeFormat: '12-hour',
+    dateFormat: 'DD/MM/YYYY',
+    timeFormat: '24-hour',
     notifications: {
       email: true,
       push: true,
@@ -44,7 +46,7 @@ export default function ProfileSettings() {
 
   const [avatarUrl, setAvatarUrl] = useState('');
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: keyof typeof formData, value: string | boolean | Record<string, boolean>) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -70,22 +72,66 @@ export default function ProfileSettings() {
 
   const handleSaveProfile = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLoading(false);
-    // Show success message
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          phone: formData.phone,
+          bio: formData.bio,
+          department: formData.department,
+          timezone: formData.timezone,
+          language: formData.language,
+          dateFormat: formData.dateFormat,
+          timeFormat: formData.timeFormat,
+          theme: formData.theme,
+          accentColor: formData.accentColor,
+          notifications: formData.notifications,
+        },
+      });
+      if (error) throw error;
+      toast.success('Profile saved successfully');
+    } catch (err) {
+      toast.error('Failed to save profile', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePasswordUpdate = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      // Show error message
+      toast.error('New passwords do not match');
+      return;
+    }
+    if (passwordData.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
       return;
     }
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLoading(false);
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    try {
+      // Re-authenticate first
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: passwordData.currentPassword,
+      });
+      if (signInError) throw new Error('Current password is incorrect');
+
+      const { error } = await supabase.auth.updateUser({ password: passwordData.newPassword });
+      if (error) throw error;
+      toast.success('Password updated successfully');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      toast.error('Failed to update password', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tabs = [
@@ -254,7 +300,7 @@ export default function ProfileSettings() {
                       className="flex items-center gap-2 px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
-                      {loading ? 'Saving...' : 'Save Changes'}
+                      {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : 'Save Changes'}
                     </button>
                   </div>
                 </div>
@@ -335,7 +381,7 @@ export default function ProfileSettings() {
                             className="flex items-center gap-2 px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
                           >
                             <Key className="h-4 w-4" />
-                            {loading ? 'Updating...' : 'Update Password'}
+                            {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Updating...</> : 'Update Password'}
                           </button>
                         </div>
                       </div>
@@ -452,7 +498,7 @@ export default function ProfileSettings() {
                       className="flex items-center gap-2 px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
-                      {loading ? 'Saving...' : 'Save Preferences'}
+                      {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : 'Save Preferences'}
                     </button>
                   </div>
                 </div>
@@ -558,7 +604,7 @@ export default function ProfileSettings() {
                       className="flex items-center gap-2 px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
-                      {loading ? 'Saving...' : 'Save Preferences'}
+                      {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : 'Save Preferences'}
                     </button>
                   </div>
                 </div>

@@ -4,11 +4,9 @@ import { toast } from 'sonner';
 
 import { DataValidator } from '../utils/dataValidation';
 import { log } from '../utils/logger';
-import { useOptimisticUpdates, useOptimisticStockUpdates } from '../utils/optimisticUpdates';
-import { OperationQueue, StockUpdateLock, ConcurrentOperationGuard } from '../utils/raceConditionPrevention';
-import { api, supabase } from '../utils/supabaseClient';
+import { StockUpdateLock, OperationQueue } from '../utils/raceConditionPrevention';
+import { supabase } from '../utils/supabaseClient';
 import { getCurrentUserTenant } from '../utils/tenantManager';
-import { TransactionManager } from '../utils/transactionManager';
 
 export interface Product {
   id?: string;
@@ -23,7 +21,7 @@ export interface Product {
 
 export interface ProductVariant {
   id: string;
-  attributes: Record<string, string>; // color, size, capacity, type, etc.
+  attributes: Record<string, string>;
   cost: number;
   costHistory: CostEntry[];
   price: number;
@@ -129,6 +127,133 @@ interface AppContextType {
   hasSession: boolean;
 }
 
+// ── DB row shapes ─────────────────────────────────────────────────────────────
+
+interface DbProduct {
+  id: string;
+  name: string;
+  barcode: string | null;
+  sku: string | null;
+  category: string | null;
+  supplier?: string | null;
+  validity_date: string | null;
+  price: number;
+  cost: number;
+  stock_quantity: number;
+  min_stock_level: number;
+}
+
+interface DbCustomer {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  debt_balance: number;
+  total_purchases: number;
+  visit_count: number;
+  last_purchase_date: string | null;
+  created_at: string;
+}
+
+interface DbEmployee {
+  id: string;
+  name: string;
+  email: string | null;
+  role: string;
+  commission_rate: number;
+  is_active: boolean;
+}
+
+interface DbSaleItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
+interface DbSale {
+  id: string;
+  sale_date: string;
+  subtotal: number;
+  total_amount: number;
+  payment_method: string | null;
+  employee_id: string | null;
+  customer_id: string | null;
+  sale_items: DbSaleItem[];
+}
+
+// ── Transformers ──────────────────────────────────────────────────────────────
+
+function dbProductToFrontend(p: DbProduct): Product {
+  return {
+    id: p.id,
+    name: p.name,
+    barcode: p.barcode ?? '',
+    sku: p.sku ?? '',
+    category: p.category ?? '',
+    supplier: p.supplier ?? '',
+    validityDate: p.validity_date ?? undefined,
+    variants: [{
+      id: `${p.id}-v0`,
+      attributes: {},
+      cost: p.cost,
+      costHistory: [],
+      price: p.price,
+      stock: p.stock_quantity,
+      reorderLevel: p.min_stock_level,
+    }],
+  };
+}
+
+function dbCustomerToFrontend(c: DbCustomer): Customer {
+  return {
+    id: c.id,
+    name: c.name,
+    phone: c.phone ?? '',
+    email: c.email ?? undefined,
+    debtBalance: c.debt_balance ?? 0,
+    totalPurchases: c.total_purchases,
+    visitCount: c.visit_count,
+    lastPurchaseDate: c.last_purchase_date ?? undefined,
+    createdAt: c.created_at,
+  };
+}
+
+function dbEmployeeToFrontend(e: DbEmployee): Employee {
+  return {
+    id: e.id,
+    name: e.name,
+    email: e.email ?? '',
+    role: e.role === 'owner' ? 'admin' : (e.role as 'manager' | 'cashier'),
+    commission: e.commission_rate,
+    totalSales: 0,
+    shifts: [],
+  };
+}
+
+function dbSaleToFrontend(s: DbSale): Sale {
+  return {
+    id: s.id,
+    date: s.sale_date,
+    subtotal: s.subtotal,
+    total: s.total_amount,
+    paymentMethod: (s.payment_method as 'cash' | 'card') ?? 'cash',
+    employeeId: s.employee_id ?? '',
+    customerId: s.customer_id ?? undefined,
+    items: (s.sale_items ?? []).map((item) => ({
+      productId: item.product_id,
+      variantId: `${item.product_id}-v0`,
+      productName: '',
+      quantity: item.quantity,
+      price: item.unit_price,
+      cost: 0,
+    })),
+  };
+}
+
+// ── Context ───────────────────────────────────────────────────────────────────
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -143,51 +268,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [hasSession, setHasSession] = useState(false);
 
   const loadData = useCallback(async () => {
+    if (!currentTenant) return;
+
+    setLoading(true);
     try {
-      setLoading(true);
-
-      if (!currentTenant) {
-        return;
-      }
-
-      // Initialize demo data if needed
-      await api.post('/init-demo', {});
-
-      // Load all data using API calls for consistency
       const [productsRes, salesRes, customersRes, employeesRes] = await Promise.all([
-        api.get('/products'),
-        api.get('/sales'),
-        api.get('/customers'),
-        api.get('/employees'),
+        supabase.from('products').select('*').eq('is_active', true).order('name'),
+        supabase.from('sales').select('*, sale_items(*)').order('sale_date', { ascending: false }).limit(500),
+        supabase.from('customers').select('*').order('name'),
+        supabase.from('employees').select('*').eq('is_active', true).order('name'),
       ]);
 
-      // Transform database products to frontend format
-      const transformedProducts = (productsRes.products || []).map((dbProduct: any) => ({
-        id: dbProduct.id,
-        name: dbProduct.name,
-        barcode: dbProduct.barcode || '',
-        sku: dbProduct.sku || '',
-        variants: dbProduct.variants || [{
-          id: `${dbProduct.id}-1`,
-          attributes: { size: 'Standard' },
-          cost: dbProduct.cost || 0,
-          costHistory: [],
-          price: dbProduct.price || 0,
-          stock: dbProduct.stock_quantity || 0,
-          reorderLevel: dbProduct.min_stock_level || 0,
-        }],
-        supplier: dbProduct.supplier || '',
-        category: dbProduct.category || '',
-        validityDate: dbProduct.validity_date || undefined,
-      }));
+      if (productsRes.error) throw productsRes.error;
+      if (salesRes.error) throw salesRes.error;
+      if (customersRes.error) throw customersRes.error;
+      if (employeesRes.error) throw employeesRes.error;
 
-      setProducts(transformedProducts);
-      setSales(salesRes.sales || []);
-      setCustomers(customersRes.customers || []);
-      setEmployees(employeesRes.employees || []);
+      const frontendProducts = (productsRes.data as DbProduct[]).map(dbProductToFrontend);
+      const frontendSales = (salesRes.data as DbSale[]).map(dbSaleToFrontend);
+      const frontendCustomers = (customersRes.data as DbCustomer[]).map(dbCustomerToFrontend);
+      const frontendEmployees = (employeesRes.data as DbEmployee[]).map(dbEmployeeToFrontend);
 
-      if (employeesRes.employees && employeesRes.employees.length > 0) {
-        setCurrentEmployee(employeesRes.employees[0]);
+      setProducts(frontendProducts);
+      setSales(frontendSales);
+      setCustomers(frontendCustomers);
+      setEmployees(frontendEmployees);
+
+      if (frontendEmployees.length > 0 && !currentEmployee) {
+        setCurrentEmployee(frontendEmployees[0] ?? null);
       }
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -198,9 +306,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [currentTenant?.id]);
+  }, [currentTenant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Watch Supabase auth and only load data when a session exists
   useEffect(() => {
     let isMounted = true;
 
@@ -211,7 +318,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const session = sessionResult?.data?.session;
         setHasSession(!!session);
         if (session) {
-          // Load tenant info first
           try {
             const tenantData = await getCurrentUserTenant();
             if (tenantData && isMounted) {
@@ -227,10 +333,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const errorObj = tenantError instanceof Error ? tenantError : new Error(String(tenantError));
             log.error('Failed to load tenant', errorObj);
           }
-          // Small delay to ensure tenant state is updated
-          setTimeout(() => {
-            loadData();
-          }, 100);
+          setTimeout(() => { loadData(); }, 100);
         }
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -245,7 +348,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setHasSession(!!session);
       if (session) {
-        // Load tenant info on auth state change
         getCurrentUserTenant().then(tenantData => {
           if (tenantData) {
             setCurrentTenant({
@@ -260,10 +362,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const errorObj = error instanceof Error ? error : new Error(String(error));
           log.error('Failed to load tenant on auth change', errorObj);
         });
-        // Small delay to ensure tenant state is updated
-        setTimeout(() => {
-          loadData();
-        }, 100);
+        setTimeout(() => { loadData(); }, 100);
       } else {
         setProducts([]);
         setSales([]);
@@ -280,26 +379,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [loadData]);
 
+  // ── Products ─────────────────────────────────────────────────────────────
+
   const addProduct = async (product: Product) => {
     const validation = DataValidator.validateProduct(product);
     if (!validation.isValid) {
-      toast.error('Validation failed', {
-        description: validation.errors.join(', '),
-      });
+      toast.error('Validation failed', { description: validation.errors.join(', ') });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
-
     if (validation.warnings.length > 0) {
-      toast.warning('Validation warnings', {
-        description: validation.warnings.join(', '),
-      });
+      toast.warning('Validation warnings', { description: validation.warnings.join(', ') });
     }
 
+    if (!currentTenant) throw new Error('No active tenant');
+
     try {
+      const variant = product.variants?.[0];
       log.info('Creating product', { product });
-      const { product: newProduct } = await api.post('/products', product);
+
+      const { data, error } = await supabase.from('products').insert({
+        tenant_id: currentTenant.id,
+        name: product.name,
+        sku: product.sku || null,
+        barcode: product.barcode || null,
+        category: product.category || null,
+        supplier: product.supplier || null,
+        validity_date: product.validityDate || null,
+        price: variant?.price ?? 0,
+        cost: variant?.cost ?? 0,
+        stock_quantity: variant?.stock ?? 0,
+        min_stock_level: variant?.reorderLevel ?? 0,
+      }).select().single();
+
+      if (error) throw error;
+
+      const newProduct = dbProductToFrontend(data as DbProduct);
       log.info('Product created successfully', { newProduct });
-      setProducts([...products, newProduct]);
+      setProducts(prev => [...prev, newProduct]);
       toast.success('Product added', { description: newProduct.name });
       return newProduct;
     } catch (error) {
@@ -314,10 +430,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateProduct = async (id: string, updatedProduct: Partial<Product>) => {
     try {
-      const { product } = await api.put(`/products/${id}`, updatedProduct);
-      setProducts(products.map(p => p.id === id ? product : p));
-      toast.success('Product updated', { description: product.name });
-      return product;
+      const variant = updatedProduct.variants?.[0];
+      const dbUpdate: Record<string, unknown> = {};
+      if (updatedProduct.name !== undefined) dbUpdate.name = updatedProduct.name;
+      if (updatedProduct.sku !== undefined) dbUpdate.sku = updatedProduct.sku;
+      if (updatedProduct.barcode !== undefined) dbUpdate.barcode = updatedProduct.barcode;
+      if (updatedProduct.category !== undefined) dbUpdate.category = updatedProduct.category;
+      if (updatedProduct.supplier !== undefined) dbUpdate.supplier = updatedProduct.supplier;
+      if (updatedProduct.validityDate !== undefined) dbUpdate.validity_date = updatedProduct.validityDate;
+      if (variant?.price !== undefined) dbUpdate.price = variant.price;
+      if (variant?.cost !== undefined) dbUpdate.cost = variant.cost;
+      if (variant?.stock !== undefined) dbUpdate.stock_quantity = variant.stock;
+      if (variant?.reorderLevel !== undefined) dbUpdate.min_stock_level = variant.reorderLevel;
+
+      const { data, error } = await supabase.from('products').update(dbUpdate).eq('id', id).select().single();
+      if (error) throw error;
+
+      const updated = dbProductToFrontend(data as DbProduct);
+      setProducts(prev => prev.map(p => p.id === id ? updated : p));
+      toast.success('Product updated', { description: updated.name });
+      return updated;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       log.error('Failed to update product', errorObj);
@@ -330,8 +462,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteProduct = async (id: string) => {
     try {
-      await api.delete(`/products/${id}`);
-      setProducts(products.filter(p => p.id !== id));
+      const { error } = await supabase.from('products').update({ is_active: false }).eq('id', id);
+      if (error) throw error;
+      setProducts(prev => prev.filter(p => p.id !== id));
       toast.success('Product deleted');
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -343,50 +476,85 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ── Sales ────────────────────────────────────────────────────────────────
+
   const addSale = async (sale: Sale) => {
     const validation = DataValidator.validateSale(sale);
     if (!validation.isValid) {
-      toast.error('Validation failed', {
-        description: validation.errors.join(', '),
-      });
+      toast.error('Validation failed', { description: validation.errors.join(', ') });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
-
     if (validation.warnings.length > 0) {
-      toast.warning('Validation warnings', {
-        description: validation.warnings.join(', '),
-      });
+      toast.warning('Validation warnings', { description: validation.warnings.join(', ') });
     }
 
+    if (!currentTenant) throw new Error('No active tenant');
+
     try {
-      const result = await TransactionManager.executeSaleTransaction(sale, products);
+      const { data: saleRow, error: saleError } = await supabase.from('sales').insert({
+        tenant_id: currentTenant.id,
+        employee_id: sale.employeeId || currentEmployee?.id || null,
+        customer_id: sale.customerId || null,
+        subtotal: sale.subtotal,
+        total_amount: sale.total,
+        discount: 0,
+        tax_amount: 0,
+        payment_method: sale.paymentMethod,
+        payment_status: 'completed',
+      }).select().single();
 
-      if (!result.success) {
-        throw new Error(result.error || 'Transaction failed');
+      if (saleError) throw saleError;
+
+      if (sale.items.length > 0) {
+        const { error: itemsError } = await supabase.from('sale_items').insert(
+          sale.items.map(item => ({
+            sale_id: saleRow.id,
+            product_id: item.productId,
+            quantity: item.quantity,
+            unit_price: item.price,
+            total_price: item.price * item.quantity,
+          }))
+        );
+        if (itemsError) throw itemsError;
       }
 
-      const newSale = result.results[0].sale;
-      setSales([...sales, newSale]);
-
-      const updatedProducts = await api.get('/products');
-      setProducts(updatedProducts.products);
-
-      const updatedEmployees = await api.get('/employees');
-      setEmployees(updatedEmployees.employees);
-
-      if (currentEmployee && newSale.employeeId === currentEmployee.id) {
-        const updated = updatedEmployees.employees.find((e: Employee) => e.id === currentEmployee.id);
-        if (updated) setCurrentEmployee(updated);
+      // Decrement stock for each sold item
+      for (const item of sale.items) {
+        const product = products.find(p => p.id === item.productId);
+        if (product) {
+          const currentStock = product.variants?.[0]?.stock ?? 0;
+          await supabase.from('products').update({
+            stock_quantity: Math.max(0, currentStock - item.quantity),
+          }).eq('id', item.productId);
+        }
       }
 
+      const newSale = dbSaleToFrontend(saleRow as DbSale);
+      newSale.items = sale.items; // keep full items with names/costs for local state
+      setSales(prev => [newSale, ...prev]);
+
+      // Refresh products to get updated stock
+      const { data: refreshedProducts } = await supabase.from('products').select('*').eq('is_active', true).order('name');
+      if (refreshedProducts) setProducts((refreshedProducts as DbProduct[]).map(dbProductToFrontend));
+
+      // Update customer stats if applicable
       if (sale.customerId) {
-        const updatedCustomers = await api.get('/customers');
-        setCustomers(updatedCustomers.customers);
+        const customer = customers.find(c => c.id === sale.customerId);
+        if (customer) {
+          await supabase.from('customers').update({
+            total_purchases: customer.totalPurchases + sale.total,
+            visit_count: (customer.visitCount ?? 0) + 1,
+            last_purchase_date: new Date().toISOString(),
+          }).eq('id', sale.customerId);
+          setCustomers(prev => prev.map(c =>
+            c.id === sale.customerId
+              ? { ...c, totalPurchases: c.totalPurchases + sale.total, visitCount: (c.visitCount ?? 0) + 1 }
+              : c
+          ));
+        }
       }
 
-      toast.success('Sale recorded', {
-        description: `Total ${newSale.total.toFixed(2)}`,
-      });
+      toast.success('Sale recorded', { description: `Total $${sale.total.toFixed(2)}` });
       return newSale;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -398,24 +566,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ── Customers ────────────────────────────────────────────────────────────
+
   const addCustomer = async (customer: Customer) => {
     const validation = DataValidator.validateCustomer(customer);
     if (!validation.isValid) {
-      toast.error('Validation failed', {
-        description: validation.errors.join(', '),
-      });
+      toast.error('Validation failed', { description: validation.errors.join(', ') });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
-
     if (validation.warnings.length > 0) {
-      toast.warning('Validation warnings', {
-        description: validation.warnings.join(', '),
-      });
+      toast.warning('Validation warnings', { description: validation.warnings.join(', ') });
     }
 
+    if (!currentTenant) throw new Error('No active tenant');
+
     try {
-      const { customer: newCustomer } = await api.post('/customers', customer);
-      setCustomers([...customers, newCustomer]);
+      const { data, error } = await supabase.from('customers').insert({
+        tenant_id: currentTenant.id,
+        name: customer.name,
+        phone: customer.phone || null,
+        email: customer.email || null,
+        total_purchases: 0,
+        visit_count: 0,
+      }).select().single();
+
+      if (error) throw error;
+
+      const newCustomer = dbCustomerToFrontend(data as DbCustomer);
+      setCustomers(prev => [...prev, newCustomer]);
       toast.success('Customer added', { description: newCustomer.name });
       return newCustomer;
     } catch (error) {
@@ -430,10 +608,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateCustomer = async (id: string, updatedCustomer: Partial<Customer>) => {
     try {
-      const { customer } = await api.put(`/customers/${id}`, updatedCustomer);
-      setCustomers(customers.map(c => c.id === id ? customer : c));
-      toast.success('Customer updated', { description: customer.name });
-      return customer;
+      const dbUpdate: Record<string, unknown> = {};
+      if (updatedCustomer.name !== undefined) dbUpdate.name = updatedCustomer.name;
+      if (updatedCustomer.phone !== undefined) dbUpdate.phone = updatedCustomer.phone;
+      if (updatedCustomer.email !== undefined) dbUpdate.email = updatedCustomer.email;
+      if (updatedCustomer.totalPurchases !== undefined) dbUpdate.total_purchases = updatedCustomer.totalPurchases;
+      if (updatedCustomer.visitCount !== undefined) dbUpdate.visit_count = updatedCustomer.visitCount;
+      if (updatedCustomer.lastPurchaseDate !== undefined) dbUpdate.last_purchase_date = updatedCustomer.lastPurchaseDate;
+
+      const { data, error } = await supabase.from('customers').update(dbUpdate).eq('id', id).select().single();
+      if (error) throw error;
+
+      const updated = dbCustomerToFrontend(data as DbCustomer);
+      setCustomers(prev => prev.map(c => c.id === id ? updated : c));
+      toast.success('Customer updated', { description: updated.name });
+      return updated;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       log.error('Failed to update customer', errorObj);
@@ -444,35 +633,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ── Employees ────────────────────────────────────────────────────────────
+
   const addEmployee = async (employee: Employee) => {
     const validation = DataValidator.validateEmployee(employee);
     if (!validation.isValid) {
-      toast.error('Validation failed', {
-        description: validation.errors.join(', '),
-      });
+      toast.error('Validation failed', { description: validation.errors.join(', ') });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
-
     if (validation.warnings.length > 0) {
-      toast.warning('Validation warnings', {
-        description: validation.warnings.join(', '),
-      });
+      toast.warning('Validation warnings', { description: validation.warnings.join(', ') });
     }
 
+    if (!currentTenant) throw new Error('No active tenant');
+
     try {
-      const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
+      const dbRole = employee.role === 'admin' ? 'owner' : employee.role;
 
-      const { employee: newEmployee } = await api.post('/employees', {
-        ...employee,
-        password: tempPassword,
-      });
+      const { data, error } = await supabase.from('employees').insert({
+        tenant_id: currentTenant.id,
+        name: employee.name,
+        email: employee.email || null,
+        role: dbRole,
+        commission_rate: employee.commission ?? 0,
+        is_active: true,
+      }).select().single();
 
-      setEmployees([...employees, newEmployee]);
-      toast.success('Employee created', {
-        description: `Temp password: ${tempPassword}`,
-      });
+      if (error) throw error;
+
+      const newEmployee = dbEmployeeToFrontend(data as DbEmployee);
+      setEmployees(prev => [...prev, newEmployee]);
+      toast.success('Employee created', { description: newEmployee.name });
       return newEmployee;
-
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       log.error('Failed to add employee', errorObj);
@@ -485,10 +677,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateEmployee = async (id: string, updatedEmployee: Partial<Employee>) => {
     try {
-      const { employee } = await api.put(`/employees/${id}`, updatedEmployee);
-      setEmployees(employees.map(e => e.id === id ? employee : e));
-      toast.success('Employee updated', { description: employee.name });
-      return employee;
+      const dbUpdate: Record<string, unknown> = {};
+      if (updatedEmployee.name !== undefined) dbUpdate.name = updatedEmployee.name;
+      if (updatedEmployee.email !== undefined) dbUpdate.email = updatedEmployee.email;
+      if (updatedEmployee.role !== undefined) dbUpdate.role = updatedEmployee.role === 'admin' ? 'owner' : updatedEmployee.role;
+      if (updatedEmployee.commission !== undefined) dbUpdate.commission_rate = updatedEmployee.commission;
+
+      const { data, error } = await supabase.from('employees').update(dbUpdate).eq('id', id).select().single();
+      if (error) throw error;
+
+      const updated = dbEmployeeToFrontend(data as DbEmployee);
+      setEmployees(prev => prev.map(e => e.id === id ? updated : e));
+      if (currentEmployee?.id === id) setCurrentEmployee(updated);
+      toast.success('Employee updated', { description: updated.name });
+      return updated;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       log.error('Failed to update employee', errorObj);
@@ -499,12 +701,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ── Stock ────────────────────────────────────────────────────────────────
+
   const updateStock = async (productId: string, variantId: string, quantity: number) => {
     const validation = DataValidator.validateStockUpdate(productId, variantId, quantity);
     if (!validation.isValid) {
-      toast.error('Validation failed', {
-        description: validation.errors.join(', '),
-      });
+      toast.error('Validation failed', { description: validation.errors.join(', ') });
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
@@ -520,13 +722,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const result = await OperationQueue.enqueue(
         `stock-${productId}-${variantId}`,
         async () => {
-          const { product } = await api.post(`/products/${productId}/variants/${variantId}/stock`, { quantity });
-          return product;
+          const { data, error } = await supabase
+            .from('products')
+            .update({ stock_quantity: Math.max(0, quantity) })
+            .eq('id', productId)
+            .select()
+            .single();
+          if (error) throw error;
+          return dbProductToFrontend(data as DbProduct);
         },
         'stock-update',
       );
 
-      setProducts(products.map(p => p.id === productId ? result : p));
+      setProducts(prev => prev.map(p => p.id === productId ? result : p));
       toast.success('Stock updated');
       return result;
     } catch (error) {
@@ -541,12 +749,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const switchTenant = async (tenantId: string) => {
-    // For now, we'll reload data which will get the new tenant info
-    // In the future, this could involve switching context without full reload
-    setTimeout(() => {
-      loadData();
-    }, 100);
+  // ── Tenant ───────────────────────────────────────────────────────────────
+
+  const switchTenant = async (_tenantId: string) => {
+    setTimeout(() => { loadData(); }, 100);
   };
 
   if (loading && hasSession) {

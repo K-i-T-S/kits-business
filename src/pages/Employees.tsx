@@ -248,8 +248,10 @@ export default function Employees() {
         </section>
 
         {filteredEmployees.length === 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-8 sm:p-12 text-center">
-            <p className="text-sm sm:text-base text-gray-600">No employees found</p>
+          <div className="hero-gradient glass-panel rounded-2xl p-8 sm:p-12 text-center">
+            <Users className="h-12 w-12 text-white/20 mx-auto mb-4" />
+            <p className="text-white font-medium mb-1">No team members found</p>
+            <p className="text-sm text-white/50">Add a teammate or invite someone by email to get started.</p>
           </div>
         )}
       </div>
@@ -301,7 +303,7 @@ export default function Employees() {
                 <label className="block text-sm sm:text-base mb-2" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>Role</label>
                 <select
                   value={newEmployee.role}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value as any })}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value as 'admin' | 'manager' | 'cashier' })}
                   className="w-full px-4 py-2 sm:py-3 rounded-lg transition-colors"
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',

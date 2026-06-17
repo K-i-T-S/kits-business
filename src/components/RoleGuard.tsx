@@ -88,35 +88,35 @@ export function RoleBadge({ role }: { role: string }) {
       case 'owner':
         return {
           label: 'Owner',
-          color: 'bg-purple-100 text-purple-700 border-purple-200',
+          color: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
           icon: Settings,
           description: 'Full access to all features',
         };
       case 'manager':
         return {
           label: 'Manager',
-          color: 'bg-blue-100 text-blue-700 border-blue-200',
+          color: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
           icon: Shield,
           description: 'Can manage team and operations',
         };
       case 'cashier':
         return {
           label: 'Cashier',
-          color: 'bg-green-100 text-green-700 border-green-200',
+          color: 'bg-green-500/20 text-green-300 border-green-500/30',
           icon: Eye,
           description: 'Can process sales and view reports',
         };
       case 'viewer':
         return {
           label: 'Viewer',
-          color: 'bg-gray-100 text-gray-700 border-gray-200',
+          color: 'bg-white/10 text-white/60 border-white/20',
           icon: Lock,
           description: 'Read-only access to data',
         };
       default:
         return {
           label: role,
-          color: 'bg-gray-100 text-gray-700 border-gray-200',
+          color: 'bg-white/10 text-white/60 border-white/20',
           icon: Lock,
           description: 'Unknown role',
         };

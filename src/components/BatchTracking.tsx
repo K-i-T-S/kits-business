@@ -131,12 +131,12 @@ export default function BatchTracking() {
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
-              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm focus:border-white/40 focus:outline-none"
+              className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
             >
-              <option value="all"          className="text-gray-900">All Status</option>
-              <option value="out_of_stock" className="text-gray-900">Out of Stock</option>
-              <option value="low_stock"    className="text-gray-900">Low Stock</option>
-              <option value="ok"           className="text-gray-900">OK</option>
+              <option value="all"          className="bg-slate-800 text-white">All Status</option>
+              <option value="out_of_stock" className="bg-slate-800 text-white">Out of Stock</option>
+              <option value="low_stock"    className="bg-slate-800 text-white">Low Stock</option>
+              <option value="ok"           className="bg-slate-800 text-white">OK</option>
             </select>
           </div>
           <div className="relative">

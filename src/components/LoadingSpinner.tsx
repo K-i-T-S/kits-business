@@ -16,7 +16,7 @@ export const LoadingSpinner = memo<{ message?: string }>(({ message }) => {
           className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"
           aria-hidden="true"
         ></div>
-        <p className="text-gray-600">{message || t('common.loading')}</p>
+        <p className="text-white/60">{message || t('common.loading')}</p>
       </div>
     </div>
   );

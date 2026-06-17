@@ -29,16 +29,21 @@ import {
   Zap,
   MapPin,
   Key,
+  Lock,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
 import { useApp } from '../context/AppContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import { useAccessibility } from '../providers/AccessibilityProvider';
 import { supabase } from '../utils/supabaseClient';
+import type { Feature } from '../types/subscription';
+import { FEATURE_DISPLAY, PLAN_DISPLAY } from '../types/subscription';
 
 import { LanguageSwitcher } from './LanguageSwitcher';
 import NavItem from './NavItem';
@@ -58,6 +63,7 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentEmployee, isModalOpen } = useApp();
+  const { hasFeature } = useSubscription();
   const { announce, setAriaAttribute, setRole } = useAccessibility();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
@@ -82,11 +88,12 @@ export default function Layout({ children }: LayoutProps) {
   const isActive = useCallback((href: string) => location.pathname === href, [location.pathname]);
 
   const navigation = useMemo(() => [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, feature: undefined },
     {
       name: 'Inventory',
       href: '/inventory',
       icon: Package,
+      feature: 'inventory_management' as Feature,
       subItems: [
         { name: 'Products', href: '/inventory', icon: Package },
         { name: 'Batch Tracking', href: '/inventory/batch-tracking', icon: Layers },
@@ -96,15 +103,16 @@ export default function Layout({ children }: LayoutProps) {
         { name: 'Reorder Points', href: '/inventory/reorder-points', icon: AlertTriangle },
       ],
     },
-    { name: 'POS', href: '/pos', icon: ShoppingCart },
-    { name: 'Customers', href: '/customers', icon: Users },
-    { name: 'Employees', href: '/employees', icon: UserCircle },
-    { name: 'Monitoring', href: '/monitoring', icon: Activity },
-    { name: 'Reports', href: '/reports', icon: BarChart3 },
+    { name: 'POS', href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature },
+    { name: 'Customers', href: '/customers', icon: Users, feature: undefined },
+    { name: 'Employees', href: '/employees', icon: UserCircle, feature: undefined },
+    { name: 'Monitoring', href: '/monitoring', icon: Activity, feature: 'monitoring' as Feature },
+    { name: 'Reports', href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
     {
       name: 'Enterprise',
       href: '/enterprise',
       icon: Shield,
+      feature: 'enterprise_dashboard' as Feature,
       subItems: [
         { name: 'Enterprise Dashboard', href: '/enterprise', icon: Shield },
         { name: 'Roles & Permissions', href: '/enterprise/roles', icon: Shield },
@@ -300,13 +308,34 @@ export default function Layout({ children }: LayoutProps) {
             <div className="px-3 py-2">
               <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider nav-section-title">Main Menu</h3>
             </div>
-            {navigation.map((item) => (
-              <NavItem
-                key={item.name}
-                item={item}
-                isActive={isActive(item.href)}
-              />
-            ))}
+            {navigation.map((item) => {
+              const locked = item.feature ? !hasFeature(item.feature) : false;
+              if (locked && item.feature) {
+                const featureInfo = FEATURE_DISPLAY[item.feature];
+                const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => toast.info(`Upgrade to ${planInfo.name} (${planInfo.price}) to unlock ${featureInfo.name}`)}
+                    className="group relative flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-white/30 opacity-50 transition-all duration-200 hover:opacity-70"
+                    aria-label={`${item.name} — requires ${planInfo.name} plan`}
+                  >
+                    <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/30">
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <span className="flex-1 text-left">{item.name}</span>
+                    <Lock className="h-3 w-3 text-amber-400/70" aria-hidden="true" />
+                  </button>
+                );
+              }
+              return (
+                <NavItem
+                  key={item.name}
+                  item={item}
+                  isActive={isActive(item.href)}
+                />
+              );
+            })}
           </nav>
 
           {/* Support Section */}

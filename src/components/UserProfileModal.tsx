@@ -263,15 +263,15 @@ function RoleBadge({ role }: { role: string }) {
   const getRoleInfo = (role: string) => {
     switch (role) {
       case 'owner':
-        return { color: 'bg-purple-100 text-purple-700', label: 'Owner' };
+        return { color: 'bg-purple-500/20 text-purple-300 border border-purple-500/30', label: 'Owner' };
       case 'manager':
-        return { color: 'bg-blue-100 text-blue-700', label: 'Manager' };
+        return { color: 'bg-blue-500/20 text-blue-300 border border-blue-500/30', label: 'Manager' };
       case 'cashier':
-        return { color: 'bg-green-100 text-green-700', label: 'Cashier' };
+        return { color: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30', label: 'Cashier' };
       case 'viewer':
-        return { color: 'bg-gray-100 text-gray-700', label: 'Viewer' };
+        return { color: 'bg-white/10 text-white/60 border border-white/10', label: 'Viewer' };
       default:
-        return { color: 'bg-gray-100 text-gray-700', label: role };
+        return { color: 'bg-white/10 text-white/60 border border-white/10', label: role };
     }
   };
 

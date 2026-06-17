@@ -64,15 +64,15 @@ export default function TenantSwitcher() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'owner':
-        return 'text-purple-600 bg-purple-100';
+        return 'text-purple-300 bg-purple-500/20 border border-purple-500/30';
       case 'manager':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-blue-300 bg-blue-500/20 border border-blue-500/30';
       case 'cashier':
-        return 'text-green-600 bg-green-100';
+        return 'text-emerald-300 bg-emerald-500/20 border border-emerald-500/30';
       case 'viewer':
-        return 'text-gray-600 bg-gray-100';
+        return 'text-white/60 bg-white/10 border border-white/10';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return 'text-white/60 bg-white/10 border border-white/10';
     }
   };
 

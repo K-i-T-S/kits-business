@@ -192,16 +192,16 @@ export function OfflineIndicator() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 text-xs text-white/50">
                   <CheckCircle className="h-3 w-3 text-green-400" />
                   <span>Local storage active</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 text-xs text-white/50">
                   <Database className="h-3 w-3 text-blue-400" />
                   <span>Data preserved offline</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <Clock className="h-3 w-3 text-gray-400" />
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <Clock className="h-3 w-3 text-white/40" />
                   <span>Auto-sync on reconnection</span>
                 </div>
               </div>
@@ -211,11 +211,11 @@ export function OfflineIndicator() {
           {/* Progress Indicator */}
           {syncStatus.isSyncing && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-gray-400">
+              <div className="flex items-center justify-between text-xs text-white/50">
                 <span>Sync Progress</span>
                 <span>Processing...</span>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-1.5">
+              <div className="w-full bg-white/10 rounded-full h-1.5">
                 <div className="bg-blue-600 h-1.5 rounded-full animate-pulse" style={{ width: '60%' }} />
               </div>
             </div>

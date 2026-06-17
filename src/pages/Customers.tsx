@@ -272,7 +272,7 @@ export default function Customers() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => setSelectedCustomer(customer.id)}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                                className="inline-flex items-center gap-2 rounded-2xl border border-indigo-500/30 bg-indigo-500/20 px-3 py-1.5 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/30"
                               >
                                 <MessageSquare className="h-4 w-4" />
                                 View
@@ -288,7 +288,7 @@ export default function Customers() {
                                       }
                                     }
                                   }}
-                                  className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                                  className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/30"
                                 >
                                   <DollarSign className="h-4 w-4" />
                                   Pay debt
@@ -314,26 +314,7 @@ export default function Customers() {
         {activeTab === 'segments' && (
           <section className="hero-gradient glass-panel p-6">
             <CustomerSegmentation
-              segments={[
-                {
-                  id: '1',
-                  name: 'VIP Customers',
-                  description: 'High-value customers with frequent purchases',
-                  criteria: { total_purchases: { operator: '>', value: 1000 } },
-                  isDynamic: true,
-                  customerCount: 12,
-                  createdAt: '2024-01-15',
-                },
-                {
-                  id: '2',
-                  name: 'New Customers',
-                  description: 'Customers who joined in the last 30 days',
-                  criteria: { days_since_join: { operator: '<', value: 30 } },
-                  isDynamic: true,
-                  customerCount: 28,
-                  createdAt: '2024-01-10',
-                },
-              ]}
+              segments={[]}
               customers={customers.map(c => ({
                 ...c,
                 visitCount: c.visitCount || 0,
@@ -360,18 +341,7 @@ export default function Customers() {
                 </div>
                 <CustomerCommunicationHistory
                   customerId={selectedCustomer}
-                  communications={[
-                    {
-                      id: '1',
-                      type: 'email',
-                      direction: 'outbound',
-                      subject: 'Welcome to our store!',
-                      content: 'Thank you for joining us. Here is a special offer...',
-                      status: 'sent',
-                      sentAt: '2024-01-15T10:00:00Z',
-                      createdAt: '2024-01-15T10:00:00Z',
-                    },
-                  ]}
+                  communications={[]}
                 />
               </div>
             ) : (
@@ -387,41 +357,7 @@ export default function Customers() {
         {activeTab === 'marketing' && (
           <section className="hero-gradient glass-panel p-6">
             <AutomatedMarketing
-              campaigns={[
-                {
-                  id: '1',
-                  name: 'Summer Sale Campaign',
-                  description: 'Promote summer products with special discounts',
-                  type: 'email',
-                  status: 'running',
-                  targetSegments: ['1'],
-                  targetCustomers: [],
-                  content: {
-                    subject: 'Summer Sale Special!',
-                    body: 'Check out our amazing summer deals...',
-                  },
-                  schedule: {
-                    timezone: 'UTC',
-                    bestTimeToSend: true,
-                  },
-                  performance: {
-                    sent: 150,
-                    delivered: 140,
-                    opened: 120,
-                    clicked: 45,
-                    replied: 12,
-                    bounced: 5,
-                    unsubscribed: 3,
-                    converted: 8,
-                    revenue: 2500,
-                    cost: 150,
-                    roi: 1566.67,
-                  },
-                  createdBy: '1',
-                  createdAt: '2024-01-10',
-                  updatedAt: '2024-01-10',
-                },
-              ]}
+              campaigns={[]}
               segments={[]}
               workflows={[]}
               onCreateCampaign={() => {}}

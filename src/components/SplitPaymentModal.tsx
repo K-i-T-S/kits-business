@@ -118,11 +118,11 @@ export default function SplitPaymentModal({ isOpen, totalAmount, onComplete, onC
               <select
                 value={newPaymentMethod}
                 onChange={(e) => setNewPaymentMethod(e.target.value as 'cash' | 'card' | 'digital')}
-                className="flex-1 rounded-lg border border-white/30 bg-white/20 px-3 py-2 text-white text-sm focus:border-white/50 focus:outline-none"
+                className="flex-1 rounded-lg border border-white/20 bg-slate-800 px-3 py-2 text-white text-sm focus:border-indigo-500 focus:outline-none"
               >
-                <option value="cash">Cash</option>
-                <option value="card">Card</option>
-                <option value="digital">Digital Wallet</option>
+                <option value="cash" className="bg-slate-800">Cash</option>
+                <option value="card" className="bg-slate-800">Card</option>
+                <option value="digital" className="bg-slate-800">Digital Wallet</option>
               </select>
               <button
                 onClick={addPayment}

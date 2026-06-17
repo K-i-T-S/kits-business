@@ -53,11 +53,11 @@ export default function SupplierManagement() {
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
-              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm focus:border-white/40 focus:outline-none"
+              className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
             >
-              <option value="all"      className="text-gray-900">All Status</option>
-              <option value="active"   className="text-gray-900">Active</option>
-              <option value="inactive" className="text-gray-900">Inactive</option>
+              <option value="all"      className="bg-slate-800 text-white">All Status</option>
+              <option value="active"   className="bg-slate-800 text-white">Active</option>
+              <option value="inactive" className="bg-slate-800 text-white">Inactive</option>
             </select>
           </div>
           <div className="relative">

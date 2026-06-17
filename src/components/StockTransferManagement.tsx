@@ -53,13 +53,13 @@ export default function StockTransferManagement() {
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
-              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm focus:border-white/40 focus:outline-none"
+              className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
             >
-              <option value="all"        className="text-gray-900">All Status</option>
-              <option value="pending"    className="text-gray-900">Pending</option>
-              <option value="in_transit" className="text-gray-900">In Transit</option>
-              <option value="completed"  className="text-gray-900">Completed</option>
-              <option value="cancelled"  className="text-gray-900">Cancelled</option>
+              <option value="all"        className="bg-slate-800 text-white">All Status</option>
+              <option value="pending"    className="bg-slate-800 text-white">Pending</option>
+              <option value="in_transit" className="bg-slate-800 text-white">In Transit</option>
+              <option value="completed"  className="bg-slate-800 text-white">Completed</option>
+              <option value="cancelled"  className="bg-slate-800 text-white">Cancelled</option>
             </select>
           </div>
           <div className="relative">

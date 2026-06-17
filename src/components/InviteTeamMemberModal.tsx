@@ -91,21 +91,21 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
       label: 'Manager',
       description: 'Can manage products, sales, and employees',
       icon: Shield,
-      color: 'text-blue-600',
+      color: 'text-blue-300',
     },
     {
       value: 'cashier',
       label: 'Cashier',
       description: 'Can process sales and view reports',
       icon: DollarSign,
-      color: 'text-green-600',
+      color: 'text-emerald-300',
     },
     {
       value: 'viewer',
       label: 'Viewer',
       description: 'Read-only access to all data',
       icon: UserPlus,
-      color: 'text-gray-600',
+      color: 'text-white/60',
     },
   ];
 
@@ -175,7 +175,7 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
                     name="role"
                     value={role.value}
                     checked={formData.role === role.value}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'owner' | 'manager' | 'cashier' | 'viewer' })}
                     className="mt-1 text-indigo-600 focus:ring-indigo-500"
                   />
                   <role.icon className={`h-5 w-5 mt-0.5 ${role.color}`} />

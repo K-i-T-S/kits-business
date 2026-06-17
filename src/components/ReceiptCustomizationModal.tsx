@@ -258,21 +258,21 @@ export default function ReceiptCustomizationModal({
                         <select
                           value={field.type}
                           onChange={(e) => updateCustomField(field.id, { type: e.target.value as ReceiptField['type'] })}
-                          className="rounded border border-white/30 bg-white/20 px-2 py-1 text-white text-xs focus:border-white/50 focus:outline-none"
+                          className="rounded border border-white/20 bg-slate-800 px-2 py-1 text-white text-xs focus:border-indigo-500 focus:outline-none"
                         >
-                          <option value="text">Text</option>
-                          <option value="date">Date</option>
-                          <option value="amount">Amount</option>
-                          <option value="custom">Custom</option>
+                          <option value="text" className="bg-slate-800">Text</option>
+                          <option value="date" className="bg-slate-800">Date</option>
+                          <option value="amount" className="bg-slate-800">Amount</option>
+                          <option value="custom" className="bg-slate-800">Custom</option>
                         </select>
                         <select
                           value={field.position}
                           onChange={(e) => updateCustomField(field.id, { position: e.target.value as ReceiptField['position'] })}
-                          className="rounded border border-white/30 bg-white/20 px-2 py-1 text-white text-xs focus:border-white/50 focus:outline-none"
+                          className="rounded border border-white/20 bg-slate-800 px-2 py-1 text-white text-xs focus:border-indigo-500 focus:outline-none"
                         >
-                          <option value="header">Header</option>
-                          <option value="body">Body</option>
-                          <option value="footer">Footer</option>
+                          <option value="header" className="bg-slate-800">Header</option>
+                          <option value="body" className="bg-slate-800">Body</option>
+                          <option value="footer" className="bg-slate-800">Footer</option>
                         </select>
                         <button
                           onClick={() => removeCustomField(field.id)}

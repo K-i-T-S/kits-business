@@ -142,7 +142,7 @@ export function PWAInstallPrompt() {
                 onClick={handleEnableNotifications}
                 variant="outline"
                 size="sm"
-                className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:border-gray-500 transition-all duration-200 active:scale-95"
+                className="border-white/20 text-white/70 hover:bg-white/10 hover:border-white/30 transition-all duration-200 active:scale-95"
               >
                 <Wifi className="h-4 w-4 mr-1" />
                 Enable
@@ -151,16 +151,16 @@ export function PWAInstallPrompt() {
           </div>
 
           {/* Trust Indicators */}
-          <div className="flex items-center justify-center gap-4 pt-2 border-t border-gray-800/30">
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="flex items-center justify-center gap-4 pt-2 border-t border-white/10">
+            <div className="flex items-center gap-1 text-xs text-white/40">
               <Shield className="h-3 w-3" />
               <span>Trusted</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="flex items-center gap-1 text-xs text-white/40">
               <Star className="h-3 w-3" />
               <span>4.8 Rating</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="flex items-center gap-1 text-xs text-white/40">
               <Download className="h-3 w-3" />
               <span>1K+ Installs</span>
             </div>

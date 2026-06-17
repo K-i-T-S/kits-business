@@ -11,6 +11,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { Toaster } from './components/ui/sonner';
 import { AppProvider } from './context/AppContext';
+import { SubscriptionProvider } from './context/SubscriptionContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Login from './pages/Login';
 import TenantSelection from './pages/TenantSelection';
@@ -139,6 +140,7 @@ export default function App() {
     <ErrorBoundary>
       <Router>
         <AppProvider>
+          <SubscriptionProvider>
           <QueryProvider>
             <LanguageProvider>
               <TranslationProvider>
@@ -346,9 +348,9 @@ export default function App() {
               </TranslationProvider>
             </LanguageProvider>
           </QueryProvider>
+          </SubscriptionProvider>
         </AppProvider>
       </Router>
     </ErrorBoundary>
   );
 };
-// Test commit

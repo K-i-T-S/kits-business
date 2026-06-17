@@ -63,40 +63,43 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Default error UI
+      // Default error UI — explicit dark theme
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
-              </div>
-              <CardTitle className="text-xl">Something went wrong</CardTitle>
-              <CardDescription>
-                An unexpected error occurred. We're working on fixing this issue.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <div className="p-3 bg-muted rounded-md">
-                  <p className="text-sm font-mono text-muted-foreground break-all">
-                    {this.state.error.message}
-                  </p>
-                </div>
-              )}
+        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 text-center shadow-2xl shadow-black/40">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-500/10 border border-rose-500/20">
+              <AlertTriangle className="h-7 w-7 text-rose-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-white">Something went wrong</h2>
+            <p className="mt-2 text-sm text-white/60">
+              An unexpected error occurred. Refresh the page to try again.
+            </p>
 
-              <div className="flex gap-2">
-                <Button onClick={this.handleReset} className="flex-1">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Try Again
-                </Button>
-                <Button variant="outline" onClick={this.handleGoHome} className="flex-1">
-                  <Home className="h-4 w-4 mr-2" />
-                  Go Home
-                </Button>
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <div className="mt-4 rounded-xl bg-white/5 border border-white/10 p-3 text-left">
+                <p className="text-xs font-mono text-rose-300 break-all">
+                  {this.state.error.message}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            )}
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={this.handleReset}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Try Again
+              </button>
+              <button
+                onClick={this.handleGoHome}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/20 transition-colors"
+              >
+                <Home className="h-4 w-4" />
+                Go Home
+              </button>
+            </div>
+          </div>
         </div>
       );
     }

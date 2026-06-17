@@ -289,14 +289,14 @@ export function MobileNavigation() {
       <div className="md:hidden fixed top-4 left-4 z-[60] w-12 h-12">
         <button
           onClick={handleDrawerToggle}
-          className={`w-full h-full p-3 bg-gray-900/95 backdrop-blur-lg rounded-2xl border border-gray-700/50 shadow-xl hover:bg-gray-800/95 active:scale-95 transition-all duration-200 group ${
+          className={`w-full h-full p-3 bg-slate-900/95 backdrop-blur-lg rounded-2xl border border-slate-700/50 shadow-xl hover:bg-slate-800/95 active:scale-95 transition-all duration-200 group ${
             isDrawerOpen ? 'opacity-0 pointer-events-none scale-75' : 'opacity-100 pointer-events-auto scale-100'
           }`}
           aria-label="Open navigation menu"
           aria-expanded={isDrawerOpen}
         >
-          <Menu className="h-5 w-5 text-gray-300 group-hover:text-white transition-colors" />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+          <Menu className="h-5 w-5 text-slate-300 group-hover:text-white transition-colors" />
+          <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
         </button>
       </div>
 
@@ -313,19 +313,19 @@ export function MobileNavigation() {
       <aside className={`md:hidden fixed top-0 left-0 h-full w-80 max-w-[85vw] z-[55] transform transition-all duration-300 ease-out ${
         isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
       } ${isAnimating ? 'scale-[0.98]' : 'scale-100'}`}>
-        <div className="h-full bg-gray-900/98 backdrop-blur-xl border-r border-gray-800/30 shadow-2xl overflow-y-auto">
+        <div className="h-full bg-slate-900/98 backdrop-blur-xl border-r border-slate-800/30 shadow-2xl overflow-y-auto">
           {/* Enhanced Drawer Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-800/30 bg-gradient-to-r from-gray-900/50 to-gray-800/50 sticky top-0 z-10">
+          <div className="flex items-center justify-between p-6 border-b border-slate-800/30 bg-gradient-to-r from-slate-900/50 to-slate-800/50 sticky top-0 z-10">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-lg">BT</span>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-900" />
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-white">Business Terminal</h2>
-                <p className="text-xs text-gray-400">Professional Management</p>
+                <p className="text-xs text-slate-400">Professional Management</p>
               </div>
             </div>
             <button
@@ -351,15 +351,15 @@ export function MobileNavigation() {
                     onClick={() => hasSubItems ? toggleExpanded(item.id) : handleNavClick(item.path)}
                     className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
                       active
-                        ? 'bg-gradient-to-r from-blue-600/20 to-blue-700/20 text-blue-400 border border-blue-600/30 shadow-lg'
-                        : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 active:scale-[0.98]'
+                        ? 'bg-gradient-to-r from-indigo-600/20 to-indigo-700/20 text-indigo-400 border border-indigo-600/30 shadow-lg'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 active:scale-[0.98]'
                     }`}
                     style={{
                       animationDelay: `${index * 50}ms`,
                     }}
                   >
                     <div className="relative">
-                      <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-blue-400' : ''}`} />
+                      <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-indigo-400' : ''}`} />
                       {item.badge !== undefined && item.badge > 0 && (
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
                           {item.badge > 99 ? '99+' : item.badge}
@@ -396,14 +396,14 @@ export function MobileNavigation() {
                             onClick={() => handleNavClick(subItem.path)}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
                               subActive
-                                ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-400'
-                                : 'text-gray-500 hover:bg-gray-800/30 hover:text-gray-300'
+                                ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-400'
+                                : 'text-slate-500 hover:bg-slate-800/30 hover:text-slate-300'
                             }`}
                             style={{
                               animationDelay: `${(index * 50) + (subIndex * 30)}ms`,
                             }}
                           >
-                            <SubIcon className={`h-4 w-4 transition-transform duration-200 group-hover:scale-110 ${subActive ? 'text-blue-400' : ''}`} />
+                            <SubIcon className={`h-4 w-4 transition-transform duration-200 group-hover:scale-110 ${subActive ? 'text-indigo-400' : ''}`} />
                             <div className="flex-1 text-left">
                               <div className="text-sm font-medium">{subItem.label}</div>
                               {subItem.description && (
@@ -421,7 +421,7 @@ export function MobileNavigation() {
           </nav>
 
           {/* Enhanced Drawer Footer */}
-          <div className="mt-auto p-6 border-t border-gray-800/30 bg-gradient-to-t from-gray-900/50 to-transparent">
+          <div className="mt-auto p-6 border-t border-slate-800/30 bg-gradient-to-t from-slate-900/50 to-transparent">
             {/* Support Links */}
             <div className="grid grid-cols-1 gap-3 mb-4">
               <button
@@ -469,13 +469,13 @@ export function MobileNavigation() {
 
             {/* Version Info */}
             <div className="flex items-center justify-between mb-3 mt-4">
-              <div className="text-xs text-gray-500">Version 1.0.0</div>
+              <div className="text-xs text-slate-500">Version 1.0.0</div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 <span className="text-xs text-green-500">Online</span>
               </div>
             </div>
-            <div className="text-xs text-gray-600 text-center">
+            <div className="text-xs text-slate-600 text-center">
               © 2024 Business Terminal
             </div>
           </div>
@@ -483,7 +483,7 @@ export function MobileNavigation() {
       </aside>
 
       {/* Enhanced Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/98 backdrop-blur-xl border-t border-gray-800/30 z-50 mobile-bottom-safe" style={{ height: 'auto', minHeight: 'max(60px, env(safe-area-inset-bottom) + 60px)' }}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800/30 z-50 mobile-bottom-safe" style={{ height: 'auto', minHeight: 'max(60px, env(safe-area-inset-bottom) + 60px)' }}>
         <div className="flex justify-around items-center py-3 pb-safe-area">
           {navItems.slice(0, 5).map((item) => {
             const Icon = item.icon;
@@ -495,14 +495,14 @@ export function MobileNavigation() {
                 onClick={() => handleNavClick(item.path)}
                 className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 min-w-[70px] relative group ${
                   active
-                    ? 'text-blue-400'
-                    : 'text-gray-500 hover:text-gray-300 active:scale-95'
+                    ? 'text-indigo-400'
+                    : 'text-slate-500 hover:text-slate-300 active:scale-95'
                 }`}
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
               >
                 <div className="relative">
-                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-blue-400' : ''}`} />
+                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-indigo-400' : ''}`} />
                   {item.badge !== undefined && item.badge > 0 && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium">
                       {item.badge > 9 ? '9+' : item.badge}
@@ -510,12 +510,12 @@ export function MobileNavigation() {
                   )}
                 </div>
                 <span className={`text-xs font-medium transition-all duration-200 ${
-                  active ? 'text-blue-400 font-semibold' : ''
+                  active ? 'text-indigo-400 font-semibold' : ''
                 }`}>
                   {item.label}
                 </span>
                 {active && (
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full" />
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-indigo-500 rounded-full" />
                 )}
               </button>
             );

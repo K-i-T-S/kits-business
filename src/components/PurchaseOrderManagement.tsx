@@ -53,15 +53,15 @@ export default function PurchaseOrderManagement() {
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
-              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm focus:border-white/40 focus:outline-none"
+              className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
             >
-              <option value="all"       className="text-gray-900">All Status</option>
-              <option value="draft"     className="text-gray-900">Draft</option>
-              <option value="sent"      className="text-gray-900">Sent</option>
-              <option value="confirmed" className="text-gray-900">Confirmed</option>
-              <option value="partial"   className="text-gray-900">Partial</option>
-              <option value="received"  className="text-gray-900">Received</option>
-              <option value="cancelled" className="text-gray-900">Cancelled</option>
+              <option value="all"       className="bg-slate-800 text-white">All Status</option>
+              <option value="draft"     className="bg-slate-800 text-white">Draft</option>
+              <option value="sent"      className="bg-slate-800 text-white">Sent</option>
+              <option value="confirmed" className="bg-slate-800 text-white">Confirmed</option>
+              <option value="partial"   className="bg-slate-800 text-white">Partial</option>
+              <option value="received"  className="bg-slate-800 text-white">Received</option>
+              <option value="cancelled" className="bg-slate-800 text-white">Cancelled</option>
             </select>
           </div>
           <div className="relative">

@@ -155,11 +155,11 @@ export default function ImportInventoryModal({ onClose }: ImportInventoryModalPr
                 <select
                   value={costAdjustment}
                   onChange={(e) => setCostAdjustment(e.target.value)}
-                  className="w-full px-4 py-2 border border-white/30 bg-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 text-white"
+                  className="w-full px-4 py-2 border border-white/20 bg-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 text-white"
                 >
-                  <option value="fixed">Fixed Amount</option>
-                  <option value="percentage">Percentage</option>
-                  <option value="weighted">Weighted Average</option>
+                  <option value="fixed" className="bg-slate-800">Fixed Amount</option>
+                  <option value="percentage" className="bg-slate-800">Percentage</option>
+                  <option value="weighted" className="bg-slate-800">Weighted Average</option>
                 </select>
               </div>
 

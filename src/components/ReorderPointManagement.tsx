@@ -6,6 +6,7 @@ import {
   BarChart3,
   RefreshCw,
 } from 'lucide-react';
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
 import Layout from '../components/Layout';
@@ -34,10 +35,10 @@ function computeStatus(qty: number, min: number): StockStatus {
 }
 
 const STATUS_COLORS: Record<StockStatus, string> = {
-  out_of_stock: 'bg-red-100 text-red-800',
-  low_stock:    'bg-yellow-100 text-yellow-800',
-  optimal:      'bg-green-100 text-green-800',
-  overstock:    'bg-blue-100 text-blue-800',
+  out_of_stock: 'bg-red-500/20 text-red-300 border border-red-500/30',
+  low_stock:    'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
+  optimal:      'bg-green-500/20 text-green-300 border border-green-500/30',
+  overstock:    'bg-blue-500/20 text-blue-300 border border-blue-500/30',
 };
 
 const STATUS_ICONS: Record<StockStatus, React.ReactNode> = {
@@ -46,8 +47,6 @@ const STATUS_ICONS: Record<StockStatus, React.ReactNode> = {
   optimal:      <Package className="h-4 w-4" />,
   overstock:    <BarChart3 className="h-4 w-4" />,
 };
-
-import React from 'react';
 
 export default function ReorderPointManagement() {
   const { setModalOpen } = useApp();
@@ -176,13 +175,13 @@ export default function ReorderPointManagement() {
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
-              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm focus:border-white/40 focus:outline-none"
+              className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
             >
-              <option value="all"          className="text-gray-900">All Status</option>
-              <option value="out_of_stock" className="text-gray-900">Out of Stock</option>
-              <option value="low_stock"    className="text-gray-900">Low Stock</option>
-              <option value="optimal"      className="text-gray-900">Optimal</option>
-              <option value="overstock"    className="text-gray-900">Overstock</option>
+              <option value="all"          className="bg-slate-800 text-white">All Status</option>
+              <option value="out_of_stock" className="bg-slate-800 text-white">Out of Stock</option>
+              <option value="low_stock"    className="bg-slate-800 text-white">Low Stock</option>
+              <option value="optimal"      className="bg-slate-800 text-white">Optimal</option>
+              <option value="overstock"    className="bg-slate-800 text-white">Overstock</option>
             </select>
           </div>
           <div className="relative">

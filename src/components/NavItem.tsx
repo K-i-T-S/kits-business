@@ -6,11 +6,11 @@ interface NavItemProps {
   item: {
     name: string;
     href: string;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<{ className?: string }>;
     subItems?: {
       name: string;
       href: string;
-      icon: React.ComponentType<any>;
+      icon: React.ComponentType<{ className?: string }>;
     }[];
   };
   isActive: boolean;

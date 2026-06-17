@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import OnboardingWizard from '../components/OnboardingWizard';
 import { supabase } from '../utils/supabaseClient';
 import { createTenant } from '../utils/tenantManager';
 
@@ -28,6 +29,9 @@ export default function TenantSelection() {
   const [userTenants, setUserTenants] = useState<Tenant[]>([]);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState('');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingTenantId, setOnboardingTenantId] = useState('');
+  const [onboardingTenantName, setOnboardingTenantName] = useState('');
 
   useEffect(() => {
     checkAuthAndLoadTenants();
@@ -87,9 +91,13 @@ export default function TenantSelection() {
     setSubmitting(true);
 
     try {
-      await createTenant(tenantName.trim(), tenantSlug, currentUser.id);
+      const newTenant = await createTenant(tenantName.trim(), tenantSlug, currentUser.id);
       toast.success('Business created!');
-      navigate('/dashboard');
+      // Always show onboarding for newly created tenants
+      const tid = (newTenant as { id?: string } | null)?.id ?? tenantSlug;
+      setOnboardingTenantId(tid);
+      setOnboardingTenantName(tenantName.trim());
+      setShowOnboarding(true);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create business.';
       setError(message);
@@ -99,7 +107,23 @@ export default function TenantSelection() {
     }
   };
 
-  const handleSelectTenant = () => {
+  const handleSelectTenant = async (tenant: Tenant) => {
+    // Check if onboarding is needed
+    try {
+      const { data } = await supabase
+        .from('tenants')
+        .select('id, onboarding_completed, name')
+        .eq('id', tenant.tenant_id)
+        .single();
+      if (data && data.onboarding_completed === false) {
+        setOnboardingTenantId(data.id as string);
+        setOnboardingTenantName((data.name as string) || tenant.tenant_name);
+        setShowOnboarding(true);
+        return;
+      }
+    } catch {
+      // If we can't check, just navigate
+    }
     navigate('/dashboard');
   };
 
@@ -111,6 +135,16 @@ export default function TenantSelection() {
     setTenantName(name);
     setTenantSlug(generateSlug(name));
   };
+
+  if (showOnboarding) {
+    return (
+      <OnboardingWizard
+        tenantId={onboardingTenantId}
+        tenantName={onboardingTenantName}
+        onComplete={() => navigate('/dashboard')}
+      />
+    );
+  }
 
   if (loadingTenants) {
     return (
@@ -143,7 +177,7 @@ export default function TenantSelection() {
                 <div
                   key={tenant.tenant_id}
                   className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/60 transition-colors cursor-pointer group"
-                  onClick={() => handleSelectTenant()}
+                  onClick={() => handleSelectTenant(tenant)}
                 >
                   <div className="flex items-center justify-between">
                     <div>

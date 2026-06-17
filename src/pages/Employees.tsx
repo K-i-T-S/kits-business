@@ -100,10 +100,10 @@ export default function Employees() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-purple-100 text-purple-600';
-      case 'manager': return 'bg-blue-100 text-blue-600';
-      case 'cashier': return 'bg-green-100 text-green-600';
-      default: return 'bg-gray-100 text-gray-600';
+      case 'admin': return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+      case 'manager': return 'bg-sky-500/20 text-sky-300 border border-sky-500/30';
+      case 'cashier': return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      default: return 'bg-white/10 text-white/60 border border-white/20';
     }
   };
 

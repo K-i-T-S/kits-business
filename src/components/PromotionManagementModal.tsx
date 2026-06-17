@@ -199,12 +199,12 @@ export default function PromotionManagementModal({
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as Promotion['type'] })}
-                  className="w-full rounded-lg border border-white/30 bg-white/20 px-3 py-2 text-white text-sm focus:border-white/50 focus:outline-none"
+                  className="w-full rounded-lg border border-white/20 bg-slate-800 px-3 py-2 text-white text-sm focus:border-indigo-500 focus:outline-none"
                 >
-                  <option value="percentage">Percentage Off</option>
-                  <option value="fixed">Fixed Amount Off</option>
-                  <option value="bundle">Bundle Deal</option>
-                  <option value="free_shipping">Free Shipping</option>
+                  <option value="percentage" className="bg-slate-800">Percentage Off</option>
+                  <option value="fixed" className="bg-slate-800">Fixed Amount Off</option>
+                  <option value="bundle" className="bg-slate-800">Bundle Deal</option>
+                  <option value="free_shipping" className="bg-slate-800">Free Shipping</option>
                 </select>
               </div>
             </div>

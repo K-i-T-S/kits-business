@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
-import { addUserToTenant, supabaseAdmin } from '../utils/tenantManager';
+import { supabase } from '../utils/supabaseClient';
+import { addUserToTenant } from '../utils/tenantManager';
 
 interface InviteTeamMemberModalProps {
   isOpen: boolean;
@@ -36,62 +37,34 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
 
     setLoading(true);
     try {
-      if (!supabaseAdmin) {
-        throw new Error('Service role key not configured');
-      }
-
-      // Step 1: Create or get the user
-      let userId: string;
-
-      // Check if user already exists
-      const { data: existingUsers } = await supabaseAdmin
-        .from('auth.users')
-        .select('id')
-        .eq('email', formData.email)
-        .single();
-
-      if (existingUsers) {
-        userId = existingUsers.id;
-      } else {
-        // Create new user with temporary password
-        const tempPassword = Math.random().toString(36).slice(-12);
-        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email: formData.email,
-          password: tempPassword,
-          email_confirm: true,
-          user_metadata: {
-            name: formData.name,
-            invited_by_tenant: currentTenant.id,
-            temp_password: tempPassword,
-          },
-        });
-
-        if (createError) throw createError;
-        userId = newUser.user.id;
-
-        // Send invitation email (you'd implement this with your email service)
-        toast.success(`Invitation sent to ${formData.email}`);
-      }
-
-      // Step 2: Add user to tenant with role
-      await addUserToTenant(currentTenant.id, userId, formData.role);
-
-      // Step 3: Create employee record
-      const { error: employeeError } = await supabaseAdmin
-        .from('employees')
+      // Send a Supabase magic-link invitation. When the invitee clicks the link
+      // and signs up, the accept-invitation flow (TODO: Edge Function) will call
+      // add_user_to_tenant and create their employee record.
+      // For now we store the pending invite in the invitations table so the
+      // Edge Function can pick it up on first login.
+      const { error: inviteError } = await supabase
+        .from('pending_invitations')
         .insert({
-          name: formData.name,
-          email: formData.email,
-          role: formData.role === 'owner' ? 'admin' : formData.role,
+          tenant_id:  currentTenant.id,
+          email:      formData.email,
+          name:       formData.name,
+          role:       formData.role,
           commission: formData.commission,
-          totalSales: 0,
-          shifts: [],
-          tenant_id: currentTenant.id,
         });
 
-      if (employeeError) throw employeeError;
+      if (inviteError) throw inviteError;
 
-      toast.success('Team member added successfully!');
+      // Send the magic link — user signs up with their own password
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email:   formData.email,
+        options: { shouldCreateUser: true },
+      });
+
+      if (otpError) throw otpError;
+
+      toast.success(`Invitation sent to ${formData.email}`, {
+        description: 'They will receive a sign-in link by email.',
+      });
       onSuccess();
       onClose();
 

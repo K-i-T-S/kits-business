@@ -268,7 +268,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [hasSession, setHasSession] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!currentTenant) return;
+    // RLS handles tenant isolation server-side via current_tenant_id().
+    // We only need a valid auth session — no React state dependency required.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
     setLoading(true);
     try {
@@ -306,7 +309,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [currentTenant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // stable — RLS enforces tenant isolation, no React state needed here
 
   useEffect(() => {
     let isMounted = true;
@@ -333,7 +336,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const errorObj = tenantError instanceof Error ? tenantError : new Error(String(tenantError));
             log.error('Failed to load tenant', errorObj);
           }
-          setTimeout(() => { loadData(); }, 100);
+          if (isMounted) loadData();
         }
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -361,8 +364,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }).catch(error => {
           const errorObj = error instanceof Error ? error : new Error(String(error));
           log.error('Failed to load tenant on auth change', errorObj);
-        });
-        setTimeout(() => { loadData(); }, 100);
+        }).finally(() => { loadData(); });
       } else {
         setProducts([]);
         setSales([]);

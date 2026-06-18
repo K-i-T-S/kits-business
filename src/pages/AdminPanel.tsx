@@ -104,7 +104,12 @@ export default function AdminPanel() {
       if (rpcError) throw rpcError;
       setTenants((data as TenantRow[]) ?? []);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load tenants');
+      const msg = err instanceof Error
+        ? err.message
+        : (err && typeof err === 'object' && 'message' in err)
+          ? String((err as { message: unknown }).message)
+          : 'Failed to load tenants';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -153,7 +158,12 @@ export default function AdminPanel() {
         setEditState(null);
         await fetchTenants();
       } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : 'Failed to update plan');
+        toast.error(
+          err instanceof Error ? err.message
+            : (err && typeof err === 'object' && 'message' in err)
+              ? String((err as { message: unknown }).message)
+              : 'Failed to update plan',
+        );
         setEditState((prev) => (prev ? { ...prev, saving: false } : null));
       }
     })();
@@ -192,7 +202,12 @@ export default function AdminPanel() {
         setProvisionForm(null);
         await fetchTenants();
       } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : 'Failed to save provisioning');
+        toast.error(
+          err instanceof Error ? err.message
+            : (err && typeof err === 'object' && 'message' in err)
+              ? String((err as { message: unknown }).message)
+              : 'Failed to save provisioning',
+        );
         setProvisionForm((prev) => (prev ? { ...prev, saving: false } : null));
       }
     })();

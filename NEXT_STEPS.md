@@ -183,10 +183,12 @@ Day-3 and Day-7 follow-up emails to improve activation and starter→paid conver
 - [x] ~~FeatureGate — "API & Webhooks requires Business" lock shows correctly for lower plans~~
 - [x] ~~Error boundary — dark fallback UI verified in source (bg-slate-950, rose alert, Sentry reporting)~~
 
-### 🔴 Run migration 000014 first, then retest
-- [ ] **Run migration 000014** in Supabase SQL Editor (`supabase/migrations/20260618_000014_fix_admin_and_invite_rls.sql`) — fixes `admin_list_tenants()` 400 error and `pending_invitations` 403
-- [ ] `/admin` panel — plan elevation working (blocked until migration 000014 is applied)
-- [ ] Pending invitations auto-redirect — 403 console noise gone (blocked until migration 000014)
+### 🔴 Run migration 000015, then retest admin panel
+- [x] ~~Run migration 000014~~ — applied; fixed `pending_invitations` 403 RLS ✅
+- [ ] **Run migration 000015** in Supabase SQL Editor (`supabase/migrations/20260618_000015_fix_admin_list_ambiguous_id.sql`)
+  - Root cause: `RETURNS TABLE(id UUID, ...)` creates an OUT parameter named `id`; the unqualified `WHERE id = auth.uid()` inside the body was ambiguous (PostgreSQL 42702). Fixed by aliasing `auth.users au` and using `au.id`.
+- [ ] `/admin` panel — plan elevation working (blocked until migration 000015 is applied)
+- [ ] Pending invitations auto-redirect — 403 console noise gone ✅ (fixed in 000014)
 
 ### 🟡 Needs email inbox access to test
 - [ ] Full signup → email confirmation → onboarding wizard → first sale (new account flow)

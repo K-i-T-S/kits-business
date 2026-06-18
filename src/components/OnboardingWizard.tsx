@@ -41,6 +41,16 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
   const labelClass = 'block text-sm font-medium text-white/70 mb-1';
   const primaryBtn = 'w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl px-6 py-3 font-semibold disabled:opacity-60 disabled:cursor-not-allowed';
 
+  // Map country → nearest Supabase region (all MENA closest to eu-central-1)
+  const COUNTRY_REGION: Record<string, string> = {
+    'Lebanon': 'eu-central-1',
+    'UAE': 'us-east-1',
+    'Saudi Arabia': 'us-east-1',
+    'Jordan': 'eu-central-1',
+    'Kuwait': 'us-east-1',
+    'Other': 'eu-central-1',
+  };
+
   const handleStep1 = async () => {
     if (!businessName.trim()) { setError('Business name is required.'); return; }
     setError('');
@@ -48,7 +58,15 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
     try {
       const { error: updateError } = await supabase
         .from('tenants')
-        .update({ name: businessName.trim(), industry: industry || null, country, currency, phone: phone || null })
+        .update({
+          name: businessName.trim(),
+          industry: industry || null,
+          country,
+          currency,
+          phone: phone || null,
+          business_type: industry || null,
+          preferred_region: COUNTRY_REGION[country] ?? 'eu-central-1',
+        })
         .eq('id', tenantId);
       if (updateError) throw updateError;
       setStep(2);
@@ -115,7 +133,10 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
   const handleFinish = async () => {
     setLoading(true);
     try {
-      await supabase.from('tenants').update({ onboarding_completed: true }).eq('id', tenantId);
+      await supabase
+        .from('tenants')
+        .update({ onboarding_completed: true, db_provision_status: 'pending' })
+        .eq('id', tenantId);
       onComplete();
     } catch {
       onComplete();

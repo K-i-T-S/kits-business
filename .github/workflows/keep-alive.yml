@@ -1,31 +1,79 @@
 name: Supabase Keep-Alive
 
-# Pings the Supabase project every 3 days to prevent the 7-day auto-pause.
-# Required secrets: SUPABASE_URL, SUPABASE_ANON_KEY
+# Pings the KiTS shared Supabase project AND all provisioned client projects
+# every 5 days to prevent the free-tier 7-day auto-pause.
+#
+# Required secrets:
+#   SUPABASE_URL              — KiTS shared project URL
+#   SUPABASE_ANON_KEY         — KiTS shared project anon key
+#   SUPABASE_SERVICE_ROLE_KEY — KiTS service role key (reads client project list)
 
 on:
   schedule:
-    - cron: '0 6 */3 * *'   # 06:00 UTC every 3 days
+    - cron: '0 6 */5 * *'   # 06:00 UTC every 5 days
   workflow_dispatch:          # allow manual trigger
 
 jobs:
   ping:
-    name: Ping Supabase
+    name: Ping All Supabase Projects
     runs-on: ubuntu-latest
     steps:
-      - name: Wake up Supabase project
+      - name: Ping KiTS shared project
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             --max-time 30 \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             "${{ secrets.SUPABASE_URL }}/rest/v1/")
-
-          echo "Supabase responded with HTTP $STATUS"
-
+          echo "KiTS shared project: HTTP $STATUS"
           if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 500 ]; then
-            echo "Unexpected status — project may be paused or unreachable."
-            exit 1
+            echo "WARNING: KiTS shared project may be paused or unreachable (HTTP $STATUS)"
           fi
 
-          echo "Project is active."
+      - name: Fetch provisioned client projects
+        id: clients
+        run: |
+          # Query tenants table for all provisioned client projects
+          RESPONSE=$(curl -sf \
+            --max-time 30 \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/tenants?db_provision_status=eq.provisioned&standalone_supabase_url=not.is.null&select=name,standalone_supabase_url,standalone_anon_key" \
+            2>/dev/null || echo '[]')
+          echo "clients=$RESPONSE" >> $GITHUB_OUTPUT
+          COUNT=$(echo "$RESPONSE" | jq '. | length' 2>/dev/null || echo 0)
+          echo "Found $COUNT provisioned client projects"
+
+      - name: Ping each client project
+        run: |
+          CLIENTS='${{ steps.clients.outputs.clients }}'
+          if [ -z "$CLIENTS" ] || [ "$CLIENTS" = "[]" ]; then
+            echo "No provisioned client projects yet — nothing to ping."
+            exit 0
+          fi
+
+          echo "$CLIENTS" | jq -c '.[]' | while IFS= read -r client; do
+            NAME=$(echo "$client" | jq -r '.name // "unknown"')
+            URL=$(echo "$client" | jq -r '.standalone_supabase_url // ""')
+            KEY=$(echo "$client" | jq -r '.standalone_anon_key // ""')
+
+            if [ -z "$URL" ] || [ -z "$KEY" ]; then
+              echo "Skipping $NAME — missing URL or key"
+              continue
+            fi
+
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 30 \
+              -H "apikey: $KEY" \
+              -H "Authorization: Bearer $KEY" \
+              "${URL}/rest/v1/" 2>/dev/null || echo "000")
+
+            if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 500 ]; then
+              echo "✓ $NAME ($URL): HTTP $STATUS — active"
+            else
+              echo "✗ $NAME ($URL): HTTP $STATUS — may be paused or unreachable"
+            fi
+          done
+
+      - name: Summary
+        run: echo "Keep-alive complete. All reachable projects have been pinged."

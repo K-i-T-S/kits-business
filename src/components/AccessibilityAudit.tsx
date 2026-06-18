@@ -185,7 +185,7 @@ export default function AccessibilityAudit() {
         </div>
         <button
           onClick={() => setIsVisible(false)}
-          className="text-white/40 hover:text-white ml-2"
+          className="text-white/40 hover:text-white ms-2"
           aria-label="Close accessibility audit"
         >
           <XCircle className="w-4 h-4" />

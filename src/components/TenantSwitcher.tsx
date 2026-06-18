@@ -104,7 +104,7 @@ export default function TenantSwitcher() {
         disabled={loading}
       >
         <Building2 className="h-4 w-4 text-white/70" />
-        <div className="flex-1 text-left">
+        <div className="flex-1 text-start">
           <div className="text-sm font-medium text-white">{currentTenant.name}</div>
           <div className="text-xs text-white/60">{getRoleLabel(currentTenant.userRole)}</div>
         </div>
@@ -139,7 +139,7 @@ export default function TenantSwitcher() {
                   }`}
                   disabled={loading}
                 >
-                  <div className="flex-1 text-left">
+                  <div className="flex-1 text-start">
                     <div className="flex items-center gap-2">
                       <div className="font-medium text-white">{tenant.name}</div>
                       {tenant.id === currentTenant.id && (

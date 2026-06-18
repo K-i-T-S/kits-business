@@ -168,12 +168,12 @@ export function OfflineIndicator() {
                 >
                   {syncStatus.isSyncing ? (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      <RefreshCw className="h-4 w-4 me-2 animate-spin" />
                       Syncing
                     </>
                   ) : (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <RefreshCw className="h-4 w-4 me-2" />
                       Sync Now
                     </>
                   )}

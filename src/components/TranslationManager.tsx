@@ -293,7 +293,7 @@ export const TranslationManager: React.FC = () => {
                     <div key={index} className="flex items-center justify-between p-2 border rounded">
                       <div>
                         <span className="font-medium">{missing.key}</span>
-                        <span className="text-sm text-muted-foreground ml-2">
+                        <span className="text-sm text-muted-foreground ms-2">
                           ({missing.language})
                         </span>
                       </div>

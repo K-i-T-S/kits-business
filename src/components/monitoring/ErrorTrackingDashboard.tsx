@@ -116,8 +116,8 @@ export default function ErrorTrackingDashboard() {
                     <Bug className="h-4 w-4 text-red-500 flex-shrink-0" />
                     <span className="font-medium text-sm">{error.message}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground ml-6">{error.source}</p>
-                  <p className="text-xs text-muted-foreground ml-6">{error.timestamp.toLocaleTimeString()}</p>
+                  <p className="text-xs text-muted-foreground ms-6">{error.source}</p>
+                  <p className="text-xs text-muted-foreground ms-6">{error.timestamp.toLocaleTimeString()}</p>
                 </div>
               ))}
             </div>

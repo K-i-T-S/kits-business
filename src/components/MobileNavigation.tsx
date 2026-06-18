@@ -385,7 +385,7 @@ export function MobileNavigation() {
 
                   {/* Sub-items */}
                   {hasSubItems && expanded && (
-                    <div className="ml-4 mt-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                    <div className="ms-4 mt-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
                       {item.subItems!.map((subItem, subIndex) => {
                         const SubIcon = subItem.icon;
                         const subActive = isActive(subItem.path);

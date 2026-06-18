@@ -107,11 +107,11 @@ export default function HealthCheckDashboard() {
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" onClick={() => setIsAutoRefresh(!isAutoRefresh)}>
-            <Clock className="h-4 w-4 mr-2" />
+            <Clock className="h-4 w-4 me-2" />
             Auto-refresh: {isAutoRefresh ? 'On' : 'Off'}
           </Button>
           <Button variant="outline" size="sm" onClick={checkHealth} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 me-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>

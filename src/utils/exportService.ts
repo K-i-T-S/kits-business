@@ -1,7 +1,3 @@
-import * as ExcelJS from 'exceljs';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-
 export interface ExportData {
   headers: string[];
   rows: (string | number)[][];
@@ -23,6 +19,11 @@ export class ExportService {
     if (!element) {
       throw new Error(`Element with id '${elementId}' not found`);
     }
+
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ]);
 
     const canvas = await html2canvas(element, {
       scale: options.scale || 2,
@@ -100,6 +101,7 @@ export class ExportService {
   }
 
   static async exportToExcel(data: ExportData, filename: string = 'report.xlsx'): Promise<void> {
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Report');
 
@@ -166,6 +168,11 @@ export class ExportService {
       throw new Error(`Chart element with id '${chartElementId}' not found`);
     }
 
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ]);
+
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
@@ -192,6 +199,7 @@ export class ExportService {
   }
 
   static async createMultiSheetExcel(reports: { name: string; data: ExportData }[], filename: string = 'multi-report.xlsx'): Promise<void> {
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
 
     reports.forEach(report => {

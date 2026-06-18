@@ -129,7 +129,7 @@ export default function PerformanceDashboard() {
           <p className="text-muted-foreground">Real browser Web Vitals for this session</p>
         </div>
         <Button variant="outline" size="sm" onClick={collectVitals} disabled={isLoading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 me-2 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </div>

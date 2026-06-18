@@ -40,4 +40,11 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(
+  <>
+    <div style={{ position: 'fixed', bottom: 16, right: 16, zIndex: 9999 }}>
+      <ErrorButton />
+    </div>
+    <App />
+  </>
+);

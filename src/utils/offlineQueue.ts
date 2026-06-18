@@ -15,8 +15,8 @@ export interface OfflineAction {
   table: 'products' | 'sales' | 'customers' | 'employees' | 'sale_items';
   operation: 'insert' | 'update' | 'delete';
   payload: Record<string, unknown>;
-  matchColumn?: string;   // for update/delete: which column to match
-  matchValue?: string;    // the value to match
+  matchColumn?: string; // for update/delete: which column to match
+  matchValue?: string; // the value to match
   timestamp: number;
   retryCount: number;
 }
@@ -64,7 +64,7 @@ export async function queueMutation(
 export async function getPendingActions(): Promise<OfflineAction[]> {
   try {
     const db = await openDB();
-    return new Promise((resolve, reject) => {
+    return await new Promise<OfflineAction[]>((resolve, reject) => {
       const tx = db.transaction([STORE_NAME], 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const req = store.getAll();

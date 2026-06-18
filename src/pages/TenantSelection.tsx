@@ -93,8 +93,14 @@ export default function TenantSelection() {
     try {
       const newTenant = await createTenant(tenantName.trim(), tenantSlug, currentUser.id);
       toast.success('Business created!');
-      // Always show onboarding for newly created tenants
+
+      // Fire-and-forget welcome email — never block the user flow
       const tid = (newTenant as { id?: string } | null)?.id ?? tenantSlug;
+      supabase.functions.invoke('welcome-email', {
+        body: { tenantId: tid, tenantName: tenantName.trim(), userEmail: currentUser.email ?? '' },
+      }).catch(() => { /* non-critical — silently ignore email failures */ });
+
+      // Always show onboarding for newly created tenants
       setOnboardingTenantId(tid);
       setOnboardingTenantName(tenantName.trim());
       setShowOnboarding(true);

@@ -78,7 +78,7 @@ export default function MonitoringDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <Badge variant="outline" className="bg-white/10 text-slate-200 border-white/20">
-              <Clock className="h-3 w-3 mr-1" />
+              <Clock className="h-3 w-3 me-1" />
               {new Date().toLocaleTimeString()}
             </Badge>
             <Button
@@ -87,7 +87,7 @@ export default function MonitoringDashboard() {
               onClick={loadStats}
               className="bg-white/10 text-slate-200 border-white/20 hover:bg-white/20"
             >
-              <Settings className="h-4 w-4 mr-2" />
+              <Settings className="h-4 w-4 me-2" />
               Refresh
             </Button>
           </div>

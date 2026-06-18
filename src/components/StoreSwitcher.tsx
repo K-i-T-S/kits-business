@@ -82,7 +82,7 @@ export default function StoreSwitcher() {
         disabled={loading}
       >
         <Building2 className="h-4 w-4 text-white/70" />
-        <div className="flex-1 text-left">
+        <div className="flex-1 text-start">
           <div className="text-sm font-medium text-white">{currentStore?.name || 'Select Store'}</div>
           <div className="text-xs text-white/60">{currentStore?.code || 'No store selected'}</div>
         </div>
@@ -117,7 +117,7 @@ export default function StoreSwitcher() {
                   }`}
                   disabled={loading}
                 >
-                  <div className="flex-1 text-left">
+                  <div className="flex-1 text-start">
                     <div className="flex items-center gap-2">
                       <div className="font-medium text-white">{store.name}</div>
                       {store.id === currentStore?.id && (

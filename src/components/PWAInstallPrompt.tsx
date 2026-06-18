@@ -134,7 +134,7 @@ export function PWAInstallPrompt() {
               size="sm"
               className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium shadow-lg transition-all duration-200 active:scale-95"
             >
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 me-2" />
               Install App
             </Button>
             {!notificationsEnabled && (
@@ -144,7 +144,7 @@ export function PWAInstallPrompt() {
                 size="sm"
                 className="border-white/20 text-white/70 hover:bg-white/10 hover:border-white/30 transition-all duration-200 active:scale-95"
               >
-                <Wifi className="h-4 w-4 mr-1" />
+                <Wifi className="h-4 w-4 me-1" />
                 Enable
               </Button>
             )}

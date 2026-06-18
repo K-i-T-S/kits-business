@@ -224,7 +224,7 @@ export default function AutomatedMarketing({
                       </div>
                     </div>
 
-                    <div className="ml-4 flex items-center gap-2">
+                    <div className="ms-4 flex items-center gap-2">
                       <button
                         onClick={() => toast.info('Campaign settings coming soon')}
                         className="rounded-xl p-2 text-white/40 hover:bg-white/10 hover:text-white/70"

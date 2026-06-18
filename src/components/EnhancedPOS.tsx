@@ -250,12 +250,12 @@ export default function EnhancedPOS({
                         </button>
                         <button
                           onClick={() => removeFromCart(item.productId)}
-                          className="p-1 rounded border border-rose-200/50 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 ml-2"
+                          className="p-1 rounded border border-rose-200/50 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 ms-2"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="text-right ml-4">
+                      <div className="text-end ms-4">
                         <div className="font-semibold text-white">
                           ${(item.price * item.quantity).toFixed(2)}
                         </div>

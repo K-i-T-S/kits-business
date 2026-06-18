@@ -78,7 +78,7 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
       </Link>
 
       {hasSubItems && isSubmenuOpen && (
-        <div className="ml-4 mt-1 space-y-1">
+        <div className="ms-4 mt-1 space-y-1">
           {item.subItems!.map((subItem) => {
             const isSubActive = location.pathname === subItem.href;
             return (

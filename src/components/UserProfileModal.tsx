@@ -279,7 +279,7 @@ function RoleBadge({ role }: { role: string }) {
 
   return (
     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${roleInfo.color}`}>
-      <Shield className="h-3 w-3 mr-1" />
+      <Shield className="h-3 w-3 me-1" />
       {roleInfo.label}
     </span>
   );

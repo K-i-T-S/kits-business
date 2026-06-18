@@ -36,16 +36,16 @@ function computeStatus(qty: number, min: number): StockStatus {
 
 const STATUS_COLORS: Record<StockStatus, string> = {
   out_of_stock: 'bg-rose-500/20 text-rose-300 border border-rose-500/30',
-  low_stock:    'bg-amber-500/20 text-amber-300 border border-amber-500/30',
-  optimal:      'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-  overstock:    'bg-sky-500/20 text-sky-300 border border-sky-500/30',
+  low_stock: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+  optimal: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+  overstock: 'bg-sky-500/20 text-sky-300 border border-sky-500/30',
 };
 
 const STATUS_ICONS: Record<StockStatus, React.ReactNode> = {
   out_of_stock: <AlertTriangle className="h-4 w-4" />,
-  low_stock:    <TrendingUp className="h-4 w-4" />,
-  optimal:      <Package className="h-4 w-4" />,
-  overstock:    <BarChart3 className="h-4 w-4" />,
+  low_stock: <TrendingUp className="h-4 w-4" />,
+  optimal: <Package className="h-4 w-4" />,
+  overstock: <BarChart3 className="h-4 w-4" />,
 };
 
 export default function ReorderPointManagement() {
@@ -76,15 +76,15 @@ export default function ReorderPointManagement() {
 
       setItems(
         (data ?? []).map(p => ({
-          id:             p.id,
-          name:           p.name,
-          sku:            p.sku,
-          category:       p.category,
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          category: p.category,
           stock_quantity: p.stock_quantity,
           min_stock_level: p.min_stock_level,
-          stock_status:   computeStatus(p.stock_quantity, p.min_stock_level),
-          editing:        false,
-          newMinLevel:    p.min_stock_level,
+          stock_status: computeStatus(p.stock_quantity, p.min_stock_level),
+          editing: false,
+          newMinLevel: p.min_stock_level,
         })),
       );
     } catch (err) {
@@ -135,10 +135,10 @@ export default function ReorderPointManagement() {
   });
 
   const stats = [
-    { label: 'Total Products', value: items.length,                                                            subcopy: 'Tracked items',  critical: false },
-    { label: 'Need Reorder',   value: items.filter(r => r.stock_status === 'out_of_stock' || r.stock_status === 'low_stock').length, subcopy: 'Critical items', critical: items.some(r => r.stock_status === 'out_of_stock' || r.stock_status === 'low_stock') },
-    { label: 'Optimal Stock',  value: items.filter(r => r.stock_status === 'optimal').length,                  subcopy: 'Well stocked',   critical: false },
-    { label: 'Overstock',      value: items.filter(r => r.stock_status === 'overstock').length,                subcopy: 'Excess stock',   critical: false },
+    { label: 'Total Products', value: items.length, subcopy: 'Tracked items', critical: false },
+    { label: 'Need Reorder', value: items.filter(r => r.stock_status === 'out_of_stock' || r.stock_status === 'low_stock').length, subcopy: 'Critical items', critical: items.some(r => r.stock_status === 'out_of_stock' || r.stock_status === 'low_stock') },
+    { label: 'Optimal Stock', value: items.filter(r => r.stock_status === 'optimal').length, subcopy: 'Well stocked', critical: false },
+    { label: 'Overstock', value: items.filter(r => r.stock_status === 'overstock').length, subcopy: 'Excess stock', critical: false },
   ];
 
   return (
@@ -177,11 +177,11 @@ export default function ReorderPointManagement() {
               onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
               className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
             >
-              <option value="all"          className="bg-slate-800 text-white">All Status</option>
+              <option value="all" className="bg-slate-800 text-white">All Status</option>
               <option value="out_of_stock" className="bg-slate-800 text-white">Out of Stock</option>
-              <option value="low_stock"    className="bg-slate-800 text-white">Low Stock</option>
-              <option value="optimal"      className="bg-slate-800 text-white">Optimal</option>
-              <option value="overstock"    className="bg-slate-800 text-white">Overstock</option>
+              <option value="low_stock" className="bg-slate-800 text-white">Low Stock</option>
+              <option value="optimal" className="bg-slate-800 text-white">Optimal</option>
+              <option value="overstock" className="bg-slate-800 text-white">Overstock</option>
             </select>
           </div>
           <div className="relative">

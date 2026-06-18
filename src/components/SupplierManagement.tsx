@@ -56,15 +56,15 @@ function SupplierModal({ supplier, onClose, onSave, saving }: ModalProps) {
   const [form, setForm] = useState<SupplierFormData>(
     supplier
       ? {
-          name: supplier.name,
-          contact_name: supplier.contact_name ?? '',
-          phone: supplier.phone ?? '',
-          email: supplier.email ?? '',
-          address: supplier.address ?? '',
-          payment_terms: supplier.payment_terms ?? '',
-          notes: supplier.notes ?? '',
-          is_active: supplier.is_active,
-        }
+        name: supplier.name,
+        contact_name: supplier.contact_name ?? '',
+        phone: supplier.phone ?? '',
+        email: supplier.email ?? '',
+        address: supplier.address ?? '',
+        payment_terms: supplier.payment_terms ?? '',
+        notes: supplier.notes ?? '',
+        is_active: supplier.is_active,
+      }
       : EMPTY_FORM,
   );
 
@@ -281,10 +281,10 @@ export default function SupplierManagement() {
   const inactiveCount = suppliers.filter(s => !s.is_active).length;
 
   const stats = [
-    { label: 'Total Suppliers',  value: totalCount,    subcopy: 'Registered partners' },
-    { label: 'Active Suppliers', value: activeCount,   subcopy: 'Currently trading' },
-    { label: 'Inactive',         value: inactiveCount, subcopy: 'Need attention' },
-    { label: 'Avg Lead Time',    value: '— days',      subcopy: 'Delivery window' },
+    { label: 'Total Suppliers', value: totalCount, subcopy: 'Registered partners' },
+    { label: 'Active Suppliers', value: activeCount, subcopy: 'Currently trading' },
+    { label: 'Inactive', value: inactiveCount, subcopy: 'Need attention' },
+    { label: 'Avg Lead Time', value: '— days', subcopy: 'Delivery window' },
   ];
 
   return (
@@ -340,8 +340,8 @@ export default function SupplierManagement() {
               onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
               className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
             >
-              <option value="all"      className="bg-slate-800 text-white">All Status</option>
-              <option value="active"   className="bg-slate-800 text-white">Active</option>
+              <option value="all" className="bg-slate-800 text-white">All Status</option>
+              <option value="active" className="bg-slate-800 text-white">Active</option>
               <option value="inactive" className="bg-slate-800 text-white">Inactive</option>
             </select>
           </div>

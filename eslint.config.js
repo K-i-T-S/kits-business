@@ -92,11 +92,13 @@ const config = [
       'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': 'warn',
       
-      // Import rules
-      'import/no-unresolved': 'error',
-      'import/named': 'error',
-      'import/namespace': 'error',
-      'import/default': 'error',
+      // Import rules — no-unresolved/named/namespace/default are off because TypeScript's
+      // own type-checker already catches bad imports; the eslint-import-resolver-typescript
+      // interface is incompatible with the current eslint-plugin-import version.
+      'import/no-unresolved': 'off',
+      'import/named': 'off',
+      'import/namespace': 'off',
+      'import/default': 'off',
       'import/export': 'error',
       'import/order': ['error', {
         'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],

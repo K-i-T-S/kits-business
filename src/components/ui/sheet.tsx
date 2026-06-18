@@ -41,7 +41,7 @@ function SheetOverlay({
       )}
       style={{
         backgroundColor: 'rgba(10, 14, 26, 0.85)',
-        backdropFilter: 'blur(8px)'
+        backdropFilter: 'blur(8px)',
       }}
       {...props}
     />
@@ -78,7 +78,7 @@ function SheetContent({
           border: '1px solid rgba(255, 255, 255, 0.15)',
           color: '#f8faff',
           boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
-          backdropFilter: 'blur(28px)'
+          backdropFilter: 'blur(28px)',
         }}
         {...props}
       >

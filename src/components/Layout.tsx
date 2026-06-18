@@ -41,9 +41,9 @@ import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
 import { useApp } from '../context/AppContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useAccessibility } from '../providers/AccessibilityProvider';
-import { supabase } from '../utils/supabaseClient';
 import type { Feature } from '../types/subscription';
 import { FEATURE_DISPLAY, PLAN_DISPLAY } from '../types/subscription';
+import { supabase } from '../utils/supabaseClient';
 
 import { LanguageSwitcher } from './LanguageSwitcher';
 import NavItem from './NavItem';

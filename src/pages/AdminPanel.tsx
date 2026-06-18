@@ -267,7 +267,7 @@ export default function AdminPanel() {
           <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">
             {activeTab === 'subscriptions'
               ? `All Tenants${!loading && tenants.length > 0 ? ` (${tenants.length})` : ''}`
-              : `Database Provisioning`
+              : 'Database Provisioning'
             }
           </h2>
           <button

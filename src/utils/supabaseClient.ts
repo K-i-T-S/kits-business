@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
-import { localStorageClient, localApi, getAuthHeaders as localGetAuthHeaders } from './localStorageClient';
+
 import { apiClient, getAuthHeaders as apiGetAuthHeaders } from './apiClient';
+import { localStorageClient, localApi, getAuthHeaders as localGetAuthHeaders } from './localStorageClient';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;

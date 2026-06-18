@@ -100,7 +100,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         borderRadius: '1.5rem',
         color: '#f8faff',
         boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
-        backdropFilter: 'blur(28px)'
+        backdropFilter: 'blur(28px)',
       }} onClick={(e) => e.stopPropagation()}>
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white">Profile Settings</h2>

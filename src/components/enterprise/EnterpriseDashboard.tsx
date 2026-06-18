@@ -13,13 +13,12 @@ import {
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { supabase } from '../../utils/supabaseClient';
 import Layout from '../Layout';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-import { supabase } from '../../utils/supabaseClient';
 
 interface RealStats {
   employeeCount: number;

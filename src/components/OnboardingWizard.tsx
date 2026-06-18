@@ -146,8 +146,8 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
   const StepDot = ({ n }: { n: number }) => (
     <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-all ${
       n < step ? 'bg-indigo-600 text-white' :
-      n === step ? 'bg-indigo-600/30 border border-indigo-500 text-indigo-300' :
-      'bg-white/5 border border-white/10 text-white/30'
+        n === step ? 'bg-indigo-600/30 border border-indigo-500 text-indigo-300' :
+          'bg-white/5 border border-white/10 text-white/30'
     }`}>{n}</div>
   );
 

@@ -174,7 +174,7 @@ export class TransactionManager {
         console.error('Looking for product ID:', item.productId);
         throw new Error(`Product not found: ${item.productId}`);
       }
-      
+
       const variant = product.variants.find(v => v.id === item.variantId);
       if (variant) {
         operations.push({

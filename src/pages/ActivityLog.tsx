@@ -51,11 +51,11 @@ function getCategoryFromAction(action: string): string {
 function getCategoryIcon(category: string) {
   switch (category) {
     case 'inventory': return <Package className="h-4 w-4" />;
-    case 'sales':     return <DollarSign className="h-4 w-4" />;
-    case 'customer':  return <User className="h-4 w-4" />;
-    case 'employee':  return <User className="h-4 w-4" />;
-    case 'system':    return <Settings className="h-4 w-4" />;
-    default:          return <FileText className="h-4 w-4" />;
+    case 'sales': return <DollarSign className="h-4 w-4" />;
+    case 'customer': return <User className="h-4 w-4" />;
+    case 'employee': return <User className="h-4 w-4" />;
+    case 'system': return <Settings className="h-4 w-4" />;
+    default: return <FileText className="h-4 w-4" />;
   }
 }
 
@@ -76,12 +76,12 @@ export default function ActivityLog() {
   const [selectedLog, setSelectedLog] = useState<DbActivityLog | null>(null);
 
   const categories = [
-    { value: 'all',       label: 'All Categories', icon: FileText },
-    { value: 'sales',     label: 'Sales',           icon: DollarSign },
-    { value: 'inventory', label: 'Inventory',       icon: Package },
-    { value: 'customer',  label: 'Customer',        icon: User },
-    { value: 'employee',  label: 'Employee',        icon: User },
-    { value: 'system',    label: 'System',          icon: Settings },
+    { value: 'all', label: 'All Categories', icon: FileText },
+    { value: 'sales', label: 'Sales', icon: DollarSign },
+    { value: 'inventory', label: 'Inventory', icon: Package },
+    { value: 'customer', label: 'Customer', icon: User },
+    { value: 'employee', label: 'Employee', icon: User },
+    { value: 'system', label: 'System', icon: Settings },
   ];
 
   const fetchLogs = useCallback(async () => {

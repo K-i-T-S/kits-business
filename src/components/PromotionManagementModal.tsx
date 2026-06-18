@@ -158,7 +158,7 @@ export default function PromotionManagementModal({
         borderRadius: '1.5rem',
         color: '#f8faff',
         boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
-        backdropFilter: 'blur(28px)'
+        backdropFilter: 'blur(28px)',
       }}>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Promotion Management</h2>

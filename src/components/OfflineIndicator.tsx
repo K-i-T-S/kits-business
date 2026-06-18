@@ -72,7 +72,7 @@ export function OfflineIndicator() {
         backgroundColor: 'rgba(11, 15, 36, 0.98)',
         border: '1px solid rgba(255, 255, 255, 0.15)',
         boxShadow: '0 10px 40px rgba(2, 3, 12, 0.6)',
-        backdropFilter: 'blur(12px)'
+        backdropFilter: 'blur(12px)',
       }}>
         {/* Status Header */}
         <div className={`h-1 bg-gradient-to-r ${
@@ -116,7 +116,7 @@ export function OfflineIndicator() {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 p-3 rounded-xl" style={{
               backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.2)'
+              border: '1px solid rgba(59, 130, 246, 0.2)',
             }}>
               <Database className="h-4 w-4 text-blue-400" />
               <div>
@@ -126,7 +126,7 @@ export function OfflineIndicator() {
             </div>
             <div className="flex items-center gap-2 p-3 rounded-xl" style={{
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              border: '1px solid rgba(255, 255, 255, 0.1)',
             }}>
               <Clock className="h-4 w-4 text-white/60" />
               <div>
@@ -144,7 +144,7 @@ export function OfflineIndicator() {
                   <Badge variant="secondary" className="text-xs" style={{
                     backgroundColor: 'rgba(59, 130, 246, 0.2)',
                     color: '#60a5fa',
-                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
                   }}>
                     {syncStatus.pendingActions} items
                   </Badge>
@@ -163,7 +163,7 @@ export function OfflineIndicator() {
                   style={{
                     backgroundColor: '#6366f1',
                     color: 'white',
-                    border: 'none'
+                    border: 'none',
                   }}
                 >
                   {syncStatus.isSyncing ? (

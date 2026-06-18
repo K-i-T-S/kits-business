@@ -11,15 +11,15 @@ export async function createTenant(
   name: string,
   slug: string,
   ownerUserId: string,
-  settings: Record<string, unknown> = {}
+  settings: Record<string, unknown> = {},
 ) {
   if (useLocalMode) {
     return { id: 'local-tenant', name, slug, ownerUserId, settings };
   }
 
   const { data, error } = await supabase.rpc('create_tenant', {
-    tenant_name:   name,
-    tenant_slug:   slug,
+    tenant_name: name,
+    tenant_slug: slug,
     owner_user_id: ownerUserId,
     settings,
   });
@@ -31,14 +31,14 @@ export async function createTenant(
 export async function addUserToTenant(
   tenantId: string,
   userId: string,
-  role: 'owner' | 'manager' | 'cashier' | 'viewer'
+  role: 'owner' | 'manager' | 'cashier' | 'viewer',
 ) {
   if (useLocalMode) return { success: true };
 
   const { data, error } = await supabase.rpc('add_user_to_tenant', {
     tenant_id_param: tenantId,
-    user_id_param:   userId,
-    user_role:       role,
+    user_id_param: userId,
+    user_role: role,
   });
 
   if (error) throw error;
@@ -50,7 +50,7 @@ export async function removeUserFromTenant(tenantId: string, userId: string) {
 
   const { data, error } = await supabase.rpc('remove_user_from_tenant', {
     tenant_id_param: tenantId,
-    user_id_param:   userId,
+    user_id_param: userId,
   });
 
   if (error) throw error;

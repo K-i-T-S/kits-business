@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { supabase } from '../utils/supabaseClient';
 import {
   type Feature,
   type RoleAction,
@@ -11,6 +10,7 @@ import {
   PLAN_LIMITS,
   roleCanPerform,
 } from '../types/subscription';
+import { supabase } from '../utils/supabaseClient';
 
 interface SubscriptionContextValue {
   plan: SubscriptionPlan;

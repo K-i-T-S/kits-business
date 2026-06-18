@@ -2,6 +2,7 @@ import { Shield, Users, Edit, CheckCircle, Sparkles } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { supabase } from '../../utils/supabaseClient';
 import Layout from '../Layout';
 
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-import { supabase } from '../../utils/supabaseClient';
 
 type EmployeeRole = 'owner' | 'manager' | 'cashier' | 'viewer';
 

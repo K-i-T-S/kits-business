@@ -46,7 +46,7 @@ export function PWAInstallPrompt() {
         backgroundColor: 'rgba(11, 15, 36, 0.98)',
         border: '1px solid rgba(255, 255, 255, 0.15)',
         boxShadow: '0 10px 40px rgba(2, 3, 12, 0.6)',
-        backdropFilter: 'blur(12px)'
+        backdropFilter: 'blur(12px)',
       }}>
         {/* Gradient Header */}
         <div className="h-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 animate-gradient" />
@@ -57,7 +57,7 @@ export function PWAInstallPrompt() {
               <div className="relative">
                 <div className="p-3 rounded-2xl border" style={{
                   background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(147, 51, 234, 0.2))',
-                  borderColor: 'rgba(99, 102, 241, 0.3)'
+                  borderColor: 'rgba(99, 102, 241, 0.3)',
                 }}>
                   <Smartphone className="h-6 w-6 text-indigo-400" />
                 </div>
@@ -90,21 +90,21 @@ export function PWAInstallPrompt() {
           <div className="grid grid-cols-3 gap-3">
             <div className="flex flex-col items-center gap-2 p-3 rounded-xl" style={{
               backgroundColor: 'rgba(99, 102, 241, 0.1)',
-              border: '1px solid rgba(99, 102, 241, 0.2)'
+              border: '1px solid rgba(99, 102, 241, 0.2)',
             }}>
               <Wifi className="h-4 w-4 text-indigo-400" />
               <span className="text-xs text-white/80 text-center">Works Offline</span>
             </div>
             <div className="flex flex-col items-center gap-2 p-3 rounded-xl" style={{
               backgroundColor: 'rgba(147, 51, 234, 0.1)',
-              border: '1px solid rgba(147, 51, 234, 0.2)'
+              border: '1px solid rgba(147, 51, 234, 0.2)',
             }}>
               <Zap className="h-4 w-4 text-purple-400" />
               <span className="text-xs text-white/80 text-center">Lightning Fast</span>
             </div>
             <div className="flex flex-col items-center gap-2 p-3 rounded-xl" style={{
               backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.2)'
+              border: '1px solid rgba(16, 185, 129, 0.2)',
             }}>
               <Shield className="h-4 w-4 text-emerald-400" />
               <span className="text-xs text-white/80 text-center">Secure</span>

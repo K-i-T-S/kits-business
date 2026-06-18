@@ -12,6 +12,7 @@ import {
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { supabase } from '../../utils/supabaseClient';
 import Layout from '../Layout';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -20,8 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 import HealthCheckDashboard from './HealthCheckDashboard';
 import PerformanceDashboard from './PerformanceDashboard';
-
-import { supabase } from '../../utils/supabaseClient';
 
 interface AppStats {
   productCount: number;

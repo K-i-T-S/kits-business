@@ -108,24 +108,24 @@ export default function MarketingCampaigns({
 
   const getStatusColor = (status: Campaign['status']) => {
     switch (status) {
-      case 'draft':      return 'bg-white/10 text-white/60 border-white/20';
-      case 'scheduled':  return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'active':     return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'paused':     return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'completed':  return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'cancelled':  return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default:           return 'bg-white/10 text-white/60 border-white/20';
+      case 'draft': return 'bg-white/10 text-white/60 border-white/20';
+      case 'scheduled': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'active': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'paused': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'completed': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default: return 'bg-white/10 text-white/60 border-white/20';
     }
   };
 
   const getTypeIcon = (type: Campaign['type']) => {
     switch (type) {
-      case 'email':        return <Mail className="h-4 w-4" />;
-      case 'sms':          return <MessageSquare className="h-4 w-4" />;
+      case 'email': return <Mail className="h-4 w-4" />;
+      case 'sms': return <MessageSquare className="h-4 w-4" />;
       case 'social_media': return <Users className="h-4 w-4" />;
-      case 'loyalty':      return <TrendingUp className="h-4 w-4" />;
-      case 'promotion':    return <BarChart3 className="h-4 w-4" />;
-      default:             return <Mail className="h-4 w-4" />;
+      case 'loyalty': return <TrendingUp className="h-4 w-4" />;
+      case 'promotion': return <BarChart3 className="h-4 w-4" />;
+      default: return <Mail className="h-4 w-4" />;
     }
   };
 

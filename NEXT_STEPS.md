@@ -161,13 +161,13 @@ Day-3 and Day-7 follow-up emails to improve activation and starter→paid conver
 
 ## Production Checklist (Before First Real Customer)
 
-- [ ] Run `npm run verify` — zero errors
-- [x] ~~Run all Supabase migrations~~ — **migrations 001–009 applied; 010–013 pending (see below)**
+- [x] ~~TypeScript (`npm run typecheck`) — zero errors~~
+- [ ] Lint (`npm run lint`) — pre-existing codebase-wide errors (unused imports, floating promises in older components). Track these as a separate code-quality sprint; they do not affect runtime or the new features built.
+- [x] ~~Run all Supabase migrations (001–013 applied)~~
 - [x] ~~Deploy welcome-email Edge Function~~
 - [x] ~~Deploy send-invitation Edge Function~~
-- [ ] **Run pending migrations 009–013** in Supabase Dashboard → SQL Editor (SQL file at `/tmp/kits_migrations_009_013.sql`)
-- [ ] Add `SUPABASE_SERVICE_ROLE_KEY` to Supabase Dashboard → Edge Functions → Secrets (required for `send-invitation`)
-- [ ] Add `SUPABASE_SERVICE_ROLE_KEY` to GitHub Secrets (required for keep-alive to ping client projects)
+- [x] ~~`SUPABASE_SERVICE_ROLE_KEY` for `send-invitation`~~ — auto-injected by Supabase runtime, no manual secret needed
+- [x] ~~Add `SUPABASE_SERVICE_ROLE_KEY` to GitHub Secrets~~ (required for keep-alive to ping client projects)
 - [x] ~~Vercel env vars set: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`~~
 - [x] ~~GitHub secrets set: `SUPABASE_URL`, `SUPABASE_ANON_KEY`~~
 - [ ] Test full signup → onboarding → first sale flow on production URL

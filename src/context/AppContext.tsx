@@ -586,7 +586,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             quantity: item.quantity,
             unit_price: item.price,
             total_price: item.price * item.quantity,
-          }))
+          })),
         );
         if (itemsError) throw itemsError;
       }
@@ -622,7 +622,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setCustomers(prev => prev.map(c =>
             c.id === sale.customerId
               ? { ...c, totalPurchases: c.totalPurchases + sale.total, visitCount: (c.visitCount ?? 0) + 1 }
-              : c
+              : c,
           ));
         }
       }

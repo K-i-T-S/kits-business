@@ -1,11 +1,10 @@
 import { AlertCircle, CheckCircle, Clock, RefreshCw, Activity, Database, Globe, Server } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 
+import { supabase } from '../../utils/supabaseClient';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-
-import { supabase } from '../../utils/supabaseClient';
 
 type HealthStatus = 'healthy' | 'warning' | 'critical';
 

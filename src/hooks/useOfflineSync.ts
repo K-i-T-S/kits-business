@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { supabase } from '@/utils/supabaseClient';
 import {
   type OfflineAction,
   getPendingActions,
@@ -9,6 +8,7 @@ import {
   incrementRetry,
   queueMutation as queueMutationUtil,
 } from '@/utils/offlineQueue';
+import { supabase } from '@/utils/supabaseClient';
 
 // Re-export for consumers that import from this hook file
 export { queueMutation } from '@/utils/offlineQueue';

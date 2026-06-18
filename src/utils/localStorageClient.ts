@@ -17,7 +17,7 @@ const getStorageData = (): LocalStorageData => {
   if (typeof window === 'undefined') {
     return { users: [], sessions: [], products: [], sales: [], customers: [], employees: [], tenant_user_details: [] };
   }
-  
+
   const data = localStorage.getItem(STORAGE_KEY);
   if (data) {
     const parsed = JSON.parse(data);
@@ -27,7 +27,7 @@ const getStorageData = (): LocalStorageData => {
     }
     return parsed;
   }
-  
+
   const initialData: LocalStorageData = {
     users: [],
     sessions: [],
@@ -59,35 +59,35 @@ export const localStorageClient = {
       authStateChangeCallbacks.push(callback);
       // Immediately call with current state
       callback(currentUser ? 'SIGNED_IN' : 'SIGNED_IN', currentUser);
-      
+
       return {
-        data: { 
-          subscription: { 
+        data: {
+          subscription: {
             unsubscribe: () => {
               authStateChangeCallbacks = authStateChangeCallbacks.filter(cb => cb !== callback);
-            }
-          } 
+            },
+          },
         },
       };
     },
-    
+
     getSession: () => Promise.resolve({
       data: {
         session: currentUser,
       },
     }),
-    
+
     signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
       const data = getStorageData();
       const user = data.users.find((u: any) => u.email === email && u.password === password);
-      
+
       if (user) {
         currentUser = {
           user: { ...user },
           access_token: 'local-token-' + generateId(),
           refresh_token: 'local-refresh-' + generateId(),
         };
-        
+
         // Ensure user has a tenant in local mode
         const existingTenant = data.tenant_user_details.find((t: any) => t.user_id === user.id);
         if (!existingTenant) {
@@ -104,13 +104,13 @@ export const localStorageClient = {
           });
           setStorageData(data);
         }
-        
+
         // Notify callbacks
         authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
-        
+
         return { data: { user: user }, error: null };
       }
-      
+
       // Create user if doesn't exist (for development convenience)
       const newUser = {
         id: generateId(),
@@ -121,9 +121,9 @@ export const localStorageClient = {
         app_metadata: {},
         user_metadata: { name: email.split('@')[0] },
       };
-      
+
       data.users.push(newUser);
-      
+
       // Create default tenant for new user
       const tenantId = generateId();
       data.tenant_user_details.push({
@@ -136,27 +136,27 @@ export const localStorageClient = {
         tenant_active: true,
         settings: {},
       });
-      
+
       setStorageData(data);
-      
+
       currentUser = {
         user: newUser,
         access_token: 'local-token-' + generateId(),
         refresh_token: 'local-refresh-' + generateId(),
       };
-      
+
       authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
-      
+
       return { data: { user: newUser }, error: null };
     },
-    
+
     signUp: async ({ email, password }: { email: string; password: string }) => {
       const data = getStorageData();
-      
+
       if (data.users.find((u: any) => u.email === email)) {
         return { data: null, error: { message: 'User already exists' } };
       }
-      
+
       const newUser = {
         id: generateId(),
         email,
@@ -166,9 +166,9 @@ export const localStorageClient = {
         app_metadata: {},
         user_metadata: { name: email.split('@')[0] },
       };
-      
+
       data.users.push(newUser);
-      
+
       // Create default tenant for new user
       const tenantId = generateId();
       data.tenant_user_details.push({
@@ -181,20 +181,20 @@ export const localStorageClient = {
         tenant_active: true,
         settings: {},
       });
-      
+
       setStorageData(data);
-      
+
       currentUser = {
         user: newUser,
         access_token: 'local-token-' + generateId(),
         refresh_token: 'local-refresh-' + generateId(),
       };
-      
+
       authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
-      
+
       return { data: { user: newUser }, error: null };
     },
-    
+
     signOut: async () => {
       currentUser = null;
       authStateChangeCallbacks.forEach(cb => cb('SIGNED_OUT', null));
@@ -204,11 +204,11 @@ export const localStorageClient = {
       return { data: { user: currentUser?.user || null }, error: null };
     },
   },
-  
+
   from: (table: string) => {
     const data = getStorageData();
     const tableData = data[table as keyof LocalStorageData] || [];
-    
+
     // Helper to create chainable query builder
     const createQueryBuilder = (filters: Array<{column: string, value: any}> = []) => {
       const applyFilters = (data: any[]) => {
@@ -218,7 +218,7 @@ export const localStorageClient = {
         });
         return filtered;
       };
-      
+
       const builder: any = {
         eq: (column: string, value: any) => {
           return createQueryBuilder([...filters, { column, value }]);
@@ -228,26 +228,26 @@ export const localStorageClient = {
             limit: (limit: number) => {
               let filtered = applyFilters(tableData);
               if (limit) filtered = filtered.slice(0, limit);
-              
-              let sorted = [...filtered];
+
+              const sorted = [...filtered];
               if (options.ascending === false) {
                 sorted.sort((a, b) => a[orderColumn] > b[orderColumn] ? 1 : -1);
               } else {
                 sorted.sort((a, b) => a[orderColumn] < b[orderColumn] ? 1 : -1);
               }
-              
+
               return Promise.resolve({ data: sorted, error: null });
             },
             single: () => {
-              let filtered = applyFilters(tableData);
-              
-              let sorted = [...filtered];
+              const filtered = applyFilters(tableData);
+
+              const sorted = [...filtered];
               if (options.ascending === false) {
                 sorted.sort((a, b) => a[orderColumn] > b[orderColumn] ? 1 : -1);
               } else {
                 sorted.sort((a, b) => a[orderColumn] < b[orderColumn] ? 1 : -1);
               }
-              
+
               const result = sorted[0] || null;
               return Promise.resolve({ data: result, error: result ? null : { message: 'Not found' } });
             },
@@ -259,15 +259,15 @@ export const localStorageClient = {
           return Promise.resolve({ data: filtered, error: null });
         },
         single: () => {
-          let filtered = applyFilters(tableData);
+          const filtered = applyFilters(tableData);
           const result = filtered[0] || null;
           return Promise.resolve({ data: result, error: result ? null : { message: 'Not found' } });
         },
       };
-      
+
       // Store filters on the builder for execution
       builder.filters = filters;
-      
+
       // Make the builder thenable so it executes when awaited
       builder.then = (resolve: any, reject: any) => {
         const filtered = tableData.filter((item: any) => {
@@ -276,56 +276,56 @@ export const localStorageClient = {
         resolve({ data: filtered, error: null });
         return builder;
       };
-      
+
       return builder;
     };
-    
+
     return {
       select: (columns = '*') => {
         return createQueryBuilder();
       },
-      
+
       insert: (item: any) => {
-        const newItem = Array.isArray(item) 
+        const newItem = Array.isArray(item)
           ? item.map(i => ({ ...i, id: i.id || generateId() }))
           : { ...item, id: item.id || generateId() };
-        
+
         const updatedData = [...tableData, ...(Array.isArray(newItem) ? newItem : [newItem])];
         data[table as keyof LocalStorageData] = updatedData;
         setStorageData(data);
-        
+
         return Promise.resolve({ data: Array.isArray(newItem) ? newItem : [newItem], error: null });
       },
-      
+
       update: (updates: any) => {
         return {
           eq: (column: string, value: any) => {
-            const updatedData = tableData.map((item: any) => 
-              item[column] === value ? { ...item, ...updates } : item
+            const updatedData = tableData.map((item: any) =>
+              item[column] === value ? { ...item, ...updates } : item,
             );
             data[table as keyof LocalStorageData] = updatedData;
             setStorageData(data);
-            
+
             const updated = updatedData.filter((item: any) => item[column] === value);
             return Promise.resolve({ data: updated, error: null });
           },
         };
       },
-      
+
       delete: () => {
         return {
           eq: (column: string, value: any) => {
             const updatedData = tableData.filter((item: any) => item[column] !== value);
             data[table as keyof LocalStorageData] = updatedData;
             setStorageData(data);
-            
+
             return Promise.resolve({ data: null, error: null });
           },
         };
       },
     };
   },
-  
+
   rpc: () => Promise.resolve({ data: [], error: null }),
 };
 
@@ -336,70 +336,70 @@ export const localApi = {
   async get(endpoint: string) {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     const data = getStorageData();
     const resource = endpoint.split('/')[1]; // products, sales, etc.
-    
+
     if (resource === 'products') return { products: data.products };
     if (resource === 'sales') return { sales: data.sales };
     if (resource === 'customers') return { customers: data.customers };
     if (resource === 'employees') return { employees: data.employees };
-    
+
     return { data: [] };
   },
 
   async post(endpoint: string, item: any) {
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     const data = getStorageData();
     const resource = endpoint.split('/')[1];
     const newItem = { ...item, id: generateId() };
-    
+
     if (resource && data[resource as keyof LocalStorageData]) {
       data[resource as keyof LocalStorageData].push(newItem);
       setStorageData(data);
       return { [resource.slice(0, -1)]: newItem }; // products -> product
     }
-    
+
     return { data: newItem };
   },
 
   async put(endpoint: string, updates: any) {
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     const data = getStorageData();
     const parts = endpoint.split('/');
     const resource = parts[1];
     const id = parts[2];
-    
+
     if (resource && data[resource as keyof LocalStorageData]) {
       const updated = data[resource as keyof LocalStorageData].map((item: any) =>
-        item.id === id ? { ...item, ...updates } : item
+        item.id === id ? { ...item, ...updates } : item,
       );
       data[resource as keyof LocalStorageData] = updated;
       setStorageData(data);
-      
+
       const updatedItem = updated.find((item: any) => item.id === id);
       return { [resource.slice(0, -1)]: updatedItem };
     }
-    
+
     return { data: updates };
   },
 
   async delete(endpoint: string) {
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     const data = getStorageData();
     const parts = endpoint.split('/');
     const resource = parts[1];
     const id = parts[2];
-    
+
     if (resource && data[resource as keyof LocalStorageData]) {
       const filtered = data[resource as keyof LocalStorageData].filter((item: any) => item.id !== id);
       data[resource as keyof LocalStorageData] = filtered;
       setStorageData(data);
     }
-    
+
     return { success: true };
   },
 };

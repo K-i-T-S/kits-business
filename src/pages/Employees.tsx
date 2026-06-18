@@ -265,7 +265,7 @@ export default function Employees() {
             borderRadius: '1.5rem',
             color: '#f8faff',
             boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
-            backdropFilter: 'blur(28px)'
+            backdropFilter: 'blur(28px)',
           }}>
             <h2 className="text-lg sm:text-xl mb-4 font-semibold" style={{ color: '#f8faff' }}>Add New Employee</h2>
             <form onSubmit={handleAddEmployee} className="space-y-4">
@@ -279,7 +279,7 @@ export default function Employees() {
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#f8faff'
+                    color: '#f8faff',
                   }}
                   required
                 />
@@ -294,7 +294,7 @@ export default function Employees() {
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#f8faff'
+                    color: '#f8faff',
                   }}
                   required
                 />
@@ -308,7 +308,7 @@ export default function Employees() {
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#f8faff'
+                    color: '#f8faff',
                   }}
                 >
                   <option value="cashier">Cashier</option>
@@ -329,7 +329,7 @@ export default function Employees() {
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#f8faff'
+                    color: '#f8faff',
                   }}
                   required
                 />
@@ -342,7 +342,7 @@ export default function Employees() {
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#f8faff'
+                    color: '#f8faff',
                   }}
                 >
                   Cancel
@@ -353,7 +353,7 @@ export default function Employees() {
                   style={{
                     backgroundColor: '#3b82f6',
                     color: 'white',
-                    border: 'none'
+                    border: 'none',
                   }}
                 >
                   Add Employee

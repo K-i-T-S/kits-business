@@ -25,14 +25,14 @@ function getStockStatus(qty: number, min: number): StockStatus {
 
 const STATUS_COLORS: Record<StockStatus, string> = {
   out_of_stock: 'bg-rose-500/20 text-rose-300 border border-rose-500/30',
-  low_stock:    'bg-amber-500/20 text-amber-300 border border-amber-500/30',
-  ok:           'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+  low_stock: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+  ok: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
 };
 
 const STATUS_LABELS: Record<StockStatus, string> = {
   out_of_stock: 'Out of Stock',
-  low_stock:    'Low Stock',
-  ok:           'OK',
+  low_stock: 'Low Stock',
+  ok: 'OK',
 };
 
 export default function BatchTracking() {
@@ -66,13 +66,13 @@ export default function BatchTracking() {
 
       setProducts(
         (data ?? []).map(p => ({
-          id:             p.id,
-          name:           p.name,
-          sku:            p.sku,
-          category:       p.category,
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          category: p.category,
           stock_quantity: p.stock_quantity,
           min_stock_level: p.min_stock_level,
-          stock_status:   getStockStatus(p.stock_quantity, p.min_stock_level),
+          stock_status: getStockStatus(p.stock_quantity, p.min_stock_level),
         })),
       );
     } catch (err) {
@@ -91,10 +91,10 @@ export default function BatchTracking() {
   });
 
   const stats = [
-    { label: 'Total Products',  value: products.length,                                              subcopy: 'Tracked items',      critical: false },
-    { label: 'Out of Stock',    value: products.filter(p => p.stock_status === 'out_of_stock').length, subcopy: 'Needs restock',       critical: products.some(p => p.stock_status === 'out_of_stock') },
-    { label: 'Low Stock',       value: products.filter(p => p.stock_status === 'low_stock').length,    subcopy: 'At or below minimum', critical: products.some(p => p.stock_status === 'low_stock') },
-    { label: 'Well Stocked',    value: products.filter(p => p.stock_status === 'ok').length,           subcopy: 'Above minimum',       critical: false },
+    { label: 'Total Products', value: products.length, subcopy: 'Tracked items', critical: false },
+    { label: 'Out of Stock', value: products.filter(p => p.stock_status === 'out_of_stock').length, subcopy: 'Needs restock', critical: products.some(p => p.stock_status === 'out_of_stock') },
+    { label: 'Low Stock', value: products.filter(p => p.stock_status === 'low_stock').length, subcopy: 'At or below minimum', critical: products.some(p => p.stock_status === 'low_stock') },
+    { label: 'Well Stocked', value: products.filter(p => p.stock_status === 'ok').length, subcopy: 'Above minimum', critical: false },
   ];
 
   return (
@@ -133,10 +133,10 @@ export default function BatchTracking() {
               onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
               className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
             >
-              <option value="all"          className="bg-slate-800 text-white">All Status</option>
+              <option value="all" className="bg-slate-800 text-white">All Status</option>
               <option value="out_of_stock" className="bg-slate-800 text-white">Out of Stock</option>
-              <option value="low_stock"    className="bg-slate-800 text-white">Low Stock</option>
-              <option value="ok"           className="bg-slate-800 text-white">OK</option>
+              <option value="low_stock" className="bg-slate-800 text-white">Low Stock</option>
+              <option value="ok" className="bg-slate-800 text-white">OK</option>
             </select>
           </div>
           <div className="relative">

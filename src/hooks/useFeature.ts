@@ -1,5 +1,5 @@
-import { type Feature, type SubscriptionPlan } from '../types/subscription';
 import { useSubscription } from '../context/SubscriptionContext';
+import { type Feature, type SubscriptionPlan } from '../types/subscription';
 
 export function useFeature(feature: Feature): { available: boolean; plan: SubscriptionPlan } {
   const { hasFeature, plan } = useSubscription();

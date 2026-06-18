@@ -402,7 +402,7 @@ export default function Customers() {
               borderRadius: '1.5rem',
               color: '#f8faff',
               boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
-              backdropFilter: 'blur(28px)'
+              backdropFilter: 'blur(28px)',
             }}>
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] font-medium" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>New loyalty profile</p>
@@ -422,7 +422,7 @@ export default function Customers() {
                     style={{
                       backgroundColor: 'rgba(255, 255, 255, 0.1)',
                       border: '1px solid rgba(255, 255, 255, 0.2)',
-                      color: '#f8faff'
+                      color: '#f8faff',
                     }}
                     placeholder="Enter customer name"
                     required
@@ -438,7 +438,7 @@ export default function Customers() {
                     style={{
                       backgroundColor: 'rgba(255, 255, 255, 0.1)',
                       border: '1px solid rgba(255, 255, 255, 0.2)',
-                      color: '#f8faff'
+                      color: '#f8faff',
                     }}
                     placeholder="Enter phone number"
                     required
@@ -452,7 +452,7 @@ export default function Customers() {
                     style={{
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#f8faff'
+                      color: '#f8faff',
                     }}
                   >
                     Cancel
@@ -463,7 +463,7 @@ export default function Customers() {
                     style={{
                       backgroundColor: '#3b82f6',
                       color: 'white',
-                      border: 'none'
+                      border: 'none',
                     }}
                   >
                     Add Customer

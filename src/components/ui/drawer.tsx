@@ -42,7 +42,7 @@ function DrawerOverlay({
       )}
       style={{
         backgroundColor: 'rgba(10, 14, 26, 0.85)',
-        backdropFilter: 'blur(8px)'
+        backdropFilter: 'blur(8px)',
       }}
       {...props}
     />
@@ -72,12 +72,12 @@ function DrawerContent({
           border: '1px solid rgba(255, 255, 255, 0.15)',
           color: '#f8faff',
           boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
-          backdropFilter: 'blur(28px)'
+          backdropFilter: 'blur(28px)',
         }}
         {...props}
       >
         <div className="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.2)'
+          backgroundColor: 'rgba(255, 255, 255, 0.2)',
         }} />
         {children}
       </DrawerPrimitive.Content>

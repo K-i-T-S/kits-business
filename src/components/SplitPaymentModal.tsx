@@ -68,7 +68,7 @@ export default function SplitPaymentModal({ isOpen, totalAmount, onComplete, onC
         borderRadius: '1.5rem',
         color: '#f8faff',
         boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
-        backdropFilter: 'blur(28px)'
+        backdropFilter: 'blur(28px)',
       }}>
         <h2 className="text-xl font-semibold text-white mb-6">Split Payment</h2>
 

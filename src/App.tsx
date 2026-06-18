@@ -10,20 +10,20 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { MobileNavigation } from './components/MobileNavigation';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { TranslationManager } from './components/TranslationManager';
 import { Toaster } from './components/ui/sonner';
 import { AppProvider } from './context/AppContext';
-import { SubscriptionProvider } from './context/SubscriptionContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { SubscriptionProvider } from './context/SubscriptionContext';
+import { TranslationProvider } from './context/TranslationContext';
 import Login from './pages/Login';
 import TenantSelection from './pages/TenantSelection';
-import { QueryProvider } from './providers/QueryProvider';
-import { TranslationProvider } from './context/TranslationContext';
 import { AccessibilityProvider } from './providers/AccessibilityProvider';
+import { QueryProvider } from './providers/QueryProvider';
 import { sentryService } from './services/sentryService';
 import { supabase } from './utils/supabaseClient';
 import './i18n';
 import './styles/rtl.css';
-import { TranslationManager } from './components/TranslationManager';
 
 const AcceptInvite = lazy(() => import('./pages/AcceptInvite'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -43,22 +43,6 @@ const SupplierManagement = lazy(() => import('./components/SupplierManagement'))
 const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrderManagement'));
 const StockTransferManagement = lazy(() => import('./components/StockTransferManagement'));
 const ReorderPointManagement = lazy(() => import('./components/ReorderPointManagement'));
-
-// Heavy Analytics and Reporting Components
-const AdvancedAnalytics = lazy(() => import('./components/AdvancedAnalytics'));
-const ReportBuilder = lazy(() => import('./components/ReportBuilder'));
-const Forecasting = lazy(() => import('./components/Forecasting'));
-
-// Heavy Modal Components
-const EnhancedImportInventoryModal = lazy(() => import('./components/EnhancedImportInventoryModal'));
-const EnhancedPOS = lazy(() => import('./components/EnhancedPOS'));
-const PromotionManagementModal = lazy(() => import('./components/PromotionManagementModal'));
-
-// CRM Components
-const CRMAnalytics = lazy(() => import('./components/crm/CRMAnalytics'));
-const CustomerSegmentation = lazy(() => import('./components/crm/CustomerSegmentation'));
-const AutomatedMarketing = lazy(() => import('./components/crm/AutomatedMarketing'));
-const MarketingCampaigns = lazy(() => import('./components/crm/MarketingCampaigns'));
 
 // Enterprise Components
 const EnterpriseDashboard = lazy(() => import('./components/enterprise/EnterpriseDashboard'));
@@ -103,7 +87,7 @@ export default function App() {
     }
 
     // Check for existing session
-    checkSession();
+    void checkSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -144,223 +128,223 @@ export default function App() {
       <Router>
         <AppProvider>
           <SubscriptionProvider>
-          <QueryProvider>
-            <LanguageProvider>
-              <TranslationProvider>
-                <AccessibilityProvider>
-                  <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <Routes>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/tenant-selection" element={<TenantSelection />} />
-                        <Route path="/accept-invite" element={<AcceptInvite />} />
-                        <Route
-                          path="/dashboard"
-                          element={
-                            isAuthenticated ?
-                              <Dashboard /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/pos"
-                          element={
-                            isAuthenticated ?
-                              <POS /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/inventory"
-                          element={
-                            isAuthenticated ?
-                              <Inventory /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/inventory/batch-tracking"
-                          element={
-                            isAuthenticated ?
-                              <BatchTracking /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/inventory/suppliers"
-                          element={
-                            isAuthenticated ?
-                              <SupplierManagement /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/inventory/purchase-orders"
-                          element={
-                            isAuthenticated ?
-                              <PurchaseOrderManagement /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/inventory/stock-transfers"
-                          element={
-                            isAuthenticated ?
-                              <StockTransferManagement /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/inventory/reorder-points"
-                          element={
-                            isAuthenticated ?
-                              <ReorderPointManagement /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/customers"
-                          element={
-                            isAuthenticated ?
-                              <Customers /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/employees"
-                          element={
-                            isAuthenticated ?
-                              <Employees /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/reports"
-                          element={
-                            isAuthenticated ?
-                              <Reports /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/profile-settings"
-                          element={
-                            isAuthenticated ?
-                              <ProfileSettings /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/system-settings"
-                          element={
-                            isAuthenticated ?
-                              <SystemSettings /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/activity-log"
-                          element={
-                            isAuthenticated ?
-                              <ActivityLog /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/help-support"
-                          element={
-                            isAuthenticated ?
-                              <HelpSupport /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/translation-manager"
-                          element={
-                            isAuthenticated ?
-                              <TranslationManager /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/enterprise"
-                          element={
-                            isAuthenticated ?
-                              <EnterpriseDashboard /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/enterprise/roles"
-                          element={
-                            isAuthenticated ?
-                              <RolesAndPermissionsManager /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/enterprise/workflows"
-                          element={
-                            isAuthenticated ?
-                              <WorkflowAutomation /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/enterprise/locations"
-                          element={
-                            isAuthenticated ?
-                              <MultiLocationSupport /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/enterprise/api"
-                          element={
-                            isAuthenticated ?
-                              <ApiAndWebhooks /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route path="/" element={<Navigate to="/login" replace />} />
-                        <Route
-                          path="/monitoring"
-                          element={
-                            isAuthenticated ?
-                              <MonitoringDashboard /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="/admin"
-                          element={
-                            isAuthenticated ?
-                              <AdminPanel /> :
-                              <Navigate to="/login" replace />
-                          }
-                        />
-                        <Route
-                          path="*"
-                          element={
-                            isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
-                          }
-                        />
-                      </Routes>
-                    </Suspense>
+            <QueryProvider>
+              <LanguageProvider>
+                <TranslationProvider>
+                  <AccessibilityProvider>
+                    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Routes>
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/tenant-selection" element={<TenantSelection />} />
+                          <Route path="/accept-invite" element={<AcceptInvite />} />
+                          <Route
+                            path="/dashboard"
+                            element={
+                              isAuthenticated ?
+                                <Dashboard /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/pos"
+                            element={
+                              isAuthenticated ?
+                                <POS /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/inventory"
+                            element={
+                              isAuthenticated ?
+                                <Inventory /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/inventory/batch-tracking"
+                            element={
+                              isAuthenticated ?
+                                <BatchTracking /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/inventory/suppliers"
+                            element={
+                              isAuthenticated ?
+                                <SupplierManagement /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/inventory/purchase-orders"
+                            element={
+                              isAuthenticated ?
+                                <PurchaseOrderManagement /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/inventory/stock-transfers"
+                            element={
+                              isAuthenticated ?
+                                <StockTransferManagement /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/inventory/reorder-points"
+                            element={
+                              isAuthenticated ?
+                                <ReorderPointManagement /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/customers"
+                            element={
+                              isAuthenticated ?
+                                <Customers /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/employees"
+                            element={
+                              isAuthenticated ?
+                                <Employees /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/reports"
+                            element={
+                              isAuthenticated ?
+                                <Reports /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/profile-settings"
+                            element={
+                              isAuthenticated ?
+                                <ProfileSettings /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/system-settings"
+                            element={
+                              isAuthenticated ?
+                                <SystemSettings /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/activity-log"
+                            element={
+                              isAuthenticated ?
+                                <ActivityLog /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/help-support"
+                            element={
+                              isAuthenticated ?
+                                <HelpSupport /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/translation-manager"
+                            element={
+                              isAuthenticated ?
+                                <TranslationManager /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/enterprise"
+                            element={
+                              isAuthenticated ?
+                                <EnterpriseDashboard /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/enterprise/roles"
+                            element={
+                              isAuthenticated ?
+                                <RolesAndPermissionsManager /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/enterprise/workflows"
+                            element={
+                              isAuthenticated ?
+                                <WorkflowAutomation /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/enterprise/locations"
+                            element={
+                              isAuthenticated ?
+                                <MultiLocationSupport /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/enterprise/api"
+                            element={
+                              isAuthenticated ?
+                                <ApiAndWebhooks /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route path="/" element={<Navigate to="/login" replace />} />
+                          <Route
+                            path="/monitoring"
+                            element={
+                              isAuthenticated ?
+                                <MonitoringDashboard /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="/admin"
+                            element={
+                              isAuthenticated ?
+                                <AdminPanel /> :
+                                <Navigate to="/login" replace />
+                            }
+                          />
+                          <Route
+                            path="*"
+                            element={
+                              isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+                            }
+                          />
+                        </Routes>
+                      </Suspense>
 
-                    {/* Mobile components wrapper inside Router context */}
-                    <MobileComponents isAuthenticated={isAuthenticated} loading={loading} />
+                      {/* Mobile components wrapper inside Router context */}
+                      <MobileComponents isAuthenticated={isAuthenticated} loading={loading} />
 
-                    <KeyboardNavigationHelper />
-                    <AccessibilityAudit />
-                    <Toaster />
-                    <SpeedInsights />
-                    <Analytics />
-                  </div>
-                </AccessibilityProvider>
-              </TranslationProvider>
-            </LanguageProvider>
-          </QueryProvider>
+                      <KeyboardNavigationHelper />
+                      <AccessibilityAudit />
+                      <Toaster />
+                      <SpeedInsights />
+                      <Analytics />
+                    </div>
+                  </AccessibilityProvider>
+                </TranslationProvider>
+              </LanguageProvider>
+            </QueryProvider>
           </SubscriptionProvider>
         </AppProvider>
       </Router>

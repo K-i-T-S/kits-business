@@ -33,10 +33,10 @@ interface NewTransferItem {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending:    'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   in_transit: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  completed:  'bg-green-500/20 text-green-400 border-green-500/30',
-  cancelled:  'bg-red-500/20 text-red-400 border-red-500/30',
+  completed: 'bg-green-500/20 text-green-400 border-green-500/30',
+  cancelled: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
 
 // ── Component ──────────────────────────────────────────────────
@@ -89,10 +89,10 @@ export default function StockTransferManagement() {
   );
 
   const stats = [
-    { label: 'Total Transfers', value: transfers.length,  subcopy: 'Stock movements' },
-    { label: 'In Transit',      value: transfers.filter(t => t.status === 'in_transit').length, subcopy: 'Currently moving' },
-    { label: 'Completed',       value: transfers.filter(t => t.status === 'completed').length,  subcopy: 'Delivered' },
-    { label: 'Total Units',     value: totalQty, subcopy: 'Units transferred' },
+    { label: 'Total Transfers', value: transfers.length, subcopy: 'Stock movements' },
+    { label: 'In Transit', value: transfers.filter(t => t.status === 'in_transit').length, subcopy: 'Currently moving' },
+    { label: 'Completed', value: transfers.filter(t => t.status === 'completed').length, subcopy: 'Delivered' },
+    { label: 'Total Units', value: totalQty, subcopy: 'Units transferred' },
   ];
 
   // ── Filtering ──────────────────────────────────────────────

@@ -61,36 +61,36 @@ export default function CustomerCommunicationHistory({
 
   const getTypeIcon = (type: Communication['type']) => {
     switch (type) {
-      case 'email':        return <Mail className="h-4 w-4" />;
-      case 'sms':          return <MessageSquare className="h-4 w-4" />;
-      case 'phone':        return <Phone className="h-4 w-4" />;
-      case 'in_person':    return <User className="h-4 w-4" />;
+      case 'email': return <Mail className="h-4 w-4" />;
+      case 'sms': return <MessageSquare className="h-4 w-4" />;
+      case 'phone': return <Phone className="h-4 w-4" />;
+      case 'in_person': return <User className="h-4 w-4" />;
       case 'social_media': return <MessageSquare className="h-4 w-4" />;
-      default:             return <MessageSquare className="h-4 w-4" />;
+      default: return <MessageSquare className="h-4 w-4" />;
     }
   };
 
   const getStatusColor = (status: Communication['status']) => {
     switch (status) {
-      case 'draft':     return 'bg-white/10 text-white/60 border-white/20';
-      case 'sent':      return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'draft': return 'bg-white/10 text-white/60 border-white/20';
+      case 'sent': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'delivered': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'failed':    return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'opened':    return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'replied':   return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      default:          return 'bg-white/10 text-white/60 border-white/20';
+      case 'failed': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'opened': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'replied': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      default: return 'bg-white/10 text-white/60 border-white/20';
     }
   };
 
   const getStatusIcon = (status: Communication['status']) => {
     switch (status) {
-      case 'draft':     return <Clock className="h-3 w-3" />;
-      case 'sent':      return <Send className="h-3 w-3" />;
+      case 'draft': return <Clock className="h-3 w-3" />;
+      case 'sent': return <Send className="h-3 w-3" />;
       case 'delivered': return <CheckCircle2 className="h-3 w-3" />;
-      case 'failed':    return <XCircle className="h-3 w-3" />;
-      case 'opened':    return <Mail className="h-3 w-3" />;
-      case 'replied':   return <ArrowRight className="h-3 w-3" />;
-      default:          return <Clock className="h-3 w-3" />;
+      case 'failed': return <XCircle className="h-3 w-3" />;
+      case 'opened': return <Mail className="h-3 w-3" />;
+      case 'replied': return <ArrowRight className="h-3 w-3" />;
+      default: return <Clock className="h-3 w-3" />;
     }
   };
 

@@ -18,12 +18,12 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       ...options.headers,
     },
   });
-  
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Request failed' }));
     throw new Error(error.message || 'Request failed');
   }
-  
+
   return response.json();
 };
 
@@ -33,67 +33,67 @@ export const apiClient = {
       authStateChangeCallbacks.push(callback);
       // Immediately call with current state
       callback(currentUser ? 'SIGNED_IN' : 'SIGNED_IN', currentUser);
-      
+
       return {
-        data: { 
-          subscription: { 
+        data: {
+          subscription: {
             unsubscribe: () => {
               authStateChangeCallbacks = authStateChangeCallbacks.filter(cb => cb !== callback);
-            }
-          } 
+            },
+          },
         },
       };
     },
-    
+
     getSession: () => Promise.resolve({
       data: {
         session: currentUser,
       },
     }),
-    
+
     signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
       try {
         const response = await apiRequest('/api/auth/signin', {
           method: 'POST',
           body: JSON.stringify({ email, password }),
         });
-        
+
         currentUser = {
           user: response.data,
           access_token: 'api-token-' + generateId(),
           refresh_token: 'api-refresh-' + generateId(),
         };
-        
+
         // Notify callbacks
         authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
-        
+
         return { data: { user: response.data }, error: null };
       } catch (error: any) {
         return { data: null, error: { message: error.message } };
       }
     },
-    
+
     signUp: async ({ email, password }: { email: string; password: string }) => {
       try {
         const response = await apiRequest('/api/auth/signup', {
           method: 'POST',
           body: JSON.stringify({ email, password }),
         });
-        
+
         currentUser = {
           user: response.data,
           access_token: 'api-token-' + generateId(),
           refresh_token: 'api-refresh-' + generateId(),
         };
-        
+
         authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
-        
+
         return { data: { user: response.data }, error: null };
       } catch (error: any) {
         return { data: null, error: { message: error.message } };
       }
     },
-    
+
     signOut: async () => {
       currentUser = null;
       authStateChangeCallbacks.forEach(cb => cb('SIGNED_OUT', null));
@@ -103,7 +103,7 @@ export const apiClient = {
       return { data: { user: currentUser?.user || null }, error: null };
     },
   },
-  
+
   from: (table: string) => {
     // Helper to create chainable query builder
     const createQueryBuilder = (filters: Array<{column: string, value: any}> = []) => {
@@ -113,7 +113,7 @@ export const apiClient = {
           return filters.every(({ column, value }) => item[column] === value);
         });
       };
-      
+
       const builder: any = {
         eq: (column: string, value: any) => {
           return createQueryBuilder([...filters, { column, value }]);
@@ -125,14 +125,14 @@ export const apiClient = {
                 .then(response => {
                   let filtered = applyFilters(response.data);
                   if (limit) filtered = filtered.slice(0, limit);
-                  
-                  let sorted = [...filtered];
+
+                  const sorted = [...filtered];
                   if (options.ascending === false) {
                     sorted.sort((a, b) => a[orderColumn] > b[orderColumn] ? 1 : -1);
                   } else {
                     sorted.sort((a, b) => a[orderColumn] < b[orderColumn] ? 1 : -1);
                   }
-                  
+
                   return { data: sorted, error: null };
                 })
                 .catch(error => ({ data: [], error: { message: error.message } }));
@@ -140,15 +140,15 @@ export const apiClient = {
             single: () => {
               return apiRequest(`/api/${table}?order=${orderColumn}`)
                 .then(response => {
-                  let filtered = applyFilters(response.data);
-                  
-                  let sorted = [...filtered];
+                  const filtered = applyFilters(response.data);
+
+                  const sorted = [...filtered];
                   if (options.ascending === false) {
                     sorted.sort((a, b) => a[orderColumn] > b[orderColumn] ? 1 : -1);
                   } else {
                     sorted.sort((a, b) => a[orderColumn] < b[orderColumn] ? 1 : -1);
                   }
-                  
+
                   const result = sorted[0] || null;
                   return { data: result, error: result ? null : { message: 'Not found' } };
                 })
@@ -168,14 +168,14 @@ export const apiClient = {
         single: () => {
           return apiRequest(`/api/${table}`)
             .then(response => {
-              let filtered = applyFilters(response.data);
+              const filtered = applyFilters(response.data);
               const result = filtered[0] || null;
               return { data: result, error: result ? null : { message: 'Not found' } };
             })
             .catch(error => ({ data: null, error: { message: error.message } }));
         },
       };
-      
+
       // Make the builder thenable so it executes when awaited
       builder.then = (resolve: any, reject: any) => {
         apiRequest(`/api/${table}`)
@@ -188,24 +188,24 @@ export const apiClient = {
           });
         return builder;
       };
-      
+
       return builder;
     };
-    
+
     return {
       select: (columns = '*') => {
         return createQueryBuilder();
       },
-      
+
       insert: (item: any) => {
         return apiRequest(`/api/${table}`, {
           method: 'POST',
           body: JSON.stringify(item),
         })
-        .then(response => ({ data: [response.data], error: null }))
-        .catch(error => ({ data: null, error: { message: error.message } }));
+          .then(response => ({ data: [response.data], error: null }))
+          .catch(error => ({ data: null, error: { message: error.message } }));
       },
-      
+
       update: (updates: any) => {
         return {
           eq: (column: string, value: any) => {
@@ -226,7 +226,7 @@ export const apiClient = {
           },
         };
       },
-      
+
       delete: () => {
         return {
           eq: (column: string, value: any) => {
@@ -247,7 +247,7 @@ export const apiClient = {
       },
     };
   },
-  
+
   rpc: () => Promise.resolve({ data: [], error: null }),
 };
 

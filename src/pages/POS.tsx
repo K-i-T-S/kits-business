@@ -1,5 +1,5 @@
-import { Barcode, Minus, Plus, Trash2, CreditCard, DollarSign, Receipt, User, Tag, Star, Settings, Split } from 'lucide-react';
-import { useState } from 'react';
+import { Barcode, Minus, Plus, Trash2, DollarSign, Receipt, User, Tag, Star, Settings, Split, Printer } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import DiscountModal from '../components/DiscountModal';
@@ -13,6 +13,13 @@ import type { Sale, Product } from '../context/AppContext';
 import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
 import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
 import { POSCalculator } from '../utils/posCalculations';
+import '../styles/print.css';
+
+// ─── Barcode scanner tuning ───────────────────────────────────────────────────
+// USB HID scanners emit characters in rapid succession (< 50 ms between each)
+// followed by an Enter keydown. We buffer chars and flush on Enter.
+const SCANNER_CHAR_INTERVAL_MS = 50;
+const SCANNER_MIN_LENGTH = 4; // ignore accidental single-keystroke Enter presses
 
 interface CartItem {
   productId: string;
@@ -51,10 +58,12 @@ export default function POS() {
   const [barcode, setBarcode] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSale, setLastSale] = useState<ReceiptData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Step 9: green flash feedback — productId | null
+  const [scannedProductId, setScannedProductId] = useState<string | null>(null);
 
   // Enhanced POS states
   const [showSplitPayment, setShowSplitPayment] = useState(false);
@@ -69,6 +78,10 @@ export default function POS() {
   const [selectedReceiptTemplate, setSelectedReceiptTemplate] = useState<ReceiptTemplate | null>(null);
   const [taxRate] = useState(0.08); // 8% tax rate
 
+  // ── Step 9: Scanner refs — NOT state, avoids async update lag ────────────
+  const scannerBuffer = useRef<string>('');
+  const lastKeystrokeAt = useRef<number>(0);
+
   const filteredProducts = (products || []).filter(p => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -77,7 +90,8 @@ export default function POS() {
       || (p.barcode?.toLowerCase() ?? '').includes(q);
   });
 
-  const addProductToCart = (product: Product) => {
+  // ── Core add-to-cart (shared by click and scanner) ───────────────────────
+  const addProductToCart = useCallback((product: Product, flashId?: string) => {
     const variant = product.variants[0];
     if (!variant) {
       toast.error('Product missing variants', { description: 'Please configure at least one variant before selling.' });
@@ -87,16 +101,19 @@ export default function POS() {
       toast.error('Out of stock', { description: `${product.name} has no remaining inventory.` });
       return;
     }
-    const existing = cart.find(item => item.productId === product.id && item.variantId === variant.id);
-    if (existing) {
-      setCart(cart.map(item =>
-        item.productId === product.id && item.variantId === variant.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item,
-      ));
-    } else {
-      const variantDesc = Object.values(variant.attributes).join(' - ');
-      setCart([...cart, {
+
+    const variantDesc = Object.values(variant.attributes).join(' - ');
+
+    setCart(prev => {
+      const existing = prev.find(item => item.productId === product.id && item.variantId === variant.id);
+      if (existing) {
+        return prev.map(item =>
+          item.productId === product.id && item.variantId === variant.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        );
+      }
+      return [...prev, {
         productId: product.id!,
         variantId: variant.id,
         productName: product.name,
@@ -104,18 +121,67 @@ export default function POS() {
         price: variant.price,
         cost: variant.cost,
         quantity: 1,
-      }]);
+      }];
+    });
+
+    // Step 9: brief green flash on the product card
+    if (flashId) {
+      setScannedProductId(flashId);
+      setTimeout(() => setScannedProductId(null), 600);
     }
-  };
+  }, []);
+
+  // ── Step 9: keydown handler on the barcode input ──────────────────────────
+  // Physical HID scanners beam a burst of characters all within ~50 ms of each
+  // other, then send Enter. We detect that pattern and intercept before the
+  // normal form submit fires.
+  const handleScannerKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    const now = Date.now();
+    const elapsed = now - lastKeystrokeAt.current;
+
+    if (e.key === 'Enter') {
+      const buffered = scannerBuffer.current;
+      scannerBuffer.current = '';
+      lastKeystrokeAt.current = 0;
+
+      if (buffered.length >= SCANNER_MIN_LENGTH) {
+        // Looks like a scanner burst — handle it ourselves
+        e.preventDefault();
+        const product = products.find(p => p.barcode === buffered || p.sku === buffered);
+        if (product) {
+          addProductToCart(product, product.id);
+          setBarcode('');
+          toast.success(`Added: ${product.name}`, { duration: 1500 });
+        } else {
+          toast.error('Barcode not recognised', {
+            description: `No product found for "${buffered}". Check inventory.`,
+          });
+          setBarcode('');
+        }
+      }
+      // Short buffer → let normal form onSubmit handle it
+      return;
+    }
+
+    // Accumulate into buffer if within scanner timing window
+    if (e.key.length === 1) {
+      if (lastKeystrokeAt.current === 0 || elapsed < SCANNER_CHAR_INTERVAL_MS) {
+        scannerBuffer.current += e.key;
+      } else {
+        // Gap too large — human typing, restart buffer
+        scannerBuffer.current = e.key;
+      }
+    }
+
+    lastKeystrokeAt.current = now;
+  }, [products, addProductToCart]);
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Find product by barcode
     const product = products.find(p => p.barcode === barcode);
 
     if (product) {
-      // For simplicity, add first variant
       const variant = product.variants[0];
       if (!variant) {
         toast.error('Product missing variants', {
@@ -137,7 +203,7 @@ export default function POS() {
           ) || []);
         } else {
           const variantDesc = Object.entries(variant.attributes)
-            .map(([key, value]) => `${value}`)
+            .map(([, value]) => `${value}`)
             .join(' - ');
 
           setCart([...(cart || []), {
@@ -203,7 +269,7 @@ export default function POS() {
     }
 
     if (loyaltyPointsRedeemed > 0) {
-      // Assuming loyalty program with 100 points = $1
+      // 100 points = $1
       totalDiscount += loyaltyPointsRedeemed * 0.01;
     }
 
@@ -231,7 +297,6 @@ export default function POS() {
       return;
     }
 
-    // Show split payment modal if total > 0
     if (calculateTotal() > 0) {
       setShowSplitPayment(true);
     }
@@ -283,7 +348,6 @@ export default function POS() {
     try {
       await addSale(sale);
 
-      // Update customer purchase history
       if (selectedCustomer) {
         const customer = customers.find(c => c.id === selectedCustomer);
         if (customer) {
@@ -321,7 +385,8 @@ export default function POS() {
 
   return (
     <Layout>
-      <div className="space-y-10 pb-20 lg:pb-0">
+      {/* Step 4: pb-28 on mobile reserves space for the sticky checkout footer */}
+      <div className="space-y-10 pb-28 lg:pb-0">
         <section className="hero-gradient glass-panel flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between text-white">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-white/80">Point of sale</p>
@@ -339,6 +404,7 @@ export default function POS() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
+            {/* ── Product grid ── */}
             <section className="hero-gradient glass-panel p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -363,12 +429,20 @@ export default function POS() {
                   {(searchQuery.trim() ? filteredProducts : filteredProducts.slice(0, 24)).map(product => {
                     const v = product.variants[0];
                     if (!v) return null;
+                    // Step 4: min-h-[80px] touch target  |  Step 9: green flash ring
+                    const isFlashing = scannedProductId === product.id;
                     return (
                       <button
                         key={product.id}
                         onClick={() => addProductToCart(product)}
                         disabled={v.stock <= 0}
-                        className="rounded-2xl border border-white/30 bg-white/10 p-3 text-left hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        className={[
+                          'rounded-2xl border p-3 text-left transition min-h-[80px] flex flex-col justify-between',
+                          isFlashing
+                            ? 'border-emerald-400 bg-emerald-500/30 ring-2 ring-emerald-400'
+                            : 'border-white/30 bg-white/10 hover:bg-white/20',
+                          v.stock <= 0 ? 'opacity-50 cursor-not-allowed' : '',
+                        ].join(' ')}
                       >
                         <p className="text-sm font-semibold text-white truncate">{product.name}</p>
                         <p className="text-xs text-white/80">${v.price.toFixed(2)}</p>
@@ -381,6 +455,8 @@ export default function POS() {
                 </div>
               )}
             </section>
+
+            {/* ── Scanner lane ── */}
             <section className="hero-gradient glass-panel p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -395,6 +471,7 @@ export default function POS() {
                     type="text"
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
+                    onKeyDown={handleScannerKeyDown}
                     placeholder="Scan or enter barcode..."
                     className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
                     autoFocus
@@ -409,6 +486,7 @@ export default function POS() {
               </form>
             </section>
 
+            {/* ── Cart ── */}
             <section className="hero-gradient glass-panel p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -437,22 +515,25 @@ export default function POS() {
                         <p className="text-sm text-white/80">${(item.price || 0).toFixed(2)}</p>
                       </div>
 
+                      {/* Step 4: quantity controls — min 44×44px (h-11 w-11) touch targets */}
                       <div className="flex flex-col items-center gap-2 sm:flex-row">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => updateQuantity(index, -1)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white/80 hover:bg-white/30"
+                            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white/80 hover:bg-white/30 active:scale-95 transition"
+                            aria-label="Decrease quantity"
                           >
-                            <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <Minus className="w-4 h-4" />
                           </button>
                           <span className="w-12 text-center text-sm font-semibold text-white">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(index, 1)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white/80 hover:bg-white/30"
+                            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white/80 hover:bg-white/30 active:scale-95 transition"
+                            aria-label="Increase quantity"
                           >
-                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <Plus className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -464,6 +545,7 @@ export default function POS() {
                         <button
                           onClick={() => removeItem(index)}
                           className="mt-2 rounded-full border border-rose-200/50 bg-rose-500/20 p-2 text-rose-300 hover:bg-rose-500/30"
+                          aria-label="Remove item"
                         >
                           <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
@@ -476,6 +558,7 @@ export default function POS() {
           </div>
 
           <div className="space-y-6">
+            {/* ── Customer ── */}
             <section className="hero-gradient glass-panel p-6 text-white">
               <p className="text-xs uppercase tracking-[0.3em] text-white/70">Customer</p>
               <h2 className="text-lg font-semibold text-white">Attach loyalty profile</h2>
@@ -496,11 +579,11 @@ export default function POS() {
               </div>
             </section>
 
+            {/* ── Payment options ── */}
             <section className="hero-gradient glass-panel p-6 text-white">
               <p className="text-xs uppercase tracking-[0.3em] text-white/70">Tender</p>
               <h2 className="text-lg font-semibold text-white">Payment options</h2>
 
-              {/* Enhanced Payment Options */}
               <div className="mt-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -543,7 +626,6 @@ export default function POS() {
                 </button>
               </div>
 
-              {/* Applied Discounts and Tips Display */}
               {(appliedCoupon || tipInfo || loyaltyPointsRedeemed > 0) && (
                 <div className="mt-4 space-y-2">
                   {appliedCoupon && (
@@ -568,7 +650,8 @@ export default function POS() {
               )}
             </section>
 
-            <section className="hero-gradient glass-panel p-6 text-white">
+            {/* ── Order summary — desktop only; mobile uses sticky footer ── */}
+            <section className="hero-gradient glass-panel p-6 text-white hidden lg:block">
               <p className="text-xs uppercase tracking-[0.3em] text-white/70">Totals</p>
               <h2 className="text-lg font-semibold text-white">Order Summary</h2>
               <div className="mt-4 space-y-3 text-sm">
@@ -610,7 +693,26 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Enhanced Modals */}
+      {/* ── Step 4: Sticky checkout footer — mobile only (hidden on lg+) ─────── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-white/10 bg-slate-950/95 backdrop-blur-sm px-4 py-3">
+        <div className="flex items-center justify-between mb-2 text-sm">
+          <span className="text-white/60">
+            {cart.length > 0
+              ? `${cart.length} item${cart.length !== 1 ? 's' : ''} in cart`
+              : 'Cart empty'}
+          </span>
+          <span className="font-semibold text-white">${(calculateTotal() || 0).toFixed(2)}</span>
+        </div>
+        <button
+          onClick={handleCheckout}
+          disabled={!cart?.length}
+          className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-lime-400 py-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {cart.length > 0 ? `Checkout · $${calculateTotal().toFixed(2)}` : 'Checkout'}
+        </button>
+      </div>
+
+      {/* ── Modals ─────────────────────────────────────────────────────────── */}
       <SplitPaymentModal
         isOpen={showSplitPayment}
         totalAmount={calculateTotal()}
@@ -688,85 +790,120 @@ export default function POS() {
         }}
         onCancel={() => setShowReceiptCustomization(false)}
       />
+
+      {/* ── Step 5: Receipt modal with print layout ─────────────────────────── */}
       {showReceipt && lastSale && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
           <div className="glass-panel max-h-[90vh] w-full max-w-md overflow-y-auto p-6">
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-                <Receipt className="h-8 w-8 text-emerald-600" />
-              </div>
-              <h2 className="text-xl font-semibold text-white">Sale complete</h2>
-              <p className="text-sm text-white/80">Receipt #{lastSale.id}</p>
-            </div>
-
-            <div className="mt-6 space-y-3 rounded-2xl border border-white/30 bg-white/20 px-4 py-3 text-sm">
-              {(lastSale?.items || []).map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-white/80">
-                    {item.productName} x{item.quantity}
-                  </span>
-                  <span className="font-semibold text-white">${((item.price || 0) * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-white/60">Subtotal</span>
-                <span className="font-semibold text-white">${(lastSale.subtotal || 0).toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white/60">Tax</span>
-                <span className="font-semibold text-white">${(lastSale.tax || 0).toFixed(2)}</span>
-              </div>
-              {(lastSale.discounts || 0) > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-300">Discounts</span>
-                  <span className="font-semibold text-emerald-300">-${(lastSale.discounts || 0).toFixed(2)}</span>
-                </div>
-              )}
-              {(lastSale.tips || 0) > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-300">Tips</span>
-                  <span className="font-semibold text-blue-300">+${(lastSale.tips || 0).toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex items-center justify-between border-t border-white/30 pt-2">
-                <span className="text-white/60">Total</span>
-                <span className="font-semibold text-white">${(lastSale.total || 0).toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white/60">Payment</span>
-                <span className="capitalize text-white">
-                  {lastSale.payments.length > 0 ? lastSale.payments.map(p => p.method).join(', ') : lastSale.paymentMethod}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white/60">Date</span>
-                <span className="text-white">
+            {/*
+              #receipt-print is the anchor for @media print — only this element
+              (and its children) will be visible when the user hits Print.
+              print.css hides body > * and reveals #receipt-print.
+            */}
+            <div id="receipt-print">
+              {/* Store header */}
+              <div className="text-center border-b border-white/20 pb-4 mb-4">
+                <p className="text-lg font-bold text-white">KiTS Business</p>
+                <p className="text-xs text-white/60 mt-1">
                   {new Date(lastSale.date).toLocaleString()}
-                </span>
+                </p>
+                <p className="text-xs text-white/60">
+                  Receipt #{lastSale.id.slice(0, 8).toUpperCase()}
+                </p>
               </div>
-              {lastSale.appliedCoupon && (
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-300">Coupon</span>
-                  <span className="text-emerald-300">{lastSale.appliedCoupon.code}</span>
+
+              {/* Sale complete indicator */}
+              <div className="text-center mb-4">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                  <Receipt className="h-8 w-8 text-emerald-600" />
                 </div>
-              )}
-              {lastSale.loyaltyPointsRedeemed > 0 && (
+                <h2 className="text-xl font-semibold text-white">Sale complete</h2>
+              </div>
+
+              {/* Line items */}
+              <div className="mt-2 space-y-3 rounded-2xl border border-white/30 bg-white/20 px-4 py-3 text-sm">
+                {(lastSale?.items || []).map((item, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-white/80">
+                      {item.productName}
+                      <span className="ml-1 text-white/50">×{item.quantity}</span>
+                    </span>
+                    <span className="font-semibold text-white">
+                      ${((item.price || 0) * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Totals */}
+              <div className="mt-4 space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-amber-300">Points Redeemed</span>
-                  <span className="text-amber-300">{lastSale.loyaltyPointsRedeemed}</span>
+                  <span className="text-white/60">Subtotal</span>
+                  <span className="font-semibold text-white">${(lastSale.subtotal || 0).toFixed(2)}</span>
                 </div>
-              )}
+                <div className="flex items-center justify-between">
+                  <span className="text-white/60">Tax</span>
+                  <span className="font-semibold text-white">${(lastSale.tax || 0).toFixed(2)}</span>
+                </div>
+                {(lastSale.discounts || 0) > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-emerald-300">Discounts</span>
+                    <span className="font-semibold text-emerald-300">-${(lastSale.discounts || 0).toFixed(2)}</span>
+                  </div>
+                )}
+                {(lastSale.tips || 0) > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-300">Tips</span>
+                    <span className="font-semibold text-blue-300">+${(lastSale.tips || 0).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between border-t border-white/30 pt-2">
+                  <span className="font-semibold text-white">Total</span>
+                  <span className="font-bold text-white text-base">${(lastSale.total || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/60">Payment</span>
+                  <span className="capitalize text-white">
+                    {lastSale.payments.length > 0
+                      ? lastSale.payments.map(p => p.method).join(', ')
+                      : lastSale.paymentMethod}
+                  </span>
+                </div>
+                {lastSale.appliedCoupon && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-emerald-300">Coupon</span>
+                    <span className="text-emerald-300">{lastSale.appliedCoupon.code}</span>
+                  </div>
+                )}
+                {lastSale.loyaltyPointsRedeemed > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-amber-300">Points Redeemed</span>
+                    <span className="text-amber-300">{lastSale.loyaltyPointsRedeemed}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer watermark */}
+              <p className="receipt-divider mt-4 pt-4 text-center text-xs text-white/40">
+                Thank you for shopping with KiTS Business
+              </p>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <button onClick={closeReceipt} className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30">
+            {/* Action buttons — hidden from print via .no-print */}
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row no-print">
+              <button
+                onClick={closeReceipt}
+                className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+              >
                 New sale
               </button>
-              <button onClick={() => window.print()} className="flex-1 rounded-2xl border border-white/30 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20">
-                Print
+              {/* Step 5: Print Receipt button */}
+              <button
+                onClick={() => window.print()}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-white/30 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20 transition"
+              >
+                <Printer className="w-4 h-4" />
+                Print Receipt
               </button>
             </div>
           </div>

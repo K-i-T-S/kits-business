@@ -1,0 +1,64 @@
+/* ─── Receipt Print Styles ───────────────────────────────────────────────── */
+
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Show only the receipt section */
+  #receipt-print,
+  #receipt-print * {
+    visibility: visible !important;
+  }
+
+  /* Position the receipt at the top of the page */
+  #receipt-print {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 300px !important;
+    margin: 0 auto !important;
+    padding: 16px !important;
+
+    /* Force white background — dark theme must not print */
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Reset all colour utilities used by the dark theme */
+  #receipt-print [class*="text-white"],
+  #receipt-print [class*="text-slate"],
+  #receipt-print [class*="bg-slate"],
+  #receipt-print [class*="bg-white"] {
+    background: transparent !important;
+    color: #000000 !important;
+  }
+
+  #receipt-print [class*="border-white"] {
+    border-color: #000000 !important;
+  }
+
+  #receipt-print .receipt-divider {
+    border-top: 1px dashed #000000 !important;
+  }
+
+  /* Hide buttons inside receipt modal when printing */
+  #receipt-print .no-print {
+    display: none !important;
+  }
+
+  /* Remove box shadows and gradients */
+  #receipt-print * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    background-image: none !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: 80mm auto;
+    margin: 4mm;
+  }
+}

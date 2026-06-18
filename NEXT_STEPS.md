@@ -185,9 +185,10 @@ Day-3 and Day-7 follow-up emails to improve activation and starter→paid conver
 
 ### 🔴 Run migration 000015, then retest admin panel
 - [x] ~~Run migration 000014~~ — applied; fixed `pending_invitations` 403 RLS ✅
-- [ ] **Run migration 000015** in Supabase SQL Editor (`supabase/migrations/20260618_000015_fix_admin_list_ambiguous_id.sql`)
-  - Root cause: `RETURNS TABLE(id UUID, ...)` creates an OUT parameter named `id`; the unqualified `WHERE id = auth.uid()` inside the body was ambiguous (PostgreSQL 42702). Fixed by aliasing `auth.users au` and using `au.id`.
-- [ ] `/admin` panel — plan elevation working (blocked until migration 000015 is applied)
+- [x] ~~Run migration 000015~~ — applied; fixed PL/pgSQL 42702 ambiguous `id` ✅
+- [ ] **Run migration 000016** in Supabase SQL Editor (`supabase/migrations/20260618_000016_fix_admin_list_varchar_cast.sql`)
+  - Root cause: `auth.users.email` is `character varying(255)`; RETURNS TABLE declared `owner_email TEXT`. PostgreSQL 42804 strict return-type matching rejects implicit coercion at column 7. Fixed by explicit `::TEXT` casts on all string columns in the SELECT.
+- [ ] `/admin` panel — plan elevation working (blocked until migration 000016 is applied)
 - [ ] Pending invitations auto-redirect — 403 console noise gone ✅ (fixed in 000014)
 
 ### 🟡 Needs email inbox access to test

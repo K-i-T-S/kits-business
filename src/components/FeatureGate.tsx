@@ -1,5 +1,4 @@
 import { Lock } from 'lucide-react';
-import { toast } from 'sonner';
 
 import { useSubscription } from '../context/SubscriptionContext';
 import {
@@ -53,9 +52,10 @@ export default function FeatureGate({
         Upgrade to unlock this feature
       </p>
       <button
-        onClick={() =>
-          toast.info(`Upgrade to ${requiredPlan.name} (${requiredPlan.price}) to unlock ${featureInfo.name}`)
-        }
+        onClick={() => {
+          const msg = encodeURIComponent(`Hi! I'd like to upgrade my KiTS plan to ${requiredPlan.name} to unlock ${featureInfo.name}.`);
+          window.open(`https://wa.me/96181290662?text=${msg}`, '_blank');
+        }}
         className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-300 transition-colors hover:bg-amber-500/30"
       >
         Upgrade to {requiredPlan.name} — {requiredPlan.price}

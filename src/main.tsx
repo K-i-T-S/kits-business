@@ -20,10 +20,26 @@ function ErrorButton() {
   return (
     <button
       onClick={() => {
-        throw new Error('This is your first error!');
+        Sentry.captureException(new Error('This is your first error!'));
+      }}
+      style={{
+        position: 'fixed',
+        bottom: '12px',
+        left: '12px',
+        zIndex: 2147483647,
+        padding: '12px 20px',
+        backgroundColor: '#dc2626',
+        color: '#ffffff',
+        fontWeight: 700,
+        fontSize: '15px',
+        border: 'none',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        cursor: 'pointer',
+        pointerEvents: 'auto',
       }}
     >
-      Break the world
+      💥 Break the world
     </button>
   );
 }
@@ -42,7 +58,7 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <>
-    <div style={{ position: 'fixed', bottom: 16, right: 16, zIndex: 9999 }}>
+    <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 2147483647 }}>
       <ErrorButton />
     </div>
     <App />

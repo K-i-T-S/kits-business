@@ -1,4 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock i18n before importing formatting utilities
+vi.mock('../i18n', () => ({
+  default: { language: 'en' },
+}));
 
 // Mock formatting utilities (these would be imported from the actual file)
 const formatCurrency = (amount: number, currency = 'USD'): string => {
@@ -11,7 +16,7 @@ const formatCurrency = (amount: number, currency = 'USD'): string => {
 const formatDate = (date: Date | string, format = 'short'): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('en-US', {
-    dateStyle: format as any,
+    dateStyle: format as 'short' | 'medium' | 'long' | 'full',
   });
 };
 
@@ -26,6 +31,33 @@ const formatPhoneNumber = (phone: string): string => {
 
 const formatPercentage = (value: number, decimals = 1): string => {
   return `${(value * 100).toFixed(decimals)}%`;
+};
+
+// Lebanese phone formatter (matches +961 X XXX XXX format)
+// Lebanese mobile numbers are in format 0X XXX XXX (8 digits with leading 0)
+// The area code is the second digit (3 = Alfa, 7/76 = Touch, etc.)
+const formatLebaneseMobile = (phone: string): string => {
+  // Normalize: remove spaces, dashes, +, parens
+  const cleaned = phone.replace(/[\s\-\(\)+]/g, '');
+  // Remove country code prefix if present (961 without +)
+  const local = cleaned.startsWith('00961') ? cleaned.slice(5)
+    : cleaned.startsWith('961') ? cleaned.slice(3)
+      : cleaned;
+
+  // Mobile: 8 digits in format 0X XXX XXX (leading 0 + 7 significant digits)
+  if (local.length === 8 && local.startsWith('0')) {
+    const area = local[1]; // e.g. '3' from '03'
+    return `+961 ${area} ${local.slice(2, 5)} ${local.slice(5)}`;
+  }
+  // Without leading zero: 7 significant digits X XXX XXX
+  if (local.length === 7) {
+    return `+961 ${local[0]} ${local.slice(1, 4)} ${local.slice(4)}`;
+  }
+  // Landline 7 digits (e.g. 1 234 567 for Beirut)
+  if (local.length === 7) {
+    return `+961 ${local.slice(0, 2)} ${local.slice(2, 5)} ${local.slice(5)}`;
+  }
+  return phone;
 };
 
 describe('Formatting Utilities', () => {
@@ -95,6 +127,34 @@ describe('Formatting Utilities', () => {
 
     it.skip('handles empty input', () => {
       expect(formatPhoneNumber('')).toBe('');
+    });
+  });
+
+  describe('Lebanese phone formatting — MENA context', () => {
+    it('formats Lebanese mobile number from local 8-digit format', () => {
+      // 03 123 456 → +961 3 123 456
+      expect(formatLebaneseMobile('03123456')).toBe('+961 3 123 456');
+    });
+
+    it('formats Lebanese mobile with country code prefix (+961)', () => {
+      expect(formatLebaneseMobile('+96103123456')).toBe('+961 3 123 456');
+    });
+
+    it('formats Lebanese mobile with 00961 prefix', () => {
+      expect(formatLebaneseMobile('0096103123456')).toBe('+961 3 123 456');
+    });
+
+    it('formats Lebanese mobile with 961 prefix (no plus)', () => {
+      expect(formatLebaneseMobile('96103123456')).toBe('+961 3 123 456');
+    });
+
+    it('formats Lebanese 7-digit number (without leading zero)', () => {
+      // e.g. Alfa mobile stored without leading 0: 3123456 → +961 3 123 456
+      expect(formatLebaneseMobile('3123456')).toBe('+961 3 123 456');
+    });
+
+    it('returns original for unrecognized formats', () => {
+      expect(formatLebaneseMobile('123')).toBe('123');
     });
   });
 

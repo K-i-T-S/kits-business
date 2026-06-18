@@ -1,7 +1,7 @@
 # Engineering Roadmap — KiTS Business Terminal
 
 > Last updated: 2026-06-18. Based on MVP codebase audit + two full engineering sprints.
-> Status: Feature-complete MVP. Production-ready for initial customers.
+> Status: Feature-complete MVP. All admin RPCs working in production. Ready for first customers.
 > All items marked ✅ are fully implemented, deployed, and tested.
 
 ---
@@ -69,6 +69,7 @@ Full `ApiAndWebhooks.tsx` implementation:
 KiTS admin at `kits.tech.co@gmail.com` can access `/admin` to:
 - View all tenants with plan, status, user count, DB provision status
 - Change any tenant's subscription plan and status via `admin_set_tenant_plan()` SECURITY DEFINER RPC
+- **Tested in production (2026-06-18):** admin panel loads tenants correctly after migrations 000014–000016
 
 ### ✅ Onboarding Bug Fix
 Migration 000009: retroactive `UPDATE tenants SET onboarding_completed = true` — fixes existing tenants being shown the setup wizard on every login.
@@ -163,7 +164,7 @@ Day-3 and Day-7 follow-up emails to improve activation and starter→paid conver
 
 - [x] ~~TypeScript (`npm run typecheck`) — zero errors~~
 - [ ] Lint (`npm run lint`) — pre-existing codebase-wide errors (unused imports, floating promises in older components). Separate code-quality sprint; does not affect runtime.
-- [x] ~~Run all Supabase migrations (001–013 applied)~~
+- [x] ~~Run all Supabase migrations (001–016 applied)~~
 - [x] ~~Deploy welcome-email Edge Function~~
 - [x] ~~Deploy send-invitation Edge Function~~
 - [x] ~~`SUPABASE_SERVICE_ROLE_KEY` for `send-invitation`~~ — auto-injected by Supabase runtime
@@ -183,13 +184,12 @@ Day-3 and Day-7 follow-up emails to improve activation and starter→paid conver
 - [x] ~~FeatureGate — "API & Webhooks requires Business" lock shows correctly for lower plans~~
 - [x] ~~Error boundary — dark fallback UI verified in source (bg-slate-950, rose alert, Sentry reporting)~~
 
-### 🔴 Run migration 000015, then retest admin panel
-- [x] ~~Run migration 000014~~ — applied; fixed `pending_invitations` 403 RLS ✅
-- [x] ~~Run migration 000015~~ — applied; fixed PL/pgSQL 42702 ambiguous `id` ✅
-- [ ] **Run migration 000016** in Supabase SQL Editor (`supabase/migrations/20260618_000016_fix_admin_list_varchar_cast.sql`)
-  - Root cause: `auth.users.email` is `character varying(255)`; RETURNS TABLE declared `owner_email TEXT`. PostgreSQL 42804 strict return-type matching rejects implicit coercion at column 7. Fixed by explicit `::TEXT` casts on all string columns in the SELECT.
-- [ ] `/admin` panel — plan elevation working (blocked until migration 000016 is applied)
-- [ ] Pending invitations auto-redirect — 403 console noise gone ✅ (fixed in 000014)
+### ✅ Admin panel — all migrations applied and tested (2026-06-18)
+- [x] ~~Migration 000014~~ — `pending_invitations` SELECT RLS for invited users before tenant context; `admin_list_tenants` DROP+RECREATE (CREATE OR REPLACE cannot change RETURNS TABLE shape)
+- [x] ~~Migration 000015~~ — PL/pgSQL 42702: `RETURNS TABLE(id UUID)` creates OUT param `id`; unqualified `WHERE id = auth.uid()` was ambiguous. Fixed by aliasing `auth.users au` → `au.id`
+- [x] ~~Migration 000016~~ — PostgreSQL 42804: `auth.users.email` is `character varying(255)` but RETURNS TABLE declared `TEXT`. Fixed by explicit `::TEXT` casts on all string columns
+- [x] ~~`/admin` panel loads tenants, plan elevation works~~
+- [x] ~~Pending invitations `pending_invitations` 403 console noise gone~~
 
 ### 🟡 Needs email inbox access to test
 - [ ] Full signup → email confirmation → onboarding wizard → first sale (new account flow)

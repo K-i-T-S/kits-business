@@ -127,6 +127,17 @@ Run in this order in Supabase Dashboard → SQL Editor:
 4. `20250617_000003_safe_domain_setup.sql` — all domain tables, RLS policies (safe to re-run)
 5. `20260617_000004_onboarding.sql` — onboarding columns on tenants
 6. `20260618_000005_subscription_tiers.sql` — subscription columns on tenants
+7. `20260618_000006_activity_log.sql` — activity_log table with RLS (tenant-scoped audit trail)
+8. `20260618_000007_stock_management.sql` — suppliers, purchase_orders, purchase_order_items, stock_transfers, stock_transfer_items
+9. `20260618_000008_multi_location.sql` — locations, location_stock tables
+
+## Edge Functions
+
+| Function | Trigger | Env Var Required |
+|---|---|---|
+| `welcome-email` | Called from TenantSelection after tenant creation | `RESEND_API_KEY` (set in Supabase Dashboard → Functions → Secrets) |
+
+Deploy: `npx supabase functions deploy welcome-email --project-ref <ref>`
 
 ## TypeScript
 
@@ -151,6 +162,7 @@ Translations in `src/i18n/locales/`. Arabic RTL styles in `src/styles/rtl.css`. 
 - **Keep-alive**: `.github/workflows/keep-alive.yml` — pings Supabase every 3 days to prevent free-tier auto-pause.
 - **Required GitHub Secrets**: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (for keep-alive workflow)
 - **Required Vercel Env Vars**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- **Required Supabase Function Secrets**: `RESEND_API_KEY` (Dashboard → Functions → Secrets)
 
 ## Dark Theme Standard
 

@@ -48,6 +48,20 @@ export default function TenantSelection() {
 
       setCurrentUser({ id: session.user.id, email: session.user.email });
       await loadUserTenants(session.user.id);
+
+      // Check for pending invitations for this user and redirect to accept flow
+      const { data: pendingInvites } = await supabase
+        .from('pending_invitations')
+        .select('id, tenant_id, name, role')
+        .eq('email', session.user.email?.toLowerCase() ?? '')
+        .eq('status', 'pending')
+        .limit(1);
+
+      if (pendingInvites && pendingInvites.length > 0) {
+        const invite = pendingInvites[0] as { id: string; tenant_id: string; name: string; role: string };
+        navigate(`/accept-invite?invitation_id=${invite.id}`);
+        return;
+      }
     } catch {
       toast.error('Failed to load account data');
     } finally {

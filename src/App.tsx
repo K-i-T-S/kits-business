@@ -25,6 +25,7 @@ import './i18n';
 import './styles/rtl.css';
 import { TranslationManager } from './components/TranslationManager';
 
+const AcceptInvite = lazy(() => import('./pages/AcceptInvite'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Inventory = lazy(() => import('./pages/Inventory'));
 const POS = lazy(() => import('./pages/POS'));
@@ -72,7 +73,7 @@ function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boole
   const location = useLocation();
 
   // Only show mobile components after authentication and loading is complete, and not on login/tenant-selection pages
-  if (!loading && isAuthenticated && !['/login', '/tenant-selection'].includes(location.pathname)) {
+  if (!loading && isAuthenticated && !['/login', '/tenant-selection', '/accept-invite'].includes(location.pathname)) {
     return (
       <>
         <PWAInstallPrompt />
@@ -151,6 +152,7 @@ export default function App() {
                       <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/tenant-selection" element={<TenantSelection />} />
+                        <Route path="/accept-invite" element={<AcceptInvite />} />
                         <Route
                           path="/dashboard"
                           element={

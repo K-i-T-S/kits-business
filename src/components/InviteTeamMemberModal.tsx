@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
-import { addUserToTenant } from '../utils/tenantManager';
 
 interface InviteTeamMemberModalProps {
   isOpen: boolean;
@@ -37,33 +36,24 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
 
     setLoading(true);
     try {
-      // Send a Supabase magic-link invitation. When the invitee clicks the link
-      // and signs up, the accept-invitation flow (TODO: Edge Function) will call
-      // add_user_to_tenant and create their employee record.
-      // For now we store the pending invite in the invitations table so the
-      // Edge Function can pick it up on first login.
-      const { error: inviteError } = await supabase
-        .from('pending_invitations')
-        .insert({
-          tenant_id:  currentTenant.id,
-          email:      formData.email,
-          name:       formData.name,
-          role:       formData.role,
+      // Call the send-invitation Edge Function which uses the service role key
+      // to invoke auth.admin.inviteUserByEmail — new users get "Set your password"
+      // email; existing users get a magic link. Both redirect to /accept-invite.
+      const { error: fnError } = await supabase.functions.invoke('send-invitation', {
+        body: {
+          inviteeEmail: formData.email,
+          inviteeName: formData.name,
+          role: formData.role,
           commission: formData.commission,
-        });
-
-      if (inviteError) throw inviteError;
-
-      // Send the magic link — user signs up with their own password
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email:   formData.email,
-        options: { shouldCreateUser: true },
+          tenantId: currentTenant.id,
+          tenantName: currentTenant.name,
+        },
       });
 
-      if (otpError) throw otpError;
+      if (fnError) throw fnError;
 
       toast.success(`Invitation sent to ${formData.email}`, {
-        description: 'They will receive a sign-in link by email.',
+        description: "They'll receive an email to set their password and join your team.",
       });
       onSuccess();
       onClose();

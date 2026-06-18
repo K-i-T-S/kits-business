@@ -27,6 +27,12 @@ vi.mock('./src/utils/tenantManager', () => ({
   validateTenantAccess: vi.fn(),
 }));
 
+// Mock React Query Devtools — prevents ReactQueryDevtools from calling useQueryClient
+// outside a real QueryClientProvider context
+vi.mock('@tanstack/react-query-devtools', () => ({
+  ReactQueryDevtools: () => null,
+}));
+
 // Mock React Query
 vi.mock('@tanstack/react-query', () => {
   const mockQueryClient = {

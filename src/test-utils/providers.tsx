@@ -3,21 +3,23 @@ import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 
 import { AppProvider } from '../context/AppContext';
+import { SubscriptionProvider } from '../context/SubscriptionContext';
 import { AccessibilityProvider } from '../providers/AccessibilityProvider';
 import { QueryProvider } from '../providers/QueryProvider';
 
-import { createSupabaseMock, tenantManagerMock } from './mocks';
-
 // Enhanced test wrapper with proper async handling
+// Provider order mirrors App.tsx: AppProvider → SubscriptionProvider → QueryProvider → AccessibilityProvider
 export const TestWrapper = ({ children }: { children: ReactNode }) => (
   <BrowserRouter>
-    <QueryProvider>
-      <AccessibilityProvider>
-        <AppProvider>
-          {children}
-        </AppProvider>
-      </AccessibilityProvider>
-    </QueryProvider>
+    <AppProvider>
+      <SubscriptionProvider>
+        <QueryProvider>
+          <AccessibilityProvider>
+            {children}
+          </AccessibilityProvider>
+        </QueryProvider>
+      </SubscriptionProvider>
+    </AppProvider>
   </BrowserRouter>
 );
 

@@ -41,7 +41,8 @@ export default defineConfig({
       'dist/',
       'build/',
       '.storybook/',
-      '**/*.stories.{js,ts,jsx,tsx}'
+      '**/*.stories.{js,ts,jsx,tsx}',
+      'tests/e2e/**'
     ]
   },
   resolve: {

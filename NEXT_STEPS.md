@@ -162,20 +162,38 @@ Day-3 and Day-7 follow-up emails to improve activation and starter→paid conver
 ## Production Checklist (Before First Real Customer)
 
 - [x] ~~TypeScript (`npm run typecheck`) — zero errors~~
-- [ ] Lint (`npm run lint`) — pre-existing codebase-wide errors (unused imports, floating promises in older components). Track these as a separate code-quality sprint; they do not affect runtime or the new features built.
+- [ ] Lint (`npm run lint`) — pre-existing codebase-wide errors (unused imports, floating promises in older components). Separate code-quality sprint; does not affect runtime.
 - [x] ~~Run all Supabase migrations (001–013 applied)~~
 - [x] ~~Deploy welcome-email Edge Function~~
 - [x] ~~Deploy send-invitation Edge Function~~
-- [x] ~~`SUPABASE_SERVICE_ROLE_KEY` for `send-invitation`~~ — auto-injected by Supabase runtime, no manual secret needed
-- [x] ~~Add `SUPABASE_SERVICE_ROLE_KEY` to GitHub Secrets~~ (required for keep-alive to ping client projects)
-- [x] ~~Vercel env vars set: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`~~
-- [x] ~~GitHub secrets set: `SUPABASE_URL`, `SUPABASE_ANON_KEY`~~
-- [ ] Test full signup → onboarding → first sale flow on production URL
+- [x] ~~`SUPABASE_SERVICE_ROLE_KEY` for `send-invitation`~~ — auto-injected by Supabase runtime
+- [x] ~~Add `SUPABASE_SERVICE_ROLE_KEY` to GitHub Secrets~~ (keep-alive pings client projects)
+- [x] ~~Vercel env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`~~
+- [x] ~~GitHub secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY`~~
+
+### ✅ Tested on production (2026-06-18)
+- [x] ~~Auth guard — `/dashboard` redirects to `/login` unauthenticated~~
+- [x] ~~Login → tenant selection → dashboard — full flow working~~
+- [x] ~~First sale via POS — product added, payment ($10.80 cash), receipt generated (Receipt #698D1AA9)~~
+- [x] ~~Dashboard — stats, recent sales, quick actions, low-stock alert all rendering~~
+- [x] ~~Inventory page — 2 SKUs, 100 units on hand, 0 errors~~
+- [x] ~~Customers + Employees pages — 0 errors~~
+- [x] ~~Reports page — loads, date filter working~~
+- [x] ~~Export Excel + PDF — both triggered without console errors~~
+- [x] ~~FeatureGate — "API & Webhooks requires Business" lock shows correctly for lower plans~~
+- [x] ~~Error boundary — dark fallback UI verified in source (bg-slate-950, rose alert, Sentry reporting)~~
+
+### 🔴 Run migration 000014 first, then retest
+- [ ] **Run migration 000014** in Supabase SQL Editor (`supabase/migrations/20260618_000014_fix_admin_and_invite_rls.sql`) — fixes `admin_list_tenants()` 400 error and `pending_invitations` 403
+- [ ] `/admin` panel — plan elevation working (blocked until migration 000014 is applied)
+- [ ] Pending invitations auto-redirect — 403 console noise gone (blocked until migration 000014)
+
+### 🟡 Needs email inbox access to test
+- [ ] Full signup → email confirmation → onboarding wizard → first sale (new account flow)
 - [ ] Supabase email confirmation templates customized (Dashboard → Auth → Email Templates)
-- [ ] Supabase Auth redirect URL set to production domain (Dashboard → Auth → URL Configuration)
-- [ ] RLS verified: create two test accounts, confirm data is isolated
-- [ ] Export function tested (Excel + PDF) on production
-- [ ] Mobile POS tested on actual phone/tablet
-- [ ] Error boundary tested (manually throw in console, verify dark error screen)
-- [ ] `/admin` panel tested with `kits.tech.co@gmail.com` login — plan elevation working
-- [ ] First employee invitation tested end-to-end (invite → email received → set password → login → correct tenant)
+- [ ] Supabase Auth redirect URL set to production domain (Dashboard → Auth → URL Configuration → Site URL: `https://kits-business.vercel.app`)
+- [ ] First employee invitation end-to-end (invite → email received → set password → login → correct tenant)
+- [ ] RLS isolation: create two test accounts, confirm each sees only their own data
+
+### 🟡 Needs physical device
+- [ ] Mobile POS tested on actual phone/tablet (375px breakpoints, touch targets)

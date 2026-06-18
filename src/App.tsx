@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
@@ -343,6 +344,7 @@ export default function App() {
                     <AccessibilityAudit />
                     <Toaster />
                     <SpeedInsights />
+                    <Analytics />
                   </div>
                 </AccessibilityProvider>
               </TranslationProvider>

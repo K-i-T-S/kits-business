@@ -170,16 +170,18 @@ describe('FeatureGate', () => {
   });
 
   describe('upgrade button interaction', () => {
-    it('calls toast.info when upgrade button is clicked', async () => {
-      const { toast } = await import('sonner');
+    it('opens WhatsApp link when upgrade button is clicked', () => {
+      const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
       renderFeatureGate('advanced_analytics', 'starter');
 
       const upgradeBtn = screen.getByRole('button', { name: /upgrade/i });
       fireEvent.click(upgradeBtn);
 
-      expect(toast.info).toHaveBeenCalledWith(
-        expect.stringContaining('Growth'),
+      expect(openSpy).toHaveBeenCalledWith(
+        expect.stringContaining('wa.me/96181290662'),
+        '_blank',
       );
+      openSpy.mockRestore();
     });
   });
 });

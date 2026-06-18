@@ -1,24 +1,41 @@
-import { format, subDays, addDays, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import {
   TrendingUp,
-  Brain,
   Calendar,
-  Target,
   AlertTriangle,
-  CheckCircle,
   Info,
   BarChart3,
-  Activity,
+  Users,
+  TrendingDown,
+  Award,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart, ReferenceLine } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart, ReferenceLine, Cell } from 'recharts';
 
 import type { Sale, Product, Customer } from '../context/AppContext';
 
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+
+// ── Lebanese Public Holiday Calendar ─────────────────────────────────────────
+// Format: 'MM-DD' → { name, multiplier }
+// multiplier > 1 = sales spike (e.g. Christmas), < 1 = sales dip (closures)
+const LEBANESE_HOLIDAYS: Record<string, { name: string; multiplier: number }> = {
+  '01-01': { name: "New Year's Day", multiplier: 0.7 },
+  '02-09': { name: "St. Maroun's Day", multiplier: 1.1 },
+  '03-25': { name: 'Annunciation Day', multiplier: 0.8 },
+  '05-01': { name: 'Labour Day', multiplier: 0.6 },
+  '05-06': { name: "Martyrs' Day", multiplier: 0.7 },
+  '08-15': { name: 'Assumption of Mary', multiplier: 0.8 },
+  '11-22': { name: 'Independence Day', multiplier: 0.6 },
+  '12-25': { name: 'Christmas Day', multiplier: 1.5 },
+  // Ramadan and Eid: dynamic, skip (require lunar calendar)
+};
+
+function getHolidayKey(date: Date): string {
+  return format(date, 'MM-dd');
+}
 
 interface ForecastData {
   date: string;
@@ -28,6 +45,7 @@ interface ForecastData {
   confidenceMax?: number;
   seasonality?: number;
   trend?: number;
+  holiday?: string;
 }
 
 interface TrendAnalysis {
@@ -115,13 +133,19 @@ export default function Forecasting({ data }: ForecastingProps) {
       });
     });
 
-    // Add future predictions
+    // Add future predictions with Lebanese holiday adjustments
     for (let i = 0; i < forecastDays; i++) {
       const futureDate = addDays(now, i + 1);
       const xValue = n + i;
       const predicted = slope * xValue + intercept;
       const seasonalFactor = normalizedSeasonality[futureDate.getDay()];
-      const seasonalPredicted = predicted * (seasonalFactor || 1);
+
+      // Apply Lebanese holiday multiplier if applicable
+      const holidayKey = getHolidayKey(futureDate);
+      const holiday = LEBANESE_HOLIDAYS[holidayKey];
+      const holidayMultiplier = holiday ? holiday.multiplier : 1;
+
+      const seasonalPredicted = predicted * (seasonalFactor || 1) * holidayMultiplier;
 
       // Calculate confidence intervals (simplified)
       const confidence = confidenceLevel === '80' ? 1.28 : confidenceLevel === '90' ? 1.64 : 1.96;
@@ -130,11 +154,12 @@ export default function Forecasting({ data }: ForecastingProps) {
 
       forecast.push({
         date: format(futureDate, 'MMM dd'),
-        predicted: seasonalPredicted,
+        predicted: Math.max(0, seasonalPredicted),
         confidenceMin: Math.max(0, seasonalPredicted - margin),
         confidenceMax: seasonalPredicted + margin,
         trend: predicted,
         seasonality: seasonalFactor,
+        holiday: holiday?.name,
       });
     }
 
@@ -233,6 +258,82 @@ export default function Forecasting({ data }: ForecastingProps) {
 
     return analyses;
   }, [data.sales]);
+
+  // ── Margin Analysis ───────────────────────────────────────────────────────
+  const marginAnalysis = useMemo(() => {
+    const marginData = data.products
+      .filter(p => {
+        // Use first variant's cost/price if available
+        const variant = p.variants[0];
+        return variant && variant.cost > 0 && variant.price > 0;
+      })
+      .map(p => {
+        const variant = p.variants[0]!;
+        const margin = ((variant.price - variant.cost) / variant.price) * 100;
+        return {
+          name: p.name.length > 20 ? p.name.slice(0, 20) + '…' : p.name,
+          margin: parseFloat(margin.toFixed(1)),
+          price: variant.price,
+        };
+      })
+      .sort((a, b) => b.margin - a.margin)
+      .slice(0, 5);
+
+    const productsWithMargin = data.products.filter(p => {
+      const variant = p.variants[0];
+      return variant && variant.cost > 0 && variant.price > 0;
+    });
+
+    const healthyCount = productsWithMargin.filter(p => {
+      const variant = p.variants[0]!;
+      return ((variant.price - variant.cost) / variant.price) * 100 > 30;
+    }).length;
+
+    const marginHealth = productsWithMargin.length > 0
+      ? Math.round((healthyCount / productsWithMargin.length) * 100)
+      : 0;
+
+    return { marginData, marginHealth, total: productsWithMargin.length };
+  }, [data.products]);
+
+  // ── Customer Lifetime Value ────────────────────────────────────────────────
+  const clvData = useMemo(() => {
+    // Aggregate sales per customer
+    const customerSpend: Record<string, { total: number; count: number }> = {};
+
+    data.sales.forEach(sale => {
+      if (!sale.customerId) return;
+      if (!customerSpend[sale.customerId]) {
+        customerSpend[sale.customerId] = { total: 0, count: 0 };
+      }
+      customerSpend[sale.customerId]!.total += sale.total || 0;
+      customerSpend[sale.customerId]!.count += 1;
+    });
+
+    // Determine observation period in months (use date range of sales)
+    const saleDates = data.sales.map(s => new Date(s.date).getTime());
+    const minDate = saleDates.length > 0 ? Math.min(...saleDates) : Date.now();
+    const maxDate = saleDates.length > 0 ? Math.max(...saleDates) : Date.now();
+    const observationMonths = Math.max(1, (maxDate - minDate) / (1000 * 60 * 60 * 24 * 30));
+
+    return data.customers
+      .filter(c => customerSpend[c.id])
+      .map(c => {
+        const spend = customerSpend[c.id]!;
+        const avgOrder = spend.count > 0 ? spend.total / spend.count : 0;
+        const monthlyVisits = spend.count / observationMonths;
+        const estimatedCLV = avgOrder * monthlyVisits * 12;
+        return {
+          name: c.name,
+          totalSpend: spend.total,
+          visitCount: spend.count,
+          avgOrder,
+          estimatedCLV,
+        };
+      })
+      .sort((a, b) => b.estimatedCLV - a.estimatedCLV)
+      .slice(0, 5);
+  }, [data.sales, data.customers]);
 
   // Generate insights
   const insights = useMemo(() => {
@@ -455,8 +556,35 @@ export default function Forecasting({ data }: ForecastingProps) {
               strokeDasharray="5 5"
               label="Today"
             />
+
+            {/* Lebanese holiday reference lines */}
+            {forecastData
+              .filter(d => d.holiday && !d.actual)
+              .map((d, i) => (
+                <ReferenceLine
+                  key={i}
+                  x={d.date}
+                  stroke="#F59E0B"
+                  strokeDasharray="3 3"
+                  label={{ value: '🎉', position: 'top', fontSize: 10 }}
+                />
+              ))}
           </AreaChart>
         </ResponsiveContainer>
+
+        {/* Holiday legend */}
+        {forecastData.some(d => d.holiday && !d.actual) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {forecastData
+              .filter(d => d.holiday && !d.actual)
+              .map((d, i) => (
+                <span key={i} className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-xs text-amber-300">
+                  <span>📅</span>
+                  {d.date} — {d.holiday}
+                </span>
+              ))}
+          </div>
+        )}
       </Card>
 
       {/* Trend Analysis */}
@@ -551,11 +679,128 @@ export default function Forecasting({ data }: ForecastingProps) {
             <Info className="h-5 w-5 text-blue-600 mt-0.5" />
             <div className="text-sm text-blue-800">
               <p className="font-medium mb-1">About this forecast</p>
-              <p>This forecast uses historical data patterns to predict future values. The confidence intervals show the range where actual values are likely to fall. Consider multiple factors when making business decisions.</p>
+              <p>This forecast uses historical data patterns to predict future values. The confidence intervals show the range where actual values are likely to fall. Lebanese public holidays are factored in with adjusted multipliers. Consider multiple factors when making business decisions.</p>
             </div>
           </div>
         </div>
       </Card>
+
+      {/* Margin Analysis */}
+      {marginAnalysis.marginData.length > 0 && (
+        <Card className="p-6 bg-white/5 border border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-emerald-400" />
+              <h3 className="text-lg font-semibold text-white">Margin Analysis</h3>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-white/60">Margin Health</span>
+              <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+                marginAnalysis.marginHealth >= 60
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                  : marginAnalysis.marginHealth >= 30
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+              }`}>
+                {marginAnalysis.marginHealth}% of products &gt;30% margin
+              </span>
+            </div>
+          </div>
+
+          <p className="text-sm text-white/50 mb-4">Top 5 products by gross margin (based on first variant)</p>
+
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart
+              data={marginAnalysis.marginData}
+              layout="vertical"
+              margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis
+                type="number"
+                domain={[0, 100]}
+                tickFormatter={(v: number) => `${v}%`}
+                tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={120}
+                tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }}
+              />
+              <Tooltip
+                formatter={(value: number) => [`${value.toFixed(1)}%`, 'Margin']}
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
+                labelStyle={{ color: 'rgba(255,255,255,0.8)' }}
+                itemStyle={{ color: '#10B981' }}
+              />
+              <Bar dataKey="margin" radius={[0, 4, 4, 0]}>
+                {marginAnalysis.marginData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.margin >= 30 ? '#10B981' : entry.margin >= 15 ? '#F59E0B' : '#EF4444'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
+
+      {/* Customer Lifetime Value */}
+      {clvData.length > 0 && (
+        <Card className="p-6 bg-white/5 border border-white/10">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="h-5 w-5 text-indigo-400" />
+            <h3 className="text-lg font-semibold text-white">Top Customers by Lifetime Value</h3>
+          </div>
+          <p className="text-sm text-white/50 mb-4">
+            Estimated annual CLV = avg order × monthly visit rate × 12
+          </p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-2 pr-4 text-white/50 font-medium">#</th>
+                  <th className="text-left py-2 pr-4 text-white/50 font-medium">Customer</th>
+                  <th className="text-right py-2 pr-4 text-white/50 font-medium">Total Spend</th>
+                  <th className="text-right py-2 pr-4 text-white/50 font-medium">Visits</th>
+                  <th className="text-right py-2 pr-4 text-white/50 font-medium">Avg Order</th>
+                  <th className="text-right py-2 text-white/50 font-medium">Est. Annual CLV</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clvData.map((customer, i) => (
+                  <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="py-3 pr-4 text-white/40">
+                      {i === 0 ? <Award className="h-4 w-4 text-amber-400" /> : i + 1}
+                    </td>
+                    <td className="py-3 pr-4 text-white font-medium">{customer.name}</td>
+                    <td className="py-3 pr-4 text-right text-white/80">
+                      ${customer.totalSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 pr-4 text-right text-white/80">{customer.visitCount}</td>
+                    <td className="py-3 pr-4 text-right text-white/80">
+                      ${customer.avgOrder.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 text-right font-semibold text-emerald-400">
+                      ${customer.estimatedCLV.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {clvData.length === 0 && (
+            <div className="flex flex-col items-center py-8 text-white/40">
+              <TrendingDown className="h-8 w-8 mb-2" />
+              <p className="text-sm">No customer purchase data available yet.</p>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

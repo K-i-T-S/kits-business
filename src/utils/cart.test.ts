@@ -291,5 +291,62 @@ describe('Cart Utilities', () => {
       const items = [{ id: '1', name: 'Precise Item', price: 0.33, quantity: 3 }];
       expect(calculateSubtotal(items)).toBeCloseTo(0.99, 2);
     });
+
+    it('handles zero-price items', () => {
+      const items = [
+        { id: '1', name: 'Free Item', price: 0, quantity: 5 },
+        { id: '2', name: 'Paid Item', price: 10, quantity: 1 },
+      ];
+      expect(calculateSubtotal(items)).toBe(10.00);
+    });
+
+    it('calculates zero tax for zero subtotal', () => {
+      expect(calculateTax(0, 0.1)).toBe(0);
+    });
+
+    it('handles a cart with only zero-price items', () => {
+      const emptyValueCart = { items: [], subtotal: 0, tax: 0, total: 0 };
+      const freeItem = { id: '99', name: 'Free Sample', price: 0, quantity: 3 };
+      const result = addToCart(emptyValueCart, freeItem);
+      expect(result.subtotal).toBe(0);
+      expect(result.tax).toBe(0);
+      expect(result.total).toBe(0);
+    });
+
+    it('calculates correct total with 0% tax rate', () => {
+      const subtotal = 100;
+      const tax = calculateTax(subtotal, 0);
+      expect(calculateTotal(subtotal, tax)).toBe(100);
+    });
+
+    it('calculates correct total with 100% tax rate', () => {
+      const subtotal = 50;
+      const tax = calculateTax(subtotal, 1.0);
+      expect(calculateTotal(subtotal, tax)).toBe(100);
+    });
+
+    it('removing last item yields empty cart with zero totals', () => {
+      const singleItemCart = {
+        items: [{ id: '1', name: 'Only Item', price: 25, quantity: 1 }],
+        subtotal: 25,
+        tax: 2,
+        total: 27,
+      };
+      const result = removeFromCart(singleItemCart, '1');
+      expect(result.items).toHaveLength(0);
+      expect(result.subtotal).toBe(0);
+      expect(result.total).toBe(0);
+    });
+
+    it('updating quantity to negative removes item', () => {
+      const cart = {
+        items: [{ id: '1', name: 'Item', price: 10, quantity: 2 }],
+        subtotal: 20,
+        tax: 1.6,
+        total: 21.6,
+      };
+      const result = updateQuantity(cart, '1', -1);
+      expect(result.items).toHaveLength(0);
+    });
   });
 });

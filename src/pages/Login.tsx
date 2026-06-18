@@ -71,10 +71,12 @@ export default function Login({ onLogin }: LoginProps) {
       let message = 'Authentication failed. Please try again.';
       if (err && typeof err === 'object') {
         const e = err as Record<string, unknown>;
-        message = (e.message as string)
+        const raw = (e.message as string)
           || (e.error_description as string)
           || (e.error as string)
-          || message;
+          || '';
+        // Supabase returns "{}" for user-enumeration-protected errors — ignore bare JSON
+        if (raw && !raw.match(/^\s*\{.*\}\s*$/)) message = raw;
       }
       setError(message);
       toast.error(isSignup ? 'Sign up failed' : 'Sign in failed', { description: message });

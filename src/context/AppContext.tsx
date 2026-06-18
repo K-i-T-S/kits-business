@@ -4,9 +4,35 @@ import { toast } from 'sonner';
 
 import { DataValidator } from '../utils/dataValidation';
 import { log } from '../utils/logger';
+import { queueMutation } from '../utils/offlineQueue';
 import { StockUpdateLock, OperationQueue } from '../utils/raceConditionPrevention';
 import { supabase } from '../utils/supabaseClient';
 import { getCurrentUserTenant } from '../utils/tenantManager';
+
+// ── Activity log helper ───────────────────────────────────────────────────────
+// Fire-and-forget: never awaited, never throws, never blocks a mutation.
+function logActivity(params: {
+  tenantId: string;
+  action: string;
+  entityType?: string;
+  entityId?: string;
+  metadata?: Record<string, unknown>;
+}): void {
+  supabase.auth.getUser().then(({ data }) => {
+    supabase.from('activity_log').insert({
+      tenant_id: params.tenantId,
+      user_id: data.user?.id ?? null,
+      action: params.action,
+      entity_type: params.entityType ?? null,
+      entity_id: params.entityId ?? null,
+      metadata: params.metadata ?? null,
+    }).then(({ error }) => {
+      if (error) console.warn('[ActivityLog] Insert failed:', error.message);
+    });
+  }).catch(err => {
+    console.warn('[ActivityLog] getUser failed:', err);
+  });
+}
 
 export interface Product {
   id?: string;
@@ -419,6 +445,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       log.info('Product created successfully', { newProduct });
       setProducts(prev => [...prev, newProduct]);
       toast.success('Product added', { description: newProduct.name });
+      logActivity({
+        tenantId: currentTenant.id,
+        action: 'product_created',
+        entityType: 'product',
+        entityId: newProduct.id,
+        metadata: { name: newProduct.name },
+      });
       return newProduct;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -451,6 +484,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const updated = dbProductToFrontend(data as DbProduct);
       setProducts(prev => prev.map(p => p.id === id ? updated : p));
       toast.success('Product updated', { description: updated.name });
+      if (currentTenant) {
+        logActivity({
+          tenantId: currentTenant.id,
+          action: 'product_updated',
+          entityType: 'product',
+          entityId: updated.id,
+          metadata: { name: updated.name },
+        });
+      }
       return updated;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -468,6 +510,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       setProducts(prev => prev.filter(p => p.id !== id));
       toast.success('Product deleted');
+      if (currentTenant) {
+        logActivity({
+          tenantId: currentTenant.id,
+          action: 'product_deleted',
+          entityType: 'product',
+          entityId: id,
+        });
+      }
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       log.error('Failed to delete product', errorObj);
@@ -491,6 +541,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     if (!currentTenant) throw new Error('No active tenant');
+
+    // Offline path: queue for later replay
+    if (!navigator.onLine) {
+      await queueMutation({
+        table: 'sales',
+        operation: 'insert',
+        payload: {
+          tenant_id: currentTenant.id,
+          employee_id: sale.employeeId || currentEmployee?.id || null,
+          customer_id: sale.customerId || null,
+          subtotal: sale.subtotal,
+          total_amount: sale.total,
+          discount: 0,
+          tax_amount: 0,
+          payment_method: sale.paymentMethod,
+          payment_status: 'completed',
+        },
+      });
+      toast.info('Sale queued — will sync when online');
+      return;
+    }
 
     try {
       const { data: saleRow, error: saleError } = await supabase.from('sales').insert({
@@ -557,6 +628,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       toast.success('Sale recorded', { description: `Total $${sale.total.toFixed(2)}` });
+      logActivity({
+        tenantId: currentTenant.id,
+        action: 'sale_created',
+        entityType: 'sale',
+        entityId: newSale.id,
+        metadata: { total: sale.total, items: sale.items.length },
+      });
       return newSale;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -597,6 +675,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newCustomer = dbCustomerToFrontend(data as DbCustomer);
       setCustomers(prev => [...prev, newCustomer]);
       toast.success('Customer added', { description: newCustomer.name });
+      logActivity({
+        tenantId: currentTenant.id,
+        action: 'customer_created',
+        entityType: 'customer',
+        entityId: newCustomer.id,
+        metadata: { name: newCustomer.name },
+      });
       return newCustomer;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -624,6 +709,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const updated = dbCustomerToFrontend(data as DbCustomer);
       setCustomers(prev => prev.map(c => c.id === id ? updated : c));
       toast.success('Customer updated', { description: updated.name });
+      if (currentTenant) {
+        logActivity({
+          tenantId: currentTenant.id,
+          action: 'customer_updated',
+          entityType: 'customer',
+          entityId: updated.id,
+          metadata: { name: updated.name },
+        });
+      }
       return updated;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -666,6 +760,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newEmployee = dbEmployeeToFrontend(data as DbEmployee);
       setEmployees(prev => [...prev, newEmployee]);
       toast.success('Employee created', { description: newEmployee.name });
+      logActivity({
+        tenantId: currentTenant.id,
+        action: 'employee_created',
+        entityType: 'employee',
+        entityId: newEmployee.id,
+        metadata: { name: newEmployee.name },
+      });
       return newEmployee;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -692,6 +793,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setEmployees(prev => prev.map(e => e.id === id ? updated : e));
       if (currentEmployee?.id === id) setCurrentEmployee(updated);
       toast.success('Employee updated', { description: updated.name });
+      if (currentTenant) {
+        logActivity({
+          tenantId: currentTenant.id,
+          action: 'employee_updated',
+          entityType: 'employee',
+          entityId: updated.id,
+          metadata: { name: updated.name },
+        });
+      }
       return updated;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));

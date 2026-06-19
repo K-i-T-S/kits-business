@@ -119,25 +119,59 @@ export default function ActivityLog() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleExport = () => {
-    const rows = [
-      ['Timestamp', 'Action', 'Entity Type', 'Entity ID', 'Metadata'],
-      ...filteredLogs.map(entry => [
-        entry.created_at,
-        entry.action,
-        entry.entity_type ?? '',
-        entry.entity_id ?? '',
-        JSON.stringify(entry.metadata ?? {}),
-      ]),
-    ].map(row => row.join(',')).join('\n');
+  const [exporting, setExporting] = useState(false);
 
-    const blob = new Blob([rows], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `activity-log-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const ExcelJS = (await import('exceljs')).default;
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'KiTS Business Terminal';
+      wb.created = new Date();
+
+      const ws = wb.addWorksheet('Activity Log');
+
+      ws.columns = [
+        { header: 'Date', key: 'created_at', width: 22 },
+        { header: 'Action', key: 'action', width: 24 },
+        { header: 'Entity Type', key: 'entity_type', width: 18 },
+        { header: 'Entity ID', key: 'entity_id', width: 36 },
+        { header: 'Metadata', key: 'metadata', width: 40 },
+      ];
+
+      // Style header row
+      const headerRow = ws.getRow(1);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+      headerRow.alignment = { vertical: 'middle' };
+      headerRow.height = 20;
+
+      filteredLogs.forEach(entry => {
+        ws.addRow({
+          created_at: new Date(entry.created_at).toLocaleString(),
+          action: formatAction(entry.action),
+          entity_type: entry.entity_type ?? '',
+          entity_id: entry.entity_id ?? '',
+          metadata: JSON.stringify(entry.metadata ?? {}),
+        });
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `activity-log-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Export failed';
+      setError(msg);
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -199,11 +233,15 @@ export default function ActivityLog() {
                 Refresh
               </button>
               <button
-                onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                onClick={() => void handleExport()}
+                disabled={exporting}
+                className="border border-white/20 text-white/80 hover:bg-white/10 rounded-xl px-4 py-2 text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
               >
-                <Download className="h-4 w-4" />
-                Export
+                {exporting
+                  ? <RefreshCw className="h-4 w-4 animate-spin" />
+                  : <Download className="h-4 w-4" />
+                }
+                Export Excel
               </button>
             </div>
           </div>

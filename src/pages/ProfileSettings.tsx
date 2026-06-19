@@ -1,4 +1,4 @@
-import { Camera, Eye, EyeOff, Key, Loader2, Save, User, X } from 'lucide-react';
+import { Camera, CheckCircle, Eye, EyeOff, Key, Loader2, Save, Shield, ShieldOff, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +11,15 @@ import { supabase } from '../utils/supabaseClient';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type LanguageCode = 'en' | 'ar' | 'fr' | 'es' | 'zh';
-type ActiveTab = 'profile' | 'password' | 'language' | 'notifications';
+type ActiveTab = 'profile' | 'password' | 'language' | 'notifications' | 'security';
+
+// ── MFA state machine ─────────────────────────────────────────────────────────
+
+type MfaEnrollState =
+  | { phase: 'idle' }
+  | { phase: 'enrolling'; factorId: string; qrCode: string; secret: string }
+  | { phase: 'verifying'; factorId: string; qrCode: string; secret: string }
+  | { phase: 'enrolled'; factorId: string };
 
 interface NotificationPrefs {
   notif_sale: boolean;
@@ -87,6 +95,13 @@ export default function ProfileSettings() {
   // Notifications (localStorage-backed)
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(loadNotificationPrefs);
 
+  // 2FA / MFA
+  const [mfaState, setMfaState] = useState<MfaEnrollState>({ phase: 'idle' });
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+
   // Load auth user on mount
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -97,6 +112,19 @@ export default function ProfileSettings() {
       // ignore — user may not be authenticated yet
     });
   }, [currentEmployee?.name]);
+
+  // Check existing MFA enrollment on mount
+  useEffect(() => {
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      if (!data) return;
+      const enrolled = data.totp[0];
+      if (enrolled) {
+        setMfaState({ phase: 'enrolled', factorId: enrolled.id });
+      }
+    }).catch(() => {
+      // ignore — best effort
+    });
+  }, []);
 
   // Sync language from context
   useEffect(() => {
@@ -211,6 +239,92 @@ export default function ProfileSettings() {
     toast.success(t('settings.saved'));
   };
 
+  // ── 2FA Handlers ──────────────────────────────────────────────────────────
+
+  const handleStartEnroll = async () => {
+    setMfaLoading(true);
+    setMfaError(null);
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+      if (error) throw error;
+      if (!data?.totp) throw new Error('No TOTP data returned');
+      setMfaCode('');
+      setMfaState({
+        phase: 'enrolling',
+        factorId: data.id,
+        qrCode: data.totp.qr_code,
+        secret: data.totp.secret,
+      });
+    } catch (err) {
+      setMfaError(err instanceof Error ? err.message : 'Failed to start enrollment');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleVerifyEnroll = async () => {
+    if (mfaState.phase !== 'enrolling' && mfaState.phase !== 'verifying') return;
+    const factorId = mfaState.factorId;
+    setMfaLoading(true);
+    setMfaError(null);
+    try {
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+      if (challengeError) throw challengeError;
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId,
+        challengeId: challengeData.id,
+        code: mfaCode.trim(),
+      });
+      if (verifyError) {
+        if (verifyError.message.toLowerCase().includes('invalid')) {
+          throw new Error('Invalid code, try again');
+        }
+        throw verifyError;
+      }
+      setMfaState({ phase: 'enrolled', factorId });
+      setMfaCode('');
+      toast.success('Two-factor authentication enabled');
+    } catch (err) {
+      setMfaError(err instanceof Error ? err.message : 'Verification failed');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleCancelEnroll = async () => {
+    if (mfaState.phase !== 'enrolling' && mfaState.phase !== 'verifying') return;
+    const factorId = mfaState.factorId;
+    setMfaLoading(true);
+    try {
+      await supabase.auth.mfa.unenroll({ factorId });
+    } catch {
+      // ignore cancel errors
+    } finally {
+      setMfaState({ phase: 'idle' });
+      setMfaCode('');
+      setMfaError(null);
+      setMfaLoading(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (mfaState.phase !== 'enrolled') return;
+    const factorId = mfaState.factorId;
+    setMfaLoading(true);
+    setMfaError(null);
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId });
+      if (error) throw error;
+      setMfaState({ phase: 'idle' });
+      setShowDisableConfirm(false);
+      toast.success('Two-factor authentication disabled');
+    } catch (err) {
+      setMfaError(err instanceof Error ? err.message : 'Failed to disable 2FA');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
   // ── Derived ────────────────────────────────────────────────────────────────
 
   const initials = displayName
@@ -225,6 +339,7 @@ export default function ProfileSettings() {
     { id: 'password', label: t('settings.password') },
     { id: 'language', label: t('settings.language') },
     { id: 'notifications', label: t('settings.notifications') },
+    { id: 'security', label: 'Security' },
   ];
 
   const languageOptions: { code: LanguageCode; label: string }[] = [
@@ -595,6 +710,172 @@ export default function ProfileSettings() {
                   <p className="text-xs text-white/40">
                     Notification preferences are saved instantly and stored in this browser.
                   </p>
+                </div>
+              )}
+
+              {/* ── Security tab ──────────────────────────────────────────── */}
+              {activeTab === 'security' && (
+                <div className="space-y-6">
+                  <h2 className="text-lg font-semibold text-white">Security</h2>
+
+                  {/* ── Enrolled state ── */}
+                  {mfaState.phase === 'enrolled' && (
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                        <CheckCircle className="h-6 w-6 text-emerald-400 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-emerald-300">Two-Factor Authentication is active</p>
+                          <p className="text-xs text-white/50 mt-0.5">
+                            Your account is protected with a TOTP authenticator app.
+                          </p>
+                        </div>
+                      </div>
+
+                      {mfaError && (
+                        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
+                          {mfaError}
+                        </p>
+                      )}
+
+                      {!showDisableConfirm ? (
+                        <button
+                          onClick={() => { setShowDisableConfirm(true); setMfaError(null); }}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm hover:bg-red-500/20 transition-colors"
+                        >
+                          <ShieldOff className="h-4 w-4" />
+                          Disable 2FA
+                        </button>
+                      ) : (
+                        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl space-y-3">
+                          <p className="text-sm font-medium text-red-300">
+                            Are you sure you want to disable two-factor authentication?
+                          </p>
+                          <p className="text-xs text-white/50">
+                            Your account will no longer require a second verification step.
+                          </p>
+                          <div className="flex items-center gap-3 pt-1">
+                            <button
+                              onClick={() => void handleDisable2FA()}
+                              disabled={mfaLoading}
+                              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+                            >
+                              {mfaLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                              Yes, disable 2FA
+                            </button>
+                            <button
+                              onClick={() => { setShowDisableConfirm(false); setMfaError(null); }}
+                              disabled={mfaLoading}
+                              className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Idle state (not enrolled) ── */}
+                  {mfaState.phase === 'idle' && (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                        <div className="flex items-start gap-3 mb-4">
+                          <Shield className="h-5 w-5 text-indigo-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-semibold text-white">Two-Factor Authentication</p>
+                            <p className="text-xs text-white/50 mt-1">
+                              Add an extra layer of security. Use any authenticator app (Google Authenticator, Authy, 1Password).
+                            </p>
+                          </div>
+                        </div>
+                        {mfaError && (
+                          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2 mb-3">
+                            {mfaError}
+                          </p>
+                        )}
+                        <button
+                          onClick={() => void handleStartEnroll()}
+                          disabled={mfaLoading}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                        >
+                          {mfaLoading
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Shield className="h-4 w-4" />
+                          }
+                          Enable 2FA
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Enrolling state (QR shown) ── */}
+                  {(mfaState.phase === 'enrolling' || mfaState.phase === 'verifying') && (
+                    <div className="space-y-5">
+                      <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-4">
+                        <p className="text-sm font-medium text-white">
+                          Step 1 — Scan this QR code with your authenticator app
+                        </p>
+                        {/* QR code */}
+                        <div className="flex justify-center">
+                          <div className="bg-white p-3 rounded-xl inline-block">
+                            <img
+                              src={mfaState.qrCode}
+                              alt="TOTP QR Code"
+                              className="h-44 w-44 block"
+                            />
+                          </div>
+                        </div>
+                        {/* Manual entry */}
+                        <div className="text-center">
+                          <p className="text-xs text-white/50 mb-1">Or enter this code manually:</p>
+                          <code className="text-xs font-mono bg-slate-900 border border-white/20 text-indigo-300 rounded-lg px-3 py-1.5 tracking-widest select-all">
+                            {mfaState.secret}
+                          </code>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-4">
+                        <p className="text-sm font-medium text-white">
+                          Step 2 — Enter the 6-digit code from your app
+                        </p>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          value={mfaCode}
+                          onChange={e => { setMfaCode(e.target.value.replace(/\D/g, '')); setMfaError(null); }}
+                          placeholder="000000"
+                          className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white text-center text-xl tracking-widest placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
+                        />
+                        {mfaError && (
+                          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
+                            {mfaError}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => void handleVerifyEnroll()}
+                            disabled={mfaLoading || mfaCode.length !== 6}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                          >
+                            {mfaLoading
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <CheckCircle className="h-4 w-4" />
+                            }
+                            Verify &amp; Enable
+                          </button>
+                          <button
+                            onClick={() => void handleCancelEnroll()}
+                            disabled={mfaLoading}
+                            className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               )}
 

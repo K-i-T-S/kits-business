@@ -2,11 +2,8 @@ import {
   BarChart3,
   Calendar,
   Clock,
-  Edit,
-  Eye,
   Mail,
   MessageSquare,
-  Pause,
   Play,
   Plus,
   Search,
@@ -15,165 +12,248 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-interface CampaignContentTemplate {
-  subject?: string;
-  body?: string;
+import { supabase } from '../../utils/supabaseClient';
+
+// ── DB row type ───────────────────────────────────────────────────────────────
+
+interface DbCampaign {
+  id: string;
+  name: string;
+  type: 'email' | 'whatsapp';
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
+  subject: string | null;
+  body: string;
+  target_segment: 'all' | 'new' | 'vip' | 'inactive';
+  scheduled_at: string | null;
+  sent_at: string | null;
+  sent_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
-interface CampaignScheduleConfig {
-  sendImmediately: boolean;
+// ── Form state ────────────────────────────────────────────────────────────────
+
+interface CampaignForm {
+  name: string;
+  type: 'email' | 'whatsapp';
+  subject: string;
+  body: string;
+  target_segment: 'all' | 'new' | 'vip' | 'inactive';
+  send_immediately: boolean;
+  scheduled_at: string;
+}
+
+const DEFAULT_FORM: CampaignForm = {
+  name: '',
+  type: 'email',
+  subject: '',
+  body: '',
+  target_segment: 'all',
+  send_immediately: true,
+  scheduled_at: '',
+};
+
+// ── Schedule modal state ──────────────────────────────────────────────────────
+
+interface ScheduleModal {
+  campaignId: string;
   scheduledAt: string;
 }
 
-interface Campaign {
-  id: string;
-  name: string;
-  description: string;
-  type: 'email' | 'sms' | 'social_media' | 'loyalty' | 'promotion';
-  status: 'draft' | 'scheduled' | 'active' | 'paused' | 'completed' | 'cancelled';
-  targetSegmentId?: string;
-  targetSegmentName?: string;
-  contentTemplate: CampaignContentTemplate;
-  scheduleConfig: CampaignScheduleConfig;
-  budget: number;
-  actualCost: number;
-  startDate?: string;
-  endDate?: string;
-  metrics: {
-    sent?: number;
-    delivered?: number;
-    opened?: number;
-    clicked?: number;
-    converted?: number;
-    revenue?: number;
-  };
-  createdBy?: {
-    id: string;
-    name: string;
-  };
-  createdAt: string;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getStatusColor(status: DbCampaign['status']): string {
+  switch (status) {
+    case 'draft': return 'bg-white/10 text-white/60 border-white/20';
+    case 'scheduled': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+    case 'sending': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+    case 'sent': return 'bg-green-500/20 text-green-400 border-green-500/30';
+    case 'failed': return 'bg-red-500/20 text-red-400 border-red-500/30';
+    default: return 'bg-white/10 text-white/60 border-white/20';
+  }
 }
 
-interface MarketingCampaignsProps {
-  campaigns: Campaign[];
-  segments: Array<{ id: string; name: string; customerCount: number }>;
-  onCreateCampaign?: (campaign: Omit<Campaign, 'id' | 'createdAt'>) => void;
-  onUpdateCampaign?: (id: string, campaign: Partial<Campaign>) => void;
-  onDeleteCampaign?: (id: string) => void;
-  onLaunchCampaign?: (id: string) => void;
-  onPauseCampaign?: (id: string) => void;
-  onResumeCampaign?: (id: string) => void;
+function getTypeIcon(type: DbCampaign['type']): JSX.Element {
+  switch (type) {
+    case 'whatsapp': return <MessageSquare className="h-4 w-4" />;
+    default: return <Mail className="h-4 w-4" />;
+  }
 }
 
-export default function MarketingCampaigns({
-  campaigns,
-  segments,
-  onCreateCampaign,
-  onUpdateCampaign,
-  onDeleteCampaign,
-  onLaunchCampaign,
-  onPauseCampaign,
-  onResumeCampaign,
-}: MarketingCampaignsProps) {
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function MarketingCampaigns() {
+  const [campaigns, setCampaigns] = useState<DbCampaign[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
-  const [newCampaign, setNewCampaign] = useState({
-    name: '',
-    description: '',
-    type: 'email' as Campaign['type'],
-    targetSegmentId: '',
-    contentTemplate: { subject: '', body: '' } as CampaignContentTemplate,
-    scheduleConfig: { sendImmediately: true as boolean, scheduledAt: '' } as CampaignScheduleConfig,
-    budget: 0,
-  });
+  const [formData, setFormData] = useState<CampaignForm>(DEFAULT_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [scheduleModal, setScheduleModal] = useState<ScheduleModal | null>(null);
+
+  // ── Data fetching ───────────────────────────────────────────────────────────
+
+  async function fetchCampaigns() {
+    try {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCampaigns((data ?? []) as DbCampaign[]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load campaigns';
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void fetchCampaigns();
+  }, []);
+
+  // ── Create campaign ─────────────────────────────────────────────────────────
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.body.trim()) {
+      toast.error('Name and body are required');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const payload: Record<string, unknown> = {
+        name: formData.name.trim(),
+        type: formData.type,
+        subject: formData.subject.trim() || null,
+        body: formData.body.trim(),
+        target_segment: formData.target_segment,
+        status: 'draft',
+      };
+
+      if (!formData.send_immediately && formData.scheduled_at) {
+        payload.scheduled_at = new Date(formData.scheduled_at).toISOString();
+        payload.status = 'scheduled';
+      }
+
+      const { error } = await supabase.from('campaigns').insert(payload);
+      if (error) throw error;
+
+      toast.success('Campaign created');
+      setFormData(DEFAULT_FORM);
+      setShowCreateModal(false);
+      await fetchCampaigns();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create campaign';
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // ── Delete campaign ─────────────────────────────────────────────────────────
+
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this campaign? This cannot be undone.')) return;
+    try {
+      const { error } = await supabase.from('campaigns').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Campaign deleted');
+      await fetchCampaigns();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete campaign';
+      toast.error(message);
+    }
+  }
+
+  // ── Send now ────────────────────────────────────────────────────────────────
+
+  async function handleSendNow(id: string) {
+    try {
+      const { error: updateErr } = await supabase
+        .from('campaigns')
+        .update({ status: 'sending', updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (updateErr) throw updateErr;
+
+      // Invoke Edge Function — may not exist yet; handle gracefully
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { error: fnErr } = await supabase.functions.invoke('send-campaign', {
+        body: { campaign_id: id },
+      });
+      if (fnErr) {
+        const fnMsg = fnErr instanceof Error ? fnErr.message : String(fnErr);
+        toast.error(`Send function unavailable: ${fnMsg}`);
+      } else {
+        toast.success('Campaign queued for sending');
+      }
+
+      await fetchCampaigns();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send campaign';
+      toast.error(message);
+    }
+  }
+
+  // ── Schedule ────────────────────────────────────────────────────────────────
+
+  async function handleSchedule() {
+    if (!scheduleModal || !scheduleModal.scheduledAt) {
+      toast.error('Please select a date and time');
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('campaigns')
+        .update({
+          scheduled_at: new Date(scheduleModal.scheduledAt).toISOString(),
+          status: 'scheduled',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', scheduleModal.campaignId);
+      if (error) throw error;
+
+      toast.success('Campaign scheduled');
+      setScheduleModal(null);
+      await fetchCampaigns();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to schedule campaign';
+      toast.error(message);
+    }
+  }
+
+  // ── Derived stats ───────────────────────────────────────────────────────────
+
+  const totalSent = campaigns.reduce((sum, c) => sum + c.sent_count, 0);
+  const activeCampaigns = campaigns.filter(c => c.status === 'sending' || c.status === 'scheduled').length;
+  const sentCount = campaigns.filter(c => c.status === 'sent').length;
 
   const filteredCampaigns = useMemo(
     () =>
-      campaigns.filter((campaign) => {
-        const matchesSearch =
-          campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          campaign.description.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter;
-        const matchesType = typeFilter === 'all' || campaign.type === typeFilter;
+      campaigns.filter((c) => {
+        const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
+        const matchesType = typeFilter === 'all' || c.type === typeFilter;
         return matchesSearch && matchesStatus && matchesType;
       }),
     [campaigns, searchQuery, statusFilter, typeFilter],
   );
 
-  const getStatusColor = (status: Campaign['status']) => {
-    switch (status) {
-      case 'draft': return 'bg-white/10 text-white/60 border-white/20';
-      case 'scheduled': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'active': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'paused': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'completed': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-white/10 text-white/60 border-white/20';
-    }
-  };
-
-  const getTypeIcon = (type: Campaign['type']) => {
-    switch (type) {
-      case 'email': return <Mail className="h-4 w-4" />;
-      case 'sms': return <MessageSquare className="h-4 w-4" />;
-      case 'social_media': return <Users className="h-4 w-4" />;
-      case 'loyalty': return <TrendingUp className="h-4 w-4" />;
-      case 'promotion': return <BarChart3 className="h-4 w-4" />;
-      default: return <Mail className="h-4 w-4" />;
-    }
-  };
-
-  const calculatePerformance = (metrics: Campaign['metrics']) => {
-    if (!metrics.sent || metrics.sent === 0) return { openRate: 0, clickRate: 0, conversionRate: 0 };
-    const openRate = ((metrics.opened || 0) / metrics.sent) * 100;
-    const clickRate = ((metrics.clicked || 0) / (metrics.opened || 1)) * 100;
-    const conversionRate = ((metrics.converted || 0) / (metrics.clicked || 1)) * 100;
-    return { openRate, clickRate, conversionRate };
-  };
-
-  const handleCreateCampaign = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onCreateCampaign) {
-      onCreateCampaign({
-        ...newCampaign,
-        status: 'draft',
-        actualCost: 0,
-        startDate: newCampaign.scheduleConfig.sendImmediately
-          ? new Date().toISOString()
-          : newCampaign.scheduleConfig.scheduledAt,
-        metrics: {},
-      });
-      setNewCampaign({
-        name: '',
-        description: '',
-        type: 'email',
-        targetSegmentId: '',
-        contentTemplate: { subject: '', body: '' },
-        scheduleConfig: { sendImmediately: true, scheduledAt: '' },
-        budget: 0,
-      });
-      setShowCreateModal(false);
-    }
-  };
-
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
-
-  const formatCurrency = (value: number | undefined | null) =>
-    (value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-
-  const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
-  const totalBudget = campaigns.reduce((sum, c) => sum + c.budget, 0);
-  const totalSent = campaigns.reduce((sum, c) => sum + (c.metrics.sent || 0), 0);
-  const totalConversions = campaigns.reduce((sum, c) => sum + (c.metrics.converted || 0), 0);
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
@@ -182,7 +262,7 @@ export default function MarketingCampaigns({
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-white/70 font-medium">Campaigns</p>
           <h2 className="mt-1 text-xl font-bold text-white">Marketing Campaigns</h2>
-          <p className="text-sm text-white/60">Create and manage automated marketing campaigns</p>
+          <p className="text-sm text-white/60">Create and manage email and WhatsApp campaigns</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -196,10 +276,10 @@ export default function MarketingCampaigns({
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Active Campaigns', value: activeCampaigns, icon: Play, accent: 'text-green-400' },
-          { label: 'Total Budget', value: formatCurrency(totalBudget), icon: BarChart3, accent: 'text-blue-400' },
-          { label: 'Total Sent', value: totalSent.toLocaleString(), icon: Send, accent: 'text-purple-400' },
-          { label: 'Conversions', value: totalConversions.toLocaleString(), icon: TrendingUp, accent: 'text-emerald-400' },
+          { label: 'Total Campaigns', value: campaigns.length, icon: BarChart3, accent: 'text-indigo-400' },
+          { label: 'Active / Scheduled', value: activeCampaigns, icon: Play, accent: 'text-green-400' },
+          { label: 'Total Messages Sent', value: totalSent.toLocaleString(), icon: Send, accent: 'text-purple-400' },
+          { label: 'Completed Campaigns', value: sentCount, icon: TrendingUp, accent: 'text-emerald-400' },
         ].map(({ label, value, icon: Icon, accent }) => (
           <div key={label} className="rounded-2xl border border-white/15 bg-white/5 p-5">
             <div className="flex items-center justify-between">
@@ -228,363 +308,233 @@ export default function MarketingCampaigns({
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white/70 focus:border-indigo-500 focus:outline-none"
+          className="rounded-2xl border border-white/20 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
         >
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
           <option value="scheduled">Scheduled</option>
-          <option value="active">Active</option>
-          <option value="paused">Paused</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="sending">Sending</option>
+          <option value="sent">Sent</option>
+          <option value="failed">Failed</option>
         </select>
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white/70 focus:border-indigo-500 focus:outline-none"
+          className="rounded-2xl border border-white/20 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
         >
           <option value="all">All Types</option>
           <option value="email">Email</option>
-          <option value="sms">SMS</option>
-          <option value="social_media">Social Media</option>
-          <option value="loyalty">Loyalty</option>
-          <option value="promotion">Promotion</option>
+          <option value="whatsapp">WhatsApp</option>
         </select>
       </div>
 
       {/* Campaigns List */}
       <div className="space-y-4">
-        {filteredCampaigns.length === 0 ? (
+        {loading ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 py-12 text-center">
+            <p className="text-sm text-white/50">Loading campaigns…</p>
+          </div>
+        ) : filteredCampaigns.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 py-16 text-center">
             <Mail className="mx-auto h-12 w-12 text-white/20" />
             <h3 className="mt-3 text-sm font-semibold text-white">No campaigns found</h3>
             <p className="mt-1 text-sm text-white/50">
               {campaigns.length === 0
-                ? 'Marketing campaigns will be available in a future update.'
+                ? 'Create your first campaign to start reaching customers.'
                 : 'No campaigns match your current filters.'}
             </p>
           </div>
         ) : (
-          filteredCampaigns.map((campaign) => {
-            const performance = calculatePerformance(campaign.metrics);
-            const isSelected = selectedCampaign === campaign.id;
-
-            return (
-              <div key={campaign.id} className="rounded-2xl border border-white/15 bg-white/5">
-                <div className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
-                        {getTypeIcon(campaign.type)}
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-white">{campaign.name}</h4>
-                        <p className="text-sm text-white/60">{campaign.description}</p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(campaign.status)}`}>
-                            {campaign.status}
-                          </span>
-                          {campaign.targetSegmentName && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-xs font-medium text-white/60">
-                              <Users className="h-3 w-3" />
-                              {campaign.targetSegmentName}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+          filteredCampaigns.map((campaign) => (
+            <div key={campaign.id} className="rounded-2xl border border-white/15 bg-white/5">
+              <div className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
+                      {getTypeIcon(campaign.type)}
                     </div>
-                    <div className="flex items-center gap-1">
-                      {campaign.status === 'draft' && onLaunchCampaign && (
-                        <button
-                          onClick={() => onLaunchCampaign(campaign.id)}
-                          className="inline-flex items-center gap-1 rounded-xl bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
-                        >
-                          <Play className="h-3 w-3" />
-                          Launch
-                        </button>
+                    <div className="min-w-0">
+                      <h4 className="font-medium text-white truncate">{campaign.name}</h4>
+                      {campaign.subject && (
+                        <p className="text-sm text-white/60 truncate">{campaign.subject}</p>
                       )}
-                      {campaign.status === 'active' && onPauseCampaign && (
-                        <button
-                          onClick={() => onPauseCampaign(campaign.id)}
-                          className="inline-flex items-center gap-1 rounded-xl bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
-                        >
-                          <Pause className="h-3 w-3" />
-                          Pause
-                        </button>
-                      )}
-                      {campaign.status === 'paused' && onResumeCampaign && (
-                        <button
-                          onClick={() => onResumeCampaign(campaign.id)}
-                          className="inline-flex items-center gap-1 rounded-xl bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
-                        >
-                          <Play className="h-3 w-3" />
-                          Resume
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setSelectedCampaign(isSelected ? null : campaign.id)}
-                        className="rounded-xl p-2 text-white/40 hover:bg-white/10 hover:text-white/70"
-                        title="View details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      {onUpdateCampaign && (
-                        <button
-                          onClick={() => toast.info('Campaign editor coming soon')}
-                          className="rounded-xl p-2 text-white/40 hover:bg-white/10 hover:text-white/70"
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                      )}
-                      {onDeleteCampaign && (
-                        <button
-                          onClick={() => {
-                            if (confirm('Delete this campaign?')) {
-                              onDeleteCampaign(campaign.id);
-                            }
-                          }}
-                          className="rounded-xl p-2 text-white/40 hover:bg-red-500/20 hover:text-red-400"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
-                    {[
-                      { label: 'Sent', value: campaign.metrics.sent || 0 },
-                      { label: 'Open Rate', value: `${performance.openRate.toFixed(1)}%` },
-                      { label: 'Click Rate', value: `${performance.clickRate.toFixed(1)}%` },
-                      { label: 'Conversions', value: campaign.metrics.converted || 0 },
-                      { label: 'Revenue', value: formatCurrency(campaign.metrics.revenue || 0) },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="text-center">
-                        <p className="text-xs text-white/50">{label}</p>
-                        <p className="text-sm font-semibold text-white">{value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {campaign.startDate && (
-                    <div className="mt-3 flex items-center gap-4 text-xs text-white/40">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Started: {formatDate(campaign.startDate)}
-                      </span>
-                      {campaign.endDate && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Ends: {formatDate(campaign.endDate)}
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(campaign.status)}`}>
+                          {campaign.status}
                         </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <BarChart3 className="h-3 w-3" />
-                        Budget: {formatCurrency(campaign.budget)}
-                      </span>
+                        <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-xs font-medium text-white/60">
+                          <Users className="h-3 w-3" />
+                          {campaign.target_segment}
+                        </span>
+                        <span className="text-xs text-white/40 capitalize">{campaign.type}</span>
+                      </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="ml-3 flex shrink-0 items-center gap-1">
+                    {campaign.status === 'draft' && (
+                      <>
+                        <button
+                          onClick={() => void handleSendNow(campaign.id)}
+                          className="inline-flex items-center gap-1 rounded-xl bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                          title="Send now"
+                        >
+                          <Send className="h-3 w-3" />
+                          Send Now
+                        </button>
+                        <button
+                          onClick={() => setScheduleModal({ campaignId: campaign.id, scheduledAt: '' })}
+                          className="inline-flex items-center gap-1 rounded-xl bg-blue-600/80 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600"
+                          title="Schedule"
+                        >
+                          <Calendar className="h-3 w-3" />
+                          Schedule
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => void handleDelete(campaign.id)}
+                      className="rounded-xl p-2 text-white/40 hover:bg-red-500/20 hover:text-red-400"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
-                {isSelected && (
-                  <div className="border-t border-white/10 p-5">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                      <div>
-                        <h5 className="mb-3 font-medium text-white">Campaign Details</h5>
-                        <div className="space-y-2">
-                          {[
-                            { label: 'Type', value: campaign.type },
-                            { label: 'Status', value: campaign.status },
-                            { label: 'Budget', value: formatCurrency(campaign.budget) },
-                            { label: 'Spent', value: formatCurrency(campaign.actualCost) },
-                            ...(campaign.createdBy ? [{ label: 'Created by', value: campaign.createdBy.name }] : []),
-                          ].map(({ label, value }) => (
-                            <div key={label} className="flex justify-between">
-                              <span className="text-sm text-white/50">{label}:</span>
-                              <span className="text-sm font-medium capitalize text-white">{value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h5 className="mb-3 font-medium text-white">Performance Metrics</h5>
-                        <div className="space-y-2">
-                          {[
-                            { label: 'Delivered', value: campaign.metrics.delivered || 0 },
-                            { label: 'Opened', value: campaign.metrics.opened || 0 },
-                            { label: 'Clicked', value: campaign.metrics.clicked || 0 },
-                            { label: 'Converted', value: campaign.metrics.converted || 0 },
-                            { label: 'Revenue', value: formatCurrency(campaign.metrics.revenue || 0) },
-                          ].map(({ label, value }) => (
-                            <div key={label} className="flex justify-between">
-                              <span className="text-sm text-white/50">{label}:</span>
-                              <span className="text-sm font-medium text-white">{value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                {/* Metrics row */}
+                <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+                  {[
+                    { label: 'Sent', value: campaign.sent_count.toLocaleString() },
+                    { label: 'Segment', value: campaign.target_segment },
+                    {
+                      label: 'Scheduled',
+                      value: campaign.scheduled_at ? formatDate(campaign.scheduled_at) : '—',
+                    },
+                    {
+                      label: 'Created',
+                      value: formatDate(campaign.created_at),
+                    },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="text-center">
+                      <p className="text-xs text-white/50">{label}</p>
+                      <p className="text-sm font-semibold text-white">{value}</p>
                     </div>
+                  ))}
+                </div>
+
+                {campaign.sent_at && (
+                  <div className="mt-3 flex items-center gap-1 text-xs text-white/40">
+                    <Clock className="h-3 w-3" />
+                    Sent: {formatDate(campaign.sent_at)}
                   </div>
                 )}
               </div>
-            );
-          })
+            </div>
+          ))
         )}
       </div>
 
-      {/* Create Campaign Modal */}
+      {/* ── Create Campaign Modal ─────────────────────────────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-2xl rounded-3xl border border-white/15 bg-slate-900 p-6 shadow-2xl">
+          <div className="w-full max-w-2xl rounded-3xl border border-white/15 bg-slate-900 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="mb-4 text-lg font-semibold text-white">Create Marketing Campaign</h3>
-            <form onSubmit={handleCreateCampaign} className="space-y-4">
+            <form onSubmit={(e) => void handleCreate(e)} className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-white/70">Campaign Name</label>
+                  <label className="mb-1 block text-sm font-medium text-white/70">Campaign Name *</label>
                   <input
                     type="text"
-                    value={newCampaign.name}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none"
                     placeholder="e.g., Summer Sale Promotion"
                     required
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-white/70">Campaign Type</label>
+                  <label className="mb-1 block text-sm font-medium text-white/70">Type</label>
                   <select
-                    value={newCampaign.type}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, type: e.target.value as Campaign['type'] })}
-                    className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'email' | 'whatsapp' })}
+                    className="w-full rounded-2xl border border-white/20 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
                   >
                     <option value="email">Email</option>
-                    <option value="sms">SMS</option>
-                    <option value="social_media">Social Media</option>
-                    <option value="loyalty">Loyalty</option>
-                    <option value="promotion">Promotion</option>
+                    <option value="whatsapp">WhatsApp</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-white/70">Description</label>
-                <textarea
-                  value={newCampaign.description}
-                  onChange={(e) => setNewCampaign({ ...newCampaign, description: e.target.value })}
-                  rows={3}
-                  className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none"
-                  placeholder="Describe your campaign objectives and target audience"
-                />
+                <label className="mb-1 block text-sm font-medium text-white/70">Target Segment</label>
+                <select
+                  value={formData.target_segment}
+                  onChange={(e) => setFormData({ ...formData, target_segment: e.target.value as CampaignForm['target_segment'] })}
+                  className="w-full rounded-2xl border border-white/20 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                >
+                  <option value="all">All Customers</option>
+                  <option value="new">New Customers (last 30 days)</option>
+                  <option value="vip">VIP Customers</option>
+                  <option value="inactive">Inactive (no purchase 60+ days)</option>
+                </select>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {formData.type === 'email' && (
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-white/70">Target Segment</label>
-                  <select
-                    value={newCampaign.targetSegmentId}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, targetSegmentId: e.target.value })}
-                    className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  >
-                    <option value="">Select a segment</option>
-                    {segments.map((segment) => (
-                      <option key={segment.id} value={segment.id}>
-                        {segment.name} ({segment.customerCount} customers)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-white/70">Budget (USD)</label>
+                  <label className="mb-1 block text-sm font-medium text-white/70">Subject Line</label>
                   <input
-                    type="number"
-                    value={newCampaign.budget}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, budget: parseFloat(e.target.value) || 0 })}
+                    type="text"
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
+                    placeholder="Your email subject line"
                   />
                 </div>
-              </div>
+              )}
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-white/70">Email Subject</label>
-                <input
-                  type="text"
-                  value={newCampaign.contentTemplate.subject ?? ''}
-                  onChange={(e) =>
-                    setNewCampaign({
-                      ...newCampaign,
-                      contentTemplate: { ...newCampaign.contentTemplate, subject: e.target.value },
-                    })
-                  }
-                  className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none"
-                  placeholder="Campaign subject line"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white/70">Email Body</label>
+                <label className="mb-1 block text-sm font-medium text-white/70">Message Body *</label>
                 <textarea
-                  value={newCampaign.contentTemplate.body ?? ''}
-                  onChange={(e) =>
-                    setNewCampaign({
-                      ...newCampaign,
-                      contentTemplate: { ...newCampaign.contentTemplate, body: e.target.value },
-                    })
-                  }
-                  rows={4}
+                  value={formData.body}
+                  onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                  rows={5}
                   className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none"
-                  placeholder="Campaign content"
+                  placeholder="Write your campaign message here…"
+                  required
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-white/70">Schedule</label>
                 <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 text-sm text-white/70">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-white/70">
                     <input
                       type="radio"
                       name="schedule"
-                      checked={newCampaign.scheduleConfig.sendImmediately}
-                      onChange={() =>
-                        setNewCampaign({
-                          ...newCampaign,
-                          scheduleConfig: { ...newCampaign.scheduleConfig, sendImmediately: true },
-                        })
-                      }
+                      checked={formData.send_immediately}
+                      onChange={() => setFormData({ ...formData, send_immediately: true })}
                       className="accent-indigo-500"
                     />
-                    Send immediately
+                    Save as draft
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-white/70">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-white/70">
                     <input
                       type="radio"
                       name="schedule"
-                      checked={!newCampaign.scheduleConfig.sendImmediately}
-                      onChange={() =>
-                        setNewCampaign({
-                          ...newCampaign,
-                          scheduleConfig: { ...newCampaign.scheduleConfig, sendImmediately: false },
-                        })
-                      }
+                      checked={!formData.send_immediately}
+                      onChange={() => setFormData({ ...formData, send_immediately: false })}
                       className="accent-indigo-500"
                     />
                     Schedule for later
                   </label>
                 </div>
-                {!newCampaign.scheduleConfig.sendImmediately && (
+                {!formData.send_immediately && (
                   <input
                     type="datetime-local"
-                    value={newCampaign.scheduleConfig.scheduledAt}
-                    onChange={(e) =>
-                      setNewCampaign({
-                        ...newCampaign,
-                        scheduleConfig: { ...newCampaign.scheduleConfig, scheduledAt: e.target.value },
-                      })
-                    }
+                    value={formData.scheduled_at}
+                    onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
                     className="mt-2 w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
                   />
                 )}
@@ -593,19 +543,54 @@ export default function MarketingCampaigns({
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => { setShowCreateModal(false); setFormData(DEFAULT_FORM); }}
                   className="flex-1 rounded-2xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/10"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+                  disabled={submitting}
+                  className="flex-1 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  Create Campaign
+                  {submitting ? 'Creating…' : 'Create Campaign'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Schedule Modal ────────────────────────────────────────────────────── */}
+      {scheduleModal !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-3xl border border-white/15 bg-slate-900 p-6 shadow-2xl">
+            <h3 className="mb-4 text-lg font-semibold text-white">Schedule Campaign</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/70">Send at</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleModal.scheduledAt}
+                  onChange={(e) => setScheduleModal({ ...scheduleModal, scheduledAt: e.target.value })}
+                  className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setScheduleModal(null)}
+                  className="flex-1 rounded-2xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void handleSchedule()}
+                  className="flex-1 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Schedule
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

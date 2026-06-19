@@ -21,8 +21,8 @@ import CustomerCommunicationHistory from '../components/crm/CustomerCommunicatio
 import CustomerSegmentation from '../components/crm/CustomerSegmentation';
 import MarketingCampaigns from '../components/crm/MarketingCampaigns';
 import FeatureGate from '../components/FeatureGate';
-import LoyaltyPanel from '../components/LoyaltyPanel';
 import Layout from '../components/Layout';
+import LoyaltyPanel from '../components/LoyaltyPanel';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
 
@@ -390,17 +390,14 @@ export default function Customers() {
         )}
 
         {activeTab === 'marketing' && (
-          <section className="hero-gradient glass-panel p-6">
-            <AutomatedMarketing
-              campaigns={[]}
-              segments={[]}
-              workflows={[]}
-              onCreateCampaign={() => {}}
-              onUpdateCampaign={() => {}}
-              onCreateWorkflow={() => {}}
-              onUpdateWorkflow={() => {}}
-            />
-          </section>
+          <div className="space-y-6">
+            <section className="hero-gradient glass-panel p-6">
+              <MarketingCampaigns />
+            </section>
+            <section className="hero-gradient glass-panel p-6">
+              <AutomatedMarketing />
+            </section>
+          </div>
         )}
 
         {activeTab === 'analytics' && (

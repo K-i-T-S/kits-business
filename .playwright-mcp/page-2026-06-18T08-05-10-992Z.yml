@@ -1,0 +1,56 @@
+- generic [ref=e4]:
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - img "Kits - Khoder's IT Solutions logo" [ref=e11]
+      - paragraph [ref=e12]: Sign In
+      - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e13]
+      - paragraph [ref=e14]: Our tech. empowering your success
+    - generic [ref=e15]:
+      - paragraph [ref=e16]: Sign Up
+      - generic [ref=e17]:
+        - generic [ref=e51]:
+          - text: Business name
+          - textbox "Business name" [ref=e52]:
+            - /placeholder: Kits - Khoder's IT Solutions
+            - text: KiTS Test Business
+        - generic [ref=e18]:
+          - text: Email
+          - textbox "Email" [ref=e19]:
+            - /placeholder: your@email.com
+            - text: kits.tech.co+prodtest1@gmail.com
+        - generic [ref=e20]:
+          - text: Password
+          - textbox "Password" [ref=e21]:
+            - /placeholder: ••••••••
+            - text: TestPass2026!
+        - generic [ref=e55]: "{}"
+        - button "Sign Up" [ref=e53]
+        - button "Already have an account?" [ref=e54]
+    - generic [ref=e24]:
+      - paragraph [ref=e25]: Need help onboarding?
+      - generic [ref=e26]:
+        - link "+961 81 290 662" [ref=e27] [cursor=pointer]:
+          - /url: https://wa.me/96181290662
+          - img [ref=e28]
+          - text: +961 81 290 662
+        - generic [ref=e30]: •
+        - link "@kits_solutions" [ref=e31] [cursor=pointer]:
+          - /url: https://instagram.com/kits_solutions
+          - img [ref=e32]
+          - text: "@kits_solutions"
+      - link "kits.tech.co@gmail.com" [ref=e36] [cursor=pointer]:
+        - /url: mailto:kits.tech.co@gmail.com
+        - img [ref=e37]
+        - text: kits.tech.co@gmail.com
+  - button "Show keyboard shortcuts" [ref=e41]:
+    - img [ref=e42]
+  - button "Show accessibility audit" [ref=e45]:
+    - img [ref=e46]
+    - generic [ref=e49]: A11y Audit
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e56]:
+        - img [ref=e58]
+        - generic [ref=e60]:
+          - generic [ref=e61]: Sign up failed
+          - generic [ref=e62]: "{}"

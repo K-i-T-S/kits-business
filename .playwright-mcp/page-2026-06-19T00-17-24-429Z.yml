@@ -1,0 +1,18 @@
+- generic [ref=e21]:
+  - generic [ref=e24]:
+    - generic [ref=e25]:
+      - img [ref=e27]
+      - heading "KiTS Admin Access" [level=1] [ref=e30]
+      - paragraph [ref=e31]: This area is restricted to KiTS staff only.
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]: Password
+        - textbox "Enter admin password" [active] [ref=e35]
+      - paragraph [ref=e47]: Incorrect password
+      - button "Unlock" [ref=e36]
+  - button "Show keyboard shortcuts" [ref=e38]:
+    - img [ref=e39]
+  - button "Show accessibility audit" [ref=e42]:
+    - img [ref=e43]
+    - generic [ref=e46]: A11y Audit
+  - region "Notifications alt+T"

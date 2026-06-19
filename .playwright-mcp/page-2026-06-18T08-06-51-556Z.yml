@@ -1,0 +1,14 @@
+- generic [ref=e4]:
+  - generic [ref=e52]:
+    - img [ref=e53]
+    - paragraph [ref=e55]: Loading your account…
+  - button "Show keyboard shortcuts" [ref=e41]:
+    - img [ref=e42]
+  - button "Show accessibility audit" [ref=e45]:
+    - img [ref=e46]
+    - generic [ref=e49]: A11y Audit
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e56]:
+        - img [ref=e58]
+        - generic [ref=e61]: Welcome back!

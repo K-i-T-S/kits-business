@@ -1,0 +1,343 @@
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - link:
+            - /url: "#main-content"
+            - text: Skip to main content
+          - link:
+            - /url: "#navigation"
+            - text: Skip to navigation
+          - link:
+            - /url: "#search"
+            - text: Skip to search
+          - navigation:
+            - generic:
+              - link:
+                - /url: /dashboard
+                - generic:
+                  - generic:
+                    - generic:
+                      - img
+                    - generic:
+                      - generic: Kits Solutions
+                      - heading [level=1]: Kits - Khoder's IT Solutions
+                      - paragraph: Our tech. empowering your success
+                  - generic:
+                    - generic:
+                      - img
+                      - text: Add your logo file and wire it into the sidebar + login for a fully branded experience.
+              - navigation:
+                - generic:
+                  - heading [level=3]: Main Menu
+                - generic:
+                  - link:
+                    - /url: /dashboard
+                    - generic:
+                      - img
+                    - generic: Dashboard
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: Inventory
+                  - img
+                - generic:
+                  - link:
+                    - /url: /pos
+                    - generic:
+                      - img
+                    - generic: POS
+                    - img
+                - generic:
+                  - link:
+                    - /url: /customers
+                    - generic:
+                      - img
+                    - generic: Customers
+                    - img
+                - generic:
+                  - link:
+                    - /url: /employees
+                    - generic:
+                      - img
+                    - generic: Employees
+                    - img
+                - button:
+                  - generic:
+                    - img
+                  - generic: Monitoring
+                  - img
+                - generic:
+                  - link:
+                    - /url: /reports
+                    - generic:
+                      - img
+                    - generic: Reports
+                    - generic:
+                      - img
+                      - text: Active
+                - button:
+                  - generic:
+                    - img
+                  - generic: Enterprise
+                  - img
+              - generic:
+                - generic:
+                  - heading [level=3]: Support
+                - complementary:
+                  - link:
+                    - /url: mailto:kits.tech.co@gmail.com
+                    - generic:
+                      - img
+                    - generic:
+                      - paragraph: Email Support
+                      - paragraph: kits.tech.co@gmail.com
+                  - link:
+                    - /url: https://wa.me/96181290662
+                    - generic:
+                      - img
+                    - generic:
+                      - paragraph: WhatsApp
+                      - paragraph: +961 81 290 662
+                  - link:
+                    - /url: https://instagram.com/kits_solutions
+                    - generic:
+                      - img
+                    - generic:
+                      - paragraph: Instagram
+                      - paragraph: "@kits_solutions"
+                - button:
+                  - img
+                  - text: Secure Logout
+          - generic:
+            - generic:
+              - generic:
+                - banner:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - img
+                        - generic:
+                          - generic:
+                            - heading [level=1]: Kits - Khoder's IT Solutions
+                            - generic: PRO
+                          - paragraph: Our tech. empowering your success
+                    - generic:
+                      - search:
+                        - generic:
+                          - img
+                        - textbox:
+                          - /placeholder: Search
+                        - generic: Search for products, customers, and orders
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: KiTS
+                          - generic: owner
+                      - generic:
+                        - button:
+                          - img
+                      - generic:
+                        - button:
+                          - img
+                          - img
+                      - generic:
+                        - button:
+                          - generic:
+                            - generic: AH
+                          - img
+                - main:
+                  - generic:
+                    - generic:
+                      - img
+                      - generic:
+                        - generic:
+                          - paragraph: Advanced Intelligence
+                          - heading [level=1]: Reports & analytics
+                          - paragraph: Monitor revenue, profit, inventory velocity, and cashier performance. Use advanced analytics and forecasting to guide business decisions.
+                        - generic:
+                          - generic: Report Type
+                          - combobox:
+                            - generic: Overview
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                              - text: Build Report
+                            - button:
+                              - img
+                              - text: Export
+                    - generic:
+                      - generic:
+                        - generic:
+                          - combobox
+                        - generic:
+                          - paragraph: No sales data for this period. Start making sales from the POS terminal.
+                        - generic:
+                          - generic:
+                            - generic:
+                              - img
+                              - paragraph: Total revenue
+                            - paragraph: $0.00
+                            - paragraph: 0 transactions
+                          - generic:
+                            - generic:
+                              - img
+                              - paragraph: Total profit
+                            - paragraph: $0.00
+                            - paragraph: 0% margin
+                          - generic:
+                            - generic:
+                              - img
+                              - paragraph: Avg transaction
+                            - paragraph: $0.00
+                            - paragraph: per sale
+                          - generic:
+                            - generic:
+                              - img
+                              - paragraph: Active customers
+                            - paragraph: "1"
+                            - paragraph: total registered
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - paragraph: Revenue pulse
+                                - heading [level=2]: Sales trend (last 7 days)
+                              - generic: Auto-refreshes
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - img:
+                                    - generic:
+                                      - generic:
+                                        - generic:
+                                          - generic: Jun 12
+                                        - generic:
+                                          - generic: Jun 13
+                                        - generic:
+                                          - generic: Jun 14
+                                        - generic:
+                                          - generic: Jun 15
+                                        - generic:
+                                          - generic: Jun 16
+                                        - generic:
+                                          - generic: Jun 17
+                                        - generic:
+                                          - generic: Jun 18
+                                    - generic:
+                                      - generic:
+                                        - generic:
+                                          - generic: "0"
+                                        - generic:
+                                          - generic: "10"
+                                        - generic:
+                                          - generic: "20"
+                                        - generic:
+                                          - generic: "30"
+                                        - generic:
+                                          - generic: "40"
+                                  - generic:
+                                    - list:
+                                      - listitem:
+                                        - img
+                                        - text: Revenue
+                                      - listitem:
+                                        - img
+                                        - text: Profit
+                          - generic:
+                            - generic:
+                              - generic:
+                                - paragraph: Merch velocity
+                                - heading [level=2]: Top products by revenue
+                              - generic: Sync with PLU
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - paragraph: Tender mix
+                                - heading [level=2]: Payment method distribution
+                              - generic: Customize copy
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - paragraph: People power
+                                - heading [level=2]: Employee performance
+                              - generic: Use for coaching
+                            - generic:
+                              - generic: No sales data available for this period
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - paragraph: Product intelligence
+                                - heading [level=2]: Top products details
+                              - generic: Kits insights
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - columnheader: Product
+                                    - columnheader: Qty sold
+                                    - columnheader: Revenue
+                                    - columnheader: Profit
+                              - paragraph: No sales data
+                          - generic:
+                            - generic:
+                              - generic:
+                                - paragraph: Cost intelligence
+                                - heading [level=2]: Recent cost shifts
+                              - generic: Audit ready
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - columnheader: Product
+                                    - columnheader: Previous
+                                    - columnheader: Current
+                                    - columnheader: Change
+                              - paragraph: No recent changes
+        - generic:
+          - button:
+            - img
+        - generic:
+          - button:
+            - img
+            - generic: A11y Audit
+        - region "Notifications alt+T":
+          - list:
+            - listitem:
+              - generic:
+                - img
+              - generic:
+                - generic: No data to export
+                - generic: Try selecting a wider date range.
+  - generic: "0"
+  - dialog "Export Report" [ref=e390]:
+    - heading "Export Report" [level=2] [ref=e392]
+    - generic [ref=e393]:
+      - paragraph [ref=e394]: Choose the format for your report export. The current date range (today) will be used.
+      - generic [ref=e395]:
+        - button "Export as CSV" [ref=e396]:
+          - img
+          - text: Export as CSV
+        - button "Export as Excel" [active] [ref=e397]:
+          - img
+          - text: Export as Excel
+        - button "Export as PDF" [ref=e398]:
+          - img
+          - text: Export as PDF
+    - button "Close" [ref=e399]:
+      - img
+      - generic [ref=e400]: Close

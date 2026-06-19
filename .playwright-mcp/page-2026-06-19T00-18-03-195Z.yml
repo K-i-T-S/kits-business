@@ -1,0 +1,225 @@
+- generic [ref=e21]:
+  - generic [ref=e22]:
+    - link "Skip to main content" [ref=e23] [cursor=pointer]:
+      - /url: "#main-content"
+    - link "Skip to navigation" [ref=e24] [cursor=pointer]:
+      - /url: "#navigation"
+    - link "Skip to search" [ref=e25] [cursor=pointer]:
+      - /url: "#search"
+    - navigation "Main navigation" [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - button "Customise brand identity" [ref=e29] [cursor=pointer]:
+            - generic [ref=e30]:
+              - img "Kits - Khoder's IT Solutions logo" [ref=e32]
+              - generic [ref=e34]:
+                - generic [ref=e35]: Your Business
+                - heading "KiTS" [level=1] [ref=e36]
+                - paragraph [ref=e37]: Our tech. empowering your success
+              - img [ref=e39]
+          - generic [ref=e42]:
+            - img "KiTS" [ref=e43]
+            - generic [ref=e44]: Powered by KiTS · Khoder's IT Solutions
+        - navigation "Main menu" [ref=e45]:
+          - heading "Main Menu" [level=3] [ref=e47]
+          - link "Dashboard" [ref=e49] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e51]
+            - generic [ref=e56]: Dashboard
+            - img [ref=e57]
+          - link "Inventory" [ref=e60] [cursor=pointer]:
+            - /url: /inventory
+            - img [ref=e62]
+            - generic [ref=e66]: Inventory
+            - img [ref=e67]
+          - link "POS Active" [ref=e70] [cursor=pointer]:
+            - /url: /pos
+            - img [ref=e72]
+            - generic [ref=e77]: POS
+            - generic [ref=e78]:
+              - img [ref=e79]
+              - text: Active
+          - link "Customers" [ref=e82] [cursor=pointer]:
+            - /url: /customers
+            - img [ref=e84]
+            - generic [ref=e89]: Customers
+            - img [ref=e90]
+          - link "Employees" [ref=e93] [cursor=pointer]:
+            - /url: /employees
+            - img [ref=e95]
+            - generic [ref=e99]: Employees
+            - img [ref=e100]
+          - link "Monitoring" [ref=e103] [cursor=pointer]:
+            - /url: /monitoring
+            - img [ref=e105]
+            - generic [ref=e107]: Monitoring
+            - img [ref=e108]
+          - link "Reports" [ref=e111] [cursor=pointer]:
+            - /url: /reports
+            - img [ref=e113]
+            - generic [ref=e115]: Reports
+            - img [ref=e116]
+          - link "Enterprise" [ref=e119] [cursor=pointer]:
+            - /url: /enterprise
+            - img [ref=e121]
+            - generic [ref=e123]: Enterprise
+            - img [ref=e124]
+          - link "Profile Settings" [ref=e127] [cursor=pointer]:
+            - /url: /profile-settings
+            - img [ref=e129]
+            - generic [ref=e132]: Profile Settings
+            - img [ref=e133]
+          - link "System Settings" [ref=e136] [cursor=pointer]:
+            - /url: /system-settings
+            - img [ref=e138]
+            - generic [ref=e142]: System Settings
+            - img [ref=e143]
+        - generic [ref=e145]:
+          - heading "Support" [level=3] [ref=e147]
+          - complementary "Support options" [ref=e148]:
+            - link "Email Support kits.tech.co@gmail.com" [ref=e149] [cursor=pointer]:
+              - /url: mailto:kits.tech.co@gmail.com
+              - img [ref=e151]
+              - generic [ref=e154]:
+                - paragraph [ref=e155]: Email Support
+                - paragraph [ref=e156]: kits.tech.co@gmail.com
+            - link "WhatsApp +961 81 290 662" [ref=e157] [cursor=pointer]:
+              - /url: https://wa.me/96181290662
+              - img [ref=e159]
+              - generic [ref=e161]:
+                - paragraph [ref=e162]: WhatsApp
+                - paragraph [ref=e163]: +961 81 290 662
+            - link "Instagram @kits_solutions" [ref=e164] [cursor=pointer]:
+              - /url: https://instagram.com/kits_solutions
+              - img [ref=e166]
+              - generic [ref=e169]:
+                - paragraph [ref=e170]: Instagram
+                - paragraph [ref=e171]: "@kits_solutions"
+          - button "Sign out of your account" [ref=e172]:
+            - img [ref=e173]
+            - text: Secure Logout
+    - generic [ref=e178]:
+      - banner [ref=e179]:
+        - generic [ref=e180]:
+          - generic [ref=e182]:
+            - img "Kits - Khoder's IT Solutions logo" [ref=e185]
+            - generic [ref=e187]:
+              - generic [ref=e188]:
+                - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e189]
+                - generic [ref=e190]: PRO
+              - paragraph [ref=e191]: Our tech. empowering your success
+          - search [ref=e192]:
+            - button "Search" [ref=e193]:
+              - img [ref=e194]
+              - generic [ref=e197]: Search…
+          - generic [ref=e198]:
+            - generic [ref=e200]:
+              - generic [ref=e201]: KiTS
+              - generic [ref=e202]: owner
+            - button "Switch to dark mode" [ref=e203]:
+              - img [ref=e204]
+            - button "View notifications" [ref=e207]:
+              - img [ref=e208]
+              - generic "New notifications" [ref=e211]
+            - button [ref=e213]:
+              - img
+              - img
+            - button "User profile menu" [ref=e215]:
+              - generic [ref=e217]: AH
+              - img [ref=e218]
+      - main [ref=e220]:
+        - generic [ref=e221]:
+          - generic [ref=e222]:
+            - generic [ref=e223]:
+              - paragraph [ref=e224]: Point of sale
+              - heading "Live sales cockpit" [level=1] [ref=e225]
+              - paragraph [ref=e226]: 1 item in cart · $10.80 total
+            - generic [ref=e227]: "Operator: ahmad"
+          - generic [ref=e228]:
+            - generic [ref=e229]:
+              - generic [ref=e230]:
+                - generic [ref=e231]:
+                  - generic [ref=e232]:
+                    - paragraph [ref=e233]: Products
+                    - heading "Select or search" [level=2] [ref=e234]
+                  - generic [ref=e235]: 2 products
+                - textbox "Search by name, SKU, or barcode…" [ref=e236]
+                - generic [ref=e237]:
+                  - button "ex $10.00 Out of stock" [disabled] [ref=e238]:
+                    - paragraph [ref=e239]: ex
+                    - paragraph [ref=e240]: $10.00
+                    - paragraph [ref=e241]: Out of stock
+                  - button "product example 1 $10.00 100 in stock" [active] [ref=e242]:
+                    - paragraph [ref=e243]: product example 1
+                    - paragraph [ref=e244]: $10.00
+                    - paragraph [ref=e245]: 100 in stock
+              - generic [ref=e246]:
+                - generic [ref=e248]:
+                  - paragraph [ref=e249]: Scanner lane
+                  - heading "Scan or enter barcode" [level=2] [ref=e250]
+                - generic [ref=e251]:
+                  - generic [ref=e252]:
+                    - img
+                    - textbox "Scan or enter barcode..." [ref=e253]
+                  - button "Add" [ref=e254]
+              - generic [ref=e255]:
+                - generic [ref=e256]:
+                  - generic [ref=e257]:
+                    - paragraph [ref=e258]: Basket
+                    - heading "Shopping cart" [level=2] [ref=e259]
+                  - paragraph [ref=e260]: Ready to convert 1 item
+                - generic [ref=e318]:
+                  - generic [ref=e319]:
+                    - paragraph [ref=e320]: product example 1
+                    - paragraph
+                    - paragraph [ref=e321]: $10.00
+                  - generic [ref=e323]:
+                    - button "Decrease quantity" [ref=e324]:
+                      - img [ref=e325]
+                    - generic [ref=e326]: "1"
+                    - button "Increase quantity" [ref=e327]:
+                      - img [ref=e328]
+                  - generic [ref=e329]:
+                    - paragraph [ref=e330]: $10.00
+                    - button "Remove item" [ref=e331]:
+                      - img [ref=e332]
+            - generic [ref=e267]:
+              - generic [ref=e268]:
+                - paragraph [ref=e269]: Customer
+                - heading "Attach loyalty profile" [level=2] [ref=e270]
+                - generic [ref=e271]:
+                  - img
+                  - combobox [ref=e272]:
+                    - option "Walk-in Customer" [selected]
+                    - option "ahmad (76623030)"
+              - generic [ref=e273]:
+                - paragraph [ref=e274]: Tender
+                - heading "Payment options" [level=2] [ref=e275]
+                - generic [ref=e276]:
+                  - generic [ref=e277]:
+                    - button "Split Payment" [ref=e278]:
+                      - img [ref=e279]
+                      - generic [ref=e284]: Split Payment
+                    - button "Add Tip" [ref=e285]:
+                      - img [ref=e286]
+                      - generic [ref=e288]: Add Tip
+                    - button "Discount" [ref=e289]:
+                      - img [ref=e290]
+                      - generic [ref=e293]: Discount
+                    - button "Loyalty" [disabled] [ref=e294]:
+                      - img [ref=e295]
+                      - generic [ref=e297]: Loyalty
+                  - button "Receipt Settings" [ref=e298]:
+                    - img [ref=e299]
+                    - generic [ref=e302]: Receipt Settings
+        - generic [ref=e303]:
+          - generic [ref=e304]:
+            - generic [ref=e305]: 1 item in cart
+            - generic [ref=e306]: $10.80
+          - button "Checkout · $10.80" [ref=e335]
+  - button "Show keyboard shortcuts" [ref=e309]:
+    - img [ref=e310]
+  - button "Show accessibility audit" [ref=e313]:
+    - img [ref=e314]
+    - generic [ref=e317]: A11y Audit
+  - region "Notifications alt+T"

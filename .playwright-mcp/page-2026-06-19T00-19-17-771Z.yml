@@ -1,0 +1,311 @@
+- generic [ref=e21]:
+  - generic [ref=e22]:
+    - link "Skip to main content" [ref=e23] [cursor=pointer]:
+      - /url: "#main-content"
+    - link "Skip to navigation" [ref=e24] [cursor=pointer]:
+      - /url: "#navigation"
+    - link "Skip to search" [ref=e25] [cursor=pointer]:
+      - /url: "#search"
+    - navigation "Main navigation" [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - button "Customise brand identity" [active] [ref=e29] [cursor=pointer]:
+            - generic [ref=e30]:
+              - img "Kits - Khoder's IT Solutions logo" [ref=e32]
+              - generic [ref=e34]:
+                - generic [ref=e35]: Your Business
+                - heading "KiTS" [level=1] [ref=e36]
+                - paragraph [ref=e37]: Our tech. empowering your success
+              - img [ref=e39]
+          - generic [ref=e42]:
+            - img "KiTS" [ref=e43]
+            - generic [ref=e44]: Powered by KiTS · Khoder's IT Solutions
+        - navigation "Main menu" [ref=e45]:
+          - heading "Main Menu" [level=3] [ref=e47]
+          - link "Dashboard Active" [ref=e49] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e51]
+            - generic [ref=e57]: Dashboard
+            - generic [ref=e58]:
+              - img [ref=e59]
+              - text: Active
+          - link "Inventory" [ref=e62] [cursor=pointer]:
+            - /url: /inventory
+            - img [ref=e64]
+            - generic [ref=e68]: Inventory
+            - img [ref=e69]
+          - link "POS" [ref=e72] [cursor=pointer]:
+            - /url: /pos
+            - img [ref=e74]
+            - generic [ref=e78]: POS
+            - img [ref=e79]
+          - link "Customers" [ref=e82] [cursor=pointer]:
+            - /url: /customers
+            - img [ref=e84]
+            - generic [ref=e89]: Customers
+            - img [ref=e90]
+          - link "Employees" [ref=e93] [cursor=pointer]:
+            - /url: /employees
+            - img [ref=e95]
+            - generic [ref=e99]: Employees
+            - img [ref=e100]
+          - link "Monitoring" [ref=e103] [cursor=pointer]:
+            - /url: /monitoring
+            - img [ref=e105]
+            - generic [ref=e107]: Monitoring
+            - img [ref=e108]
+          - link "Reports" [ref=e111] [cursor=pointer]:
+            - /url: /reports
+            - img [ref=e113]
+            - generic [ref=e115]: Reports
+            - img [ref=e116]
+          - link "Enterprise" [ref=e119] [cursor=pointer]:
+            - /url: /enterprise
+            - img [ref=e121]
+            - generic [ref=e123]: Enterprise
+            - img [ref=e124]
+          - link "Profile Settings" [ref=e127] [cursor=pointer]:
+            - /url: /profile-settings
+            - img [ref=e129]
+            - generic [ref=e132]: Profile Settings
+            - img [ref=e133]
+          - link "System Settings" [ref=e136] [cursor=pointer]:
+            - /url: /system-settings
+            - img [ref=e138]
+            - generic [ref=e142]: System Settings
+            - img [ref=e143]
+        - generic [ref=e145]:
+          - heading "Support" [level=3] [ref=e147]
+          - complementary "Support options" [ref=e148]:
+            - link "Email Support kits.tech.co@gmail.com" [ref=e149] [cursor=pointer]:
+              - /url: mailto:kits.tech.co@gmail.com
+              - img [ref=e151]
+              - generic [ref=e154]:
+                - paragraph [ref=e155]: Email Support
+                - paragraph [ref=e156]: kits.tech.co@gmail.com
+            - link "WhatsApp +961 81 290 662" [ref=e157] [cursor=pointer]:
+              - /url: https://wa.me/96181290662
+              - img [ref=e159]
+              - generic [ref=e161]:
+                - paragraph [ref=e162]: WhatsApp
+                - paragraph [ref=e163]: +961 81 290 662
+            - link "Instagram @kits_solutions" [ref=e164] [cursor=pointer]:
+              - /url: https://instagram.com/kits_solutions
+              - img [ref=e166]
+              - generic [ref=e169]:
+                - paragraph [ref=e170]: Instagram
+                - paragraph [ref=e171]: "@kits_solutions"
+          - button "Sign out of your account" [ref=e172]:
+            - img [ref=e173]
+            - text: Secure Logout
+    - generic [ref=e176]:
+      - generic [ref=e178]:
+        - banner [ref=e179]:
+          - generic [ref=e180]:
+            - generic [ref=e182]:
+              - img "Kits - Khoder's IT Solutions logo" [ref=e185]
+              - generic [ref=e187]:
+                - generic [ref=e188]:
+                  - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e189]
+                  - generic [ref=e190]: PRO
+                - paragraph [ref=e191]: Our tech. empowering your success
+            - search [ref=e192]:
+              - button "Search" [ref=e193]:
+                - img [ref=e194]
+                - generic [ref=e197]: Search…
+            - generic [ref=e198]:
+              - generic [ref=e200]:
+                - generic [ref=e201]: KiTS
+                - generic [ref=e202]: owner
+              - button "Switch to dark mode" [ref=e203]:
+                - img [ref=e204]
+              - button "View notifications" [ref=e207]:
+                - img [ref=e208]
+                - generic "New notifications" [ref=e211]
+              - button [ref=e213]:
+                - img
+                - img
+              - button "User profile menu" [ref=e215]:
+                - generic [ref=e217]: AH
+                - img [ref=e218]
+        - main [ref=e220]:
+          - generic [ref=e221]:
+            - generic [ref=e222]:
+              - img
+              - generic [ref=e223]:
+                - generic [ref=e224]:
+                  - paragraph [ref=e225]: Operations dashboard
+                  - heading "Welcome back, ahmad" [level=1] [ref=e226]
+                  - paragraph [ref=e227]: No transactions recorded yet today. Start a new sale from the POS terminal.
+                - generic [ref=e228]:
+                  - paragraph [ref=e229]: Today
+                  - paragraph [ref=e230]: Friday, June 19
+            - generic [ref=e231]:
+              - link "Total Products 2 100 units in stock" [ref=e232] [cursor=pointer]:
+                - /url: /inventory
+                - img [ref=e234]
+                - paragraph [ref=e238]: Total Products
+                - paragraph [ref=e239]: "2"
+                - paragraph [ref=e240]: 100 units in stock
+              - link "Today's Sales $0.00 0 transactions" [ref=e241] [cursor=pointer]:
+                - /url: /pos
+                - img [ref=e243]
+                - paragraph [ref=e247]: Today's Sales
+                - paragraph [ref=e248]: $0.00
+                - paragraph [ref=e249]: 0 transactions
+              - link "Customers 1 0 with debt" [ref=e250] [cursor=pointer]:
+                - /url: /customers
+                - img [ref=e252]
+                - paragraph [ref=e257]: Customers
+                - paragraph [ref=e258]: "1"
+                - paragraph [ref=e259]: 0 with debt
+              - link "Today's Profit $0.00 0.0% margin" [ref=e260] [cursor=pointer]:
+                - /url: /reports
+                - img [ref=e262]
+                - paragraph [ref=e265]: Today's Profit
+                - paragraph [ref=e266]: $0.00
+                - paragraph [ref=e267]: 0.0% margin
+            - generic [ref=e269]:
+              - generic [ref=e270]:
+                - img [ref=e271]
+                - paragraph [ref=e273]: Low stock detected
+              - paragraph [ref=e274]:
+                - text: 1 variant is approaching the reorder threshold.
+                - link "Review inventory" [ref=e275] [cursor=pointer]:
+                  - /url: /inventory
+            - generic [ref=e276]:
+              - heading "Operator shortcuts" [level=2] [ref=e277]
+              - generic [ref=e278]:
+                - link "New Order Tap to open" [ref=e279] [cursor=pointer]:
+                  - /url: /pos
+                  - img [ref=e280]
+                  - generic [ref=e284]: New Order
+                  - generic [ref=e285]: Tap to open
+                - link "Add Product Tap to open" [ref=e286] [cursor=pointer]:
+                  - /url: /inventory
+                  - img [ref=e287]
+                  - generic [ref=e291]: Add Product
+                  - generic [ref=e292]: Tap to open
+                - link "View Reports Tap to open" [ref=e293] [cursor=pointer]:
+                  - /url: /reports
+                  - img [ref=e294]
+                  - generic [ref=e296]: View Reports
+                  - generic [ref=e297]: Tap to open
+                - link "Manage Team Tap to open" [ref=e298] [cursor=pointer]:
+                  - /url: /employees
+                  - img [ref=e299]
+                  - generic [ref=e303]: Manage Team
+                  - generic [ref=e304]: Tap to open
+            - generic [ref=e305]:
+              - generic [ref=e306]:
+                - generic [ref=e307]:
+                  - generic [ref=e308]:
+                    - paragraph [ref=e309]: Live feed
+                    - heading "Recent Sales" [level=3] [ref=e310]
+                  - link "View all" [ref=e311] [cursor=pointer]:
+                    - /url: /reports
+                - generic [ref=e312]:
+                  - img [ref=e313]
+                  - paragraph [ref=e315]: No sales yet—keep the scanners ready.
+              - generic [ref=e316]:
+                - generic [ref=e317]:
+                  - generic [ref=e318]:
+                    - paragraph [ref=e319]: Stock pulse
+                    - heading "Inventory Overview" [level=3] [ref=e320]
+                  - link "Manage" [ref=e321] [cursor=pointer]:
+                    - /url: /inventory
+                - generic [ref=e322]:
+                  - generic [ref=e323]:
+                    - generic [ref=e324]:
+                      - paragraph [ref=e325]: ex
+                      - paragraph
+                    - generic [ref=e326]:
+                      - img [ref=e327]
+                      - generic [ref=e329]: 0 units
+                  - generic [ref=e330]:
+                    - generic [ref=e331]:
+                      - paragraph [ref=e332]: product example 1
+                      - paragraph
+                    - generic [ref=e334]: 100 units
+      - generic [ref=e347]:
+        - generic [ref=e348]:
+          - generic [ref=e349]:
+            - img [ref=e351]
+            - generic [ref=e357]:
+              - heading "Brand Identity" [level=2] [ref=e358]
+              - paragraph [ref=e359]: Customise your business look and feel
+          - button [ref=e360]:
+            - img [ref=e361]
+        - generic [ref=e364]:
+          - generic [ref=e365]:
+            - heading "Preview" [level=3] [ref=e366]
+            - generic [ref=e367]:
+              - img [ref=e369]
+              - generic [ref=e374]:
+                - generic [ref=e375]: Your Business
+                - generic [ref=e376]: KiTS
+                - generic [ref=e377]: Our tech. empowering your success
+            - generic [ref=e378]:
+              - img "KiTS" [ref=e379]
+              - generic [ref=e380]:
+                - text: Powered by
+                - strong [ref=e381]: KiTS
+                - text: — Khoder's IT Solutions
+              - link "Visit KiTS" [ref=e382] [cursor=pointer]:
+                - /url: https://kits.solutions
+                - img [ref=e383]
+          - generic [ref=e387]:
+            - heading "Business Logo" [level=3] [ref=e388]:
+              - generic [ref=e389]:
+                - img [ref=e390]
+                - text: Business Logo
+            - generic [ref=e394] [cursor=pointer]:
+              - button "Choose File" [ref=e395]
+              - generic [ref=e396]:
+                - img [ref=e397]
+                - generic [ref=e400]:
+                  - paragraph [ref=e401]: Drop your logo here
+                  - paragraph [ref=e402]: "PNG, SVG, JPEG · Max 2 MB · Recommended: 200×200px"
+          - generic [ref=e403]:
+            - heading "Colour Scheme" [level=3] [ref=e404]:
+              - generic [ref=e405]:
+                - img [ref=e406]
+                - text: Colour Scheme
+            - generic [ref=e412]:
+              - button "Indigo" [ref=e413]:
+                - text: Indigo
+                - img [ref=e417]
+              - button "Emerald" [ref=e419]: Emerald
+              - button "Rose" [ref=e423]: Rose
+              - button "Violet" [ref=e427]: Violet
+              - button "Amber" [ref=e431]: Amber
+              - button "Teal" [ref=e435]: Teal
+            - generic [ref=e439]:
+              - generic [ref=e440]:
+                - generic [ref=e441]: Primary Colour
+                - generic [ref=e442]:
+                  - textbox [ref=e443] [cursor=pointer]: "#6366f1"
+                  - textbox [ref=e444]: "#6366f1"
+              - generic [ref=e445]:
+                - generic [ref=e446]: Accent Colour
+                - generic [ref=e447]:
+                  - textbox [ref=e448] [cursor=pointer]: "#0ea5e9"
+                  - textbox [ref=e449]: "#0ea5e9"
+          - generic [ref=e450]:
+            - generic [ref=e451]: Custom Tagline
+            - textbox "Our tech. empowering your success" [ref=e452]
+            - paragraph [ref=e453]: 0/80 characters
+          - generic [ref=e455]:
+            - img [ref=e456]
+            - generic [ref=e458]:
+              - paragraph [ref=e459]: Powered by KiTS — always visible
+              - text: The "Powered by KiTS" watermark is always displayed in your sidebar. This is a platform requirement and cannot be removed. Upgrade to a Business plan for custom domain + white-label removal.
+        - generic [ref=e460]:
+          - button "Cancel" [ref=e461]
+          - button "Save Brand Identity" [ref=e462]
+  - button "Show keyboard shortcuts" [ref=e336]:
+    - img [ref=e337]
+  - button "Show accessibility audit" [ref=e340]:
+    - img [ref=e341]
+    - generic [ref=e344]: A11y Audit
+  - region "Notifications alt+T"

@@ -1,0 +1,104 @@
+- generic [ref=e21]:
+  - generic [ref=e22]:
+    - generic [ref=e25]:
+      - img [ref=e48]
+      - generic [ref=e50]:
+        - heading "KiTS Admin Panel" [level=1] [ref=e51]
+        - paragraph [ref=e52]: Internal subscription & database management
+    - generic [ref=e55]:
+      - img [ref=e56]
+      - paragraph [ref=e58]:
+        - strong [ref=e59]: Restricted area.
+        - text: This page is for KiTS staff only. Actions here directly affect client billing, feature access, and database configuration.
+    - generic [ref=e62]:
+      - button "Subscription Management" [ref=e63]:
+        - img [ref=e64]
+        - text: Subscription Management
+      - button "Database Provisioning (3 pending)" [ref=e66]:
+        - img [ref=e67]
+        - text: Database Provisioning (3 pending)
+    - generic [ref=e71]:
+      - generic [ref=e72]:
+        - heading "All Tenants (4)" [level=2] [ref=e73]
+        - button "Refresh" [ref=e74]:
+          - img [ref=e75]
+          - text: Refresh
+      - table [ref=e82]:
+        - rowgroup [ref=e83]:
+          - row "Business Slug Owner Email Users Plan Status DB Created Actions" [ref=e84]:
+            - columnheader "Business" [ref=e85]
+            - columnheader "Slug" [ref=e86]
+            - columnheader "Owner Email" [ref=e87]
+            - columnheader "Users" [ref=e88]
+            - columnheader "Plan" [ref=e89]
+            - columnheader "Status" [ref=e90]
+            - columnheader "DB" [ref=e91]
+            - columnheader "Created" [ref=e92]
+            - columnheader "Actions" [ref=e93]
+        - rowgroup [ref=e94]:
+          - row "ahmad shop ahmad-shop ahmad.khoder2332@gmail.com 2 starter active Awaiting Setup 18 Jun 2026 Change Plan" [ref=e95]:
+            - cell "ahmad shop" [ref=e96]
+            - cell "ahmad-shop" [ref=e97]
+            - cell "ahmad.khoder2332@gmail.com" [ref=e98]
+            - cell "2" [ref=e99]
+            - cell "starter" [ref=e100]:
+              - generic [ref=e101]: starter
+            - cell "active" [ref=e102]
+            - cell "Awaiting Setup" [ref=e103]:
+              - generic [ref=e104]:
+                - img [ref=e105]
+                - text: Awaiting Setup
+            - cell "18 Jun 2026" [ref=e108]
+            - cell "Change Plan" [ref=e109]:
+              - button "Change Plan" [ref=e110]
+          - row "test business test-business admin@admin.com 2 growth canceled Awaiting Setup 18 Jun 2026 Change Plan" [ref=e111]:
+            - cell "test business" [ref=e112]
+            - cell "test-business" [ref=e113]
+            - cell "admin@admin.com" [ref=e114]
+            - cell "2" [ref=e115]
+            - cell "growth" [ref=e116]:
+              - generic [ref=e117]: growth
+            - cell "canceled" [ref=e118]
+            - cell "Awaiting Setup" [ref=e119]:
+              - generic [ref=e120]:
+                - img [ref=e121]
+                - text: Awaiting Setup
+            - cell "18 Jun 2026" [ref=e124]
+            - cell "Change Plan" [ref=e125]:
+              - button "Change Plan" [ref=e126]
+          - row "kits kits kits.tech.co@gmail.com 1 business active Shared DB 18 Jun 2026 Change Plan" [ref=e127]:
+            - cell "kits" [ref=e128]
+            - cell "kits" [ref=e129]
+            - cell "kits.tech.co@gmail.com" [ref=e130]
+            - cell "1" [ref=e131]
+            - cell "business" [ref=e132]:
+              - generic [ref=e133]: business
+            - cell "active" [ref=e134]
+            - cell "Shared DB" [ref=e135]:
+              - generic [ref=e136]:
+                - img [ref=e137]
+                - text: Shared DB
+            - cell "18 Jun 2026" [ref=e141]
+            - cell "Change Plan" [ref=e142]:
+              - button "Change Plan" [ref=e143]
+          - row "KiTS kitshub.vercel.app kits.tech.co@gmail.com 1 business active Awaiting Setup 17 Jun 2026 Change Plan" [ref=e144]:
+            - cell "KiTS" [ref=e145]
+            - cell "kitshub.vercel.app" [ref=e146]
+            - cell "kits.tech.co@gmail.com" [ref=e147]
+            - cell "1" [ref=e148]
+            - cell "business" [ref=e149]:
+              - generic [ref=e150]: business
+            - cell "active" [ref=e151]
+            - cell "Awaiting Setup" [ref=e152]:
+              - generic [ref=e153]:
+                - img [ref=e154]
+                - text: Awaiting Setup
+            - cell "17 Jun 2026" [ref=e157]
+            - cell "Change Plan" [ref=e158]:
+              - button "Change Plan" [ref=e159]
+  - button "Show keyboard shortcuts" [ref=e38]:
+    - img [ref=e39]
+  - button "Show accessibility audit" [ref=e42]:
+    - img [ref=e43]
+    - generic [ref=e46]: A11y Audit
+  - region "Notifications alt+T"

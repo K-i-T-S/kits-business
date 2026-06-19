@@ -1,0 +1,195 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - link "Skip to main content" [ref=e6] [cursor=pointer]:
+      - /url: "#main-content"
+    - link "Skip to navigation" [ref=e7] [cursor=pointer]:
+      - /url: "#navigation"
+    - link "Skip to search" [ref=e8] [cursor=pointer]:
+      - /url: "#search"
+    - navigation "Main navigation" [ref=e9]:
+      - generic [ref=e10]:
+        - link "Go to dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e12]:
+            - generic [ref=e13]:
+              - img "Kits - Khoder's IT Solutions logo" [ref=e15]
+              - generic [ref=e17]:
+                - generic [ref=e18]: Kits Solutions
+                - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e19]
+                - paragraph [ref=e20]: Our tech. empowering your success
+            - generic [ref=e22]:
+              - img [ref=e23]
+              - text: Add your logo file and wire it into the sidebar + login for a fully branded experience.
+        - navigation "Main menu" [ref=e25]:
+          - heading "Main Menu" [level=3] [ref=e27]
+          - link "Dashboard Active" [ref=e29] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e31]
+            - generic [ref=e37]: Dashboard
+            - generic [ref=e38]:
+              - img [ref=e39]
+              - text: Active
+          - button "Inventory — requires Growth plan" [ref=e41]:
+            - img [ref=e43]
+            - generic [ref=e47]: Inventory
+            - img [ref=e48]
+          - link "POS" [ref=e52] [cursor=pointer]:
+            - /url: /pos
+            - img [ref=e54]
+            - generic [ref=e58]: POS
+            - img [ref=e59]
+          - link "Customers" [ref=e62] [cursor=pointer]:
+            - /url: /customers
+            - img [ref=e64]
+            - generic [ref=e69]: Customers
+            - img [ref=e70]
+          - link "Employees" [ref=e73] [cursor=pointer]:
+            - /url: /employees
+            - img [ref=e75]
+            - generic [ref=e79]: Employees
+            - img [ref=e80]
+          - button "Monitoring — requires Business plan" [ref=e82]:
+            - img [ref=e84]
+            - generic [ref=e86]: Monitoring
+            - img [ref=e87]
+          - link "Reports" [ref=e91] [cursor=pointer]:
+            - /url: /reports
+            - img [ref=e93]
+            - generic [ref=e95]: Reports
+            - img [ref=e96]
+          - button "Enterprise — requires Business plan" [ref=e98]:
+            - img [ref=e100]
+            - generic [ref=e102]: Enterprise
+            - img [ref=e103]
+        - generic [ref=e106]:
+          - heading "Support" [level=3] [ref=e108]
+          - complementary "Support options" [ref=e109]:
+            - link "Email Support kits.tech.co@gmail.com" [ref=e110] [cursor=pointer]:
+              - /url: mailto:kits.tech.co@gmail.com
+              - img [ref=e112]
+              - generic [ref=e115]:
+                - paragraph [ref=e116]: Email Support
+                - paragraph [ref=e117]: kits.tech.co@gmail.com
+            - link "WhatsApp +961 81 290 662" [ref=e118] [cursor=pointer]:
+              - /url: https://wa.me/96181290662
+              - img [ref=e120]
+              - generic [ref=e122]:
+                - paragraph [ref=e123]: WhatsApp
+                - paragraph [ref=e124]: +961 81 290 662
+            - link "Instagram @kits_solutions" [ref=e125] [cursor=pointer]:
+              - /url: https://instagram.com/kits_solutions
+              - img [ref=e127]
+              - generic [ref=e130]:
+                - paragraph [ref=e131]: Instagram
+                - paragraph [ref=e132]: "@kits_solutions"
+          - button "Sign out of your account" [ref=e133]:
+            - img [ref=e134]
+            - text: Secure Logout
+    - generic [ref=e139]:
+      - banner [ref=e140]:
+        - generic [ref=e141]:
+          - generic [ref=e143]:
+            - img "Kits - Khoder's IT Solutions logo" [ref=e146]
+            - generic [ref=e148]:
+              - generic [ref=e149]:
+                - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e150]
+                - generic [ref=e151]: PRO
+              - paragraph [ref=e152]: Our tech. empowering your success
+          - search [ref=e154]:
+            - generic:
+              - img
+            - textbox "Search" [ref=e155]
+            - generic [ref=e156]: Search for products, customers, and orders
+          - generic [ref=e157]:
+            - button "View notifications" [ref=e159]:
+              - img [ref=e160]
+              - generic "New notifications" [ref=e163]
+            - button [ref=e165]:
+              - img
+              - img
+            - button "User profile menu" [ref=e167]:
+              - generic [ref=e169]: U
+              - img [ref=e170]
+      - main [ref=e172]:
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - img
+            - generic [ref=e175]:
+              - generic [ref=e176]:
+                - paragraph [ref=e177]: Operations dashboard
+                - heading "Welcome back, Operator" [level=1] [ref=e178]
+                - paragraph [ref=e179]: No transactions recorded yet today. Start a new sale from the POS terminal.
+              - generic [ref=e180]:
+                - paragraph [ref=e181]: Today
+                - paragraph [ref=e182]: Thursday, June 18
+          - generic [ref=e183]:
+            - link "Total Products 0 0 units in stock" [ref=e184] [cursor=pointer]:
+              - /url: /inventory
+              - img [ref=e186]
+              - paragraph [ref=e190]: Total Products
+              - paragraph [ref=e191]: "0"
+              - paragraph [ref=e192]: 0 units in stock
+            - link "Today's Sales $0.00 0 transactions" [ref=e193] [cursor=pointer]:
+              - /url: /pos
+              - img [ref=e195]
+              - paragraph [ref=e199]: Today's Sales
+              - paragraph [ref=e200]: $0.00
+              - paragraph [ref=e201]: 0 transactions
+            - link "Customers 0 0 with debt" [ref=e202] [cursor=pointer]:
+              - /url: /customers
+              - img [ref=e204]
+              - paragraph [ref=e209]: Customers
+              - paragraph [ref=e210]: "0"
+              - paragraph [ref=e211]: 0 with debt
+            - link "Today's Profit $0.00 0.0% margin" [ref=e212] [cursor=pointer]:
+              - /url: /reports
+              - img [ref=e214]
+              - paragraph [ref=e217]: Today's Profit
+              - paragraph [ref=e218]: $0.00
+              - paragraph [ref=e219]: 0.0% margin
+          - generic [ref=e220]:
+            - heading "Operator shortcuts" [level=2] [ref=e221]
+            - generic [ref=e222]:
+              - link "New Order Tap to open" [ref=e223] [cursor=pointer]:
+                - /url: /pos
+                - img [ref=e224]
+                - generic [ref=e228]: New Order
+                - generic [ref=e229]: Tap to open
+              - link "Add Product Tap to open" [ref=e230] [cursor=pointer]:
+                - /url: /inventory
+                - img [ref=e231]
+                - generic [ref=e235]: Add Product
+                - generic [ref=e236]: Tap to open
+              - link "View Reports Tap to open" [ref=e237] [cursor=pointer]:
+                - /url: /reports
+                - img [ref=e238]
+                - generic [ref=e240]: View Reports
+                - generic [ref=e241]: Tap to open
+              - link "Manage Team Tap to open" [ref=e242] [cursor=pointer]:
+                - /url: /employees
+                - img [ref=e243]
+                - generic [ref=e247]: Manage Team
+                - generic [ref=e248]: Tap to open
+          - generic [ref=e249]:
+            - generic [ref=e250]:
+              - generic [ref=e251]:
+                - generic [ref=e252]:
+                  - paragraph [ref=e253]: Live feed
+                  - heading "Recent Sales" [level=3] [ref=e254]
+                - link "View all" [ref=e255] [cursor=pointer]:
+                  - /url: /reports
+              - generic [ref=e256]:
+                - img [ref=e257]
+                - paragraph [ref=e259]: No sales yet—keep the scanners ready.
+            - generic [ref=e261]:
+              - generic [ref=e262]:
+                - paragraph [ref=e263]: Stock pulse
+                - heading "Inventory Overview" [level=3] [ref=e264]
+              - link "Manage" [ref=e265] [cursor=pointer]:
+                - /url: /inventory
+  - button "Show keyboard shortcuts" [ref=e267]:
+    - img [ref=e268]
+  - button "Show accessibility audit" [ref=e271]:
+    - img [ref=e272]
+    - generic [ref=e275]: A11y Audit
+  - region "Notifications alt+T"

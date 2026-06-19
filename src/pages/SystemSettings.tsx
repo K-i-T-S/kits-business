@@ -1,856 +1,611 @@
 import {
-  Settings,
-  Building2,
-  Shield,
-  Mail,
-  Database,
-  Bell,
-  Plug,
-  Key,
-  Save,
-  X,
-  Check,
   AlertTriangle,
-  User,
-  Lock,
-  Smartphone,
-  Globe,
-  Clock,
-  RefreshCw,
-  Download,
-  Upload,
-  FileText,
-  Users as UsersIcon,
+  Building2,
   CreditCard,
-  Package,
-  TrendingUp,
-  HelpCircle,
-  Info,
-  CheckCircle,
+  Loader2,
+  Save,
+  Settings,
+  ShoppingCart,
   Trash2,
+  X,
 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { BRAND } from '../constants/branding';
 import { useApp } from '../context/AppContext';
-import { useAccessibility } from '../providers/AccessibilityProvider';
-import { log } from '../utils/logger';
+import { supabase } from '../utils/supabaseClient';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'dangerZone';
+
+interface BusinessForm {
+  name: string;
+  country: string;
+  currency: string;
+  phone: string;
+  website: string;
+}
+
+interface FinancialForm {
+  taxRate: string;
+  defaultCurrency: string;
+  decimalPlaces: string;
+}
+
+interface PosForm {
+  defaultPaymentMethod: 'cash' | 'card' | 'both';
+  requireCustomerOnSale: boolean;
+  printReceiptAutomatically: boolean;
+}
+
+const POS_PAYMENT_KEY = 'pos_default_payment';
+const POS_REQUIRE_CUSTOMER_KEY = 'pos_require_customer';
+const POS_AUTO_PRINT_KEY = 'pos_auto_print_receipt';
+
+function loadPosPrefs(): PosForm {
+  const raw = localStorage.getItem(POS_PAYMENT_KEY);
+  const method = raw === 'card' || raw === 'both' ? (raw as 'card' | 'both') : 'cash';
+  return {
+    defaultPaymentMethod: method,
+    requireCustomerOnSale: localStorage.getItem(POS_REQUIRE_CUSTOMER_KEY) === 'true',
+    printReceiptAutomatically: localStorage.getItem(POS_AUTO_PRINT_KEY) === 'true',
+  };
+}
+
+// ── Toggle sub-component ──────────────────────────────────────────────────────
+
+interface ToggleProps {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}
+
+function Toggle({ checked, onChange, disabled = false }: ToggleProps) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => !disabled && onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50 disabled:opacity-50 ${
+        checked ? 'bg-indigo-500' : 'bg-white/20'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function SystemSettings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { currentEmployee } = useApp();
-  const { announce, setAriaAttribute, setRole } = useAccessibility();
-  const [activeTab, setActiveTab] = useState('general');
-  const [loading, setLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const { currentTenant, setCurrentTenant } = useApp();
 
-  const [settings, setSettings] = useState({
-    // General Settings
-    siteName: BRAND.name,
-    siteUrl: 'https://kits-solutions.com',
-    timezone: 'Asia/Beirut',
+  const [activeTab, setActiveTab] = useState<ActiveTab>('businessInfo');
+
+  // Business info
+  const [businessForm, setBusinessForm] = useState<BusinessForm>({
+    name: currentTenant?.name ?? '',
+    country: 'Lebanon',
     currency: 'USD',
-    dateFormat: 'MM/DD/YYYY',
-    language: 'English',
-
-    // Business Settings
-    businessName: 'Kits - Khoder\'s IT Solutions',
-    businessEmail: BRAND.supportEmail,
-    businessPhone: BRAND.supportWhatsApp,
-    businessAddress: 'Beirut, Lebanon',
-    taxRate: 15,
-
-    // Security Settings
-    sessionTimeout: 30,
-    passwordMinLength: 8,
-    require2FA: false,
-    allowedIPs: '',
-    loginAttempts: 5,
-
-    // Email Settings
-    smtpHost: 'smtp.gmail.com',
-    smtpPort: 587,
-    smtpUsername: '',
-    smtpPassword: '',
-    emailFrom: BRAND.supportEmail,
-    emailFromName: BRAND.name,
-
-    // Backup Settings
-    autoBackup: true,
-    backupFrequency: 'daily',
-    retentionDays: 30,
-    backupLocation: 'cloud',
-
-    // Notification Settings
-    emailNotifications: true,
-    smsNotifications: false,
-    pushNotifications: true,
-    lowStockAlert: true,
-    newOrderAlert: true,
-
-    // Integration Settings
-    paymentGateway: 'stripe',
-    shippingProvider: 'dhl',
-    analyticsProvider: 'google',
-
-    // API Settings
-    apiEnabled: true,
-    apiRateLimit: 1000,
-    webhookUrl: '',
-    apiKey: '',
+    phone: '',
+    website: '',
   });
+  const [savingBusiness, setSavingBusiness] = useState(false);
 
-  const [backupHistory, setBackupHistory] = useState<Array<{ id: number; date: string; size: string; type: string; status: string }>>([]);
+  // Financial
+  const [financialForm, setFinancialForm] = useState<FinancialForm>({
+    taxRate: '11',
+    defaultCurrency: 'USD',
+    decimalPlaces: '2',
+  });
+  const [savingFinancial, setSavingFinancial] = useState(false);
 
-  const [systemLogs] = useState<Array<{ id: number; timestamp: string; level: string; message: string; user: string }>>([]);
+  // POS behaviour (localStorage)
+  const [posForm, setPosForm] = useState<PosForm>(loadPosPrefs);
+  const [savingPos, setSavingPos] = useState(false);
 
+  // Danger zone
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deletingBusiness, setDeletingBusiness] = useState(false);
+
+  // Initialise forms from currentTenant
   useEffect(() => {
-    const saved = localStorage.getItem('kits_system_settings');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as typeof settings;
-        setSettings(prev => ({ ...prev, ...parsed }));
-      } catch {
-        // ignore malformed localStorage data
-      }
-    }
-  }, []);
+    if (!currentTenant) return;
+    const settings = currentTenant.settings as Record<string, unknown>;
+    setBusinessForm(prev => ({
+      ...prev,
+      name: currentTenant.name ?? prev.name,
+      country: (settings['country'] as string | undefined) ?? prev.country,
+      currency: (settings['currency'] as string | undefined) ?? prev.currency,
+      phone: (settings['phone'] as string | undefined) ?? prev.phone,
+      website: (settings['website'] as string | undefined) ?? prev.website,
+    }));
+    setFinancialForm(prev => ({
+      ...prev,
+      taxRate: (settings['tax_rate'] as string | undefined) ?? prev.taxRate,
+      defaultCurrency: (settings['currency'] as string | undefined) ?? prev.defaultCurrency,
+      decimalPlaces: (settings['decimal_places'] as string | undefined) ?? prev.decimalPlaces,
+    }));
+  }, [currentTenant]);
 
-  const tabs = [
-    { id: 'general', label: 'General', icon: Settings },
-    { id: 'users', label: 'Users', icon: UsersIcon },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'email', label: 'Email', icon: Mail },
-    { id: 'backup', label: 'Backup', icon: Database },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'integrations', label: 'Integrations', icon: Globe },
-    { id: 'api', label: 'API', icon: Settings },
+  // ── Handlers ───────────────────────────────────────────────────────────────
+
+  const handleSaveBusiness = async () => {
+    if (!currentTenant) return;
+    setSavingBusiness(true);
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .update({
+          name: businessForm.name.trim(),
+          settings: {
+            ...(currentTenant.settings as Record<string, unknown>),
+            country: businessForm.country,
+            currency: businessForm.currency,
+            phone: businessForm.phone,
+            website: businessForm.website,
+          },
+        })
+        .eq('id', currentTenant.id);
+      if (error) throw error;
+
+      // Keep local state in sync
+      setCurrentTenant({
+        ...currentTenant,
+        name: businessForm.name.trim(),
+        settings: {
+          ...(currentTenant.settings as Record<string, unknown>),
+          country: businessForm.country,
+          currency: businessForm.currency,
+          phone: businessForm.phone,
+          website: businessForm.website,
+        },
+      });
+
+      toast.success(t('settings.saved'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setSavingBusiness(false);
+    }
+  };
+
+  const handleSaveFinancial = async () => {
+    if (!currentTenant) return;
+    setSavingFinancial(true);
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .update({
+          settings: {
+            ...(currentTenant.settings as Record<string, unknown>),
+            tax_rate: financialForm.taxRate,
+            currency: financialForm.defaultCurrency,
+            decimal_places: financialForm.decimalPlaces,
+          },
+        })
+        .eq('id', currentTenant.id);
+      if (error) throw error;
+      toast.success(t('settings.saved'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setSavingFinancial(false);
+    }
+  };
+
+  const handleSavePos = () => {
+    setSavingPos(true);
+    try {
+      localStorage.setItem(POS_PAYMENT_KEY, posForm.defaultPaymentMethod);
+      localStorage.setItem(POS_REQUIRE_CUSTOMER_KEY, String(posForm.requireCustomerOnSale));
+      localStorage.setItem(POS_AUTO_PRINT_KEY, String(posForm.printReceiptAutomatically));
+      toast.success(t('settings.saved'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setSavingPos(false);
+    }
+  };
+
+  const handleDeleteBusiness = async () => {
+    if (!currentTenant) return;
+    if (deleteConfirmName !== currentTenant.name) {
+      toast.error(t('settings.deleteConfirm'));
+      return;
+    }
+    setDeletingBusiness(true);
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .delete()
+        .eq('id', currentTenant.id);
+      if (error) throw error;
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+      setDeletingBusiness(false);
+    }
+  };
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+
+  const isOwner = currentTenant?.userRole === 'owner';
+
+  const tabs: { id: ActiveTab; label: string; icon: typeof Settings }[] = [
+    { id: 'businessInfo', label: t('settings.businessInfo'), icon: Building2 },
+    { id: 'financial', label: t('settings.financial'), icon: CreditCard },
+    { id: 'posBehaviour', label: t('settings.posBehaviour'), icon: ShoppingCart },
+    { id: 'dangerZone', label: t('settings.dangerZone'), icon: AlertTriangle },
   ];
 
-  const handleSettingChange = (_category: string, field: keyof typeof settings, value: string | number | boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSave = async () => {
-    try {
-      setSaveStatus('saving');
-      announce('Saving settings...', 'polite');
-      localStorage.setItem('kits_system_settings', JSON.stringify(settings));
-      setSaveStatus('success');
-      announce('Settings saved successfully!', 'polite');
-      toast.success('Settings saved');
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      setSaveStatus('error');
-      announce('Failed to save settings. Please try again.', 'assertive');
-      toast.error('Failed to save settings');
-    }
-  };
-
-  const handleTabChange = useCallback((tabId: string) => {
-    setActiveTab(tabId);
-    announce(`Switched to ${tabId} settings`, 'polite');
-  }, [announce]);
-
-  const handleBackup = async () => {
-    setLoading(true);
-    // Simulate backup process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setLoading(false);
-
-    // Add new backup to history
-    const newBackup = {
-      id: (backupHistory?.length || 0) + 1,
-      date: new Date().toLocaleString(),
-      size: '2.5 MB',
-      type: 'Manual',
-      status: 'completed',
-    };
-    setBackupHistory([newBackup, ...(backupHistory || [])]);
-  };
-
-  const handleRestore = (backupId: number) => {
-    log.info('Restoring backup', { backupId });
-    toast.info('Restore requested', { description: 'Contact your administrator to restore from this backup.' });
-  };
-
-  const handleDeleteBackup = (backupId: number) => {
-    setBackupHistory((backupHistory || [])?.filter(backup => backup.id !== backupId) || []);
-  };
-
-  const getLogLevelIcon = (level: string) => {
-    switch (level) {
-      case 'error': return <AlertTriangle className="h-4 w-4 text-red-400" />;
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-400" />;
-      case 'info': return <Info className="h-4 w-4 text-blue-400" />;
-      default: return <Info className="h-4 w-4 text-gray-400" />;
-    }
-  };
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 pb-20 lg:pb-0">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-slate-950 text-white pb-20 lg:pb-0">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">System Settings</h1>
-              <p className="text-white/60">Configure your system preferences and settings</p>
-            </div>
-            <div className="flex items-center gap-4">
-              {saveStatus === 'success' && (
-                <div className="flex items-center gap-2 text-green-400">
-                  <CheckCircle className="h-4 w-4" />
-                  <span className="text-sm">Settings saved successfully</span>
-                </div>
-              )}
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-2 px-4 py-2 text-white/60 hover:text-white transition-colors"
-              >
-                <X className="h-5 w-5" />
-                Back to Dashboard
-              </button>
-            </div>
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+              {t('navigation.systemSettings')}
+            </h1>
+            <p className="mt-1 text-white/60 text-sm">
+              {currentTenant?.name ?? ''}
+            </p>
           </div>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 px-3 py-2 text-white/60 hover:text-white transition-colors"
+          >
+            <X className="h-5 w-5" />
+            <span className="hidden sm:inline">{t('common.dashboard')}</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Settings Categories</h3>
+          <aside className="lg:col-span-1">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+              <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">
+                {t('common.settings')}
+              </p>
               <nav className="space-y-1">
-                {(tabs || [])?.map((tab) => {
+                {tabs.map(tab => {
                   const Icon = tab.icon;
+                  const isDanger = tab.id === 'dangerZone';
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      className={`w-full flex items-center gap-3 text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
                         activeTab === tab.id
-                          ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                          : 'text-white/60 hover:bg-white/10 hover:text-white'
+                          ? isDanger
+                            ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                            : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                          : isDanger
+                            ? 'text-red-400/60 hover:bg-red-500/10 hover:text-red-300'
+                            : 'text-white/60 hover:bg-white/10 hover:text-white'
                       }`}
                     >
-                      <Icon className="h-4 w-4" />
-                      <span className="text-sm font-medium">{tab.label}</span>
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {tab.label}
                     </button>
                   );
                 })}
               </nav>
             </div>
-          </div>
+          </aside>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <div className="bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-              {/* General Settings */}
-              {activeTab === 'general' && (
-                <div className="space-y-6">
+          {/* Main content */}
+          <main className="lg:col-span-3 space-y-6">
+
+            {/* ── Business Info ─────────────────────────────────────────── */}
+            {activeTab === 'businessInfo' && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6">
+                <h2 className="text-lg font-semibold text-white">
+                  {t('settings.businessInfo')}
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Business Name
+                    </label>
+                    <input
+                      type="text"
+                      value={businessForm.name}
+                      onChange={e => setBusinessForm(p => ({ ...p, name: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      placeholder="Your business name"
+                    />
+                  </div>
+
                   <div>
-                    <h2 className="text-xl font-semibold text-white mb-6">General Settings</h2>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Country
+                    </label>
+                    <select
+                      value={businessForm.country}
+                      onChange={e => setBusinessForm(p => ({ ...p, country: e.target.value }))}
+                      className="w-full bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    >
+                      <option value="Lebanon" className="bg-slate-800">Lebanon</option>
+                      <option value="UAE" className="bg-slate-800">UAE</option>
+                      <option value="Saudi Arabia" className="bg-slate-800">Saudi Arabia</option>
+                      <option value="Jordan" className="bg-slate-800">Jordan</option>
+                      <option value="Kuwait" className="bg-slate-800">Kuwait</option>
+                      <option value="Qatar" className="bg-slate-800">Qatar</option>
+                      <option value="Bahrain" className="bg-slate-800">Bahrain</option>
+                      <option value="Oman" className="bg-slate-800">Oman</option>
+                      <option value="Egypt" className="bg-slate-800">Egypt</option>
+                      <option value="Other" className="bg-slate-800">Other</option>
+                    </select>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Site Name</label>
-                        <input
-                          type="text"
-                          value={settings.siteName}
-                          onChange={(e) => handleSettingChange('general', 'siteName', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Site URL</label>
-                        <input
-                          type="url"
-                          value={settings.siteUrl}
-                          onChange={(e) => handleSettingChange('general', 'siteUrl', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Timezone</label>
-                        <select
-                          value={settings.timezone}
-                          onChange={(e) => handleSettingChange('general', 'timezone', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        >
-                          <option value="Asia/Beirut" className="bg-slate-800 text-white">Asia/Beirut</option>
-                          <option value="Europe/London" className="bg-slate-800 text-white">Europe/London</option>
-                          <option value="America/New_York" className="bg-slate-800 text-white">America/New_York</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Currency</label>
-                        <select
-                          value={settings.currency}
-                          onChange={(e) => handleSettingChange('general', 'currency', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        >
-                          <option value="USD" className="bg-slate-800 text-white">USD ($)</option>
-                          <option value="EUR" className="bg-slate-800 text-white">EUR (€)</option>
-                          <option value="GBP" className="bg-slate-800 text-white">GBP (£)</option>
-                          <option value="LBP" className="bg-slate-800 text-white">LBP (ل.ل)</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Date Format</label>
-                        <select
-                          value={settings.dateFormat}
-                          onChange={(e) => handleSettingChange('general', 'dateFormat', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        >
-                          <option value="MM/DD/YYYY" className="bg-slate-800 text-white">MM/DD/YYYY</option>
-                          <option value="DD/MM/YYYY" className="bg-slate-800 text-white">DD/MM/YYYY</option>
-                          <option value="YYYY-MM-DD" className="bg-slate-800 text-white">YYYY-MM-DD</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Language</label>
-                        <select
-                          value={settings.language}
-                          onChange={(e) => handleSettingChange('general', 'language', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        >
-                          <option value="English" className="bg-slate-800 text-white">English</option>
-                          <option value="Arabic" className="bg-slate-800 text-white">العربية</option>
-                          <option value="French" className="bg-slate-800 text-white">Français</option>
-                        </select>
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      {t('settings.currency')}
+                    </label>
+                    <select
+                      value={businessForm.currency}
+                      onChange={e => setBusinessForm(p => ({ ...p, currency: e.target.value }))}
+                      className="w-full bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    >
+                      <option value="USD" className="bg-slate-800">USD ($)</option>
+                      <option value="LBP" className="bg-slate-800">LBP (ل.ل)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={businessForm.phone}
+                      onChange={e => setBusinessForm(p => ({ ...p, phone: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      placeholder="+961 X XXX XXX"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      value={businessForm.website}
+                      onChange={e => setBusinessForm(p => ({ ...p, website: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      placeholder="https://example.com"
+                    />
                   </div>
                 </div>
-              )}
 
-              {/* Business Settings */}
-              {activeTab === 'business' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white mb-6">Business Information</h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Business Name</label>
-                        <input
-                          type="text"
-                          value={settings.businessName}
-                          onChange={(e) => handleSettingChange('business', 'businessName', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Business Email</label>
-                        <input
-                          type="email"
-                          value={settings.businessEmail}
-                          onChange={(e) => handleSettingChange('business', 'businessEmail', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Business Phone</label>
-                        <input
-                          type="tel"
-                          value={settings.businessPhone}
-                          onChange={(e) => handleSettingChange('business', 'businessPhone', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Business Address</label>
-                        <input
-                          type="text"
-                          value={settings.businessAddress}
-                          onChange={(e) => handleSettingChange('business', 'businessAddress', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Tax Rate (%)</label>
-                        <input
-                          type="number"
-                          value={settings.taxRate}
-                          onChange={(e) => handleSettingChange('business', 'taxRate', parseFloat(e.target.value))}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => void handleSaveBusiness()}
+                    disabled={savingBusiness}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {savingBusiness ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {savingBusiness ? t('settings.saving') : t('settings.saveChanges')}
+                  </button>
                 </div>
-              )}
-
-              {/* Security Settings */}
-              {activeTab === 'security' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white mb-6">Security Configuration</h2>
-
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">Session Timeout (minutes)</label>
-                          <input
-                            type="number"
-                            value={settings.sessionTimeout}
-                            onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">Password Minimum Length</label>
-                          <input
-                            type="number"
-                            value={settings.passwordMinLength}
-                            onChange={(e) => handleSettingChange('security', 'passwordMinLength', parseInt(e.target.value))}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">Max Login Attempts</label>
-                          <input
-                            type="number"
-                            value={settings.loginAttempts}
-                            onChange={(e) => handleSettingChange('security', 'loginAttempts', parseInt(e.target.value))}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">Allowed IPs (comma-separated)</label>
-                          <input
-                            type="text"
-                            value={settings.allowedIPs}
-                            onChange={(e) => handleSettingChange('security', 'allowedIPs', e.target.value)}
-                            placeholder="192.168.1.1, 10.0.0.1"
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
-                          <div>
-                            <h3 className="text-lg font-medium text-white">Require Two-Factor Authentication</h3>
-                            <p className="text-sm text-white/60">Force all users to enable 2FA</p>
-                          </div>
-                          <button
-                            onClick={() => handleSettingChange('security', 'require2FA', !settings.require2FA)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              settings.require2FA ? 'bg-indigo-500' : 'bg-white/20'
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                settings.require2FA ? 'translate-x-6' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Email Settings */}
-              {activeTab === 'email' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white mb-6">Email Configuration</h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">SMTP Host</label>
-                        <input
-                          type="text"
-                          value={settings.smtpHost}
-                          onChange={(e) => handleSettingChange('email', 'smtpHost', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">SMTP Port</label>
-                        <input
-                          type="number"
-                          value={settings.smtpPort}
-                          onChange={(e) => handleSettingChange('email', 'smtpPort', parseInt(e.target.value))}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">SMTP Username</label>
-                        <input
-                          type="text"
-                          value={settings.smtpUsername}
-                          onChange={(e) => handleSettingChange('email', 'smtpUsername', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">SMTP Password</label>
-                        <input
-                          type="password"
-                          value={settings.smtpPassword}
-                          onChange={(e) => handleSettingChange('email', 'smtpPassword', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">From Email</label>
-                        <input
-                          type="email"
-                          value={settings.emailFrom}
-                          onChange={(e) => handleSettingChange('email', 'emailFrom', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">From Name</label>
-                        <input
-                          type="text"
-                          value={settings.emailFromName}
-                          onChange={(e) => handleSettingChange('email', 'emailFromName', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-6">
-                      <button className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
-                        Test Email Configuration
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Backup Settings */}
-              {activeTab === 'backup' && (
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-semibold text-white">Backup & Recovery</h2>
-                      <button
-                        onClick={handleBackup}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        {loading ? 'Creating Backup...' : 'Create Backup'}
-                      </button>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">Auto Backup</label>
-                          <select
-                            value={settings.backupFrequency}
-                            onChange={(e) => handleSettingChange('backup', 'backupFrequency', e.target.value)}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                          >
-                            <option value="daily" className="bg-slate-800 text-white">Daily</option>
-                            <option value="weekly" className="bg-slate-800 text-white">Weekly</option>
-                            <option value="monthly" className="bg-slate-800 text-white">Monthly</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-2">Retention Days</label>
-                          <input
-                            type="number"
-                            value={settings.retentionDays}
-                            onChange={(e) => handleSettingChange('backup', 'retentionDays', parseInt(e.target.value))}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-white">Backup History</h3>
-                        <div className="border border-white/10 rounded-lg overflow-hidden">
-                          <table className="w-full">
-                            <thead className="bg-white/5">
-                              <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Date</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Size</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Type</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Status</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/10">
-                              {(backupHistory || [])?.map((backup) => (
-                                <tr key={backup.id} className="hover:bg-white/5">
-                                  <td className="px-4 py-3 text-sm text-white">{backup.date}</td>
-                                  <td className="px-4 py-3 text-sm text-white">{backup.size}</td>
-                                  <td className="px-4 py-3 text-sm text-white">{backup.type}</td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">
-                                      {backup.status}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        onClick={() => handleRestore(backup.id)}
-                                        className="text-indigo-400 hover:text-indigo-300"
-                                        title="Restore"
-                                      >
-                                        <RefreshCw className="h-4 w-4" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteBackup(backup.id)}
-                                        className="text-red-400 hover:text-red-300"
-                                        title="Delete"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notification Settings */}
-              {activeTab === 'notifications' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white mb-6">Notification Preferences</h2>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
-                        <div>
-                          <h3 className="text-lg font-medium text-white">Email Notifications</h3>
-                          <p className="text-sm text-white/60">Send notifications via email</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'emailNotifications', !settings.emailNotifications)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            settings.emailNotifications ? 'bg-indigo-500' : 'bg-white/20'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              settings.emailNotifications ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
-                        <div>
-                          <h3 className="text-lg font-medium text-white">SMS Notifications</h3>
-                          <p className="text-sm text-white/60">Send notifications via SMS</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'smsNotifications', !settings.smsNotifications)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            settings.smsNotifications ? 'bg-indigo-500' : 'bg-white/20'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              settings.smsNotifications ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
-                        <div>
-                          <h3 className="text-lg font-medium text-white">Push Notifications</h3>
-                          <p className="text-sm text-white/60">Send browser push notifications</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'pushNotifications', !settings.pushNotifications)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            settings.pushNotifications ? 'bg-indigo-500' : 'bg-white/20'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              settings.pushNotifications ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
-                        <div>
-                          <h3 className="text-lg font-medium text-white">Low Stock Alerts</h3>
-                          <p className="text-sm text-white/60">Alert when inventory is low</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'lowStockAlert', !settings.lowStockAlert)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            settings.lowStockAlert ? 'bg-indigo-500' : 'bg-white/20'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              settings.lowStockAlert ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
-                        <div>
-                          <h3 className="text-lg font-medium text-white">New Order Alerts</h3>
-                          <p className="text-sm text-white/60">Alert when new orders are received</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'newOrderAlert', !settings.newOrderAlert)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            settings.newOrderAlert ? 'bg-indigo-500' : 'bg-white/20'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              settings.newOrderAlert ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Integrations Settings */}
-              {activeTab === 'integrations' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white mb-6">Third-Party Integrations</h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Payment Gateway</label>
-                        <select
-                          value={settings.paymentGateway}
-                          onChange={(e) => handleSettingChange('integrations', 'paymentGateway', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        >
-                          <option value="stripe" className="bg-slate-800 text-white">Stripe</option>
-                          <option value="paypal" className="bg-slate-800 text-white">PayPal</option>
-                          <option value="square" className="bg-slate-800 text-white">Square</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Shipping Provider</label>
-                        <select
-                          value={settings.shippingProvider}
-                          onChange={(e) => handleSettingChange('integrations', 'shippingProvider', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        >
-                          <option value="dhl" className="bg-slate-800 text-white">DHL</option>
-                          <option value="fedex" className="bg-slate-800 text-white">FedEx</option>
-                          <option value="ups" className="bg-slate-800 text-white">UPS</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Analytics Provider</label>
-                        <select
-                          value={settings.analyticsProvider}
-                          onChange={(e) => handleSettingChange('integrations', 'analyticsProvider', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        >
-                          <option value="google" className="bg-slate-800 text-white">Google Analytics</option>
-                          <option value="mixpanel" className="bg-slate-800 text-white">Mixpanel</option>
-                          <option value="segment" className="bg-slate-800 text-white">Segment</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* API Settings */}
-              {activeTab === 'api' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white mb-6">API Configuration</h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">API Enabled</label>
-                        <button
-                          onClick={() => handleSettingChange('api', 'apiEnabled', !settings.apiEnabled)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            settings.apiEnabled ? 'bg-indigo-500' : 'bg-white/20'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              settings.apiEnabled ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-2">Rate Limit (requests/hour)</label>
-                        <input
-                          type="number"
-                          value={settings.apiRateLimit}
-                          onChange={(e) => handleSettingChange('api', 'apiRateLimit', parseInt(e.target.value))}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-white/80 mb-2">Webhook URL</label>
-                        <input
-                          type="url"
-                          value={settings.webhookUrl}
-                          onChange={(e) => handleSettingChange('api', 'webhookUrl', e.target.value)}
-                          className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-white/80 mb-2">API Key</label>
-                        <div className="flex gap-2">
-                          <input
-                            type="password"
-                            value={settings.apiKey}
-                            onChange={(e) => handleSettingChange('api', 'apiKey', e.target.value)}
-                            className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-                          />
-                          <button className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
-                            Generate New
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Save Button */}
-              <div className="flex justify-end pt-6 border-t border-white/10">
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
-                >
-                  <Save className="h-4 w-4" />
-                  {loading ? 'Saving...' : 'Save Settings'}
-                </button>
               </div>
-            </div>
-          </div>
+            )}
+
+            {/* ── Financial ─────────────────────────────────────────────── */}
+            {activeTab === 'financial' && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6">
+                <h2 className="text-lg font-semibold text-white">
+                  {t('settings.financial')}
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      {t('settings.taxRate')}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      value={financialForm.taxRate}
+                      onChange={e => setFinancialForm(p => ({ ...p, taxRate: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                    <p className="mt-1 text-xs text-white/40">Lebanon VAT = 11%</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      {t('settings.currency')}
+                    </label>
+                    <select
+                      value={financialForm.defaultCurrency}
+                      onChange={e => setFinancialForm(p => ({ ...p, defaultCurrency: e.target.value }))}
+                      className="w-full bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    >
+                      <option value="USD" className="bg-slate-800">USD ($)</option>
+                      <option value="LBP" className="bg-slate-800">LBP (ل.ل)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Decimal Places
+                    </label>
+                    <select
+                      value={financialForm.decimalPlaces}
+                      onChange={e => setFinancialForm(p => ({ ...p, decimalPlaces: e.target.value }))}
+                      className="w-full bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    >
+                      <option value="0" className="bg-slate-800">0 (e.g. 100)</option>
+                      <option value="2" className="bg-slate-800">2 (e.g. 100.00)</option>
+                      <option value="3" className="bg-slate-800">3 (e.g. 100.000)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <p className="text-xs text-white/40">
+                  These settings apply to how prices and totals are displayed. If a column does not yet exist in the database, the update will be silently ignored.
+                </p>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => void handleSaveFinancial()}
+                    disabled={savingFinancial}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {savingFinancial ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {savingFinancial ? t('settings.saving') : t('settings.saveChanges')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── POS Behaviour ─────────────────────────────────────────── */}
+            {activeTab === 'posBehaviour' && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6">
+                <h2 className="text-lg font-semibold text-white">
+                  {t('settings.posBehaviour')}
+                </h2>
+
+                <div className="space-y-4">
+                  {/* Default payment method */}
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Default Payment Method
+                    </label>
+                    <select
+                      value={posForm.defaultPaymentMethod}
+                      onChange={e => setPosForm(p => ({ ...p, defaultPaymentMethod: e.target.value as 'cash' | 'card' | 'both' }))}
+                      className="w-full bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    >
+                      <option value="cash" className="bg-slate-800">Cash</option>
+                      <option value="card" className="bg-slate-800">Card</option>
+                      <option value="both" className="bg-slate-800">Both</option>
+                    </select>
+                  </div>
+
+                  {/* Require customer */}
+                  <div className="flex items-center justify-between p-4 bg-slate-900 border border-white/10 rounded-xl">
+                    <div>
+                      <p className="text-sm font-medium text-white">Require customer on sale</p>
+                      <p className="text-xs text-white/50 mt-0.5">Cashier must select a customer before completing a sale</p>
+                    </div>
+                    <Toggle
+                      checked={posForm.requireCustomerOnSale}
+                      onChange={v => setPosForm(p => ({ ...p, requireCustomerOnSale: v }))}
+                    />
+                  </div>
+
+                  {/* Auto print receipt */}
+                  <div className="flex items-center justify-between p-4 bg-slate-900 border border-white/10 rounded-xl">
+                    <div>
+                      <p className="text-sm font-medium text-white">Print receipt automatically</p>
+                      <p className="text-xs text-white/50 mt-0.5">Automatically open print dialog after each completed sale</p>
+                    </div>
+                    <Toggle
+                      checked={posForm.printReceiptAutomatically}
+                      onChange={v => setPosForm(p => ({ ...p, printReceiptAutomatically: v }))}
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs text-white/40">
+                  POS behaviour settings are stored locally in this browser.
+                </p>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={handleSavePos}
+                    disabled={savingPos}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {savingPos ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {savingPos ? t('settings.saving') : t('settings.saveChanges')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Danger Zone ───────────────────────────────────────────── */}
+            {activeTab === 'dangerZone' && (
+              <div className="bg-red-950/30 border border-red-500/20 rounded-2xl p-5 sm:p-6 space-y-6">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-400 shrink-0" />
+                  <h2 className="text-lg font-semibold text-red-300">
+                    {t('settings.dangerZone')}
+                  </h2>
+                </div>
+
+                {!isOwner ? (
+                  <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                    <p className="text-sm text-white/60">
+                      Only the business owner can delete this business.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                      <h3 className="text-sm font-semibold text-red-300 mb-1">
+                        {t('settings.deleteAccount')}
+                      </h3>
+                      <p className="text-xs text-red-300/70 mb-4">
+                        This action is permanent and cannot be undone. All data associated with this business will be deleted.
+                      </p>
+
+                      <label className="block text-sm font-medium text-white/80 mb-2">
+                        {t('settings.deleteConfirm')}:{' '}
+                        <span className="font-bold text-red-300">{currentTenant?.name}</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={deleteConfirmName}
+                        onChange={e => setDeleteConfirmName(e.target.value)}
+                        placeholder={currentTenant?.name ?? ''}
+                        className="w-full px-4 py-2.5 bg-slate-900 border border-red-500/30 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                      />
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => void handleDeleteBusiness()}
+                        disabled={deletingBusiness || deleteConfirmName !== currentTenant?.name}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {deletingBusiness
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Trash2 className="h-4 w-4" />
+                        }
+                        {deletingBusiness ? 'Deleting...' : t('settings.deleteAccount')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </main>
         </div>
       </div>
     </div>

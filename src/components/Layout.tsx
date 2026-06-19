@@ -34,6 +34,7 @@ import {
   Sun,
   Moon,
   Pencil,
+  TrendingDown,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -118,6 +119,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'Employees', href: '/employees', icon: UserCircle, feature: undefined },
     { name: 'Monitoring', href: '/monitoring', icon: Activity, feature: 'monitoring' as Feature },
     { name: 'Reports', href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
+    { name: 'Finance', href: '/finance', icon: TrendingDown, feature: undefined },
     {
       name: 'Enterprise',
       href: '/enterprise',

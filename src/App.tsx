@@ -55,6 +55,7 @@ const ApiAndWebhooks = lazy(() => import('./components/enterprise/ApiAndWebhooks
 const MonitoringDashboard = lazy(() => import('./components/monitoring/MonitoringDashboard'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const ForecastingPage = lazy(() => import('./pages/Forecasting'));
+const Finance = lazy(() => import('./pages/Finance'));
 
 // Mobile components wrapper that needs access to Router context
 function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
@@ -156,6 +157,10 @@ export default function App() {
                             <Route
                               path="/reports"
                               element={isAuthenticated ? <Reports /> : <Navigate to="/login" replace />}
+                            />
+                            <Route
+                              path="/finance"
+                              element={isAuthenticated ? <Finance /> : <Navigate to="/login" replace />}
                             />
                             <Route
                               path="/employees"

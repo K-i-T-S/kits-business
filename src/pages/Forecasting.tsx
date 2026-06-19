@@ -1,6 +1,7 @@
-import { format, addDays, parseISO } from 'date-fns';
+import { format, addDays, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import {
   TrendingUp,
+  TrendingDown,
   Calendar,
   AlertTriangle,
   Package,
@@ -9,7 +10,7 @@ import {
   Award,
   Zap,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   ComposedChart,
   Line,
@@ -28,6 +29,7 @@ import FeatureGate from '@/components/FeatureGate';
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import type { Sale, Product, Customer } from '@/context/AppContext';
+import { supabase } from '@/utils/supabaseClient';
 
 // ── Lebanese Public Holiday Calendar ─────────────────────────────────────────
 // Fixed dates as 'YYYY-MM-DD'.
@@ -107,6 +109,7 @@ interface ChartPoint {
   ciMax: number | null;
   isHoliday: boolean;
   holidayName?: string;
+  projected_expense?: number | null;
 }
 
 interface ProductVelocity {
@@ -172,7 +175,7 @@ function residualStdDev(ys: number[], slope: number, intercept: number): number 
   return Math.sqrt(ss / (n - 2));
 }
 
-function buildChartData(sales: Sale[]): ChartPoint[] {
+function buildChartData(sales: Sale[], avgDailyExpense = 0): ChartPoint[] {
   const dateMap = groupSalesByDate(sales);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -201,6 +204,7 @@ function buildChartData(sales: Sale[]): ChartPoint[] {
       ciMax: null,
       isHoliday: !!holiday,
       holidayName: holiday?.name,
+      projected_expense: null,
     });
   });
 
@@ -218,6 +222,7 @@ function buildChartData(sales: Sale[]): ChartPoint[] {
       ciMax: parseFloat((fitted + margin).toFixed(2)),
       isHoliday: !!holiday,
       holidayName: holiday?.name,
+      projected_expense: avgDailyExpense > 0 ? parseFloat(avgDailyExpense.toFixed(2)) : null,
     });
   }
 
@@ -386,12 +391,50 @@ function fmtUnits(n: number): string {
 export default function ForecastingPage() {
   const { sales, products, customers } = useApp();
   const [exporting, setExporting] = useState(false);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase
+        .from('expenses')
+        .select('expense_date, amount_usd')
+        .order('expense_date');
+      if (data) {
+        const map = new Map<string, number>();
+        for (const row of data as { expense_date: string; amount_usd: number }[]) {
+          const month = row.expense_date.slice(0, 7); // 'YYYY-MM'
+          map.set(month, (map.get(month) ?? 0) + row.amount_usd);
+        }
+        setMonthlyExpenses(map);
+      }
+    })();
+  }, []);
+
+  // Average daily expense over the last 30 days for expense projection line
+  const avgDailyExpense = useMemo(() => {
+    const today = new Date();
+    const cutoff = addDays(today, -30);
+    let total = 0;
+    let days = 0;
+    for (const [monthKey, val] of monthlyExpenses.entries()) {
+      const [y, m] = monthKey.split('-').map(Number) as [number, number];
+      const monthStart = startOfMonth(new Date(y, m - 1));
+      const monthEnd = endOfMonth(new Date(y, m - 1));
+      if (monthEnd >= cutoff && monthStart <= today) {
+        total += val;
+        const overlapStart = monthStart < cutoff ? cutoff : monthStart;
+        const overlapEnd = monthEnd > today ? today : monthEnd;
+        days += Math.ceil((overlapEnd.getTime() - overlapStart.getTime()) / 86400000);
+      }
+    }
+    return days > 0 ? total / days : 0;
+  }, [monthlyExpenses]);
 
   const safeSales = useMemo<Sale[]>(() => sales ?? [], [sales]);
   const safeProducts = useMemo<Product[]>(() => products ?? [], [products]);
   const safeCustomers = useMemo<Customer[]>(() => customers ?? [], [customers]);
 
-  const chartData = useMemo(() => buildChartData(safeSales), [safeSales]);
+  const chartData = useMemo(() => buildChartData(safeSales, avgDailyExpense), [safeSales, avgDailyExpense]);
   const upcomingHolidays = useMemo(() => getUpcomingHolidays(30), []);
   const productVelocity = useMemo(() => computeProductVelocity(safeSales), [safeSales]);
   const clvData = useMemo(() => computeClv(safeSales, safeCustomers), [safeSales, safeCustomers]);
@@ -527,6 +570,32 @@ export default function ForecastingPage() {
           </div>
         )}
 
+        {/* ── Net Profit Summary Card ─────────────────────────────────────── */}
+        {(() => {
+          const currentMonthKey = format(new Date(), 'yyyy-MM');
+          const currentMonthRevenue = safeSales
+            .filter(s => s.date.slice(0, 7) === currentMonthKey)
+            .reduce((sum, s) => sum + (s.total ?? 0), 0);
+          const currentMonthExpenses = monthlyExpenses.get(currentMonthKey) ?? 0;
+          const netProfit = currentMonthRevenue - currentMonthExpenses;
+          const isPositive = netProfit >= 0;
+          return (
+            <div className={`rounded-2xl border p-5 flex items-center justify-between ${isPositive ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'}`}>
+              <div>
+                <p className="text-xs font-medium text-white/50 uppercase tracking-wide mb-1">Net Profit — {format(new Date(), 'MMMM yyyy')}</p>
+                <p className={`text-2xl font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {isPositive ? '' : '-'}{fmtUSD(Math.abs(netProfit))}
+                </p>
+                <p className="text-xs text-white/40 mt-0.5">Revenue {fmtUSD(currentMonthRevenue)} − Expenses {fmtUSD(currentMonthExpenses)}</p>
+              </div>
+              {isPositive
+                ? <TrendingUp className="h-8 w-8 text-emerald-400/60" />
+                : <TrendingDown className="h-8 w-8 text-rose-400/60" />
+              }
+            </div>
+          );
+        })()}
+
         <FeatureGate feature="forecasting">
           {/* ── Upcoming Lebanese Holidays ─────────────────────────────── */}
           {upcomingHolidays.length > 0 && (
@@ -633,6 +702,21 @@ export default function ForecastingPage() {
                     connectNulls={false}
                     activeDot={{ r: 4, fill: '#0ea5e9' }}
                   />
+
+                  {/* Projected daily expense (dashed orange line — forecast segment only) */}
+                  {avgDailyExpense > 0 && (
+                    <Line
+                      type="monotone"
+                      dataKey="projected_expense"
+                      stroke="#f97316"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                      dot={false}
+                      name="Projected Expenses"
+                      connectNulls={false}
+                      activeDot={{ r: 3, fill: '#f97316' }}
+                    />
+                  )}
 
                   {/* Holiday dots on forecast segment */}
                   {chartData

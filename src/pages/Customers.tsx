@@ -116,7 +116,7 @@ export default function Customers() {
             <div className="lg:flex-shrink-0">
               <button
                 onClick={() => setShowAddModal(true)}
-                className="w-full sm:w-auto tilt-hover inline-flex items-center justify-center gap-2 rounded-xl border border-white/70 bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-all duration-200"
+                className="w-full sm:w-auto tilt-hover inline-flex items-center justify-center gap-2 rounded-xl border border-white/70 btn-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-all duration-200"
               >
                 <Plus className="h-5 w-5" />
                 Add customer

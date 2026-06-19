@@ -2,7 +2,6 @@ import { Shield, Lock, Eye, Settings } from 'lucide-react';
 import React from 'react';
 
 import { useApp } from '../context/AppContext';
-
 import type { Tenant } from '../context/AppContext';
 
 type TenantRole = Tenant['userRole'];

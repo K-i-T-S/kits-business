@@ -342,7 +342,7 @@ export default function BrandIdentityModal({ open, onClose }: Props) {
             type="button"
             onClick={() => void handleSave()}
             disabled={saving || uploadingLogo}
-            className="px-5 py-2 text-sm font-semibold text-white rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2 text-sm font-semibold text-white rounded-xl btn-brand hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
           >
             {(saving || uploadingLogo) && (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

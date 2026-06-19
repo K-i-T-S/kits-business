@@ -15,6 +15,11 @@
   --brand-secondary: #0ea5e9;
 }
 
+/* ── Brand-aware primary button ── */
+.btn-brand {
+  background: linear-gradient(to right, var(--brand-primary), var(--brand-secondary));
+}
+
 /* ── Light theme overrides ── */
 html.light-theme {
   color-scheme: light;

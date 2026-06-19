@@ -170,7 +170,7 @@ export default function Inventory() {
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="tilt-hover flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/60 bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-3 text-white shadow-lg shadow-indigo-500/30"
+              className="tilt-hover flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/60 btn-brand px-5 py-3 text-white shadow-lg shadow-indigo-500/30"
             >
               <Plus className="h-4 w-4" />
               New product

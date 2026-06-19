@@ -203,7 +203,7 @@ export default function AcceptInvite() {
           </div>
           <button
             onClick={() => { void navigate('/tenant-selection'); }}
-            className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+            className="mt-4 w-full px-6 py-3 btn-brand text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
           >
             Go to Dashboard
           </button>
@@ -291,7 +291,7 @@ export default function AcceptInvite() {
         <button
           type="submit"
           disabled={loginLoading}
-          className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full px-6 py-3 btn-brand text-white rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loginLoading ? (
             <>

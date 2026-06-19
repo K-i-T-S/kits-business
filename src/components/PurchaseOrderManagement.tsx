@@ -278,7 +278,7 @@ function NewPOModal({ suppliers, products, onClose, onSaved }: NewPOModalProps) 
           <button
             onClick={() => void handleSave()}
             disabled={saving}
-            className="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
+            className="rounded-xl btn-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
             {saving ? 'Creating…' : 'Create PO'}
           </button>
@@ -511,7 +511,7 @@ function ReceiveModal({ po, onClose, onDone }: ReceiveModalProps) {
           <button
             onClick={() => void handleReceive()}
             disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
+            className="flex items-center gap-2 rounded-xl btn-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
             <CheckCircle className="h-4 w-4" />
             {saving ? 'Processing…' : 'Confirm Received'}
@@ -632,7 +632,7 @@ export default function PurchaseOrderManagement() {
             </div>
             <button
               onClick={() => setShowNewModal(true)}
-              className="flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              className="flex shrink-0 items-center gap-2 rounded-xl btn-brand px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
             >
               <Plus className="h-4 w-4" />
               New PO
@@ -704,7 +704,7 @@ export default function PurchaseOrderManagement() {
               {orders.length === 0 && (
                 <button
                   onClick={() => setShowNewModal(true)}
-                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2 text-sm font-medium text-white hover:opacity-90"
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl btn-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90"
                 >
                   <Plus className="h-4 w-4" />
                   New PO

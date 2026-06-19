@@ -294,7 +294,7 @@ function ApiKeysTab() {
         </p>
         <button
           onClick={() => setShowNewKeyModal(true)}
-          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-medium text-white"
+          className="flex items-center gap-2 rounded-xl btn-brand px-4 py-2 text-sm font-medium text-white"
         >
           <Plus className="h-4 w-4" />
           Generate New Key
@@ -445,7 +445,7 @@ function ApiKeysTab() {
               <button
                 type="submit"
                 disabled={creating || !newKeyName.trim()}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                className="flex items-center gap-2 rounded-xl btn-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
               >
                 {creating ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -506,7 +506,7 @@ function ApiKeysTab() {
                 setRevealedKey(null);
                 setCopied(false);
               }}
-              className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-medium text-white"
+              className="w-full rounded-xl btn-brand px-4 py-2 text-sm font-medium text-white"
             >
               Done — I've saved the key
             </button>
@@ -677,7 +677,7 @@ function WebhooksTab() {
         </p>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-medium text-white"
+          className="flex items-center gap-2 rounded-xl btn-brand px-4 py-2 text-sm font-medium text-white"
         >
           <Plus className="h-4 w-4" />
           Add Webhook
@@ -879,7 +879,7 @@ function WebhooksTab() {
               <button
                 type="submit"
                 disabled={saving || !newName.trim() || !newUrl.trim() || newEvents.size === 0}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                className="flex items-center gap-2 rounded-xl btn-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
               >
                 {saving ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

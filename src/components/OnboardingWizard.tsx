@@ -39,7 +39,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
   const inputClass = 'bg-white/5 border border-white/20 text-white placeholder:text-white/40 rounded-xl px-4 py-3 w-full focus:outline-none focus:border-indigo-500 transition-colors';
   const selectClass = 'bg-slate-800 border border-white/20 text-white rounded-xl px-4 py-3 w-full focus:outline-none focus:border-indigo-500 transition-colors';
   const labelClass = 'block text-sm font-medium text-white/70 mb-1';
-  const primaryBtn = 'w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl px-6 py-3 font-semibold disabled:opacity-60 disabled:cursor-not-allowed';
+  const primaryBtn = 'w-full btn-brand text-white rounded-xl px-6 py-3 font-semibold disabled:opacity-60 disabled:cursor-not-allowed';
 
   // Map country → nearest Supabase region (all MENA closest to eu-central-1)
   const COUNTRY_REGION: Record<string, string> = {
@@ -186,6 +186,22 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
               <label className={labelClass}>Business Name *</label>
               <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} className={inputClass} placeholder="My Business" required />
             </div>
+
+            {/* Brand preview card */}
+            {businessName.trim() && (
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 flex items-center gap-3">
+                <div
+                  className="h-8 w-8 rounded-full flex-shrink-0"
+                  style={{ background: 'var(--brand-primary)' }}
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{businessName}</p>
+                  <p className="text-xs text-white/40">Powered by KiTS</p>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className={labelClass}>Industry</label>
               <select value={industry} onChange={e => setIndustry(e.target.value)} className={selectClass}>

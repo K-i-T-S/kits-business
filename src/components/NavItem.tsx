@@ -24,6 +24,7 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
 
   const hasSubItems = item.subItems && item.subItems.length > 0;
   const isSubItemActive = item.subItems?.some(subItem => location.pathname === subItem.href);
+  const active = isActive || isSubItemActive;
 
   const toggleSubmenu = (e: React.MouseEvent) => {
     if (hasSubItems) {
@@ -39,30 +40,46 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
         to={item.href}
         onClick={toggleSubmenu}
         data-testid={`nav-${item.href.replace('/', '')}`}
-        className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 sidebar-nav-item ${
-          isActive || isSubItemActive
-            ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-white shadow-lg border border-indigo-500/30 active'
-            : 'text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20'
-        } border border-transparent`}
+        className={`group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 sidebar-nav-item border ${
+          active
+            ? 'text-white shadow-lg active'
+            : 'text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20 border-transparent'
+        }`}
+        style={active ? {
+          background: 'linear-gradient(to right, color-mix(in srgb, var(--brand-primary) 20%, transparent), color-mix(in srgb, var(--brand-secondary) 10%, transparent))',
+          borderColor: 'color-mix(in srgb, var(--brand-primary) 30%, transparent)',
+        } : undefined}
       >
-        <div className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-all sidebar-nav-icon ${
-          isActive || isSubItemActive
-            ? 'bg-indigo-500/20 text-indigo-300'
-            : 'bg-white/5 text-white/70 group-hover:bg-white/10 group-hover:text-white'
-        }`}>
+        <div
+          className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-all sidebar-nav-icon ${
+            active
+              ? ''
+              : 'bg-white/5 text-white/70 group-hover:bg-white/10 group-hover:text-white'
+          }`}
+          style={active ? {
+            background: 'color-mix(in srgb, var(--brand-primary) 20%, transparent)',
+            color: 'color-mix(in srgb, var(--brand-primary) 90%, white)',
+          } : undefined}
+        >
           <item.icon className="h-4 w-4" />
-          {(isActive || isSubItemActive) && (
-            <div className="absolute -inset-1 rounded-lg bg-indigo-500/20 animate-pulse"></div>
+          {active && (
+            <div
+              className="absolute -inset-1 rounded-lg animate-pulse"
+              style={{ background: 'color-mix(in srgb, var(--brand-primary) 20%, transparent)' }}
+            />
           )}
         </div>
         <span className="flex-1">{item.name}</span>
-        {(isActive || isSubItemActive) && (
-          <div className="flex items-center gap-1 text-xs font-semibold text-indigo-300">
+        {active && (
+          <div
+            className="flex items-center gap-1 text-xs font-semibold"
+            style={{ color: 'color-mix(in srgb, var(--brand-secondary) 90%, white)' }}
+          >
             <Stars className="h-3 w-3" />
             Active
           </div>
         )}
-        {!isActive && !isSubItemActive && (
+        {!active && (
           <>
             {hasSubItems ? (
               isSubmenuOpen ? (
@@ -85,17 +102,27 @@ const NavItem = memo(({ item, isActive }: NavItemProps) => {
               <Link
                 key={subItem.name}
                 to={subItem.href}
-                className={`group relative flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                className={`group relative flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 border ${
                   isSubActive
-                    ? 'bg-indigo-500/10 text-white border border-indigo-500/20'
-                    : 'text-white/60 hover:bg-white/5 hover:text-white'
+                    ? 'text-white'
+                    : 'text-white/60 hover:bg-white/5 hover:text-white border-transparent'
                 }`}
+                style={isSubActive ? {
+                  background: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)',
+                  borderColor: 'color-mix(in srgb, var(--brand-primary) 20%, transparent)',
+                } : undefined}
               >
-                <div className={`flex h-6 w-6 items-center justify-center rounded transition-all ${
-                  isSubActive
-                    ? 'bg-indigo-500/20 text-indigo-300'
-                    : 'bg-white/5 text-white/60 group-hover:bg-white/10 group-hover:text-white'
-                }`}>
+                <div
+                  className={`flex h-6 w-6 items-center justify-center rounded transition-all ${
+                    isSubActive
+                      ? ''
+                      : 'bg-white/5 text-white/60 group-hover:bg-white/10 group-hover:text-white'
+                  }`}
+                  style={isSubActive ? {
+                    background: 'color-mix(in srgb, var(--brand-primary) 20%, transparent)',
+                    color: 'color-mix(in srgb, var(--brand-primary) 90%, white)',
+                  } : undefined}
+                >
                   <subItem.icon className="h-3 w-3" />
                 </div>
                 <span className="text-xs">{subItem.name}</span>

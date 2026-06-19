@@ -270,7 +270,7 @@ export default function CustomRolesManager() {
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 rounded-xl btn-brand px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:opacity-90 transition-opacity"
         >
           <Plus className="h-4 w-4" />
           New Role
@@ -522,7 +522,7 @@ export default function CustomRolesManager() {
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={saving || !form.display_name.trim() || !form.name.trim()}
-                className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                className="flex-1 rounded-xl btn-brand px-4 py-3 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                 {editingRole ? 'Save Changes' : 'Create Role'}

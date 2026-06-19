@@ -139,7 +139,7 @@ function LocationForm({ initial, onSave, onCancel, saving }: LocationFormProps) 
         <button
           type="submit"
           disabled={saving}
-          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="flex items-center gap-2 rounded-xl btn-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
         >
           {saving ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -273,7 +273,7 @@ function LocationsTab({ locations, loading, onRefresh }: LocationsTabProps) {
         {!showForm && (
           <button
             onClick={handleAdd}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-medium text-white"
+            className="flex items-center gap-2 rounded-xl btn-brand px-4 py-2 text-sm font-medium text-white"
           >
             <Plus className="h-4 w-4" />
             Add Location
@@ -749,7 +749,7 @@ function TransferTab({ locations }: TransferTabProps) {
             <button
               type="submit"
               disabled={transferring || !fromId || !toId || !productId || !quantity}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl btn-brand px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
             >
               {transferring ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

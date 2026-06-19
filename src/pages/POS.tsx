@@ -10,6 +10,7 @@ import SplitPaymentModal from '../components/SplitPaymentModal';
 import TipsModal from '../components/TipsModal';
 import { useApp } from '../context/AppContext';
 import type { Sale, Product } from '../context/AppContext';
+import { formatTaxBreakdown } from '../utils/formatting';
 import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
 import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
 import { POSCalculator } from '../utils/posCalculations';
@@ -54,7 +55,7 @@ interface ReceiptData {
 }
 
 export default function POS() {
-  const { products, customers, currentEmployee, addSale, updateCustomer } = useApp();
+  const { products, customers, currentEmployee, currentTenant, addSale, updateCustomer } = useApp();
   const [barcode, setBarcode] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
@@ -76,7 +77,7 @@ export default function POS() {
   const [appliedCoupon, setAppliedCoupon] = useState<DiscountCoupon | null>(null);
   const [loyaltyPointsRedeemed, setLoyaltyPointsRedeemed] = useState(0);
   const [selectedReceiptTemplate, setSelectedReceiptTemplate] = useState<ReceiptTemplate | null>(null);
-  const [taxRate] = useState(0.08); // 8% tax rate
+  const taxRate = currentTenant?.tax_rate ?? 0;
 
   // ── Step 9: Scanner refs — NOT state, avoids async update lag ────────────
   const scannerBuffer = useRef<string>('');
@@ -479,7 +480,7 @@ export default function POS() {
                 </div>
                 <button
                   type="submit"
-                  className="rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+                  className="rounded-2xl btn-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
                 >
                   Add
                 </button>
@@ -655,14 +656,23 @@ export default function POS() {
               <p className="text-xs uppercase tracking-[0.3em] text-white/70">Totals</p>
               <h2 className="text-lg font-semibold text-white">Order Summary</h2>
               <div className="mt-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between text-white/80">
-                  <span>Subtotal</span>
-                  <span className="text-white">${(calculateSubtotal() || 0).toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between text-white/80">
-                  <span>Tax ({(taxRate * 100).toFixed(0)}%)</span>
-                  <span className="text-white">${calculateTax().toFixed(2)}</span>
-                </div>
+                {taxRate > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between text-white/80">
+                      <span>Subtotal</span>
+                      <span className="text-white">${(calculateSubtotal() || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-white/80">
+                      <span>{formatTaxBreakdown(calculateSubtotal(), taxRate).taxLabel}</span>
+                      <span className="text-white">${calculateTax().toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between text-white/80">
+                    <span>Subtotal</span>
+                    <span className="text-white">${(calculateSubtotal() || 0).toFixed(2)}</span>
+                  </div>
+                )}
                 {calculateDiscounts() > 0 && (
                   <div className="flex items-center justify-between text-emerald-300">
                     <span>Discounts</span>
@@ -675,9 +685,16 @@ export default function POS() {
                     <span>+${calculateTips().toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between border-t border-white/30 pt-3 text-base font-semibold text-white">
-                  <span>Total</span>
-                  <span>${(calculateTotal() || 0).toFixed(2)}</span>
+                <div className="flex flex-col border-t border-white/30 pt-3">
+                  <div className="flex items-center justify-between text-base font-semibold text-white">
+                    <span>Total</span>
+                    <span>${(calculateTotal() || 0).toFixed(2)}</span>
+                  </div>
+                  {currentTenant?.show_dual_currency && currentTenant.exchange_rate && (
+                    <div className="text-right text-xs text-white/50 mt-0.5">
+                      ≈ {Math.round((calculateTotal() || 0) * currentTenant.exchange_rate).toLocaleString()} {currentTenant.secondary_currency ?? 'LBP'}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -893,7 +910,7 @@ export default function POS() {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row no-print">
               <button
                 onClick={closeReceipt}
-                className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+                className="flex-1 rounded-2xl btn-brand px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
               >
                 New sale
               </button>

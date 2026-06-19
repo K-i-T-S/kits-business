@@ -148,7 +148,7 @@ export default function CustomerManagement() {
           </div>
           <button
             onClick={() => setShowAddCustomerModal(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+            className="inline-flex items-center gap-2 rounded-xl btn-brand px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
           >
             <Plus className="h-4 w-4" />
             Add Customer
@@ -391,7 +391,7 @@ export default function CustomerManagement() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+                    className="flex-1 rounded-xl btn-brand py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
                   >
                     Add Customer
                   </button>

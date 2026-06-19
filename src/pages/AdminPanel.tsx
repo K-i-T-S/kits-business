@@ -319,7 +319,7 @@ export default function AdminPanel() {
               <button
                 type="submit"
                 disabled={gateVerifying}
-                className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl py-3 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full btn-brand text-white rounded-xl py-3 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {gateVerifying && <Loader2 className="h-4 w-4 animate-spin" />}
                 {gateVerifying ? 'Verifying…' : 'Unlock'}
@@ -484,7 +484,7 @@ export default function AdminPanel() {
                                 </select>
                               </div>
                               <div className="flex gap-2">
-                                <button onClick={handleSavePlan} disabled={editState.saving} className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">{editState.saving ? 'Saving…' : 'Save'}</button>
+                                <button onClick={handleSavePlan} disabled={editState.saving} className="flex-1 rounded-xl btn-brand px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">{editState.saving ? 'Saving…' : 'Save'}</button>
                                 <button onClick={cancelEdit} disabled={editState.saving} className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60 hover:bg-white/10">{''}</button>
                               </div>
                             </div>
@@ -540,7 +540,7 @@ export default function AdminPanel() {
                           <p className="text-xs text-white/30 mt-0.5">Completed onboarding: {formatDate(tenant.created_at)}</p>
                         </div>
                         {provisionForm?.tenantId !== tenant.id && (
-                          <button onClick={() => openProvisionForm(tenant)} className="flex-shrink-0 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity">
+                          <button onClick={() => openProvisionForm(tenant)} className="flex-shrink-0 rounded-xl btn-brand px-4 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity">
                             Enter Credentials
                           </button>
                         )}
@@ -580,7 +580,7 @@ export default function AdminPanel() {
                             />
                           </div>
                           <div className="flex gap-2 pt-1">
-                            <button onClick={handleSaveProvision} disabled={provisionForm.saving} className="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-xs font-medium text-white disabled:opacity-50">
+                            <button onClick={handleSaveProvision} disabled={provisionForm.saving} className="rounded-xl btn-brand px-4 py-2 text-xs font-medium text-white disabled:opacity-50">
                               {provisionForm.saving ? 'Saving…' : 'Mark Provisioned'}
                             </button>
                             <button onClick={cancelProvision} disabled={provisionForm.saving} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 hover:bg-white/10">

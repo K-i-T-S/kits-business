@@ -211,7 +211,7 @@ export default function StockTransferManagement() {
             </div>
             <button
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg"
+              className="flex items-center gap-2 rounded-xl btn-brand px-5 py-2.5 text-sm font-semibold text-white shadow-lg"
             >
               <Plus className="h-4 w-4" /> New Transfer
             </button>
@@ -340,7 +340,7 @@ export default function StockTransferManagement() {
                 <button
                   type="submit"
                   disabled={submitting || newItems.length === 0}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                  className="flex-1 rounded-xl btn-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {submitting ? 'Creating…' : 'Create Transfer'}
                 </button>

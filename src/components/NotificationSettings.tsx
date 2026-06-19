@@ -96,7 +96,7 @@ export function NotificationSettings() {
               <button
                 onClick={handleEnableNotifications}
                 disabled={isLoading}
-                className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full px-4 py-2 btn-brand text-white rounded-xl text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Bell className="h-4 w-4" />
                 {isLoading ? 'Enabling...' : 'Enable Notifications'}

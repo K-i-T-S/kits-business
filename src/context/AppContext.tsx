@@ -122,12 +122,26 @@ export interface Tenant {
   brand_primary?: string;
   brand_secondary?: string;
   brand_tagline?: string | null;
+  tax_rate?: number;
+  secondary_currency?: string;
+  exchange_rate?: number;
+  show_dual_currency?: boolean;
+  tin?: string | null;
 }
 
 function applyBrandColors(primary?: string, secondary?: string) {
   const root = document.documentElement;
   root.style.setProperty('--brand-primary', primary ?? '#6366f1');
   root.style.setProperty('--brand-secondary', secondary ?? '#0ea5e9');
+}
+
+function applyFavicon(logoUrl?: string | null) {
+  if (!logoUrl) return;
+  const existing = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  const link = existing ?? document.createElement('link');
+  link.rel = 'icon';
+  link.href = logoUrl;
+  if (!existing) document.head.appendChild(link);
 }
 
 interface User {
@@ -370,9 +384,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 brand_primary: tenantData.brand_primary ?? '#6366f1',
                 brand_secondary: tenantData.brand_secondary ?? '#0ea5e9',
                 brand_tagline: tenantData.brand_tagline ?? null,
+                tax_rate: tenantData.tax_rate != null ? Number(tenantData.tax_rate) : undefined,
+                secondary_currency: tenantData.secondary_currency ?? 'LBP',
+                exchange_rate: tenantData.exchange_rate != null ? Number(tenantData.exchange_rate) : undefined,
+                show_dual_currency: tenantData.show_dual_currency ?? false,
+                tin: tenantData.tin ?? null,
               };
               setCurrentTenant(tenant);
               applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
+              applyFavicon(tenant.brand_logo_url);
             }
           } catch (tenantError) {
             const errorObj = tenantError instanceof Error ? tenantError : new Error(String(tenantError));
@@ -405,9 +425,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
               brand_primary: tenantData.brand_primary ?? '#6366f1',
               brand_secondary: tenantData.brand_secondary ?? '#0ea5e9',
               brand_tagline: tenantData.brand_tagline ?? null,
+              tax_rate: tenantData.tax_rate != null ? Number(tenantData.tax_rate) : undefined,
+              secondary_currency: tenantData.secondary_currency ?? 'LBP',
+              exchange_rate: tenantData.exchange_rate != null ? Number(tenantData.exchange_rate) : undefined,
+              show_dual_currency: tenantData.show_dual_currency ?? false,
+              tin: tenantData.tin ?? null,
             };
             setCurrentTenant(tenant);
             applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
+            applyFavicon(tenant.brand_logo_url);
           }
         }).catch(error => {
           const errorObj = error instanceof Error ? error : new Error(String(error));

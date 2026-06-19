@@ -9,15 +9,39 @@ import {
   BarChart3,
   Sparkles,
 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 
+// Roles that are redirected away from /dashboard on initial landing.
+// owner | admin | manager | supervisor | viewer stay on /dashboard.
+const ROLE_REDIRECT: Partial<Record<string, string>> = {
+  cashier: '/pos',
+  stockkeeper: '/inventory',
+  accountant: '/reports',
+};
+
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { products, sales, customers, currentEmployee } = useApp();
+  const { products, sales, customers, currentEmployee, currentTenant, loading } = useApp();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Role-based redirect: fires once when tenant data becomes available and the
+  // current path is /dashboard (the default post-login landing). Uses replace
+  // so the back button goes to the page before login, not back to /dashboard.
+  useEffect(() => {
+    if (loading || !currentTenant) return;
+    if (location.pathname !== '/dashboard') return;
+
+    const target = ROLE_REDIRECT[currentTenant.userRole];
+    if (target) {
+      navigate(target, { replace: true });
+    }
+  }, [currentTenant, loading, navigate, location.pathname]);
 
   const totalProducts = products?.reduce((acc, p) => acc + (p.variants?.length || 0), 0) || 0;
   const totalStock = products?.reduce(

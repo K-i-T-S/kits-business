@@ -143,7 +143,7 @@ export default function Employees() {
               </button>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25"
+                className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 btn-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25"
               >
                 <Plus className="h-5 w-5" />
                 Add teammate

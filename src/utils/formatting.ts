@@ -179,6 +179,45 @@ export const getCurrencySymbol = (language?: string): string => {
 };
 
 /**
+ * Format a USD amount with its LBP (or other secondary currency) equivalent.
+ * Example: "$10.00 (895,000 LBP)"
+ */
+export function formatDualCurrency(
+  usdAmount: number,
+  exchangeRate: number,
+  secondaryCurrency = 'LBP',
+): string {
+  const primary = formatCurrency(usdAmount);
+  const secondary = new Intl.NumberFormat('en-LB', {
+    maximumFractionDigits: 0,
+  }).format(Math.round(usdAmount * exchangeRate));
+  return `${primary} (${secondary} ${secondaryCurrency})`;
+}
+
+/**
+ * Compute tax breakdown for a subtotal.
+ * Returns subtotal, taxAmount, total, and a human-readable taxLabel.
+ * Lebanese TVA is 11%; any other rate uses a generic "Tax X%" label.
+ */
+export function formatTaxBreakdown(
+  subtotal: number,
+  taxRate: number,
+): {
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  taxLabel: string;
+} {
+  const taxAmount = subtotal * taxRate;
+  return {
+    subtotal,
+    taxAmount,
+    total: subtotal + taxAmount,
+    taxLabel: taxRate === 0.11 ? 'TVA 11%' : `Tax ${(taxRate * 100).toFixed(0)}%`,
+  };
+}
+
+/**
  * Format file size based on current language
  */
 export const formatFileSize = (bytes: number, language?: string): string => {

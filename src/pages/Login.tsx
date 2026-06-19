@@ -138,9 +138,15 @@ export default function Login({ onLogin }: LoginProps) {
                   <ShoppingCart className="h-8 w-8 text-indigo-600" />
                 )}
               </div>
-              <p className="text-xs uppercase tracking-[0.35em] text-white/60">{t('auth.signIn')}</p>
-              <h1 className="mt-2 text-3xl font-semibold text-white">{BRAND.name}</h1>
-              <p className="text-sm text-white/60">{BRAND.tagline}</p>
+              <p className="text-xs uppercase tracking-[0.35em] text-white/60">Welcome to</p>
+              <h1
+                className="mt-2 text-4xl font-bold"
+                style={{ background: 'linear-gradient(to right, var(--brand-primary), var(--brand-secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+              >
+                {BRAND.name}
+              </h1>
+              <p className="text-sm font-medium text-white/60 mt-0.5">Business Terminal</p>
+              <p className="text-xs text-white/40 mt-1">{BRAND.tagline}</p>
             </div>
 
             <div className="rounded-3xl border border-white/20 bg-white/5 p-6 shadow-xl shadow-black/20">
@@ -201,7 +207,7 @@ export default function Login({ onLogin }: LoginProps) {
                   type="submit"
                   data-testid="login-button"
                   disabled={loading}
-                  className="tilt-hover w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="tilt-hover btn-brand w-full rounded-2xl py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? t('common.loading') : isSignup ? t('auth.signUp') : t('auth.signIn')}
                 </button>
@@ -215,6 +221,19 @@ export default function Login({ onLogin }: LoginProps) {
                 </button>
               </form>
             </div>
+
+            <p className="text-center text-sm text-white/50">
+              Don&apos;t have an account?{' '}
+              <a
+                href="https://wa.me/96181290662"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-semibold text-white/80 hover:text-white transition-colors"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                Contact us on WhatsApp
+              </a>
+            </p>
 
             <div className="rounded-3xl border border-white/20 bg-white/5 p-4 text-center text-xs text-white/60">
               <p className="font-semibold text-white/80">Need help onboarding?</p>

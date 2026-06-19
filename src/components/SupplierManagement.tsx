@@ -168,7 +168,7 @@ function SupplierModal({ supplier, onClose, onSave, saving }: ModalProps) {
           <button
             onClick={() => void onSave(form)}
             disabled={!form.name.trim() || saving}
-            className="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
+            className="rounded-xl btn-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
             {saving ? 'Saving…' : supplier ? 'Update' : 'Create'}
           </button>
@@ -302,7 +302,7 @@ export default function SupplierManagement() {
             </div>
             <button
               onClick={() => setModalSupplier('new')}
-              className="flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              className="flex shrink-0 items-center gap-2 rounded-xl btn-brand px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
             >
               <Plus className="h-4 w-4" />
               Add Supplier
@@ -377,7 +377,7 @@ export default function SupplierManagement() {
               {suppliers.length === 0 && (
                 <button
                   onClick={() => setModalSupplier('new')}
-                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2 text-sm font-medium text-white hover:opacity-90"
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl btn-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90"
                 >
                   <Plus className="h-4 w-4" />
                   Add Supplier

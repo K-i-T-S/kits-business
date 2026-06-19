@@ -60,11 +60,10 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
         .from('tenants')
         .update({
           name: businessName.trim(),
-          industry: industry || null,
-          country,
-          currency,
-          phone: phone || null,
           business_type: industry || null,
+          country: country || null,
+          currency: currency || null,
+          phone: phone || null,
           preferred_region: COUNTRY_REGION[country] ?? 'eu-central-1',
         })
         .eq('id', tenantId);

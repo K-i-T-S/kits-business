@@ -30,6 +30,10 @@ import {
   MapPin,
   Key,
   Lock,
+  Building2,
+  Sun,
+  Moon,
+  Pencil,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -37,14 +41,17 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
+import { BRAND } from '../constants/branding';
 import { useApp } from '../context/AppContext';
 import { useSubscription } from '../context/SubscriptionContext';
+import { useTheme } from '../context/ThemeContext';
 import { useAccessibility } from '../providers/AccessibilityProvider';
 import type { Feature } from '../types/subscription';
 import { FEATURE_DISPLAY, PLAN_DISPLAY } from '../types/subscription';
 import { supabase } from '../utils/supabaseClient';
 
+import BrandIdentityModal from './BrandIdentityModal';
+import GlobalSearch from './GlobalSearch';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import NavItem from './NavItem';
 import NotificationItem from './NotificationItem';
@@ -62,8 +69,9 @@ export default function Layout({ children }: LayoutProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentEmployee, isModalOpen } = useApp();
+  const { currentEmployee, isModalOpen, currentTenant } = useApp();
   const { hasFeature } = useSubscription();
+  const { theme, toggleTheme } = useTheme();
   const { announce, setAriaAttribute, setRole } = useAccessibility();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
@@ -71,8 +79,10 @@ export default function Layout({ children }: LayoutProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [brandModalOpen, setBrandModalOpen] = useState(false);
+
+  const isOwnerOrAdmin = currentTenant?.userRole === 'owner' || currentTenant?.userRole === 'admin';
 
   const handleLogout = async () => {
     try {
@@ -121,6 +131,8 @@ export default function Layout({ children }: LayoutProps) {
         { name: 'API & Webhooks', href: '/enterprise/api', icon: Key },
       ],
     },
+    { name: 'Profile Settings', href: '/profile-settings', icon: Settings, feature: undefined },
+    { name: 'System Settings', href: '/system-settings', icon: Building2, feature: undefined },
   ], []);
 
   const supportActions = useMemo(() => [
@@ -145,6 +157,17 @@ export default function Layout({ children }: LayoutProps) {
   useEffect(() => {
     setMobileNavOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-900 text-slate-100 md:flex">
@@ -270,11 +293,22 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Branding Section */}
-          <Link to="/dashboard" className="group" aria-label="Go to dashboard">
-            <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-500/30 via-purple-500/20 to-transparent p-4 text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-white/20 sidebar-brand">
+          <div className="relative group sidebar-brand">
+            {/* Main brand card */}
+            <button
+              onClick={() => isOwnerOrAdmin ? setBrandModalOpen(true) : undefined}
+              className={`w-full text-left flex flex-col gap-3 rounded-2xl border border-white/10 bg-gradient-to-br from-[var(--brand-primary)]/30 via-[var(--brand-secondary)]/15 to-transparent p-4 text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:border-white/20 ${isOwnerOrAdmin ? 'cursor-pointer hover:scale-[1.02]' : 'cursor-default'}`}
+              aria-label={isOwnerOrAdmin ? 'Customise brand identity' : 'Brand'}
+            >
               <div className="flex items-center gap-3">
-                <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 transition-transform group-hover:scale-110">
-                  {!logoError ? (
+                <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
+                  {currentTenant?.brand_logo_url ? (
+                    <img
+                      src={currentTenant.brand_logo_url}
+                      alt={`${currentTenant.name} logo`}
+                      className="h-10 w-10 object-contain rounded-lg"
+                    />
+                  ) : !logoError ? (
                     <img
                       src="/logo.png"
                       alt={`${BRAND.name} logo`}
@@ -283,25 +317,40 @@ export default function Layout({ children }: LayoutProps) {
                     />
                   ) : (
                     <span className="text-2xl font-bold uppercase tracking-wide">
-                      {BRAND.shortName.slice(0, 2)}
+                      {(currentTenant?.name ?? BRAND.shortName).slice(0, 2)}
                     </span>
                   )}
-                  <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-slate-900 animate-pulse status-indicator" aria-hidden="true"></div>
+                  <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-slate-900 animate-pulse status-indicator" aria-hidden="true" />
                 </div>
-                <div className="flex-1">
-                  <div className="text-xs uppercase tracking-[0.35em] text-white/60 font-medium">Kits Solutions</div>
-                  <h1 className="text-xl font-bold text-white">{BRAND.name}</h1>
-                  <p className="text-xs text-white/60 mt-1">{BRAND.tagline}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs uppercase tracking-[0.3em] text-white/50 font-medium">Your Business</div>
+                  <h1 className="text-lg font-bold text-white truncate">{currentTenant?.name ?? BRAND.name}</h1>
+                  <p className="text-xs text-white/50 mt-0.5 truncate">
+                    {currentTenant?.brand_tagline ?? BRAND.tagline}
+                  </p>
                 </div>
+                {/* Edit hint — only owners/admins see this */}
+                {isOwnerOrAdmin && (
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    <Pencil className="h-4 w-4 text-white/40" />
+                  </div>
+                )}
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70 backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-3 w-3 text-indigo-400" aria-hidden="true" />
-                  {LOGO_PLACEHOLDER_MESSAGE}
-                </div>
-              </div>
+            </button>
+
+            {/* Always-visible "Powered by KiTS" watermark */}
+            <div className="mt-1.5 rounded-xl border border-white/5 bg-white/3 px-3 py-2 flex items-center gap-2">
+              {!logoError ? (
+                <img src="/logo.png" alt="KiTS" className="h-3.5 w-3.5 object-contain opacity-50 flex-shrink-0"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              ) : (
+                <Sparkles className="h-3 w-3 text-indigo-400 flex-shrink-0" aria-hidden="true" />
+              )}
+              <span className="text-xs text-white/35 truncate">
+                Powered by <span className="text-white/55 font-medium">KiTS</span> · Khoder's IT Solutions
+              </span>
             </div>
-          </Link>
+          </div>
 
           {/* Navigation */}
           <nav className="flex-1 space-y-2 overflow-y-auto" role="navigation" aria-label="Main menu">
@@ -437,36 +486,19 @@ export default function Layout({ children }: LayoutProps) {
                   </div>
                 </div>
 
-                {/* Center Section - Search Bar (Desktop) */}
-                <div className="hidden md:flex flex-1 max-w-md mx-6">
-                  <div className="relative w-full header-search" role="search">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-white/40" aria-hidden="true" />
-                    </div>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onFocus={() => setSearchOpen(true)}
-                      onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
-                      placeholder={t('common.search', 'Search products, customers, orders...')}
-                      className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
-                      aria-label="Search"
-                      aria-describedby="search-description"
-                    />
-                    <span id="search-description" className="sr-only">
-                      Search for products, customers, and orders
-                    </span>
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        aria-label="Clear search"
-                      >
-                        <X className="h-4 w-4 text-white/40 hover:text-white/60" />
-                      </button>
-                    )}
-                  </div>
+                {/* Center Section - Search trigger (Desktop) */}
+                <div className="hidden md:flex flex-1 max-w-md mx-6" role="search">
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    aria-label={t('common.search', 'Search')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors text-sm w-48 lg:w-64 header-search"
+                  >
+                    <Search className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                    <span className="flex-1 text-left">Search&hellip;</span>
+                    <kbd className="ml-auto text-xs bg-white/10 px-1.5 py-0.5 rounded text-white/30 font-mono hidden lg:inline">
+                      ⌘K
+                    </kbd>
+                  </button>
                 </div>
 
                 {/* Right Section - Actions & Profile */}
@@ -489,11 +521,20 @@ export default function Layout({ children }: LayoutProps) {
                   {/* Search Button (Mobile) */}
                   <button
                     className="rounded-xl border border-white/20 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20 hover:scale-105 md:hidden header-button flex-shrink-0"
-                    onClick={() => setSearchOpen(!searchOpen)}
+                    onClick={() => setSearchOpen(true)}
                     aria-label="Open search"
-                    aria-expanded={searchOpen}
                   >
                     <Search className="h-5 w-5" />
+                  </button>
+
+                  {/* Theme Toggle */}
+                  <button
+                    className="rounded-xl border border-white/20 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20 hover:scale-105 header-button flex-shrink-0"
+                    onClick={toggleTheme}
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                    title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                  >
+                    {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                   </button>
 
                   {/* Notifications */}
@@ -626,25 +667,6 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
               </div>
 
-              {/* Mobile Search Bar */}
-              {searchOpen && (
-                <div className="md:hidden px-4 pb-3" role="search">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-white/40" aria-hidden="true" />
-                    </div>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={t('common.search', 'Search products, customers, orders...')}
-                      className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
-                      aria-label="Search"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-              )}
             </header>
 
             <main className="relative z-10 app-shell space-y-10 mobile-content" role="main" id="main-content">{children}</main>
@@ -655,6 +677,18 @@ export default function Layout({ children }: LayoutProps) {
         <UserProfileModal
           isOpen={profileModalOpen}
           onClose={() => setProfileModalOpen(false)}
+        />
+
+        {/* Global Search Command Palette */}
+        <GlobalSearch
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+        />
+
+        {/* Brand Identity Modal */}
+        <BrandIdentityModal
+          open={brandModalOpen}
+          onClose={() => setBrandModalOpen(false)}
         />
       </div>
     </div>

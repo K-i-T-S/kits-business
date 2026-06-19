@@ -22,12 +22,17 @@ import {
   Zap,
   MapPin,
   Key,
+  Lock,
+  Building2,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { BRAND } from '../constants/branding';
-import { useApp } from '../context/AppContext';
+import { useSubscription } from '../context/SubscriptionContext';
+import type { Feature } from '../types/subscription';
+import { FEATURE_DISPLAY, PLAN_DISPLAY } from '../types/subscription';
 import { supabase } from '../utils/supabaseClient';
 
 interface NavItem {
@@ -35,6 +40,7 @@ interface NavItem {
   label: string
   icon: React.ComponentType<{ className?: string }>
   path: string
+  feature?: Feature
   badge?: number
   description?: string
   subItems?: Array<{
@@ -59,6 +65,7 @@ const navItems: NavItem[] = [
     label: 'POS',
     icon: ShoppingCart,
     path: '/pos',
+    feature: 'pos',
     description: 'Point of Sale system',
     badge: 0,
   },
@@ -67,6 +74,7 @@ const navItems: NavItem[] = [
     label: 'Inventory',
     icon: Package,
     path: '/inventory',
+    feature: 'inventory_management',
     description: 'Manage products and stock',
     subItems: [
       {
@@ -132,6 +140,7 @@ const navItems: NavItem[] = [
     label: 'Monitoring',
     icon: Activity,
     path: '/monitoring',
+    feature: 'monitoring',
     description: 'System monitoring and alerts',
   },
   {
@@ -139,6 +148,7 @@ const navItems: NavItem[] = [
     label: 'Analytics',
     icon: BarChart3,
     path: '/reports',
+    feature: 'basic_reports',
     description: 'Reports and insights',
   },
   {
@@ -146,6 +156,7 @@ const navItems: NavItem[] = [
     label: 'Enterprise',
     icon: Shield,
     path: '/enterprise',
+    feature: 'enterprise_dashboard',
     description: 'Advanced enterprise features',
     subItems: [
       {
@@ -186,11 +197,18 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    id: 'settings',
-    label: 'Settings',
+    id: 'profile-settings',
+    label: 'Profile Settings',
     icon: Settings,
     path: '/profile-settings',
-    description: 'App preferences',
+    description: 'Personal preferences and account',
+  },
+  {
+    id: 'system-settings',
+    label: 'System Settings',
+    icon: Building2,
+    path: '/system-settings',
+    description: 'Business configuration',
   },
 ];
 
@@ -200,6 +218,7 @@ export function MobileNavigation() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const location = useLocation();
   const navigate = useNavigate();
+  const { hasFeature } = useSubscription();
 
   // Handle body scroll lock when drawer is open
   useEffect(() => {
@@ -213,13 +232,6 @@ export function MobileNavigation() {
       document.body.style.overflow = '';
     };
   }, [isDrawerOpen]);
-
-  // Disable aggressive padding adjustment to avoid layout issues
-  // useEffect(() => {
-  //   const adjustContentPadding = () => {
-  //     // ... disabled
-  //   }
-  // }, [])
 
   const handleLogout = async () => {
     try {
@@ -253,6 +265,12 @@ export function MobileNavigation() {
     }, 150);
   };
 
+  const handleLockedNavClick = (featureId: Feature) => {
+    const featureInfo = FEATURE_DISPLAY[featureId];
+    const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
+    toast.info(`Upgrade to ${planInfo.name} (${planInfo.price}) to unlock ${featureInfo.name}`);
+  };
+
   const isActive = (path: string) => {
     return location.pathname === path ||
            (path !== '/' && location.pathname.startsWith(path));
@@ -283,6 +301,8 @@ export function MobileNavigation() {
            (itemId === 'enterprise' && location.pathname.startsWith('/enterprise'));
   };
 
+  const isLocked = (item: NavItem) => item.feature !== undefined && !hasFeature(item.feature);
+
   return (
     <>
       {/* Mobile Menu Button - Hidden when drawer is open but maintains space */}
@@ -300,7 +320,7 @@ export function MobileNavigation() {
         </button>
       </div>
 
-      {/* Enhanced Mobile Drawer Overlay with better animation */}
+      {/* Mobile Drawer Overlay */}
       <div
         className={`md:hidden fixed inset-0 z-[50] transition-all duration-300 ease-out ${
           isDrawerOpen ? 'bg-black/60 backdrop-blur-sm' : 'pointer-events-none opacity-0'
@@ -309,12 +329,12 @@ export function MobileNavigation() {
         aria-hidden={!isDrawerOpen}
       />
 
-      {/* Enhanced Mobile Drawer with professional design */}
+      {/* Mobile Drawer */}
       <aside className={`md:hidden fixed top-0 left-0 h-full w-80 max-w-[85vw] z-[55] transform transition-all duration-300 ease-out ${
         isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
       } ${isAnimating ? 'scale-[0.98]' : 'scale-100'}`}>
         <div className="h-full bg-slate-900/98 backdrop-blur-xl border-r border-slate-800/30 shadow-2xl overflow-y-auto">
-          {/* Enhanced Drawer Header */}
+          {/* Drawer Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-800/30 bg-gradient-to-r from-slate-900/50 to-slate-800/50 sticky top-0 z-10">
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -337,13 +357,40 @@ export function MobileNavigation() {
             </button>
           </div>
 
-          {/* Enhanced Navigation Items with descriptions and sub-items */}
+          {/* Navigation Items */}
           <nav className="p-4 space-y-2">
             {navItems.map((item, index) => {
               const Icon = item.icon;
               const active = isActive(item.path);
               const expanded = isItemExpanded(item.id);
               const hasSubItems = item.subItems && item.subItems.length > 0;
+              const locked = isLocked(item);
+
+              if (locked && item.feature) {
+                const featureInfo = FEATURE_DISPLAY[item.feature];
+                const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
+                return (
+                  <div key={item.id}>
+                    <button
+                      onClick={() => handleLockedNavClick(item.feature!)}
+                      className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 text-slate-600 opacity-50 hover:opacity-70"
+                      aria-label={`${item.label} — requires ${planInfo.name} plan`}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">{item.label}</div>
+                        {item.description && (
+                          <div className="text-xs opacity-70 mt-0.5">{item.description}</div>
+                        )}
+                      </div>
+                      <Lock className="h-3 w-3 text-amber-400/70" aria-hidden="true" />
+                    </button>
+                  </div>
+                );
+              }
 
               return (
                 <div key={item.id}>
@@ -420,7 +467,7 @@ export function MobileNavigation() {
             })}
           </nav>
 
-          {/* Enhanced Drawer Footer */}
+          {/* Drawer Footer */}
           <div className="mt-auto p-6 border-t border-slate-800/30 bg-gradient-to-t from-slate-900/50 to-transparent">
             {/* Support Links */}
             <div className="grid grid-cols-1 gap-3 mb-4">
@@ -482,39 +529,51 @@ export function MobileNavigation() {
         </div>
       </aside>
 
-      {/* Enhanced Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation — first 5 items only */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800/30 z-50 mobile-bottom-safe" style={{ height: 'auto', minHeight: 'max(60px, env(safe-area-inset-bottom) + 60px)' }}>
         <div className="flex justify-around items-center py-3 pb-safe-area">
           {navItems.slice(0, 5).map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
+            const locked = isLocked(item);
 
             return (
               <button
                 key={item.id}
-                onClick={() => handleNavClick(item.path)}
-                className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 min-w-[70px] relative group ${
-                  active
-                    ? 'text-indigo-400'
-                    : 'text-slate-500 hover:text-slate-300 active:scale-95'
+                onClick={() => {
+                  if (locked && item.feature) {
+                    handleLockedNavClick(item.feature);
+                  } else {
+                    handleNavClick(item.path);
+                  }
+                }}
+                className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 min-w-[60px] relative group ${
+                  locked
+                    ? 'text-slate-600 opacity-50'
+                    : active
+                      ? 'text-indigo-400'
+                      : 'text-slate-500 hover:text-slate-300 active:scale-95'
                 }`}
                 aria-label={item.label}
-                aria-current={active ? 'page' : undefined}
+                aria-current={active && !locked ? 'page' : undefined}
               >
                 <div className="relative">
-                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-indigo-400' : ''}`} />
+                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${active && !locked ? 'text-indigo-400' : ''}`} />
                   {item.badge !== undefined && item.badge > 0 && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium">
                       {item.badge > 9 ? '9+' : item.badge}
                     </span>
                   )}
+                  {locked && (
+                    <Lock className="absolute -top-1 -right-1 h-3 w-3 text-amber-400/70" />
+                  )}
                 </div>
                 <span className={`text-xs font-medium transition-all duration-200 ${
-                  active ? 'text-indigo-400 font-semibold' : ''
+                  active && !locked ? 'text-indigo-400 font-semibold' : ''
                 }`}>
                   {item.label}
                 </span>
-                {active && (
+                {active && !locked && (
                   <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-indigo-500 rounded-full" />
                 )}
               </button>

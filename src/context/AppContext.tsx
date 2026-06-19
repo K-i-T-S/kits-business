@@ -97,7 +97,7 @@ export interface Employee {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'cashier';
+  role: 'owner' | 'admin' | 'manager' | 'supervisor' | 'cashier' | 'accountant' | 'stockkeeper' | 'viewer';
   commission: number;
   totalSales: number;
   shifts: Shift[];
@@ -112,12 +112,22 @@ export interface Shift {
   totalRevenue: number;
 }
 
-interface Tenant {
+export interface Tenant {
   id: string;
   name: string;
   slug: string;
-  userRole: 'owner' | 'manager' | 'cashier' | 'viewer';
+  userRole: 'owner' | 'admin' | 'manager' | 'supervisor' | 'accountant' | 'stockkeeper' | 'cashier' | 'viewer';
   settings: Record<string, unknown>;
+  brand_logo_url?: string | null;
+  brand_primary?: string;
+  brand_secondary?: string;
+  brand_tagline?: string | null;
+}
+
+function applyBrandColors(primary?: string, secondary?: string) {
+  const root = document.documentElement;
+  root.style.setProperty('--brand-primary', primary ?? '#6366f1');
+  root.style.setProperty('--brand-secondary', secondary ?? '#0ea5e9');
 }
 
 interface User {
@@ -350,13 +360,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           try {
             const tenantData = await getCurrentUserTenant();
             if (tenantData && isMounted) {
-              setCurrentTenant({
+              const tenant: Tenant = {
                 id: tenantData.tenant_id,
                 name: tenantData.tenant_name,
                 slug: tenantData.tenant_slug,
                 userRole: tenantData.user_role,
                 settings: tenantData.settings || {},
-              });
+                brand_logo_url: tenantData.brand_logo_url ?? null,
+                brand_primary: tenantData.brand_primary ?? '#6366f1',
+                brand_secondary: tenantData.brand_secondary ?? '#0ea5e9',
+                brand_tagline: tenantData.brand_tagline ?? null,
+              };
+              setCurrentTenant(tenant);
+              applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
             }
           } catch (tenantError) {
             const errorObj = tenantError instanceof Error ? tenantError : new Error(String(tenantError));
@@ -379,13 +395,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (session) {
         getCurrentUserTenant().then(tenantData => {
           if (tenantData) {
-            setCurrentTenant({
+            const tenant: Tenant = {
               id: tenantData.tenant_id,
               name: tenantData.tenant_name,
               slug: tenantData.tenant_slug,
               userRole: tenantData.user_role,
               settings: tenantData.settings || {},
-            });
+              brand_logo_url: tenantData.brand_logo_url ?? null,
+              brand_primary: tenantData.brand_primary ?? '#6366f1',
+              brand_secondary: tenantData.brand_secondary ?? '#0ea5e9',
+              brand_tagline: tenantData.brand_tagline ?? null,
+            };
+            setCurrentTenant(tenant);
+            applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
           }
         }).catch(error => {
           const errorObj = error instanceof Error ? error : new Error(String(error));

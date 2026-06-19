@@ -86,7 +86,7 @@ Stripe integration is stubbed (`stripe_customer_id`, `stripe_subscription_id` on
 
 ### Provider Stack (App.tsx, outermost first)
 
-`ErrorBoundary` → `Router` → `AppProvider` → `SubscriptionProvider` → `QueryProvider` → `LanguageProvider` → `TranslationProvider` → `AccessibilityProvider`
+`ErrorBoundary` → `ThemeProvider` → `Router` → `AppProvider` → `SubscriptionProvider` → `QueryProvider` → `LanguageProvider` → `TranslationProvider` → `AccessibilityProvider`
 
 ### Routing
 
@@ -130,6 +130,22 @@ Run in this order in Supabase Dashboard → SQL Editor:
 7. `20260618_000006_activity_log.sql` — activity_log table with RLS (tenant-scoped audit trail)
 8. `20260618_000007_stock_management.sql` — suppliers, purchase_orders, purchase_order_items, stock_transfers, stock_transfer_items
 9. `20260618_000008_multi_location.sql` — locations, location_stock tables
+10. `20260618_000009_fix_onboarding_completed.sql` — retroactive set onboarding_completed = true for pre-existing tenants
+11. `20260618_000010_admin_functions.sql` — admin_list_tenants() and admin_set_tenant_plan() RPCs
+12. `20260618_000011_invite_accept_rpc.sql` — accept_pending_invitation() RPC + pending_invitations status column
+13. `20260618_000012_api_webhooks.sql` — api_keys, webhooks, webhook_deliveries tables
+14. `20260618_000013_db_provisioning.sql` — db_provision_status and related fields on tenants; admin_provision_client() RPC
+15. `20260618_000014_fix_admin_and_invite_rls.sql` — DROP+RECREATE admin_list_tenants (provisioning columns); pending_invitations SELECT RLS for invited users pre-tenant-context
+16. `20260618_000015_fix_admin_list_ambiguous_id.sql` — Fix PL/pgSQL 42702 — alias auth.users → au to resolve ambiguous `id` OUT param
+17. `20260618_000016_fix_admin_list_varchar_cast.sql` — Fix PostgreSQL 42804 — explicit ::TEXT casts on all string columns
+18. `20260618_000017_fix_trigger_search_path.sql` — Fix signup 500: auth trigger `handle_new_user_invite` needs SET search_path = 'public'; Supabase auth context has restricted search_path that excludes public schema
+19. `20260618_000018_tenants_profile_columns.sql` — Add country, currency, phone columns to tenants (required by OnboardingWizard step 1)
+20. `20260618_000019_fix_onboarding_loop.sql` — Set onboarding_completed = true for all pre-existing tenants
+21. `20260618_000020_get_tenant_with_plan.sql` — Extend get_current_user_tenant() with subscription_plan + subscription_status
+22. `20260618_000021_roles_and_custom_roles.sql` — 8-role set (admin/supervisor/accountant/stockkeeper added); custom_roles table; kits admin auto-added to all tenants
+23. `20260618_000022_admin_pin_verification.sql` — Initial pgcrypto verify_admin_pin (uses ALTER DATABASE — superseded by 000023)
+24. `20260619_000023_admin_pin_config_table.sql` — Fix admin PIN: kits_admin_config table (ALTER DATABASE not available in Supabase SQL Editor); UPDATE the table to set your PIN hash
+25. `20260619_000024_brand_identity.sql` — brand_logo_url, brand_primary, brand_secondary, brand_tagline on tenants; extends get_current_user_tenant()
 
 ## Edge Functions
 

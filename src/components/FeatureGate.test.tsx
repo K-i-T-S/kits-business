@@ -77,6 +77,7 @@ function renderFeatureGate(
     isWithinLimit: () => true,
     canPerform: () => true,
     isLoading: false,
+    reloadSubscription: vi.fn().mockResolvedValue(undefined),
   });
 
   return render(

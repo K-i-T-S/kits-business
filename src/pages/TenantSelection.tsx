@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import OnboardingWizard from '../components/OnboardingWizard';
+import { useSubscription } from '../context/SubscriptionContext';
 import { supabase } from '../utils/supabaseClient';
 import { createTenant } from '../utils/tenantManager';
 
@@ -21,6 +22,7 @@ interface AuthUser {
 
 export default function TenantSelection() {
   const navigate = useNavigate();
+  const { reloadSubscription } = useSubscription();
   const [loadingTenants, setLoadingTenants] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -47,9 +49,9 @@ export default function TenantSelection() {
       }
 
       setCurrentUser({ id: session.user.id, email: session.user.email });
-      await loadUserTenants(session.user.id);
+      const tenantList = await loadUserTenants(session.user.id);
 
-      // Check for pending invitations for this user and redirect to accept flow
+      // Check for pending invitations — takes priority over everything else
       const { data: pendingInvites } = await supabase
         .from('pending_invitations')
         .select('id, tenant_id, name, role')
@@ -60,6 +62,13 @@ export default function TenantSelection() {
       if (pendingInvites && pendingInvites.length > 0) {
         const invite = pendingInvites[0] as { id: string; tenant_id: string; name: string; role: string };
         navigate(`/accept-invite?invitation_id=${invite.id}`);
+        return;
+      }
+
+      // Auto-select when the user belongs to exactly one tenant — skip the picker
+      if (tenantList.length === 1) {
+        await reloadSubscription();
+        navigate('/dashboard');
         return;
       }
     } catch {
@@ -105,17 +114,17 @@ export default function TenantSelection() {
     setSubmitting(true);
 
     try {
-      const newTenant = await createTenant(tenantName.trim(), tenantSlug, currentUser.id);
+      // create_tenant RPC returns the new tenant UUID directly (not an object)
+      const newTenantId = await createTenant(tenantName.trim(), tenantSlug, currentUser.id) as string;
       toast.success('Business created!');
 
       // Fire-and-forget welcome email — never block the user flow
-      const tid = (newTenant as { id?: string } | null)?.id ?? tenantSlug;
       supabase.functions.invoke('welcome-email', {
-        body: { tenantId: tid, tenantName: tenantName.trim(), userEmail: currentUser.email ?? '' },
-      }).catch(() => { /* non-critical — silently ignore email failures */ });
+        body: { tenantId: newTenantId, tenantName: tenantName.trim(), userEmail: currentUser.email ?? '' },
+      }).catch(() => { /* non-critical */ });
 
       // Always show onboarding for newly created tenants
-      setOnboardingTenantId(tid);
+      setOnboardingTenantId(newTenantId);
       setOnboardingTenantName(tenantName.trim());
       setShowOnboarding(true);
     } catch (err: unknown) {
@@ -127,23 +136,12 @@ export default function TenantSelection() {
     }
   };
 
-  const handleSelectTenant = async (tenant: Tenant) => {
-    // Check if onboarding is needed
-    try {
-      const { data } = await supabase
-        .from('tenants')
-        .select('id, onboarding_completed, name')
-        .eq('id', tenant.tenant_id)
-        .single();
-      if (data && data.onboarding_completed === false) {
-        setOnboardingTenantId(data.id as string);
-        setOnboardingTenantName((data.name as string) || tenant.tenant_name);
-        setShowOnboarding(true);
-        return;
-      }
-    } catch {
-      // If we can't check, just navigate
-    }
+  const handleSelectTenant = async (_tenant: Tenant) => {
+    // Always navigate directly for existing tenants.
+    // The onboarding wizard only fires for tenants created in the current session
+    // (via handleCreateTenant). Checking onboarding_completed here caused an
+    // infinite loop for tenants where the flag was never set (pre-migration-000019 bug).
+    await reloadSubscription();
     navigate('/dashboard');
   };
 
@@ -161,7 +159,10 @@ export default function TenantSelection() {
       <OnboardingWizard
         tenantId={onboardingTenantId}
         tenantName={onboardingTenantName}
-        onComplete={() => navigate('/dashboard')}
+        onComplete={() => {
+          void reloadSubscription();
+          navigate('/dashboard');
+        }}
       />
     );
   }
@@ -197,7 +198,7 @@ export default function TenantSelection() {
                 <div
                   key={tenant.tenant_id}
                   className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/60 transition-colors cursor-pointer group"
-                  onClick={() => handleSelectTenant(tenant)}
+                  onClick={() => void handleSelectTenant(tenant)}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -239,9 +240,7 @@ export default function TenantSelection() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">
-                  Business Name
-                </label>
+                <label className="block text-sm font-medium text-white/70 mb-2">Business Name</label>
                 <input
                   type="text"
                   value={tenantName}
@@ -253,9 +252,7 @@ export default function TenantSelection() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">
-                  Business Slug
-                </label>
+                <label className="block text-sm font-medium text-white/70 mb-2">Business Slug</label>
                 <input
                   type="text"
                   value={tenantSlug}
@@ -280,12 +277,7 @@ export default function TenantSelection() {
                 <button
                   type="button"
                   disabled={submitting}
-                  onClick={() => {
-                    setShowCreateForm(false);
-                    setTenantName('');
-                    setTenantSlug('');
-                    setError('');
-                  }}
+                  onClick={() => { setShowCreateForm(false); setTenantName(''); setTenantSlug(''); setError(''); }}
                   className="px-4 py-3 bg-white/5 border border-white/10 text-white/70 rounded-xl hover:bg-white/10 transition-colors font-medium"
                 >
                   Cancel

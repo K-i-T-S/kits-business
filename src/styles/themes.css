@@ -1,0 +1,143 @@
+/* ── KiTS Light / Dark Theme System ─────────────────────────────────────────
+ *
+ * The app defaults to dark (bg-slate-900 etc. hardcoded in Tailwind classes).
+ * Light mode works by overriding those classes at the html level.
+ *
+ * Brand colours are applied as CSS custom properties on load and when the
+ * tenant customises their brand identity:
+ *   --brand-primary   (default: indigo-500 #6366f1)
+ *   --brand-secondary (default: sky-500    #0ea5e9)
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Brand colour tokens (always available) ── */
+:root {
+  --brand-primary:   #6366f1;
+  --brand-secondary: #0ea5e9;
+}
+
+/* ── Light theme overrides ── */
+html.light-theme {
+  color-scheme: light;
+}
+
+/* Main backgrounds */
+html.light-theme .bg-slate-950,
+html.light-theme .bg-slate-900,
+html.light-theme .min-h-screen.bg-slate-900,
+html.light-theme .min-h-screen.bg-slate-950 {
+  background-color: #f1f5f9 !important; /* slate-100 */
+}
+
+html.light-theme .bg-slate-800 {
+  background-color: #e2e8f0 !important; /* slate-200 */
+}
+
+html.light-theme .bg-slate-700 {
+  background-color: #cbd5e1 !important; /* slate-300 */
+}
+
+/* Sidebar */
+html.light-theme aside,
+html.light-theme [class*="sidebar"] {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Header */
+html.light-theme header {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Cards / panels */
+html.light-theme .bg-white\/5 {
+  background-color: #ffffff !important;
+}
+
+html.light-theme .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Text */
+html.light-theme .text-white {
+  color: #0f172a !important; /* slate-900 */
+}
+
+html.light-theme .text-white\/80 {
+  color: rgba(15, 23, 42, 0.8) !important;
+}
+
+html.light-theme .text-white\/70 {
+  color: rgba(15, 23, 42, 0.7) !important;
+}
+
+html.light-theme .text-white\/60 {
+  color: rgba(15, 23, 42, 0.6) !important;
+}
+
+html.light-theme .text-white\/50 {
+  color: rgba(15, 23, 42, 0.5) !important;
+}
+
+html.light-theme .text-white\/40 {
+  color: rgba(15, 23, 42, 0.4) !important;
+}
+
+html.light-theme .text-white\/30 {
+  color: rgba(15, 23, 42, 0.3) !important;
+}
+
+/* Borders */
+html.light-theme .border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+html.light-theme .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+html.light-theme .border-white\/5 {
+  border-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+/* Hover states */
+html.light-theme .hover\:bg-white\/10:hover {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+html.light-theme .hover\:bg-white\/5:hover {
+  background-color: rgba(15, 23, 42, 0.03) !important;
+}
+
+/* Active nav items — keep brand colour readable in light mode */
+html.light-theme .bg-gradient-to-r.from-indigo-600 {
+  background: linear-gradient(to right, #4f46e5, #0284c7) !important;
+}
+
+/* Status indicators — keep green */
+html.light-theme .bg-green-500 {
+  background-color: #22c55e !important;
+}
+
+/* Placeholder text */
+html.light-theme .placeholder-white\/30::placeholder {
+  color: rgba(15, 23, 42, 0.3) !important;
+}
+
+html.light-theme .placeholder-white\/40::placeholder {
+  color: rgba(15, 23, 42, 0.4) !important;
+}
+
+/* Scrollbar in light mode */
+html.light-theme ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light-theme ::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+}
+
+html.light-theme ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}

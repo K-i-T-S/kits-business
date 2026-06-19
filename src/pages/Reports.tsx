@@ -304,7 +304,7 @@ export default function Reports() {
                 Monitor revenue, profit, inventory velocity, and cashier performance. Use advanced analytics and forecasting to guide business decisions.
               </p>
             </div>
-            <div className="flex flex-col gap-3 rounded-3xl border border-white/60 bg-white/80 p-5 text-sm text-slate-600 shadow-lg shadow-slate-900/5">
+            <div className="w-full lg:w-auto flex flex-col gap-3 rounded-3xl border border-white/60 bg-white/80 p-4 sm:p-5 text-sm text-slate-600 shadow-lg shadow-slate-900/5">
               <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Report Type</label>
               <Select value={reportType} onValueChange={setReportType}>
                 <SelectTrigger className="rounded-2xl border border-slate-200 bg-white/90 py-2.5 px-4 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none">
@@ -322,7 +322,7 @@ export default function Reports() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowReportBuilder(true)}
-                  className="flex-1"
+                  className="flex-1 min-h-[40px]"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Build Report
@@ -331,7 +331,7 @@ export default function Reports() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowExportDialog(true)}
-                  className="flex-1"
+                  className="flex-1 min-h-[40px]"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Export

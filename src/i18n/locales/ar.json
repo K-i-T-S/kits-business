@@ -11,7 +11,7 @@
     "export": "تصدير",
     "import": "استيراد",
     "settings": "الإعدادات",
-    "profile": "الملف الشخصي",
+    "profile": "إعدادات الملف الشخصي",
     "logout": "تسجيل الخروج",
     "login": "تسجيل الدخول",
     "dashboard": "لوحة التحكم",
@@ -54,7 +54,11 @@
     "reports": "التقارير والتحليلات",
     "settings": "الإعدادات",
     "help": "المساعدة والدعم",
-    "activity": "سجل النشاط"
+    "activity": "سجل النشاط",
+    "monitoring": "المراقبة",
+    "enterprise": "المؤسسة",
+    "profileSettings": "إعدادات الملف الشخصي",
+    "systemSettings": "إعدادات النظام"
   },
   "dashboard": {
     "overview": "نظرة عامة",
@@ -173,7 +177,42 @@
     "employeeAdded": "تم إضافة الموظف بنجاح",
     "employeeUpdated": "تم تحديث الموظف بنجاح",
     "employeeDeleted": "تم حذف الموظف بنجاح",
-    "manageTeam": "إدارة الفريق"
+    "manageTeam": "إدارة الفريق",
+    "teamMembers": "أعضاء الفريق",
+    "roles": "الأدوار",
+    "customRoles": "أدوار مخصصة",
+    "createRole": "إنشاء دور",
+    "editRole": "تحرير الدور",
+    "deleteRole": "حذف الدور",
+    "roleName": "اسم الدور",
+    "baseAccess": "مستوى الوصول الأساسي"
+  },
+  "roles": {
+    "owner": "المالك",
+    "admin": "مدير النظام",
+    "manager": "مدير",
+    "supervisor": "مشرف",
+    "accountant": "محاسب",
+    "stockkeeper": "أمين المخزن",
+    "cashier": "أمين الصندوق",
+    "viewer": "مشاهد"
+  },
+  "admin": {
+    "title": "لوحة إدارة KiTS",
+    "subscriptions": "الاشتراكات",
+    "provisioning": "إعداد قاعدة البيانات",
+    "password": "كلمة المرور",
+    "unlock": "فتح",
+    "verifying": "جاري التحقق...",
+    "accessRestricted": "هذا القسم مخصص لموظفي KiTS فقط."
+  },
+  "search": {
+    "placeholder": "بحث عن منتجات، عملاء، موظفين...",
+    "noResults": "لا توجد نتائج",
+    "products": "المنتجات",
+    "customers": "العملاء",
+    "employees": "الموظفون",
+    "viewAll": "عرض جميع النتائج"
   },
   "reports": {
     "salesReport": "تقرير المبيعات",

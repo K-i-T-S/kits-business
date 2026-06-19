@@ -1,9 +1,41 @@
-import { Mail, UserPlus, Shield, DollarSign, Check, X, Loader2 } from 'lucide-react';
-import React, { useState } from 'react';
+import {
+  Mail,
+  UserPlus,
+  Shield,
+  DollarSign,
+  Users,
+  Loader2,
+  BookUser,
+  Package,
+  Eye,
+  ShieldCheck,
+  CreditCard,
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
+import { type RoleAction, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../types/subscription';
 import { supabase } from '../utils/supabaseClient';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type StandardInviteRole =
+  | 'admin'
+  | 'manager'
+  | 'supervisor'
+  | 'cashier'
+  | 'accountant'
+  | 'stockkeeper'
+  | 'viewer';
+
+interface CustomRole {
+  id: string;
+  name: string;
+  display_name: string;
+  base_role: 'manager' | 'cashier' | 'viewer';
+  permissions: Partial<Record<RoleAction, boolean>>;
+}
 
 interface InviteTeamMemberModalProps {
   isOpen: boolean;
@@ -11,15 +43,95 @@ interface InviteTeamMemberModalProps {
   onSuccess: () => void;
 }
 
-export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: InviteTeamMemberModalProps) {
+// ── Standard role option config ───────────────────────────────────────────────
+
+const STANDARD_ROLES: Array<{
+  value: StandardInviteRole;
+  icon: React.ElementType;
+  color: string;
+}> = [
+  { value: 'admin', icon: ShieldCheck, color: 'text-purple-300' },
+  { value: 'manager', icon: Shield, color: 'text-blue-300' },
+  { value: 'supervisor', icon: Users, color: 'text-cyan-300' },
+  { value: 'cashier', icon: CreditCard, color: 'text-emerald-300' },
+  { value: 'accountant', icon: BookUser, color: 'text-amber-300' },
+  { value: 'stockkeeper', icon: Package, color: 'text-orange-300' },
+  { value: 'viewer', icon: Eye, color: 'text-white/60' },
+];
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function InviteTeamMemberModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: InviteTeamMemberModalProps) {
   const { currentTenant } = useApp();
   const [loading, setLoading] = useState(false);
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+  const [loadingCustom, setLoadingCustom] = useState(false);
+
+  // Selected role state — either a standard role slug or a custom role id
+  const [selectedStandard, setSelectedStandard] = useState<StandardInviteRole>('cashier');
+  const [selectedCustomId, setSelectedCustomId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     email: '',
-    role: 'cashier' as 'owner' | 'manager' | 'cashier' | 'viewer',
     name: '',
     commission: 3,
   });
+
+  // ── Load custom roles ────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isOpen || !currentTenant) return;
+
+    setLoadingCustom(true);
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('custom_roles')
+          .select('id, name, display_name, base_role, permissions')
+          .order('display_name', { ascending: true });
+
+        if (!error && data) {
+          setCustomRoles(
+            data.map((row: {
+              id: string;
+              name: string;
+              display_name: string;
+              base_role: string;
+              permissions: unknown;
+            }) => ({
+              id: row.id,
+              name: row.name,
+              display_name: row.display_name,
+              base_role: (['manager', 'cashier', 'viewer'].includes(row.base_role)
+                ? row.base_role
+                : 'viewer') as 'manager' | 'cashier' | 'viewer',
+              permissions: (typeof row.permissions === 'object' && row.permissions !== null
+                ? row.permissions
+                : {}) as Partial<Record<RoleAction, boolean>>,
+            })),
+          );
+        }
+      } finally {
+        setLoadingCustom(false);
+      }
+    })();
+  }, [isOpen, currentTenant]);
+
+  // ── Reset on open/close ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({ email: '', name: '', commission: 3 });
+      setSelectedStandard('cashier');
+      setSelectedCustomId(null);
+    }
+  }, [isOpen]);
+
+  // ── Submit ───────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,16 +146,27 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
       return;
     }
 
+    // Resolve the actual DB role and custom_role_id to send
+    let dbRole: string = selectedStandard;
+    let customRoleId: string | null = null;
+
+    if (selectedCustomId) {
+      const cr = customRoles.find((r) => r.id === selectedCustomId);
+      if (cr) {
+        dbRole = cr.base_role; // DB-level access
+        customRoleId = cr.id;
+      }
+    }
+
     setLoading(true);
     try {
-      // Call the send-invitation Edge Function which uses the service role key
-      // to invoke auth.admin.inviteUserByEmail — new users get "Set your password"
-      // email; existing users get a magic link. Both redirect to /accept-invite.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const { error: fnError } = await supabase.functions.invoke('send-invitation', {
         body: {
           inviteeEmail: formData.email,
           inviteeName: formData.name,
-          role: formData.role,
+          role: dbRole,
+          customRoleId,
           commission: formData.commission,
           tenantId: currentTenant.id,
           tenantName: currentTenant.name,
@@ -57,14 +180,6 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
       });
       onSuccess();
       onClose();
-
-      // Reset form
-      setFormData({
-        email: '',
-        role: 'cashier',
-        name: '',
-        commission: 3,
-      });
     } catch (error) {
       console.error('Failed to invite team member:', error);
       toast.error('Failed to add team member', {
@@ -75,55 +190,48 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
     }
   };
 
-  const roleOptions = [
-    {
-      value: 'manager',
-      label: 'Manager',
-      description: 'Can manage products, sales, and employees',
-      icon: Shield,
-      color: 'text-blue-300',
-    },
-    {
-      value: 'cashier',
-      label: 'Cashier',
-      description: 'Can process sales and view reports',
-      icon: DollarSign,
-      color: 'text-emerald-300',
-    },
-    {
-      value: 'viewer',
-      label: 'Viewer',
-      description: 'Read-only access to all data',
-      icon: UserPlus,
-      color: 'text-white/60',
-    },
-  ];
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  const isCommissionRole =
+    selectedCustomId === null &&
+    (selectedStandard === 'cashier' || selectedStandard === 'manager');
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
-      <div className="w-full max-w-md p-6" style={{
-        backgroundColor: 'rgba(11, 15, 36, 0.98)',
-        border: '1px solid rgba(255, 255, 255, 0.15)',
-        borderRadius: '1.5rem',
-        color: '#f8faff',
-        boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
-        backdropFilter: 'blur(28px)',
-      }}>
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-white mb-2">Invite Team Member</h2>
-          <p className="text-white/60">Add someone to your {currentTenant?.name} team</p>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(8px)' }}
+    >
+      <div
+        className="w-full max-w-md max-h-[90vh] flex flex-col rounded-2xl"
+        style={{
+          backgroundColor: 'rgba(11, 15, 36, 0.98)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          boxShadow: '0 35px 85px rgba(2, 3, 12, 0.6)',
+          backdropFilter: 'blur(28px)',
+          color: '#f8faff',
+        }}
+      >
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 shrink-0">
+          <h2 className="text-2xl font-bold text-white mb-1">Invite Team Member</h2>
+          <p className="text-white/60 text-sm">Add someone to your {currentTenant?.name} team</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Scrollable form body */}
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          className="overflow-y-auto flex-1 px-6 pb-6 space-y-5"
+        >
+          {/* Full name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-white/80 mb-2">
+            <label htmlFor="invite-name" className="block text-sm font-medium text-white/80 mb-2">
               Full Name *
             </label>
             <input
               type="text"
-              id="name"
+              id="invite-name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="John Doe"
@@ -132,15 +240,16 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
             />
           </div>
 
+          {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-white/80 mb-2">
+            <label htmlFor="invite-email" className="block text-sm font-medium text-white/80 mb-2">
               Email Address *
             </label>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
               <input
                 type="email"
-                id="email"
+                id="invite-email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="team@company.com"
@@ -150,44 +259,108 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
             </div>
           </div>
 
+          {/* Role selector — Standard roles */}
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-3">
-              Role *
-            </label>
+            <label className="block text-sm font-medium text-white/80 mb-3">Role *</label>
             <div className="space-y-2">
-              {roleOptions.map((role) => (
+              {STANDARD_ROLES.map(({ value, icon: Icon, color }) => (
                 <label
-                  key={role.value}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-all"
+                  key={value}
+                  className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                    selectedCustomId === null && selectedStandard === value
+                      ? 'border-indigo-500/40 bg-indigo-500/10'
+                      : 'border-white/10 bg-white/5 hover:bg-white/10'
+                  }`}
                 >
                   <input
                     type="radio"
-                    name="role"
-                    value={role.value}
-                    checked={formData.role === role.value}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'owner' | 'manager' | 'cashier' | 'viewer' })}
+                    name="invite-role"
+                    value={value}
+                    checked={selectedCustomId === null && selectedStandard === value}
+                    onChange={() => {
+                      setSelectedStandard(value);
+                      setSelectedCustomId(null);
+                    }}
                     className="mt-1 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <role.icon className={`h-5 w-5 mt-0.5 ${role.color}`} />
+                  <Icon className={`h-5 w-5 mt-0.5 ${color}`} />
                   <div className="flex-1">
-                    <div className="font-medium text-white">{role.label}</div>
-                    <div className="text-xs text-white/60">{role.description}</div>
+                    <div className="font-medium text-white text-sm">
+                      {/* eslint-disable-next-line security/detect-object-injection */}
+                      {ROLE_LABELS[value] ?? value}
+                    </div>
+                    <div className="text-xs text-white/60">
+                      {/* eslint-disable-next-line security/detect-object-injection */}
+                      {ROLE_DESCRIPTIONS[value] ?? ''}
+                    </div>
                   </div>
                 </label>
               ))}
             </div>
+
+            {/* Custom roles divider + list */}
+            {(loadingCustom || customRoles.length > 0) && (
+              <>
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 border-t border-white/10" />
+                  <span className="text-xs text-white/40 uppercase tracking-wider">Custom Roles</span>
+                  <div className="flex-1 border-t border-white/10" />
+                </div>
+
+                {loadingCustom ? (
+                  <div className="flex items-center gap-2 py-2 text-sm text-white/40">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Loading custom roles…
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {customRoles.map((cr) => (
+                      <label
+                        key={cr.id}
+                        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                          selectedCustomId === cr.id
+                            ? 'border-indigo-500/40 bg-indigo-500/10'
+                            : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="invite-role"
+                          value={cr.id}
+                          checked={selectedCustomId === cr.id}
+                          onChange={() => setSelectedCustomId(cr.id)}
+                          className="mt-1 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <UserPlus className="h-5 w-5 mt-0.5 text-indigo-300" />
+                        <div className="flex-1">
+                          <div className="font-medium text-white text-sm">{cr.display_name}</div>
+                          <div className="text-xs text-white/50">
+                            Base: {cr.base_role} &middot;{' '}
+                            {Object.values(cr.permissions).filter(Boolean).length} permissions
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
-          {(formData.role === 'cashier' || formData.role === 'manager') && (
+          {/* Commission rate — only for cashier or manager standard roles */}
+          {isCommissionRole && (
             <div>
-              <label htmlFor="commission" className="block text-sm font-medium text-white/80 mb-2">
+              <label
+                htmlFor="invite-commission"
+                className="block text-sm font-medium text-white/80 mb-2"
+              >
                 Commission Rate (%)
               </label>
               <div className="relative">
                 <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
                 <input
                   type="number"
-                  id="commission"
+                  id="invite-commission"
                   value={formData.commission}
                   onChange={(e) => setFormData({ ...formData, commission: Number(e.target.value) })}
                   min="0"
@@ -199,24 +372,25 @@ export default function InviteTeamMemberModal({ isOpen, onClose, onSuccess }: In
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white/80 hover:bg-white/10 transition-all"
               disabled={loading}
+              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white/80 hover:bg-white/10 transition-all disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               disabled={loading}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending Invitation...
+                  Sending Invitation…
                 </>
               ) : (
                 <>

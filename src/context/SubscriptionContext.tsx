@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import {
   type Feature,
@@ -23,6 +23,8 @@ interface SubscriptionContextValue {
   ) => boolean;
   canPerform: (action: RoleAction) => boolean;
   isLoading: boolean;
+  /** Call after tenant selection or tenant switch to re-sync plan + role. */
+  reloadSubscription: () => Promise<void>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
@@ -54,22 +56,28 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [role, setRole] = useState<UserRole>('viewer');
   const [isLoading, setIsLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        setPlan('starter');
+        setStatus('active');
+        setRole('viewer');
         setIsLoading(false);
         return;
       }
 
       const { data, error } = await supabase.rpc('get_current_user_tenant');
+
+      // If the RPC errors (e.g. no tenant yet), keep starter/viewer — do not crash.
       if (error || !data) {
         setIsLoading(false);
         return;
       }
 
-      // RPC may return an array or a single object
-      const row: TenantRow = Array.isArray(data) ? data[0] : data;
+      // RPC returns an array of rows (one per tenant the user belongs to).
+      // We always use the first row — matching the pattern in tenantManager.ts.
+      const row: TenantRow | undefined = Array.isArray(data) ? data[0] : data;
       if (!row) {
         setIsLoading(false);
         return;
@@ -79,17 +87,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setStatus(coerceStatus(row.subscription_status));
       setRole(coerceRole(row.user_role));
     } catch {
-      // fail-safe: stay on starter/viewer
+      // fail-safe: stay on starter/viewer so the app never breaks
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void load();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
+        // Re-fetch on every auth state change (login, token refresh, etc.)
         void load();
       } else {
         setPlan('starter');
@@ -100,30 +109,44 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [load]);
 
-  const hasFeature = (feature: Feature): boolean =>
-    PLAN_FEATURES[plan].includes(feature);
+  const hasFeature = useCallback(
+    (feature: Feature): boolean => PLAN_FEATURES[plan].includes(feature),
+    [plan],
+  );
 
-  const isWithinLimit = (
-    resource: 'products' | 'customers' | 'employees',
-    currentCount: number,
-  ): boolean => {
-    const limits = PLAN_LIMITS[plan];
-    const limit =
-      resource === 'products'
-        ? limits.maxProducts
-        : resource === 'customers'
-          ? limits.maxCustomers
-          : limits.maxEmployees;
-    return limit === null || currentCount < limit;
-  };
+  const isWithinLimit = useCallback(
+    (resource: 'products' | 'customers' | 'employees', currentCount: number): boolean => {
+      const limits = PLAN_LIMITS[plan];
+      const limit =
+        resource === 'products'
+          ? limits.maxProducts
+          : resource === 'customers'
+            ? limits.maxCustomers
+            : limits.maxEmployees;
+      return limit === null || currentCount < limit;
+    },
+    [plan],
+  );
 
-  const canPerform = (action: RoleAction): boolean => roleCanPerform(role, action);
+  const canPerform = useCallback(
+    (action: RoleAction): boolean => roleCanPerform(role, action),
+    [role],
+  );
 
   return (
     <SubscriptionContext.Provider
-      value={{ plan, status, role, hasFeature, isWithinLimit, canPerform, isLoading }}
+      value={{
+        plan,
+        status,
+        role,
+        hasFeature,
+        isWithinLimit,
+        canPerform,
+        isLoading,
+        reloadSubscription: load,
+      }}
     >
       {children}
     </SubscriptionContext.Provider>

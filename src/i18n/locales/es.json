@@ -11,7 +11,7 @@
     "export": "Exportar",
     "import": "Importar",
     "settings": "Configuración",
-    "profile": "Perfil",
+    "profile": "Configuración del Perfil",
     "logout": "Cerrar sesión",
     "login": "Iniciar sesión",
     "dashboard": "Panel",
@@ -54,7 +54,11 @@
     "reports": "Informes y Análisis",
     "settings": "Configuración",
     "help": "Ayuda y Soporte",
-    "activity": "Registro de Actividad"
+    "activity": "Registro de Actividad",
+    "monitoring": "Monitoreo",
+    "enterprise": "Empresa",
+    "profileSettings": "Configuración del Perfil",
+    "systemSettings": "Configuración del Sistema"
   },
   "dashboard": {
     "overview": "Resumen",
@@ -70,7 +74,10 @@
     "newOrder": "Nuevo Pedido",
     "addProduct": "Agregar Producto",
     "addCustomer": "Agregar Cliente",
-    "viewReports": "Ver Informes"
+    "viewReports": "Ver Informes",
+    "todaysSales": "Ventas de Hoy",
+    "todaysProfit": "Ganancia de Hoy",
+    "margin": "margen"
   },
   "inventory": {
     "products": "Productos",
@@ -96,7 +103,8 @@
     "deleteProduct": "Eliminar Producto",
     "productAdded": "Producto agregado exitosamente",
     "productUpdated": "Producto actualizado exitosamente",
-    "productDeleted": "Producto eliminado exitosamente"
+    "productDeleted": "Producto eliminado exitosamente",
+    "unitsInStock": "unidades en stock"
   },
   "pos": {
     "cart": "Carrito",
@@ -122,7 +130,8 @@
     "applyDiscount": "Aplicar Descuento",
     "processPayment": "Procesar Pago",
     "printReceipt": "Imprimir Recibo",
-    "emailReceipt": "Enviar Recibo por Correo"
+    "emailReceipt": "Enviar Recibo por Correo",
+    "transactions": "transacciones"
   },
   "customers": {
     "customerList": "Lista de Clientes",
@@ -143,7 +152,9 @@
     "lastOrder": "Último Pedido",
     "customerAdded": "Cliente agregado exitosamente",
     "customerUpdated": "Cliente actualizado exitosamente",
-    "customerDeleted": "Cliente eliminado exitosamente"
+    "customerDeleted": "Cliente eliminado exitosamente",
+    "title": "Clientes",
+    "withDebt": "con deuda"
   },
   "employees": {
     "employeeList": "Lista de Empleados",
@@ -165,7 +176,43 @@
     "role": "Rol",
     "employeeAdded": "Empleado agregado exitosamente",
     "employeeUpdated": "Empleado actualizado exitosamente",
-    "employeeDeleted": "Empleado eliminado exitosamente"
+    "employeeDeleted": "Empleado eliminado exitosamente",
+    "manageTeam": "Gestionar Equipo",
+    "teamMembers": "Miembros del Equipo",
+    "roles": "Roles",
+    "customRoles": "Roles Personalizados",
+    "createRole": "Crear Rol",
+    "editRole": "Editar Rol",
+    "deleteRole": "Eliminar Rol",
+    "roleName": "Nombre del Rol",
+    "baseAccess": "Nivel de Acceso Base"
+  },
+  "roles": {
+    "owner": "Propietario",
+    "admin": "Administrador",
+    "manager": "Gerente",
+    "supervisor": "Supervisor",
+    "accountant": "Contador",
+    "stockkeeper": "Encargado de Almacén",
+    "cashier": "Cajero",
+    "viewer": "Observador"
+  },
+  "admin": {
+    "title": "Administración KiTS",
+    "subscriptions": "Suscripciones",
+    "provisioning": "Aprovisionamiento de Base de Datos",
+    "password": "Contraseña",
+    "unlock": "Desbloquear",
+    "verifying": "Verificando...",
+    "accessRestricted": "Esta área está restringida al personal de KiTS."
+  },
+  "search": {
+    "placeholder": "Buscar productos, clientes, empleados...",
+    "noResults": "No se encontraron resultados",
+    "products": "Productos",
+    "customers": "Clientes",
+    "employees": "Empleados",
+    "viewAll": "Ver todos los resultados"
   },
   "reports": {
     "salesReport": "Informe de Ventas",
@@ -235,5 +282,35 @@
     "lastMonth": "Mes Pasado",
     "lastYear": "Año Pasado",
     "custom": "Rango Personalizado"
+  },
+  "translationManager": {
+    "title": "Gestor de Traducciones",
+    "add": "Agregar",
+    "edit": "Editar",
+    "missing": "Faltante",
+    "search": "Buscar",
+    "tools": "Herramientas",
+    "totalKeys": "Total de Claves",
+    "translated": "Traducido",
+    "completion": "Completado",
+    "addTranslation": "Agregar Traducción",
+    "editTranslation": "Editar Traducción",
+    "update": "Actualizar",
+    "delete": "Eliminar",
+    "missingTranslations": "Traducciones Faltantes",
+    "noMissingTranslations": "No se encontraron traducciones faltantes",
+    "clearMissing": "Limpiar Lista Faltante",
+    "searchTranslations": "Buscar Traducciones",
+    "searchPlaceholder": "Buscar traducciones...",
+    "exportTranslations": "Exportar Traducciones",
+    "exportDescription": "Descargar traducciones como archivo JSON",
+    "export": "Exportar",
+    "importTranslations": "Importar Traducciones",
+    "importDescription": "Subir traducciones desde archivo JSON",
+    "import": "Importar",
+    "validation": "Validación",
+    "valid": "Válido",
+    "invalid": "Inválido",
+    "languageStats": "Estadísticas de Idioma"
   }
 }

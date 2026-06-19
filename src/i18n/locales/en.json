@@ -11,7 +11,7 @@
     "export": "Export",
     "import": "Import",
     "settings": "Settings",
-    "profile": "Profile",
+    "profile": "Profile Settings",
     "logout": "Logout",
     "login": "Login",
     "dashboard": "Dashboard",
@@ -54,7 +54,11 @@
     "reports": "Reports & Analytics",
     "settings": "Settings",
     "help": "Help & Support",
-    "activity": "Activity Log"
+    "activity": "Activity Log",
+    "monitoring": "Monitoring",
+    "enterprise": "Enterprise",
+    "profileSettings": "Profile Settings",
+    "systemSettings": "System Settings"
   },
   "dashboard": {
     "overview": "Overview",
@@ -173,7 +177,42 @@
     "employeeAdded": "Employee added successfully",
     "employeeUpdated": "Employee updated successfully",
     "employeeDeleted": "Employee deleted successfully",
-    "manageTeam": "Manage Team"
+    "manageTeam": "Manage Team",
+    "teamMembers": "Team Members",
+    "roles": "Roles",
+    "customRoles": "Custom Roles",
+    "createRole": "Create Role",
+    "editRole": "Edit Role",
+    "deleteRole": "Delete Role",
+    "roleName": "Role Name",
+    "baseAccess": "Base Access Level"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "manager": "Manager",
+    "supervisor": "Supervisor",
+    "accountant": "Accountant",
+    "stockkeeper": "Stock Keeper",
+    "cashier": "Cashier",
+    "viewer": "Viewer"
+  },
+  "admin": {
+    "title": "KiTS Admin",
+    "subscriptions": "Subscriptions",
+    "provisioning": "Database Provisioning",
+    "password": "Password",
+    "unlock": "Unlock",
+    "verifying": "Verifying...",
+    "accessRestricted": "This area is restricted to KiTS staff only."
+  },
+  "search": {
+    "placeholder": "Search products, customers, employees...",
+    "noResults": "No results found",
+    "products": "Products",
+    "customers": "Customers",
+    "employees": "Employees",
+    "viewAll": "View all results"
   },
   "reports": {
     "salesReport": "Sales Report",
@@ -243,5 +282,35 @@
     "lastMonth": "Last Month",
     "lastYear": "Last Year",
     "custom": "Custom Range"
+  },
+  "translationManager": {
+    "title": "Translation Manager",
+    "add": "Add",
+    "edit": "Edit",
+    "missing": "Missing",
+    "search": "Search",
+    "tools": "Tools",
+    "totalKeys": "Total Keys",
+    "translated": "Translated",
+    "completion": "Completion",
+    "addTranslation": "Add Translation",
+    "editTranslation": "Edit Translation",
+    "update": "Update",
+    "delete": "Delete",
+    "missingTranslations": "Missing Translations",
+    "noMissingTranslations": "No missing translations found",
+    "clearMissing": "Clear Missing List",
+    "searchTranslations": "Search Translations",
+    "searchPlaceholder": "Search translations...",
+    "exportTranslations": "Export Translations",
+    "exportDescription": "Download translations as JSON file",
+    "export": "Export",
+    "importTranslations": "Import Translations",
+    "importDescription": "Upload translations from JSON file",
+    "import": "Import",
+    "validation": "Validation",
+    "valid": "Valid",
+    "invalid": "Invalid",
+    "languageStats": "Language Statistics"
   }
 }

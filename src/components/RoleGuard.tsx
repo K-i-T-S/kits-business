@@ -3,9 +3,13 @@ import React from 'react';
 
 import { useApp } from '../context/AppContext';
 
+import type { Tenant } from '../context/AppContext';
+
+type TenantRole = Tenant['userRole'];
+
 interface RoleGuardProps {
   children: React.ReactNode;
-  allowedRoles: ('owner' | 'manager' | 'cashier' | 'viewer')[];
+  allowedRoles: TenantRole[];
   fallback?: React.ReactNode;
 }
 

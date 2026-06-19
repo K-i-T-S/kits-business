@@ -1,5 +1,5 @@
-import { AlertTriangle, RefreshCw, Shield, Database, CreditCard, CheckCircle2, Clock, XCircle } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { AlertTriangle, RefreshCw, Shield, Database, CreditCard, CheckCircle2, Clock, XCircle, Lock, Loader2 } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -88,6 +88,62 @@ function getProvisionBadge(status: string): { label: string; className: string; 
 
 export default function AdminPanel() {
   const navigate = useNavigate();
+
+  // ── Password gate ─────────────────────────────────────────────────────────
+  // No sessionStorage caching — PIN is required on every visit.
+  // gateChecking is true until we confirm the Supabase session email.
+  const [gateUnlocked, setGateUnlocked] = useState(false);
+  const [gateChecking, setGateChecking] = useState(true);
+  const [gatePassword, setGatePassword] = useState('');
+  const [gateError, setGateError] = useState('');
+  const [gateVerifying, setGateVerifying] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email !== 'kits.tech.co@gmail.com') {
+        void navigate('/dashboard');
+        return;
+      }
+      // Email confirmed — show the PIN form (never auto-unlock)
+      setGateChecking(false);
+    }).catch(() => {
+      void navigate('/login');
+    });
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!gateChecking && !gateUnlocked) {
+      passwordInputRef.current?.focus();
+    }
+  }, [gateChecking, gateUnlocked]);
+
+  const handleGateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGateVerifying(true);
+    setGateError('');
+    try {
+      // Verification is server-side via pgcrypto — password never compared in browser
+      const { data: valid, error: rpcError } = await supabase.rpc('verify_admin_pin', { attempt: gatePassword });
+      if (rpcError) throw rpcError;
+      if (valid === true) {
+        setGateUnlocked(true);
+      } else {
+        setGateError('Incorrect password');
+        setGatePassword('');
+        passwordInputRef.current?.focus();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Verification failed — try again';
+      setGateError(msg);
+      setGatePassword('');
+      passwordInputRef.current?.focus();
+    } finally {
+      setGateVerifying(false);
+    }
+  };
+
+  // ── Admin panel state ─────────────────────────────────────────────────────
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -219,6 +275,61 @@ export default function AdminPanel() {
 
   const selectClass = 'flex-1 bg-slate-800 border border-white/20 text-white rounded-xl px-2 py-1.5 text-xs';
   const inputClass = 'w-full bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2 text-xs placeholder-white/30 focus:outline-none focus:border-indigo-500';
+
+  // ── Password gate render ───────────────────────────────────────────────────
+  if (gateChecking) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+      </div>
+    );
+  }
+
+  if (!gateUnlocked) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <div className="rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl">
+            <div className="mb-6 flex flex-col items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600/20 border border-indigo-500/30">
+                <Lock className="h-7 w-7 text-indigo-400" />
+              </div>
+              <h1 className="text-xl font-bold text-white">KiTS Admin Access</h1>
+              <p className="text-xs text-white/40 text-center">This area is restricted to KiTS staff only.</p>
+            </div>
+
+            <form onSubmit={handleGateSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-white/60 mb-1.5">Password</label>
+                <input
+                  ref={passwordInputRef}
+                  type="password"
+                  value={gatePassword}
+                  onChange={e => setGatePassword(e.target.value)}
+                  autoComplete="current-password"
+                  className="w-full bg-slate-800 border border-white/20 text-white rounded-xl px-4 py-3 text-sm placeholder-white/30 focus:outline-none focus:border-indigo-500 transition-colors"
+                  placeholder="Enter admin password"
+                />
+              </div>
+
+              {gateError && (
+                <p className="text-xs font-medium text-rose-300">{gateError}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={gateVerifying}
+                className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl py-3 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {gateVerifying && <Loader2 className="h-4 w-4 animate-spin" />}
+                {gateVerifying ? 'Verifying…' : 'Unlock'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">

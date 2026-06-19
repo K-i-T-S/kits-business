@@ -264,7 +264,16 @@
     "taxRate": "Taux de TVA (%)",
     "currency": "Devise par défaut",
     "deleteAccount": "Supprimer l'entreprise",
-    "deleteConfirm": "Tapez le nom de votre entreprise pour confirmer la suppression"
+    "deleteConfirm": "Tapez le nom de votre entreprise pour confirmer la suppression",
+    "taxId": "Numéro fiscal (TIN)",
+    "secondaryCurrency": "Devise secondaire",
+    "exchangeRate": "Taux de change",
+    "showDualCurrency": "Afficher les prix en double devise",
+    "loyaltyProgram": "Programme de fidélité",
+    "enableLoyalty": "Activer le programme de fidélité",
+    "pointsPerDollar": "Points gagnés par dollar",
+    "redemptionValue": "Valeur de rachat des points",
+    "loyaltyTiers": "Niveaux de fidélité"
   },
   "errors": {
     "networkError": "Erreur réseau. Veuillez vérifier votre connexion.",

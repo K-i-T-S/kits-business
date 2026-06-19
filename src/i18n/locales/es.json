@@ -264,7 +264,16 @@
     "taxRate": "Tasa de impuesto (%)",
     "currency": "Moneda predeterminada",
     "deleteAccount": "Eliminar negocio",
-    "deleteConfirm": "Escriba el nombre de su negocio para confirmar la eliminación"
+    "deleteConfirm": "Escriba el nombre de su negocio para confirmar la eliminación",
+    "taxId": "Número fiscal (TIN)",
+    "secondaryCurrency": "Moneda secundaria",
+    "exchangeRate": "Tipo de cambio",
+    "showDualCurrency": "Mostrar precios en doble moneda",
+    "loyaltyProgram": "Programa de fidelidad",
+    "enableLoyalty": "Activar programa de fidelidad",
+    "pointsPerDollar": "Puntos ganados por dólar",
+    "redemptionValue": "Valor de canje de puntos",
+    "loyaltyTiers": "Niveles de fidelidad"
   },
   "errors": {
     "networkError": "Error de red. Por favor verifique su conexión.",

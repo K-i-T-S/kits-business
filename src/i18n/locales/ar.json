@@ -264,7 +264,16 @@
     "taxRate": "معدل الضريبة (%)",
     "currency": "العملة الافتراضية",
     "deleteAccount": "حذف العمل",
-    "deleteConfirm": "اكتب اسم عملك لتأكيد الحذف"
+    "deleteConfirm": "اكتب اسم عملك لتأكيد الحذف",
+    "taxId": "الرقم الضريبي (TIN)",
+    "secondaryCurrency": "العملة الثانوية",
+    "exchangeRate": "سعر الصرف",
+    "showDualCurrency": "عرض الأسعار بعملتين",
+    "loyaltyProgram": "برنامج الولاء",
+    "enableLoyalty": "تفعيل برنامج الولاء",
+    "pointsPerDollar": "النقاط المكتسبة لكل دولار",
+    "redemptionValue": "قيمة استرداد النقاط",
+    "loyaltyTiers": "مستويات الولاء"
   },
   "errors": {
     "networkError": "خطأ في الشبكة. يرجى فحص اتصالك.",

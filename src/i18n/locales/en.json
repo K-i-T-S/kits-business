@@ -264,7 +264,16 @@
     "taxRate": "Tax Rate (%)",
     "currency": "Default Currency",
     "deleteAccount": "Delete Business",
-    "deleteConfirm": "Type your business name to confirm deletion"
+    "deleteConfirm": "Type your business name to confirm deletion",
+    "taxId": "Tax ID (TIN)",
+    "secondaryCurrency": "Secondary Currency",
+    "exchangeRate": "Exchange Rate",
+    "showDualCurrency": "Show Dual Currency Prices",
+    "loyaltyProgram": "Loyalty Program",
+    "enableLoyalty": "Enable Loyalty Program",
+    "pointsPerDollar": "Points Earned per Dollar",
+    "redemptionValue": "Point Redemption Value",
+    "loyaltyTiers": "Loyalty Tiers"
   },
   "errors": {
     "networkError": "Network error. Please check your connection.",

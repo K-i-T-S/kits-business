@@ -6,6 +6,7 @@ import {
   Save,
   Settings,
   ShoppingCart,
+  Star,
   Trash2,
   X,
 } from 'lucide-react';
@@ -19,7 +20,7 @@ import { supabase } from '../utils/supabaseClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'dangerZone';
+type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'dangerZone';
 
 interface BusinessForm {
   name: string;
@@ -33,12 +34,22 @@ interface FinancialForm {
   taxRate: string;
   defaultCurrency: string;
   decimalPlaces: string;
+  tin: string;
+  secondaryCurrency: string;
+  exchangeRate: string;
+  showDualCurrency: boolean;
 }
 
 interface PosForm {
   defaultPaymentMethod: 'cash' | 'card' | 'both';
   requireCustomerOnSale: boolean;
   printReceiptAutomatically: boolean;
+}
+
+interface LoyaltyForm {
+  loyaltyEnabled: boolean;
+  loyaltyPointsPerDollar: string;
+  loyaltyPointsRedeemRate: string;
 }
 
 const POS_PAYMENT_KEY = 'pos_default_payment';
@@ -108,12 +119,24 @@ export default function SystemSettings() {
     taxRate: '11',
     defaultCurrency: 'USD',
     decimalPlaces: '2',
+    tin: '',
+    secondaryCurrency: 'LBP',
+    exchangeRate: '89500',
+    showDualCurrency: false,
   });
   const [savingFinancial, setSavingFinancial] = useState(false);
 
   // POS behaviour (localStorage)
   const [posForm, setPosForm] = useState<PosForm>(loadPosPrefs);
   const [savingPos, setSavingPos] = useState(false);
+
+  // Loyalty
+  const [loyaltyForm, setLoyaltyForm] = useState<LoyaltyForm>({
+    loyaltyEnabled: false,
+    loyaltyPointsPerDollar: '1',
+    loyaltyPointsRedeemRate: '0.01',
+  });
+  const [savingLoyalty, setSavingLoyalty] = useState(false);
 
   // Danger zone
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
@@ -133,9 +156,31 @@ export default function SystemSettings() {
     }));
     setFinancialForm(prev => ({
       ...prev,
-      taxRate: (settings['tax_rate'] as string | undefined) ?? prev.taxRate,
+      taxRate:
+        currentTenant.tax_rate != null
+          ? String(+(currentTenant.tax_rate * 100).toFixed(4))
+          : (settings['tax_rate'] as string | undefined) ?? prev.taxRate,
       defaultCurrency: (settings['currency'] as string | undefined) ?? prev.defaultCurrency,
       decimalPlaces: (settings['decimal_places'] as string | undefined) ?? prev.decimalPlaces,
+      tin: currentTenant.tin ?? prev.tin,
+      secondaryCurrency: currentTenant.secondary_currency ?? prev.secondaryCurrency,
+      exchangeRate:
+        currentTenant.exchange_rate != null
+          ? String(currentTenant.exchange_rate)
+          : prev.exchangeRate,
+      showDualCurrency: currentTenant.show_dual_currency ?? prev.showDualCurrency,
+    }));
+    setLoyaltyForm(prev => ({
+      ...prev,
+      loyaltyEnabled: currentTenant.loyalty_enabled ?? prev.loyaltyEnabled,
+      loyaltyPointsPerDollar:
+        currentTenant.loyalty_points_per_dollar != null
+          ? String(currentTenant.loyalty_points_per_dollar)
+          : prev.loyaltyPointsPerDollar,
+      loyaltyPointsRedeemRate:
+        currentTenant.loyalty_points_redeem_rate != null
+          ? String(currentTenant.loyalty_points_redeem_rate)
+          : prev.loyaltyPointsRedeemRate,
     }));
   }, [currentTenant]);
 
@@ -185,18 +230,41 @@ export default function SystemSettings() {
     if (!currentTenant) return;
     setSavingFinancial(true);
     try {
+      // tax_rate stored as decimal in DB (11% → 0.11)
+      const taxRateDecimal = parseFloat(financialForm.taxRate) / 100;
+      const exchangeRateNum = parseFloat(financialForm.exchangeRate) || 0;
+
       const { error } = await supabase
         .from('tenants')
         .update({
+          tax_rate: taxRateDecimal,
+          tin: financialForm.tin.trim() || null,
+          secondary_currency: financialForm.secondaryCurrency,
+          exchange_rate: exchangeRateNum,
+          show_dual_currency: financialForm.showDualCurrency,
           settings: {
             ...(currentTenant.settings as Record<string, unknown>),
-            tax_rate: financialForm.taxRate,
             currency: financialForm.defaultCurrency,
             decimal_places: financialForm.decimalPlaces,
           },
         })
         .eq('id', currentTenant.id);
       if (error) throw error;
+
+      setCurrentTenant({
+        ...currentTenant,
+        tax_rate: taxRateDecimal,
+        tin: financialForm.tin.trim() || null,
+        secondary_currency: financialForm.secondaryCurrency,
+        exchange_rate: exchangeRateNum,
+        show_dual_currency: financialForm.showDualCurrency,
+        settings: {
+          ...(currentTenant.settings as Record<string, unknown>),
+          currency: financialForm.defaultCurrency,
+          decimal_places: financialForm.decimalPlaces,
+        },
+      });
+
       toast.success(t('settings.saved'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.serverError'));
@@ -216,6 +284,38 @@ export default function SystemSettings() {
       toast.error(err instanceof Error ? err.message : t('errors.serverError'));
     } finally {
       setSavingPos(false);
+    }
+  };
+
+  const handleSaveLoyalty = async () => {
+    if (!currentTenant) return;
+    setSavingLoyalty(true);
+    try {
+      const pointsPerDollar = parseFloat(loyaltyForm.loyaltyPointsPerDollar) || 1;
+      const redeemRate = parseFloat(loyaltyForm.loyaltyPointsRedeemRate) || 0.01;
+
+      const { error } = await supabase
+        .from('tenants')
+        .update({
+          loyalty_enabled: loyaltyForm.loyaltyEnabled,
+          loyalty_points_per_dollar: pointsPerDollar,
+          loyalty_points_redeem_rate: redeemRate,
+        })
+        .eq('id', currentTenant.id);
+      if (error) throw error;
+
+      setCurrentTenant({
+        ...currentTenant,
+        loyalty_enabled: loyaltyForm.loyaltyEnabled,
+        loyalty_points_per_dollar: pointsPerDollar,
+        loyalty_points_redeem_rate: redeemRate,
+      });
+
+      toast.success(t('settings.saved'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setSavingLoyalty(false);
     }
   };
 
@@ -244,10 +344,18 @@ export default function SystemSettings() {
 
   const isOwner = currentTenant?.userRole === 'owner';
 
+  // Exchange rate only shown when secondary currency differs from the primary
+  const showExchangeRate = financialForm.secondaryCurrency !== financialForm.defaultCurrency;
+
+  // Human-readable redemption label: e.g. 0.01 → "1 point = $0.01"
+  const redeemRateNum = parseFloat(loyaltyForm.loyaltyPointsRedeemRate) || 0;
+  const redeemLabel = `1 point = $${redeemRateNum.toFixed(2)}`;
+
   const tabs: { id: ActiveTab; label: string; icon: typeof Settings }[] = [
     { id: 'businessInfo', label: t('settings.businessInfo'), icon: Building2 },
     { id: 'financial', label: t('settings.financial'), icon: CreditCard },
     { id: 'posBehaviour', label: t('settings.posBehaviour'), icon: ShoppingCart },
+    { id: 'loyalty', label: t('settings.loyaltyProgram'), icon: Star },
     { id: 'dangerZone', label: t('settings.dangerZone'), icon: AlertTriangle },
   ];
 
@@ -402,7 +510,7 @@ export default function SystemSettings() {
                   <button
                     onClick={() => void handleSaveBusiness()}
                     disabled={savingBusiness}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="btn-brand flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium disabled:opacity-50"
                   >
                     {savingBusiness ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     {savingBusiness ? t('settings.saving') : t('settings.saveChanges')}
@@ -419,6 +527,7 @@ export default function SystemSettings() {
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Tax Rate */}
                   <div>
                     <label className="block text-sm font-medium text-white/80 mb-2">
                       {t('settings.taxRate')}
@@ -432,9 +541,24 @@ export default function SystemSettings() {
                       onChange={e => setFinancialForm(p => ({ ...p, taxRate: e.target.value }))}
                       className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
-                    <p className="mt-1 text-xs text-white/40">Lebanon VAT = 11%</p>
+                    <p className="mt-1 text-xs text-white/40">Lebanon TVA = 11%</p>
                   </div>
 
+                  {/* Tax ID (TIN) */}
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      {t('settings.taxId')}
+                    </label>
+                    <input
+                      type="text"
+                      value={financialForm.tin}
+                      onChange={e => setFinancialForm(p => ({ ...p, tin: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      placeholder="e.g. 123456789"
+                    />
+                  </div>
+
+                  {/* Default Currency */}
                   <div>
                     <label className="block text-sm font-medium text-white/80 mb-2">
                       {t('settings.currency')}
@@ -446,9 +570,60 @@ export default function SystemSettings() {
                     >
                       <option value="USD" className="bg-slate-800">USD ($)</option>
                       <option value="LBP" className="bg-slate-800">LBP (ل.ل)</option>
+                      <option value="EUR" className="bg-slate-800">EUR (€)</option>
+                      <option value="GBP" className="bg-slate-800">GBP (£)</option>
+                      <option value="AED" className="bg-slate-800">AED (د.إ)</option>
+                      <option value="SAR" className="bg-slate-800">SAR (ر.س)</option>
+                      <option value="QAR" className="bg-slate-800">QAR (ر.ق)</option>
+                      <option value="KWD" className="bg-slate-800">KWD (د.ك)</option>
                     </select>
                   </div>
 
+                  {/* Secondary Currency */}
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      {t('settings.secondaryCurrency')}
+                    </label>
+                    <select
+                      value={financialForm.secondaryCurrency}
+                      onChange={e => setFinancialForm(p => ({ ...p, secondaryCurrency: e.target.value }))}
+                      className="w-full bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    >
+                      <option value="LBP" className="bg-slate-800">LBP (ل.ل)</option>
+                      <option value="USD" className="bg-slate-800">USD ($)</option>
+                      <option value="EUR" className="bg-slate-800">EUR (€)</option>
+                      <option value="GBP" className="bg-slate-800">GBP (£)</option>
+                      <option value="AED" className="bg-slate-800">AED (د.إ)</option>
+                      <option value="SAR" className="bg-slate-800">SAR (ر.س)</option>
+                      <option value="QAR" className="bg-slate-800">QAR (ر.ق)</option>
+                      <option value="KWD" className="bg-slate-800">KWD (د.ك)</option>
+                    </select>
+                  </div>
+
+                  {/* Exchange Rate — shown only when secondary ≠ primary */}
+                  {showExchangeRate && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-white/80 mb-2">
+                        {t('settings.exchangeRate')}{' '}
+                        <span className="text-white/40 font-normal">
+                          ({financialForm.secondaryCurrency} per {financialForm.defaultCurrency})
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={financialForm.exchangeRate}
+                        onChange={e => setFinancialForm(p => ({ ...p, exchangeRate: e.target.value }))}
+                        className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      />
+                      <p className="mt-1 text-xs text-white/40">
+                        LBP per USD — update from sayrafa.com
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Decimal Places */}
                   <div>
                     <label className="block text-sm font-medium text-white/80 mb-2">
                       Decimal Places
@@ -465,15 +640,25 @@ export default function SystemSettings() {
                   </div>
                 </div>
 
-                <p className="text-xs text-white/40">
-                  These settings apply to how prices and totals are displayed. If a column does not yet exist in the database, the update will be silently ignored.
-                </p>
+                {/* Show Dual Currency toggle */}
+                <div className="flex items-center justify-between p-4 bg-slate-900 border border-white/10 rounded-xl">
+                  <div>
+                    <p className="text-sm font-medium text-white">{t('settings.showDualCurrency')}</p>
+                    <p className="text-xs text-white/50 mt-0.5">
+                      Show prices in both {financialForm.defaultCurrency} and {financialForm.secondaryCurrency} on POS and receipts
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={financialForm.showDualCurrency}
+                    onChange={v => setFinancialForm(p => ({ ...p, showDualCurrency: v }))}
+                  />
+                </div>
 
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={() => void handleSaveFinancial()}
                     disabled={savingFinancial}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="btn-brand flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium disabled:opacity-50"
                   >
                     {savingFinancial ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     {savingFinancial ? t('settings.saving') : t('settings.saveChanges')}
@@ -539,10 +724,114 @@ export default function SystemSettings() {
                   <button
                     onClick={handleSavePos}
                     disabled={savingPos}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="btn-brand flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium disabled:opacity-50"
                   >
                     {savingPos ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     {savingPos ? t('settings.saving') : t('settings.saveChanges')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Loyalty Program ───────────────────────────────────────── */}
+            {activeTab === 'loyalty' && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6">
+                <div className="flex items-center gap-3">
+                  <Star className="h-5 w-5 text-amber-400 shrink-0" />
+                  <h2 className="text-lg font-semibold text-white">
+                    {t('settings.loyaltyProgram')}
+                  </h2>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Enable loyalty */}
+                  <div className="flex items-center justify-between p-4 bg-slate-900 border border-white/10 rounded-xl">
+                    <div>
+                      <p className="text-sm font-medium text-white">{t('settings.enableLoyalty')}</p>
+                      <p className="text-xs text-white/50 mt-0.5">
+                        Customers earn and redeem points on every purchase
+                      </p>
+                    </div>
+                    <Toggle
+                      checked={loyaltyForm.loyaltyEnabled}
+                      onChange={v => setLoyaltyForm(p => ({ ...p, loyaltyEnabled: v }))}
+                    />
+                  </div>
+
+                  {/* Points config — shown only when loyalty is enabled */}
+                  {loyaltyForm.loyaltyEnabled && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Points per dollar */}
+                      <div>
+                        <label className="block text-sm font-medium text-white/80 mb-2">
+                          {t('settings.pointsPerDollar')}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          value={loyaltyForm.loyaltyPointsPerDollar}
+                          onChange={e => setLoyaltyForm(p => ({ ...p, loyaltyPointsPerDollar: e.target.value }))}
+                          className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        />
+                        <p className="mt-1 text-xs text-white/40">e.g. 1 = earn 1 point per $1 spent</p>
+                      </div>
+
+                      {/* Redemption value */}
+                      <div>
+                        <label className="block text-sm font-medium text-white/80 mb-2">
+                          {t('settings.redemptionValue')}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.001"
+                          value={loyaltyForm.loyaltyPointsRedeemRate}
+                          onChange={e => setLoyaltyForm(p => ({ ...p, loyaltyPointsRedeemRate: e.target.value }))}
+                          className="w-full px-4 py-2.5 bg-slate-900 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        />
+                        <p className="mt-1 text-xs text-white/40">{redeemLabel}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tier thresholds — read-only info */}
+                  <div className="p-4 bg-slate-900 border border-white/10 rounded-xl space-y-3">
+                    <p className="text-sm font-medium text-white/80">{t('settings.loyaltyTiers')}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="flex items-center gap-2 p-3 bg-amber-900/20 border border-amber-700/30 rounded-xl">
+                        <span className="text-amber-600 text-lg">🥉</span>
+                        <div>
+                          <p className="text-xs font-semibold text-amber-400">Bronze</p>
+                          <p className="text-xs text-white/50">0 – 499 pts</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 p-3 bg-slate-700/30 border border-slate-500/30 rounded-xl">
+                        <span className="text-slate-300 text-lg">🥈</span>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-300">Silver</p>
+                          <p className="text-xs text-white/50">500 – 1,999 pts</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-xl">
+                        <span className="text-yellow-400 text-lg">🥇</span>
+                        <div>
+                          <p className="text-xs font-semibold text-yellow-400">Gold</p>
+                          <p className="text-xs text-white/50">2,000+ pts</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => void handleSaveLoyalty()}
+                    disabled={savingLoyalty}
+                    className="btn-brand flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium disabled:opacity-50"
+                  >
+                    {savingLoyalty ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {savingLoyalty ? t('settings.saving') : t('settings.saveChanges')}
                   </button>
                 </div>
               </div>

@@ -2,8 +2,8 @@ import { Building2, Palette, Upload, X, Check, Image, ExternalLink, Sparkles } f
 import React, { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { useApp } from '../context/AppContext';
 import { BRAND } from '../constants/branding';
+import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
 
 interface Props {

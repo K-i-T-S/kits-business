@@ -10,9 +10,9 @@ import SplitPaymentModal from '../components/SplitPaymentModal';
 import TipsModal from '../components/TipsModal';
 import { useApp } from '../context/AppContext';
 import type { Sale, Product } from '../context/AppContext';
-import { formatTaxBreakdown } from '../utils/formatting';
 import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
 import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
+import { formatTaxBreakdown } from '../utils/formatting';
 import { POSCalculator } from '../utils/posCalculations';
 import '../styles/print.css';
 

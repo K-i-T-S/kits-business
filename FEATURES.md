@@ -1,7 +1,7 @@
 # KiTS Business Terminal — Feature Reference
 
 > Developer reference. Covers every feature, its architecture, data flow, plan gate, and key files.
-> Last updated: 2026-06-19.
+> Last updated: 2026-06-20.
 
 ---
 
@@ -25,6 +25,7 @@
 16. [Admin Panel](#16-admin-panel)
 17. [Database Schema Overview](#17-database-schema-overview)
 18. [Key Utilities](#18-key-utilities)
+19. [Finance Module](#19-finance-module)
 
 ---
 
@@ -809,3 +810,136 @@ export const BRAND = {
 }
 ```
 Used in FeatureGate upgrade CTA, HelpSupport page, footer.
+
+---
+
+## 19. Finance Module
+
+**Plan gate:** All plans (Finance page is available to all authenticated users with appropriate role)
+**Role gate:** `owner | admin | accountant | supervisor | manager`
+**Key file:** `src/pages/Finance.tsx` (≈1,968 lines)
+**Migration:** `20260619_000028_finance.sql`
+**Storage bucket:** `expense-receipts` (private, authenticated)
+
+### Overview
+
+A full Lebanese/MENA-aware finance management module covering expenses, payroll, budgeting, and profit & loss reporting. Integrated with the Forecasting page for expense projection.
+
+### Tab 1: Overview
+
+- 4 KPI cards: Total Expenses (current month), Daily Average, Recurring/Month, VAT Recoverable
+- Month selector (defaults to current month)
+- **Recharts PieChart** donut: expense breakdown by category
+- **Recharts BarChart**: 6-month expense comparison
+- Upcoming recurring expenses list (next 30 days)
+
+### Tab 2: Expenses
+
+- Filter bar: category dropdown, date range, currency (USD/LBP), text search
+- Paginated expense table with receipt preview link
+- **Add/Edit Expense Modal:**
+  - Category picker (system + custom categories)
+  - Amount with USD ↔ LBP toggle (auto-converts using tenant's `exchange_rate`)
+  - Date, description, VAT amount, is-VAT-inclusive toggle
+  - Receipt upload to `expense-receipts` Supabase Storage bucket
+  - Recurring toggle with frequency (monthly/quarterly/yearly)
+- ExcelJS export with styled indigo header row
+
+### Tab 3: Payroll
+
+- Per-employee payroll entry with auto-calculated Lebanese statutory deductions:
+
+  | Field | Rate | Basis |
+  |---|---|---|
+  | NSSF Employer | **22.5%** | Gross (8.5% EOS + 8% Sickness/Maternity + 6% Family Allowances) |
+  | EOS Accrual | **8.5%** | Included in NSSF employer above |
+  | NSSF Employee | **3%** | Deducted from gross |
+  | Transport Allowance | LBP 48,000/day | Lebanese Labor Law — separate payroll line |
+
+- Net salary = Gross − NSSF employee − transport allowance adjustments
+- Total employer cost = Gross + NSSF employer (22.5%)
+- **jsPDF bilingual payslip** (EN/AR): employee name, period, all deduction lines, net salary, company stamp area
+
+### Tab 4: Budget
+
+- Monthly budget target per expense category
+- Inline editable `budgeted_amount_usd` fields
+- Variance coloring: green (under budget), amber (80–100%), red (over budget)
+- **Copy Last Month** action — copies all budget rows from previous month
+- `UNIQUE(tenant_id, category_id, year, month)` constraint prevents duplicates
+
+### Tab 5: P&L Report
+
+Full income statement following standard format:
+```
+Revenue (from sales)
+− COGS (expenses with is_cogs = true)
+= Gross Profit
+− Operating Expenses (non-COGS)
+= EBITDA
+− Lebanese CIT 17%
+= Net Profit
+```
+- Monthly or Year-to-Date view
+- **jsPDF export** — formatted P&L statement with tenant name and period header
+
+### Expense Categories (Lebanese/MENA Context)
+
+34 system-default categories seeded by migration 000028. `tenant_id = NULL` marks them as system defaults visible to all tenants.
+
+Categories cover: generator fuel, generator subscription, EDL electricity, water, internet/telecom, NSSF employer, NSSF employee, EOS accrual, municipal tax, income tax (CIT 17%), VAT (TVA 11%), import duties, customs clearance, transport allowance, employee salaries, commissions, rent, bank fees, loan interest, equipment purchase, maintenance & repairs, office supplies, marketing & advertising, insurance, legal & accounting fees, cleaning, security, software subscriptions, travel & accommodation, vehicle fuel, miscellaneous.
+
+Tenants can add custom categories via the Expenses tab UI.
+
+### Forecasting Integration
+
+`src/pages/Forecasting.tsx` fetches `expenses.amount_usd` for the last 90 days, computes `avgDailyExpense`, and renders a dashed orange line in the ComposedChart representing projected daily expense spend. A **Net Profit** summary card shows Revenue Projection − Expense Projection.
+
+### Data Flow
+
+```
+Finance.tsx
+  ↓ supabase.from('expense_categories').select('*')
+  ↓ supabase.from('expenses').select('*, expense_categories(name, type, is_cogs)')
+  ↓ supabase.from('expense_budgets').select('*')
+  ↓ supabase.from('payroll_entries').select('*, employees(name)')
+  ↓ supabase.from('sales').select('total_amount, sale_date')  // for P&L revenue
+
+Receipt upload:
+  supabase.storage.from('expense-receipts').upload(path, file)
+  → receipt_url stored on expenses row
+```
+
+### Key Types
+
+```typescript
+interface Expense {
+  id: string
+  category_id: string
+  amount: number
+  currency: 'USD' | 'LBP'
+  amount_usd: number
+  exchange_rate_used: number
+  expense_date: string
+  description: string
+  is_recurring: boolean
+  recurring_frequency: 'monthly' | 'quarterly' | 'yearly' | null
+  receipt_url: string | null
+  vat_amount: number
+  is_vat_inclusive: boolean
+}
+
+interface PayrollEntry {
+  employee_id: string
+  period_year: number
+  period_month: number
+  gross_salary: number
+  nssf_employer: number    // 22.5%
+  eos_accrual: number      // 8.5% (part of nssf_employer)
+  nssf_employee: number    // 3%
+  transport_allowance: number
+  net_salary: number
+  total_employer_cost: number
+  currency: 'USD' | 'LBP'
+}
+```

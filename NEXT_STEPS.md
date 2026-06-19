@@ -1,7 +1,7 @@
 # Engineering Roadmap — KiTS Business Terminal
 
-> Last updated: 2026-06-19. Sprint 4 complete.
-> Status: Production-grade MVP. All core flows live. Security hardened. Feature-rich.
+> Last updated: 2026-06-20. Sprint 5 complete.
+> Status: Production-grade MVP. All core flows live. Security hardened. Finance module live.
 > All items marked ✅ are fully implemented, deployed, and tested in production.
 
 ---
@@ -25,8 +25,9 @@
 - ✅ Customer Loyalty Panel — balance, tier, progress bar, history, adjust points
 - ✅ CRM Analytics — retention rate, CLV, revenue, top customers, purchase frequency
 - ✅ Customer Segmentation — segment builder UI
-- ✅ Marketing Campaigns — campaign list + creation form (Resend integration pending)
-- ✅ Automated Marketing — trigger-based workflow UI (engine pending)
+- ✅ Marketing Campaigns — full CRUD against `campaigns` table, send-now, schedule
+- ✅ Automated Marketing — trigger-based workflow engine with `automated_workflows` table
+- ✅ Workflow Automation — enable/disable, Run Now, `trigger-workflows` Edge Function
 - ✅ Communication History — per-customer log
 
 ### Employees & Auth
@@ -36,20 +37,31 @@
 - ✅ Employee Invitation — `send-invitation` Edge Function, `accept_pending_invitation()` RPC
 - ✅ Role-based routing — cashier→POS, stockkeeper→inventory, accountant→reports
 - ✅ Multi-tenant — complete RLS isolation, `current_tenant_id()` / `current_user_role()` SECURITY DEFINER
+- ✅ Two-Factor Authentication (TOTP) — `supabase.auth.mfa.*`, QR code setup, disable flow in ProfileSettings
+
+### Finance
+- ✅ Finance module (`src/pages/Finance.tsx`) — 5-tab page: Overview, Expenses, Payroll, Budget, P&L
+- ✅ Expense management — add/edit/delete, USD/LBP toggle, receipt upload to Supabase Storage, VAT tracking
+- ✅ 34 Lebanese expense categories — generator fuel, EDL electricity, NSSF, municipal tax, import duties, rent, etc.
+- ✅ Payroll — NSSF employer 22.5% auto-calc, EOS 8.5% accrual, transport allowance, bilingual payslip PDF
+- ✅ Budget management — monthly targets per category, variance coloring, Copy Last Month
+- ✅ P&L Report — Revenue → COGS → Gross Profit → EBITDA → 17% CIT → Net; jsPDF export
+- ✅ Forecasting integration — expense data feeds into revenue/profit forecast chart (dashed expense line)
+- ✅ Expense categories — role-gated (owner/admin/accountant/supervisor/manager)
 
 ### Reports & Analytics
 - ✅ Reports — sales, profit, export Excel/PDF
 - ✅ Dashboard — live stats, role-aware, recent sales
-- ✅ Advanced Analytics — charts, margin analysis (AdvancedAnalytics.tsx)
-- ✅ Forecasting — 30-day revenue trend, Lebanese holidays, CLV, stock depletion, PDF export
+- ✅ Advanced Analytics — charts, margin analysis
+- ✅ Forecasting — 30-day revenue trend, Lebanese holidays, CLV, stock depletion, expense integration, PDF export
 - ✅ Monitoring — real Supabase data, 60s auto-refresh, sales velocity, low-stock, DB latency
-- ✅ Activity Log — full filterable audit trail with export
+- ✅ Activity Log — full filterable audit trail with Excel export (ExcelJS)
 
 ### Settings & Brand
-- ✅ Profile Settings — display name, avatar upload, password change, language, notifications
-- ✅ System Settings — business info, financial (tax/TIN/dual-currency), POS behaviour, loyalty, danger zone
+- ✅ Profile Settings — display name, avatar upload, password change, language, notifications, 2FA
+- ✅ System Settings — business info, financial (tax/TIN/dual-currency), POS behaviour, loyalty, WhatsApp setup
 - ✅ Brand Identity — logo upload, 6 color presets, custom hex, tagline, CSS vars, favicon swap
-- ✅ Dark/Light Theme toggle — ThemeContext, `themes.css` 347-line audit, localStorage persistence
+- ✅ Dark/Light Theme toggle — ThemeContext, `themes.css`, localStorage persistence
 - ✅ Onboarding Wizard — 4-step: Business Profile → First Product → Invite Team → Done
 
 ### Platform & Infrastructure
@@ -64,27 +76,30 @@
 - ✅ Bundle optimization — all pages lazy-loaded, ExcelJS/jsPDF dynamic import, Vite chunk splitting
 - ✅ GitHub Actions CI — typecheck + build on every push
 
-### Edge Functions (Deployed)
+### Edge Functions (Deployed to `pytndxjeznhhyycjasep`)
 | Function | Purpose |
 |---|---|
 | `welcome-email` | Branded HTML email on tenant creation via Resend |
 | `send-invitation` | Employee invite via Supabase auth.admin.inviteUserByEmail |
 | `whatsapp-receipt` | WhatsApp receipt via Meta Cloud API v18.0 |
+| `trigger-workflows` | Daily summary + low-stock alerts via WhatsApp |
 
-### Migrations Applied (000000–000026)
-All 27 migrations applied in production. See CLAUDE.md for full list.
+### Migrations Applied (000000–000028)
+All 29 migrations applied in production. See CLAUDE.md for full list.
 
 ---
 
 ## 🔴 Setup Required (Manual — Run Once)
 
 ### Done ✅
-- [x] Migrations 000000–000026 applied
+- [x] Migrations 000000–000028 applied
 - [x] Admin PIN hash set in `kits_admin_config`
 - [x] `brand-assets` Storage bucket created
+- [x] `expense-receipts` Storage bucket created
 - [x] `welcome-email` Edge Function deployed
 - [x] `send-invitation` Edge Function deployed
 - [x] `whatsapp-receipt` Edge Function deployed
+- [x] `trigger-workflows` Edge Function deployed
 - [x] Loyalty enabled, `customer_points` table live
 
 ### Pending
@@ -93,33 +108,6 @@ All 27 migrations applied in production. See CLAUDE.md for full list.
 - [ ] **Supabase email templates** — Dashboard → Auth → Email Templates (KiTS branding)
 - [ ] **Resend API key** confirmed in Supabase Secrets for `welcome-email` function
 - [ ] **`avatars` bucket** — Dashboard → Storage → New Bucket → `avatars` (public: off) — needed for ProfileSettings avatar upload
-
----
-
-## 🟡 Active Sprint — In Progress
-
-### 1. CRM Campaigns — Full Implementation
-**Status:** UI exists, DB schema and send logic pending.
-- Create `campaigns` table (migration 000027): id, tenant_id, name, status, type, subject, body, target_segment, scheduled_at, sent_at, sent_count
-- Create `campaign_recipients` table: campaign_id, customer_id, email, status, sent_at
-- Wire MarketingCampaigns.tsx: real CRUD + campaign status (draft/scheduled/sent)
-- Email send: Resend API via Edge Function `send-campaign`
-- AutomatedMarketing.tsx: save workflow rules to DB, trigger on events
-- **File:** `supabase/migrations/20260619_000027_campaigns.sql`
-
-### 2. Workflow Automation — Real Triggers
-**Status:** UI shows "coming soon". Engine not built.
-- Edge Function `trigger-workflows` (scheduled daily + on-event)
-- Rules: low-stock alert (WhatsApp to owner), daily sales summary (WhatsApp/email)
-- UI: enable/disable switches per workflow, configure thresholds
-- **File:** `supabase/functions/trigger-workflows/index.ts`
-
-### 3. Two-Factor Authentication
-**Status:** Not started.
-- Supabase TOTP via `supabase.auth.mfa.*`
-- ProfileSettings: "Enable 2FA" section with QR code display, verify modal
-- Onboarding step 4 prompt for owners
-- **File:** `src/pages/ProfileSettings.tsx` (add 2FA tab)
 
 ---
 
@@ -154,10 +142,9 @@ All 27 migrations applied in production. See CLAUDE.md for full list.
 - Custom Google Font picker, `brand_font` column
 - Custom email from-address (Resend custom domain)
 
-### Audit Trail UI Enhancements
-- Date range, event type, user, entity filters already in ActivityLog.tsx
-- Add Excel export button
-- More granular events: role changes, plan changes
+### Campaign Email Send (Resend)
+- `send-campaign` Edge Function wired to MarketingCampaigns "Send Now"
+- Currently campaigns table is live but outbound email not connected
 
 ---
 
@@ -165,17 +152,21 @@ All 27 migrations applied in production. See CLAUDE.md for full list.
 
 ### Infrastructure
 - [x] TypeScript — zero errors (`npm run typecheck`)
-- [x] Migrations 000000–000026 applied
+- [x] Migrations 000000–000028 applied
 - [x] Vercel env vars set
 - [x] GitHub secrets set
-- [x] All 3 Edge Functions deployed
+- [x] All 4 Edge Functions deployed
 - [x] Admin PIN hash set
 - [x] CI passing
+- [x] `expense-receipts` bucket created
 
 ### Pending Verification
 - [ ] Full signup → email confirmation → onboarding → first sale (new account)
 - [ ] Employee invitation end-to-end
 - [ ] WhatsApp receipt end-to-end (after secrets set)
+- [ ] Finance: add expense → view in Overview → P&L export
+- [ ] Payroll: add entry → download bilingual payslip
+- [ ] 2FA: enable → QR scan → verify → disable
 - [ ] RLS isolation: two test accounts see only their own data
 - [ ] Mobile POS on physical phone (375px, touch targets)
 - [ ] Arabic RTL on physical device

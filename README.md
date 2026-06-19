@@ -68,7 +68,7 @@ npm run storybook     # Component explorer on :6006
 
 ## Database Setup
 
-Run migrations in order in **Supabase Dashboard → SQL Editor**. All 27 migrations are in `supabase/migrations/` and must be applied in filename order (000000 → 000026).
+Run migrations in order in **Supabase Dashboard → SQL Editor**. All 29 migrations are in `supabase/migrations/` and must be applied in filename order (000000 → 000028).
 
 See `CLAUDE.md` for the full ordered list with descriptions.
 
@@ -105,7 +105,10 @@ See `CLAUDE.md` for the full ordered list with descriptions.
 | Forecasting | | ✓ | ✓ |
 | CRM & Loyalty | | ✓ | ✓ |
 | Inventory Management | | ✓ | ✓ |
+| Finance (Expenses, Payroll, P&L) | ✓ | ✓ | ✓ |
+| Two-Factor Authentication (TOTP) | ✓ | ✓ | ✓ |
 | Enterprise Dashboard | | | ✓ |
+| Workflow Automation | | | ✓ |
 | Monitoring | | | ✓ |
 | API & Webhooks | | | ✓ |
 | Multi-Location | | | ✓ |

@@ -9,17 +9,30 @@ Each business is a **tenant**. Users belong to one or more tenants with a specif
 ## Database Tables
 
 ### `tenants`
-One row per business. Contains business metadata and subscription plan.
+One row per business. Contains business metadata, subscription plan, and brand configuration.
 
 ```sql
 id UUID PRIMARY KEY
-name TEXT           -- business display name
-slug TEXT UNIQUE    -- URL-safe identifier
-owner_user_id UUID  -- references auth.users
-subscription_plan TEXT  -- 'starter' | 'growth' | 'business'
+name TEXT              -- business display name
+slug TEXT UNIQUE       -- URL-safe identifier
+owner_user_id UUID     -- references auth.users
+subscription_plan TEXT -- 'starter' | 'growth' | 'business' DEFAULT 'starter'
+subscription_status TEXT -- 'active' | 'trialing' | 'past_due' | 'canceled'
 onboarding_completed BOOLEAN DEFAULT false
-industry, phone, country, currency  -- business profile
-stripe_customer_id, stripe_subscription_id  -- billing (future)
+onboarding_step INTEGER DEFAULT 0
+industry TEXT
+phone TEXT
+country TEXT DEFAULT 'Lebanon'
+currency TEXT DEFAULT 'USD'
+exchange_rate NUMERIC DEFAULT 89500  -- LBP per USD
+trial_ends_at TIMESTAMPTZ
+stripe_customer_id TEXT
+stripe_subscription_id TEXT
+brand_logo_url TEXT
+brand_primary TEXT DEFAULT '#6366f1'
+brand_secondary TEXT DEFAULT '#38bdf8'
+brand_tagline TEXT
+db_provision_status TEXT -- 'pending' | 'provisioned'
 ```
 
 ### `tenant_users`
@@ -28,11 +41,24 @@ Junction table — links a Supabase auth user to a tenant with a role.
 ```sql
 tenant_id UUID → tenants
 user_id UUID   → auth.users
-role TEXT      -- 'owner' | 'manager' | 'cashier' | 'viewer'
+role TEXT      -- see role set below
+```
+
+### `custom_roles`
+Tenant-defined roles with granular permission sets.
+
+```sql
+id UUID PRIMARY KEY
+tenant_id UUID → tenants
+name TEXT
+permissions JSONB  -- { make_sale, edit_products, view_reports, ... }
+is_active BOOLEAN
 ```
 
 ### Domain tables
-`products`, `customers`, `employees`, `sales`, `sale_items`, `inventory_movements` — all have `tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE`.
+All have `tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE`:
+
+`products`, `customers`, `employees`, `sales`, `sale_items`, `inventory_movements`, `suppliers`, `purchase_orders`, `purchase_order_items`, `stock_transfers`, `stock_transfer_items`, `locations`, `location_stock`, `activity_log`, `api_keys`, `webhooks`, `webhook_deliveries`, `customer_points`, `campaigns`, `automated_workflows`, `expense_categories`, `expenses`, `expense_budgets`, `payroll_entries`
 
 ---
 
@@ -46,7 +72,7 @@ current_tenant_id() RETURNS UUID
 -- Set by get_current_user_tenant RPC after tenant selection.
 
 current_user_role() RETURNS TEXT
--- Returns 'owner' | 'manager' | 'cashier' | 'viewer' for the current user/tenant.
+-- Returns the active role for the current user/tenant.
 ```
 
 All RLS policies follow this pattern:
@@ -60,7 +86,7 @@ CREATE POLICY "view tenant products" ON products
 CREATE POLICY "staff manage products" ON products
   FOR ALL USING (
     tenant_id = current_tenant_id()
-    AND current_user_role() IN ('owner', 'manager')
+    AND current_user_role() IN ('owner', 'admin', 'supervisor', 'manager')
   );
 ```
 
@@ -83,9 +109,15 @@ Returns array of:
   tenant_id: string
   tenant_name: string
   tenant_slug: string
-  user_role: 'owner' | 'manager' | 'cashier' | 'viewer'
-  subscription_plan: string
+  user_role: string
+  subscription_plan: 'starter' | 'growth' | 'business'
+  subscription_status: string
   onboarding_completed: boolean
+  exchange_rate: number
+  brand_primary: string
+  brand_secondary: string
+  brand_logo_url: string | null
+  brand_tagline: string | null
   settings: Record<string, unknown>
 }
 ```
@@ -104,14 +136,26 @@ supabase.rpc('create_tenant', {
 
 ## Role-Based Access
 
-| Role | Make sales | Edit products | View employees | Edit employees | Settings |
-|---|---|---|---|---|---|
-| viewer | — | — | — | — | — |
-| cashier | ✓ | — | — | — | — |
-| manager | ✓ | ✓ | ✓ | — | — |
-| owner | ✓ | ✓ | ✓ | ✓ | ✓ |
+8 standard roles (set in `tenant_users.role`):
 
-Role checks in the frontend use `RoleGate` from `src/components/RoleGate.tsx` and `canPerform()` from `SubscriptionContext`. Role checks in the backend use `current_user_role()` in RLS policies.
+| Role | Make sales | Edit products/inventory | View reports/finance | Edit employees | Settings |
+|---|---|---|---|---|---|
+| `viewer` | — | — | — | — | — |
+| `cashier` | ✓ | — | — | — | — |
+| `stockkeeper` | — | ✓ (inventory only) | — | — | — |
+| `accountant` | — | — | ✓ (finance/reports) | — | — |
+| `manager` | ✓ | ✓ | ✓ | — | — |
+| `supervisor` | ✓ | ✓ | ✓ | ✓ | — |
+| `admin` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `owner` | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+Custom roles can be created per-tenant via `custom_roles` table (Enterprise plan).
+
+Role checks in the frontend:
+- `RoleGate` (`src/components/RoleGate.tsx`) — renders nothing for insufficient roles
+- `canPerform()` from `SubscriptionContext` — programmatic check
+
+Role checks in the backend use `current_user_role()` in RLS policies.
 
 ---
 
@@ -119,25 +163,46 @@ Role checks in the frontend use `RoleGate` from `src/components/RoleGate.tsx` an
 
 Each tenant has a `subscription_plan` column. The `SubscriptionContext` reads this and enforces feature access via `hasFeature()` and `isWithinLimit()`.
 
-| Plan | Products | Customers | Employees |
-|---|---|---|---|
-| starter | 50 | 100 | 1 |
-| growth | unlimited | unlimited | 10 |
-| business | unlimited | unlimited | unlimited |
+| Plan | Price | Products | Customers | Employees | Key Features |
+|---|---|---|---|---|---|
+| `starter` | Free | 50 | 100 | 1 | POS, basic reports |
+| `growth` | $29/mo | Unlimited | Unlimited | 10 | + analytics, forecasting, CRM, inventory |
+| `business` | $79/mo | Unlimited | Unlimited | Unlimited | + enterprise, monitoring, API, multi-location, WhatsApp |
 
-See `src/types/subscription.ts` for the full feature matrix.
+See `src/types/subscription.ts` for the complete feature matrix.
+
+---
+
+## Invitations
+
+Users are invited via the `pending_invitations` table. On first login, the `handle_new_user_invite` auth trigger (migration 000002) auto-applies any pending invitations for the user's email, inserting the appropriate `tenant_users` row.
+
+- `accept_pending_invitation()` RPC also available for manual acceptance
+- Auth trigger requires `SET search_path = 'public'` (migration 000017 fix)
 
 ---
 
 ## Onboarding
 
-New tenants go through a 4-step onboarding wizard (`src/components/OnboardingWizard.tsx`) before reaching the dashboard:
+New tenants go through a 4-step wizard (`src/components/OnboardingWizard.tsx`) before reaching the dashboard:
 1. Business profile (name, industry, country, currency, phone)
 2. First product
 3. First team member (skippable)
 4. Done — sets `tenants.onboarding_completed = true`
 
-Existing tenants with `onboarding_completed = false` are also shown the wizard on next login.
+Pre-existing tenants have `onboarding_completed = true` set retroactively via migrations 000009 and 000019.
+
+---
+
+## Brand Identity
+
+Each tenant can customize their brand via `src/components/BrandIdentityModal.tsx`:
+- Logo URL (external CDN or uploaded)
+- Primary color → `--brand-primary` CSS custom property
+- Secondary color → `--brand-secondary`
+- Tagline
+
+All buttons use `.btn-brand` CSS class, which references these variables. Colors propagate instantly across the UI on tenant switch.
 
 ---
 

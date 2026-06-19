@@ -146,14 +146,23 @@ Run in this order in Supabase Dashboard → SQL Editor:
 23. `20260618_000022_admin_pin_verification.sql` — Initial pgcrypto verify_admin_pin (uses ALTER DATABASE — superseded by 000023)
 24. `20260619_000023_admin_pin_config_table.sql` — Fix admin PIN: kits_admin_config table (ALTER DATABASE not available in Supabase SQL Editor); UPDATE the table to set your PIN hash
 25. `20260619_000024_brand_identity.sql` — brand_logo_url, brand_primary, brand_secondary, brand_tagline on tenants; extends get_current_user_tenant()
+26. `20260619_000025_loyalty.sql` — customer_points table; points_balance on customers; Bronze/Silver/Gold tier logic; earn/redeem triggers
+27. `20260619_000026_crm.sql` — customer segments, communication history, CRM analytics helper views
+28. `20260619_000027_campaigns.sql` — campaigns table (marketing campaigns CRUD); automated_workflows table (trigger-based automations)
+29. `20260619_000028_finance.sql` — expense_categories (34 Lebanese system defaults seeded); expenses (USD/LBP dual-currency, VAT, receipt upload); expense_budgets; payroll_entries (NSSF 22.5%, EOS 8.5% accrual, transport allowance)
 
 ## Edge Functions
 
 | Function | Trigger | Env Var Required |
 |---|---|---|
-| `welcome-email` | Called from TenantSelection after tenant creation | `RESEND_API_KEY` (set in Supabase Dashboard → Functions → Secrets) |
+| `welcome-email` | Called from TenantSelection after tenant creation | `RESEND_API_KEY` |
+| `send-invitation` | Called from InviteTeamMemberModal | `RESEND_API_KEY` |
+| `whatsapp-receipt` | Called from POS after sale (Business plan) | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
+| `trigger-workflows` | Called from WorkflowAutomation "Run Now" | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
 
-Deploy: `npx supabase functions deploy welcome-email --project-ref <ref>`
+Deploy all: `npx supabase functions deploy <function-name> --project-ref pytndxjeznhhyycjasep`
+
+Set WhatsApp secrets: `npx supabase secrets set WHATSAPP_TOKEN=... WHATSAPP_PHONE_ID=... --project-ref pytndxjeznhhyycjasep`
 
 ## TypeScript
 

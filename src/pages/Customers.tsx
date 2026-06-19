@@ -10,23 +10,58 @@ import {
   Users,
   Target,
   Mail,
+  Star,
+  Trophy,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import AutomatedMarketing from '../components/crm/AutomatedMarketing';
 import CRMAnalytics from '../components/crm/CRMAnalytics';
 import CustomerCommunicationHistory from '../components/crm/CustomerCommunicationHistory';
 import CustomerSegmentation from '../components/crm/CustomerSegmentation';
+import MarketingCampaigns from '../components/crm/MarketingCampaigns';
+import FeatureGate from '../components/FeatureGate';
+import LoyaltyPanel from '../components/LoyaltyPanel';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../utils/supabaseClient';
 
 export default function Customers() {
   const { customers, addCustomer, updateCustomer } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '' });
-  const [activeTab, setActiveTab] = useState<'overview' | 'segments' | 'communications' | 'marketing' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'segments' | 'communications' | 'marketing' | 'analytics' | 'loyalty'>('overview');
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  const [loyaltySelectedCustomer, setLoyaltySelectedCustomer] = useState<string | null>(null);
+
+  // ── Loyalty leaderboard state ─────────────────────────────────────────────
+
+  interface LoyaltyRow {
+    customer_id: string;
+    points_balance: number;
+    lifetime_points: number;
+    tier: 'bronze' | 'silver' | 'gold';
+  }
+
+  const [loyaltyRows, setLoyaltyRows] = useState<LoyaltyRow[]>([]);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== 'loyalty') return;
+    setLoyaltyLoading(true);
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('customer_points')
+          .select('customer_id, points_balance, lifetime_points, tier')
+          .order('points_balance', { ascending: false });
+        if (!error && data) setLoyaltyRows(data as LoyaltyRow[]);
+      } finally {
+        setLoyaltyLoading(false);
+      }
+    })();
+  }, [activeTab]);
 
   const filteredCustomers = useMemo(
     () =>
@@ -138,10 +173,11 @@ export default function Customers() {
                 { id: 'communications', label: 'Communications', icon: MessageSquare },
                 { id: 'marketing', label: 'Marketing', icon: Mail },
                 { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+                { id: 'loyalty', label: 'Loyalty', icon: Star },
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'overview' | 'segments' | 'communications' | 'marketing' | 'analytics')}
+                  onClick={() => setActiveTab(tab.id as 'overview' | 'segments' | 'communications' | 'marketing' | 'analytics' | 'loyalty')}
                   className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-all duration-200 ${
                     activeTab === tab.id
                       ? 'bg-white/20 text-white border border-white/30 shadow-lg'
@@ -390,6 +426,120 @@ export default function Customers() {
               onDateRangeChange={() => {}}
             />
           </section>
+        )}
+
+        {/* Loyalty Tab */}
+        {activeTab === 'loyalty' && (
+          <FeatureGate feature="crm">
+            <div className="space-y-6">
+              {/* Leaderboard */}
+              <section className="hero-gradient glass-panel rounded-2xl p-4 sm:p-6 text-white">
+                <div className="flex items-center gap-3 mb-4">
+                  <Trophy className="h-5 w-5 text-yellow-400" />
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/60 font-medium">Top Customers</p>
+                    <h2 className="text-lg font-bold text-white mt-0.5">Loyalty Leaderboard</h2>
+                  </div>
+                </div>
+
+                {loyaltyLoading ? (
+                  <p className="text-sm text-white/50 text-center py-8">Loading…</p>
+                ) : loyaltyRows.length === 0 ? (
+                  <div className="text-center py-10">
+                    <Star className="mx-auto h-10 w-10 text-white/20 mb-2" />
+                    <p className="text-sm text-white/50">No loyalty data yet</p>
+                    <p className="text-xs text-white/30 mt-1">Points are earned automatically when loyalty is enabled on your plan</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-white/90">
+                      <thead className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white/70">
+                        <tr>
+                          <th className="px-4 py-3">Rank</th>
+                          <th className="px-4 py-3">Customer</th>
+                          <th className="px-4 py-3">Tier</th>
+                          <th className="px-4 py-3">Balance</th>
+                          <th className="px-4 py-3">Lifetime</th>
+                          <th className="px-4 py-3"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {loyaltyRows.map((row, idx) => {
+                          const customer = customers.find(c => c.id === row.customer_id);
+                          if (!customer) return null;
+                          const tierStyle = row.tier === 'gold'
+                            ? { badge: 'bg-yellow-500/20 border-yellow-400/40 text-yellow-200', icon: 'text-yellow-400' }
+                            : row.tier === 'silver'
+                              ? { badge: 'bg-slate-500/20 border-slate-400/40 text-slate-200', icon: 'text-slate-300' }
+                              : { badge: 'bg-amber-700/20 border-amber-600/40 text-amber-300', icon: 'text-amber-500' };
+                          const rankStyle = idx === 0 ? 'text-yellow-400 font-bold' : idx === 1 ? 'text-slate-300 font-semibold' : idx === 2 ? 'text-amber-500 font-semibold' : 'text-white/50';
+                          return (
+                            <tr key={row.customer_id} className={`transition hover:bg-white/10 ${loyaltySelectedCustomer === row.customer_id ? 'bg-white/10' : ''}`}>
+                              <td className={`px-4 py-3 text-base ${rankStyle}`}>#{idx + 1}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-xs font-semibold text-white">
+                                    {customer.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-white text-sm">{customer.name}</p>
+                                    <p className="text-xs text-white/50">{customer.phone}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold capitalize ${tierStyle.badge}`}>
+                                  <Trophy className={`h-3 w-3 ${tierStyle.icon}`} />
+                                  {row.tier}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="font-semibold text-white">{row.points_balance.toLocaleString()}</span>
+                                <span className="text-white/40 text-xs ml-1">pts</span>
+                              </td>
+                              <td className="px-4 py-3 text-white/60 text-sm">{row.lifetime_points.toLocaleString()}</td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => setLoyaltySelectedCustomer(loyaltySelectedCustomer === row.customer_id ? null : row.customer_id)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/20 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/30 transition"
+                                >
+                                  <Star className="h-3.5 w-3.5" />
+                                  {loyaltySelectedCustomer === row.customer_id ? 'Hide' : 'Details'}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+
+              {/* Selected customer loyalty panel */}
+              {loyaltySelectedCustomer && (() => {
+                const customer = customers.find(c => c.id === loyaltySelectedCustomer);
+                if (!customer) return null;
+                return (
+                  <section className="hero-gradient glass-panel rounded-2xl p-4 sm:p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-white/60 font-medium">Loyalty Profile</p>
+                        <h2 className="text-lg font-bold text-white mt-0.5">{customer.name}</h2>
+                      </div>
+                      <button
+                        onClick={() => setLoyaltySelectedCustomer(null)}
+                        className="text-sm text-white/50 hover:text-white"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <LoyaltyPanel customerId={customer.id} customerName={customer.name} />
+                  </section>
+                );
+              })()}
+            </div>
+          </FeatureGate>
         )}
 
         {/* Add Customer Modal */}

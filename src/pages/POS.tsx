@@ -358,6 +358,35 @@ export default function POS() {
             lastPurchaseDate: new Date().toISOString(),
           });
         }
+
+        // Loyalty: earn points
+        if (currentTenant?.loyalty_enabled) {
+          const pointsEarned = Math.floor(total * (currentTenant.loyalty_points_per_dollar ?? 1));
+          if (pointsEarned > 0) {
+            void supabase.rpc('upsert_customer_points', {
+              p_customer_id: selectedCustomer,
+              p_points_earned: pointsEarned,
+              p_sale_id: sale.id,
+            });
+          }
+        }
+        // Loyalty: deduct redeemed points
+        if (loyaltyPointsRedeemed > 0) {
+          void supabase.from('customer_points').select('points_balance').eq('customer_id', selectedCustomer).single()
+            .then(({ data }) => {
+              if (!data) return;
+              const newBalance = Math.max(0, (data as { points_balance: number }).points_balance - loyaltyPointsRedeemed);
+              void supabase.from('customer_points').update({ points_balance: newBalance }).eq('customer_id', selectedCustomer);
+              void supabase.from('point_transactions').insert({
+                tenant_id: currentTenant?.id,
+                customer_id: selectedCustomer,
+                sale_id: sale.id,
+                type: 'redeemed',
+                points: -loyaltyPointsRedeemed,
+                balance_after: newBalance,
+              });
+            });
+        }
       }
 
       setLastSale(receiptData);

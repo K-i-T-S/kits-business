@@ -25,12 +25,65 @@ html.light-theme {
   color-scheme: light;
 }
 
-/* Main backgrounds */
+/* ── Page / body background ── */
+html.light-theme body {
+  background-color: #f1f5f9 !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+/* ── hero-gradient and glass-panel overrides ──────────────────────────────────
+ * These are defined in index.css with dark !important backgrounds.
+ * We override here. Attribute selector on html adds 1 extra specificity point
+ * over the plain class selectors in index.css.
+ * ─────────────────────────────────────────────────────────────────────────── */
+html.light-theme .hero-gradient,
+html.light-theme .glass-panel {
+  background:
+    radial-gradient(circle at 5% 0%, rgba(99, 102, 241, 0.07), transparent 45%),
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.05), transparent 45%),
+    linear-gradient(135deg, #ffffff 0%, #f8faff 45%, #f1f5f9 100%) !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* tilt-hover cards (stat cards, quick action cards, inventory stat cards) */
+html.light-theme .tilt-hover {
+  background:
+    radial-gradient(circle at 5% 0%, rgba(99, 102, 241, 0.05), transparent 45%),
+    linear-gradient(135deg, #ffffff 0%, #f8faff 100%) !important;
+  color: #0f172a !important;
+}
+
+/* tilt-hover with explicit colored gradient backgrounds — don't override */
+html.light-theme .tilt-hover[class*="from-"],
+html.light-theme .tilt-hover[class*="to-"] {
+  background: revert !important;
+  color: revert !important;
+}
+
+/* hero-gradient.tilt-hover hover state */
+html.light-theme .hero-gradient.tilt-hover:hover {
+  background:
+    radial-gradient(circle at 5% 0%, rgba(99, 102, 241, 0.1), transparent 45%),
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.07), transparent 45%),
+    linear-gradient(135deg, #ffffff 0%, #f0f4ff 45%, #eef2fb 100%) !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 65px rgba(15, 23, 42, 0.12) !important;
+}
+
+/* ── Main backgrounds ── */
 html.light-theme .bg-slate-950,
 html.light-theme .bg-slate-900,
 html.light-theme .min-h-screen.bg-slate-900,
 html.light-theme .min-h-screen.bg-slate-950 {
   background-color: #f1f5f9 !important; /* slate-100 */
+}
+
+/* bg-slate-950/95 (POS sticky checkout footer) */
+html.light-theme [class*="bg-slate-950"] {
+  background-color: rgba(241, 245, 249, 0.97) !important;
 }
 
 html.light-theme .bg-slate-800 {
@@ -41,32 +94,97 @@ html.light-theme .bg-slate-700 {
   background-color: #cbd5e1 !important; /* slate-300 */
 }
 
-/* Sidebar */
+/* ── Sidebar ── */
 html.light-theme aside,
 html.light-theme [class*="sidebar"] {
   background-color: #ffffff !important;
   border-color: rgba(15, 23, 42, 0.1) !important;
 }
 
-/* Header */
+/* ── Header ── */
 html.light-theme header {
   background-color: #ffffff !important;
   border-color: rgba(15, 23, 42, 0.08) !important;
 }
 
-/* Cards / panels */
+/* ── Cards / panels / translucent surfaces ── */
 html.light-theme .bg-white\/5 {
-  background-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.85) !important;
 }
 
 html.light-theme .bg-white\/10 {
-  background-color: rgba(255, 255, 255, 0.9) !important;
+  background-color: #ffffff !important;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
 }
 
-/* Text */
+html.light-theme .bg-white\/20 {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+/* Table head / body rows that use bg-white/10 */
+html.light-theme thead.bg-white\/10,
+html.light-theme table thead .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+html.light-theme tbody.bg-white\/10,
+html.light-theme .divide-y.bg-white\/10 {
+  background-color: #ffffff !important;
+}
+
+/* ── Input fields, textareas ── */
+html.light-theme input[class*="bg-white\/"],
+html.light-theme textarea[class*="bg-white\/"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+html.light-theme input[class*="bg-white\/5"],
+html.light-theme textarea[class*="bg-white\/5"] {
+  background-color: #ffffff !important;
+}
+
+/* ── Select elements ── */
+html.light-theme select[class*="bg-white\/"],
+html.light-theme select[class*="bg-slate"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+/* OnboardingWizard selectClass explicitly uses bg-slate-800 */
+html.light-theme select.bg-slate-800 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+/* ── Placeholder text (generic — covers any input inside light-theme) ── */
+html.light-theme input::placeholder,
+html.light-theme textarea::placeholder {
+  color: rgba(15, 23, 42, 0.35) !important;
+}
+
+html.light-theme .placeholder-white\/30::placeholder {
+  color: rgba(15, 23, 42, 0.3) !important;
+}
+
+html.light-theme .placeholder-white\/40::placeholder {
+  color: rgba(15, 23, 42, 0.4) !important;
+}
+
+html.light-theme .placeholder-white\/50::placeholder {
+  color: rgba(15, 23, 42, 0.4) !important;
+}
+
+/* ── Text ── */
 html.light-theme .text-white {
   color: #0f172a !important; /* slate-900 */
+}
+
+html.light-theme .text-white\/90 {
+  color: rgba(15, 23, 42, 0.9) !important;
 }
 
 html.light-theme .text-white\/80 {
@@ -93,48 +211,129 @@ html.light-theme .text-white\/30 {
   color: rgba(15, 23, 42, 0.3) !important;
 }
 
-/* Borders */
+html.light-theme .text-white\/25 {
+  color: rgba(15, 23, 42, 0.25) !important;
+}
+
+/* ── Borders ── */
+html.light-theme .border-white\/5 {
+  border-color: rgba(15, 23, 42, 0.05) !important;
+}
+
 html.light-theme .border-white\/10 {
   border-color: rgba(15, 23, 42, 0.1) !important;
 }
 
 html.light-theme .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+
+html.light-theme .border-white\/25 {
   border-color: rgba(15, 23, 42, 0.2) !important;
 }
 
-html.light-theme .border-white\/5 {
-  border-color: rgba(15, 23, 42, 0.05) !important;
+html.light-theme .border-white\/30 {
+  border-color: rgba(15, 23, 42, 0.2) !important;
 }
 
-/* Hover states */
-html.light-theme .hover\:bg-white\/10:hover {
-  background-color: rgba(15, 23, 42, 0.05) !important;
+html.light-theme .border-white\/50 {
+  border-color: rgba(15, 23, 42, 0.3) !important;
 }
 
+html.light-theme .border-white\/60 {
+  border-color: rgba(15, 23, 42, 0.3) !important;
+}
+
+/* ── Dividers (table row separators) ── */
+html.light-theme .divide-white\/20 > :not(:last-child) {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+/* ── Hover states ── */
 html.light-theme .hover\:bg-white\/5:hover {
   background-color: rgba(15, 23, 42, 0.03) !important;
 }
 
-/* Active nav items — keep brand colour readable in light mode */
+html.light-theme .hover\:bg-white\/10:hover {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+html.light-theme .hover\:bg-white\/20:hover {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+html.light-theme .hover\:bg-white\/30:hover {
+  background-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html.light-theme .hover\:border-white\/50:hover {
+  border-color: rgba(15, 23, 42, 0.3) !important;
+}
+
+/* Table row hover */
+html.light-theme .hover\:bg-white\/20:hover {
+  background-color: rgba(15, 23, 42, 0.04) !important;
+}
+
+/* ── Active nav items — keep brand colour readable in light mode ── */
 html.light-theme .bg-gradient-to-r.from-indigo-600 {
   background: linear-gradient(to right, #4f46e5, #0284c7) !important;
 }
 
-/* Status indicators — keep green */
+/* ── Status indicators ── */
 html.light-theme .bg-green-500 {
   background-color: #22c55e !important;
 }
 
-/* Placeholder text */
-html.light-theme .placeholder-white\/30::placeholder {
-  color: rgba(15, 23, 42, 0.3) !important;
+/* ── glass-panel-dark (e.g. Inventory edit modal) ── */
+html.light-theme .glass-panel-dark {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+  box-shadow: 0 8px 40px rgba(15, 23, 42, 0.12) !important;
 }
 
-html.light-theme .placeholder-white\/40::placeholder {
-  color: rgba(15, 23, 42, 0.4) !important;
+/* ── GlobalSearch modal overlay ── */
+html.light-theme .bg-black\/60 {
+  background-color: rgba(15, 23, 42, 0.25) !important;
 }
 
-/* Scrollbar in light mode */
+/* GlobalSearch panel: bg-slate-900 is already covered above. */
+
+/* kbd hints inside search modal */
+html.light-theme kbd.bg-white\/10,
+html.light-theme .bg-white\/10.px-1 {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+  color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* ── OnboardingWizard — full-screen overlay ── */
+html.light-theme .fixed.inset-0.z-50.bg-slate-950 {
+  background-color: #f1f5f9 !important;
+}
+
+/* ── POS receipt modal overlay ── */
+html.light-theme .fixed.inset-0.z-50.flex.items-center.justify-center.bg-slate-950\/70 {
+  background-color: rgba(241, 245, 249, 0.85) !important;
+}
+
+/* ── Recharts chart elements ── */
+html.light-theme .recharts-cartesian-grid line {
+  stroke: rgba(15, 23, 42, 0.15) !important;
+}
+
+html.light-theme .recharts-cartesian-axis-tick text,
+html.light-theme .recharts-legend-item-text {
+  fill: rgba(15, 23, 42, 0.6) !important;
+}
+
+html.light-theme .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+}
+
+/* ── Scrollbar in light mode ── */
 html.light-theme ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }

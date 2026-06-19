@@ -1,4 +1,4 @@
-import { Barcode, Minus, Plus, Trash2, DollarSign, Receipt, User, Tag, Star, Settings, Split, Printer } from 'lucide-react';
+import { Barcode, Minus, Plus, Trash2, DollarSign, Receipt, User, Tag, Star, Settings, Split, Printer, MessageCircle, Loader2 } from 'lucide-react';
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
@@ -10,6 +10,7 @@ import SplitPaymentModal from '../components/SplitPaymentModal';
 import TipsModal from '../components/TipsModal';
 import { useApp } from '../context/AppContext';
 import type { Sale, Product } from '../context/AppContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import { supabase } from '../utils/supabaseClient';
 import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
 import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
@@ -57,6 +58,7 @@ interface ReceiptData {
 
 export default function POS() {
   const { products, customers, currentEmployee, currentTenant, addSale, updateCustomer } = useApp();
+  const { hasFeature } = useSubscription();
   const [barcode, setBarcode] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
@@ -78,7 +80,44 @@ export default function POS() {
   const [appliedCoupon, setAppliedCoupon] = useState<DiscountCoupon | null>(null);
   const [loyaltyPointsRedeemed, setLoyaltyPointsRedeemed] = useState(0);
   const [selectedReceiptTemplate, setSelectedReceiptTemplate] = useState<ReceiptTemplate | null>(null);
+  const [whatsappSending, setWhatsappSending] = useState(false);
   const taxRate = currentTenant?.tax_rate ?? 0;
+
+  const handleSendWhatsApp = async () => {
+    if (!lastSale || !selectedCustomer) return;
+    const customer = customers.find(c => c.id === selectedCustomer);
+    if (!customer?.phone) return;
+
+    setWhatsappSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('whatsapp-receipt', {
+        body: {
+          to: customer.phone,
+          customerName: customer.name,
+          saleId: lastSale.id,
+          items: lastSale.items.map(i => ({
+            name: i.productName,
+            qty: i.quantity,
+            price: i.price,
+          })),
+          subtotal: lastSale.subtotal,
+          tax: lastSale.tax,
+          total: lastSale.total,
+          paymentMethod: lastSale.paymentMethod,
+          businessName: currentTenant?.name ?? 'KiTS Business',
+        },
+      });
+      if (error) {
+        toast.error('Failed to send receipt via WhatsApp');
+      } else {
+        toast.success('Receipt sent via WhatsApp!');
+      }
+    } catch {
+      toast.error('Failed to send receipt via WhatsApp');
+    } finally {
+      setWhatsappSending(false);
+    }
+  };
 
   // ── Step 9: Scanner refs — NOT state, avoids async update lag ────────────
   const scannerBuffer = useRef<string>('');
@@ -937,21 +976,38 @@ export default function POS() {
             </div>
 
             {/* Action buttons — hidden from print via .no-print */}
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row no-print">
-              <button
-                onClick={closeReceipt}
-                className="flex-1 rounded-2xl btn-brand px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
-              >
-                New sale
-              </button>
-              {/* Step 5: Print Receipt button */}
-              <button
-                onClick={() => window.print()}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-white/30 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20 transition"
-              >
-                <Printer className="w-4 h-4" />
-                Print Receipt
-              </button>
+            <div className="mt-6 flex flex-col gap-3 no-print">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={closeReceipt}
+                  className="flex-1 rounded-2xl btn-brand px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
+                >
+                  New sale
+                </button>
+                {/* Step 5: Print Receipt button */}
+                <button
+                  onClick={() => window.print()}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-white/30 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20 transition"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Receipt
+                </button>
+              </div>
+              {/* WhatsApp Receipt — Business plan only, requires customer phone */}
+              {hasFeature('enterprise_dashboard') &&
+                selectedCustomer &&
+                customers.find(c => c.id === selectedCustomer)?.phone && (
+                  <button
+                    onClick={() => void handleSendWhatsApp()}
+                    disabled={whatsappSending}
+                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {whatsappSending
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <MessageCircle className="w-4 h-4" />}
+                    {whatsappSending ? 'Sending…' : 'Send via WhatsApp'}
+                  </button>
+                )}
             </div>
           </div>
         </div>

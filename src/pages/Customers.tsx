@@ -589,7 +589,7 @@ export default function Customers() {
                       border: '1px solid rgba(255, 255, 255, 0.2)',
                       color: '#f8faff',
                     }}
-                    placeholder="Enter phone number"
+                    placeholder="+961 X XXX XXX"
                     required
                   />
                 </div>

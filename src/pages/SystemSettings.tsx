@@ -3,6 +3,7 @@ import {
   Building2,
   CreditCard,
   Loader2,
+  MessageCircle,
   Save,
   Settings,
   ShoppingCart,
@@ -15,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import FeatureGate from '../components/FeatureGate';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
 
@@ -719,6 +721,48 @@ export default function SystemSettings() {
                 <p className="text-xs text-white/40">
                   POS behaviour settings are stored locally in this browser.
                 </p>
+
+                {/* ── WhatsApp Receipts (Business plan only) ──────────── */}
+                <FeatureGate feature="enterprise_dashboard">
+                  <div className="rounded-xl border border-white/10 bg-slate-900 p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10">
+                        <MessageCircle className="h-4 w-4 text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">WhatsApp Receipts</p>
+                        <p className="mt-0.5 text-xs text-white/60">
+                          Send sale receipts directly to customers via WhatsApp Business Cloud API.
+                          Enabled automatically when the Supabase secrets are set.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-1.5">
+                      <p className="text-xs font-medium text-white/80">Setup instructions</p>
+                      <ol className="space-y-1 text-xs text-white/60 list-decimal list-inside">
+                        <li>
+                          Create a Meta Business App and enable the WhatsApp Cloud API —{' '}
+                          <a
+                            href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+                          >
+                            Getting Started Guide
+                          </a>
+                        </li>
+                        <li>In Supabase Dashboard → Functions → Secrets, add:</li>
+                      </ol>
+                      <div className="mt-2 rounded border border-white/10 bg-slate-950 px-3 py-2 font-mono text-xs text-white/70 space-y-0.5">
+                        <p>WHATSAPP_TOKEN=&lt;Meta API bearer token&gt;</p>
+                        <p>WHATSAPP_PHONE_ID=&lt;sender phone number ID&gt;</p>
+                      </div>
+                      <p className="text-xs text-white/40">
+                        Once set, a &ldquo;Send via WhatsApp&rdquo; button will appear on every receipt for customers with a phone number.
+                      </p>
+                    </div>
+                  </div>
+                </FeatureGate>
 
                 <div className="flex justify-end pt-2">
                   <button

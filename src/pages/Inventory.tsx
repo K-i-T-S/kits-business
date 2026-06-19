@@ -489,8 +489,8 @@ export default function Inventory() {
 
       {/* Edit product modal */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: 'rgba(11,15,36,0.98)', border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 35px 85px rgba(2,3,12,0.6)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+          <div className="glass-panel-dark w-full max-w-md rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white">Edit Product</h2>
               <button onClick={() => setEditingProduct(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">

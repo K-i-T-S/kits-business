@@ -54,6 +54,7 @@ const MultiLocationSupport = lazy(() => import('./components/enterprise/MultiLoc
 const ApiAndWebhooks = lazy(() => import('./components/enterprise/ApiAndWebhooks'));
 const MonitoringDashboard = lazy(() => import('./components/monitoring/MonitoringDashboard'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const ForecastingPage = lazy(() => import('./pages/Forecasting'));
 
 // Mobile components wrapper that needs access to Router context
 function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
@@ -183,6 +184,20 @@ export default function App() {
                             <Route
                               path="/admin"
                               element={isAuthenticated ? <AdminPanel /> : <Navigate to="/login" replace />}
+                            />
+
+                            {/* ── Growth+ routes (forecasting) ── */}
+                            <Route
+                              path="/forecasting"
+                              element={
+                                isAuthenticated ? (
+                                  <FeatureRoute feature="forecasting">
+                                    <ForecastingPage />
+                                  </FeatureRoute>
+                                ) : (
+                                  <Navigate to="/login" replace />
+                                )
+                              }
                             />
 
                             {/* ── Growth+ routes (inventory_management) ── */}

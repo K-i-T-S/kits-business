@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryOptions, type UseMutationOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import type { Product, Sale, Customer, Employee } from '../context/AppContext';
@@ -57,7 +57,7 @@ export function useCreateProduct() {
       return data.product;
     },
     onSuccess: (newProduct) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.products });
       toast.success('Product added', { description: newProduct.name });
     },
     onError: (error: any) => {
@@ -78,8 +78,8 @@ export function useUpdateProduct() {
       return data.product;
     },
     onSuccess: (updatedProduct) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products });
-      queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
       toast.success('Product updated', { description: updatedProduct.name });
     },
     onError: (error: any) => {
@@ -100,7 +100,7 @@ export function useDeleteProduct() {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.products });
       toast.success('Product deleted');
     },
     onError: (error: any) => {
@@ -131,8 +131,8 @@ export function useCreateSale() {
       return data.sale;
     },
     onSuccess: (newSale) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.sales });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sales });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.products });
       toast.success('Sale recorded', {
         description: `Total $${newSale.total.toFixed(2)}`,
       });
@@ -179,7 +179,7 @@ export function useCreateCustomer() {
       return data.customer;
     },
     onSuccess: (newCustomer) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       toast.success('Customer added', { description: newCustomer.name });
     },
     onError: (error: any) => {
@@ -200,8 +200,8 @@ export function useUpdateCustomer() {
       return data.customer;
     },
     onSuccess: (updatedCustomer) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.customers });
-      queryClient.invalidateQueries({ queryKey: queryKeys.customer(updatedCustomer.id) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customer(updatedCustomer.id) });
       toast.success('Customer updated', { description: updatedCustomer.name });
     },
     onError: (error: any) => {
@@ -247,7 +247,7 @@ export function useCreateEmployee() {
       return { ...data.employee, tempPassword };
     },
     onSuccess: (newEmployee) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.employees });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.employees });
       toast.success('Employee created', {
         description: `Temp password: ${newEmployee.tempPassword}`,
       });
@@ -270,8 +270,8 @@ export function useUpdateEmployee() {
       return data.employee;
     },
     onSuccess: (updatedEmployee) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.employees });
-      queryClient.invalidateQueries({ queryKey: queryKeys.employee(updatedEmployee.id) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.employees });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.employee(updatedEmployee.id) });
       toast.success('Employee updated', { description: updatedEmployee.name });
     },
     onError: (error: any) => {
@@ -297,8 +297,8 @@ export function useUpdateStock() {
       return data.product;
     },
     onSuccess: (updatedProduct) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products });
-      queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
       toast.success('Stock updated');
     },
     onError: (error: any) => {

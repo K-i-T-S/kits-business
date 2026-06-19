@@ -1,17 +1,10 @@
 import {
-  ArrowRight,
-  Calendar,
   CheckCircle2,
   Clock,
-  Edit,
   Filter,
-  Mail,
-  MessageSquare,
-  Phone,
   Plus,
   Search,
   Send,
-  Star,
   TrendingUp,
   Users,
   X,
@@ -31,7 +24,7 @@ export default function CustomerManagement() {
   const [activeTab, setActiveTab] = useState<'overview' | 'segments' | 'campaigns' | 'analytics'>('overview');
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
-  const [filters, setFilters] = useState({ status: 'all', source: 'all' });
+  const [_filters, _setFilters] = useState({ status: 'all', source: 'all' });
   const [newCustomerForm, setNewCustomerForm] = useState({ name: '', email: '', phone: '' });
 
   const filteredCustomers = useMemo(() => {

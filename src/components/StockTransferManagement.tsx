@@ -80,7 +80,7 @@ export default function StockTransferManagement() {
     }
   }, []);
 
-  useEffect(() => { loadTransfers(); }, [loadTransfers]);
+  void useEffect(() => { loadTransfers(); }, [loadTransfers]);
 
   // ── Derived stats ──────────────────────────────────────────
 
@@ -152,7 +152,7 @@ export default function StockTransferManagement() {
       setToLocation('');
       setNotes('');
       setNewItems([]);
-      loadTransfers();
+      void loadTransfers();
     } catch (err) {
       toast.error('Failed to create transfer');
       console.error(err);
@@ -175,7 +175,7 @@ export default function StockTransferManagement() {
       const { error } = await supabase.from('stock_transfers').update(patch).eq('id', transfer.id);
       if (error) throw error;
       toast.success(`Transfer marked as ${newStatus.replace('_', ' ')}`);
-      loadTransfers();
+      void loadTransfers();
     } catch (err) {
       toast.error('Failed to update transfer status');
       console.error(err);
@@ -187,7 +187,7 @@ export default function StockTransferManagement() {
       const { error } = await supabase.from('stock_transfers').update({ status: 'cancelled' }).eq('id', id);
       if (error) throw error;
       toast.success('Transfer cancelled');
-      loadTransfers();
+      void loadTransfers();
     } catch (err) {
       toast.error('Failed to cancel transfer');
       console.error(err);

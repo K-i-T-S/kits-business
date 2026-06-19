@@ -208,7 +208,7 @@ export class SecurityMiddleware {
         default:
           return { valid: false, error: 'Unknown input type' };
       }
-    } catch (error) {
+    } catch (_error) {
       return { valid: false, error: 'Validation error occurred' };
     }
   }

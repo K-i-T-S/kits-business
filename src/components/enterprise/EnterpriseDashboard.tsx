@@ -65,7 +65,7 @@ export default function EnterpriseDashboard() {
   }, []);
 
   useEffect(() => {
-    loadDashboardData();
+    void loadDashboardData();
   }, [loadDashboardData]);
 
   if (loading) {

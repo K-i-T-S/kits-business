@@ -271,8 +271,8 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-80 transform border-r border-white/10 bg-slate-900/98 backdrop-blur-xl transition-all duration-300 ease-out md:static md:translate-x-0 md:flex-none shadow-2xl ${
-          mobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        className={`fixed inset-y-0 start-0 z-30 w-80 transform border-e border-white/10 bg-slate-900/98 backdrop-blur-xl transition-all duration-300 ease-out md:static md:translate-x-0 md:flex-none shadow-2xl ${
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full md:translate-x-0 rtl:md:translate-x-0'
         }`}
         role="navigation"
         aria-label="Main navigation"
@@ -372,7 +372,7 @@ export default function Layout({ children }: LayoutProps) {
                     <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/30">
                       <item.icon className="h-4 w-4" />
                     </div>
-                    <span className="flex-1 text-left">{item.name}</span>
+                    <span className="flex-1 text-start">{item.name}</span>
                     <Lock className="h-3 w-3 text-amber-400/70" aria-hidden="true" />
                   </button>
                 );
@@ -494,8 +494,8 @@ export default function Layout({ children }: LayoutProps) {
                     className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors text-sm w-48 lg:w-64 header-search"
                   >
                     <Search className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-                    <span className="flex-1 text-left">Search&hellip;</span>
-                    <kbd className="ml-auto text-xs bg-white/10 px-1.5 py-0.5 rounded text-white/30 font-mono hidden lg:inline">
+                    <span className="flex-1 text-start">Search&hellip;</span>
+                    <kbd className="ms-auto text-xs bg-white/10 px-1.5 py-0.5 rounded text-white/30 font-mono hidden lg:inline">
                       ⌘K
                     </kbd>
                   </button>
@@ -620,7 +620,7 @@ export default function Layout({ children }: LayoutProps) {
                         <div className="py-2" role="none">
                           <Link
                             to="/profile-settings"
-                            className="w-full px-4 py-2 text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3"
+                            className="w-full px-4 py-2 text-start text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3"
                             role="menuitem"
                           >
                             <UserCircle className="h-4 w-4" aria-hidden="true" />
@@ -628,7 +628,7 @@ export default function Layout({ children }: LayoutProps) {
                           </Link>
                           <Link
                             to="/system-settings"
-                            className="w-full px-4 py-2 text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3"
+                            className="w-full px-4 py-2 text-start text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3"
                             role="menuitem"
                           >
                             <Settings className="h-4 w-4" aria-hidden="true" />
@@ -636,7 +636,7 @@ export default function Layout({ children }: LayoutProps) {
                           </Link>
                           <Link
                             to="/activity-log"
-                            className="w-full px-4 py-2 text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3"
+                            className="w-full px-4 py-2 text-start text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3"
                             role="menuitem"
                           >
                             <Calendar className="h-4 w-4" aria-hidden="true" />
@@ -644,7 +644,7 @@ export default function Layout({ children }: LayoutProps) {
                           </Link>
                           <Link
                             to="/help-support"
-                            className="w-full px-4 py-2 text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3"
+                            className="w-full px-4 py-2 text-start text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3"
                             role="menuitem"
                           >
                             <HelpCircle className="h-4 w-4" aria-hidden="true" />
@@ -654,7 +654,7 @@ export default function Layout({ children }: LayoutProps) {
                         <div className="border-t border-white/10 p-2">
                           <button
                             onClick={handleLogout}
-                            className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors rounded-lg flex items-center gap-3"
+                            className="w-full px-3 py-2 text-start text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors rounded-lg flex items-center gap-3"
                             role="menuitem"
                           >
                             <LogOut className="h-4 w-4" aria-hidden="true" />

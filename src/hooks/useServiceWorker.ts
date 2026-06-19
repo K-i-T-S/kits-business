@@ -141,7 +141,7 @@ export function useOfflineDetection() {
       setIsOnline(true);
       // Trigger background sync if supported
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(registration => {
+        void navigator.serviceWorker.ready.then(registration => {
           if ('sync' in registration) {
             (registration as any).sync.register('background-sync');
           }
@@ -193,7 +193,7 @@ export function useOfflineDetection() {
       }
     };
 
-    checkOfflineActions();
+    void checkOfflineActions();
     const interval = setInterval(checkOfflineActions, 5000); // Check every 5 seconds
 
     return () => clearInterval(interval);

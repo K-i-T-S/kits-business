@@ -31,7 +31,7 @@ export class OperationQueue {
       const queue = this.queues.get(queueKey)!;
       queue.push(pendingOp);
 
-      this.processQueue(queueKey);
+      void this.processQueue(queueKey);
     });
   }
 

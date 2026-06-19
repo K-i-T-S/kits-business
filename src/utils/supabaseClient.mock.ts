@@ -1,7 +1,7 @@
 // Mock Supabase client for testing
 export const supabase = {
   auth: {
-    onAuthStateChange: (callback: any) => ({
+    onAuthStateChange: (_callback: any) => ({
       data: { subscription: { unsubscribe: () => {} } },
     }),
     getSession: () => Promise.resolve({
@@ -22,7 +22,7 @@ export const supabase = {
     signUp: () => Promise.resolve({ data: { user: {} }, error: null }),
     signOut: () => Promise.resolve({ error: null }),
   },
-  from: (table: string) => ({
+  from: (_table: string) => ({
     select: () => ({
       eq: () => ({
         order: () => ({

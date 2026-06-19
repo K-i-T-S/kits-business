@@ -95,7 +95,7 @@ export default function ReorderPointManagement() {
   }, []);
 
   useEffect(() => {
-    loadProducts();
+    void loadProducts();
   }, [loadProducts]);
 
   const startEdit = (id: string) =>

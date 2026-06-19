@@ -1,11 +1,7 @@
 import {
-  Activity,
   BarChart3,
   Calendar,
-  Clock,
   DollarSign,
-  Mail,
-  MessageSquare,
   Target,
   TrendingUp,
   UserPlus,
@@ -38,7 +34,7 @@ interface CRMAnalyticsProps {
   onDateRangeChange: (range: { start: string; end: string }) => void;
 }
 
-export default function CRMAnalytics({ customers, segments, dateRange, onDateRangeChange }: CRMAnalyticsProps) {
+export default function CRMAnalytics({ customers, segments, dateRange, onDateRangeChange: _onDateRangeChange }: CRMAnalyticsProps) {
   const analytics = useMemo(() => {
     const totalCustomers = customers.length;
     const now = new Date();

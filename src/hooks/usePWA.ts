@@ -91,8 +91,8 @@ export function usePWA() {
 
   const showNotification = (title: string, options?: NotificationOptions) => {
     if (Notification.permission === 'granted' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.showNotification(title, {
+      void navigator.serviceWorker.ready.then(registration => {
+        void registration.showNotification(title, {
           icon: '/logo.png',
           badge: '/logo.png',
           ...options,

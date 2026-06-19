@@ -36,7 +36,7 @@ export default function TenantSelection() {
   const [onboardingTenantName, setOnboardingTenantName] = useState('');
 
   useEffect(() => {
-    checkAuthAndLoadTenants();
+    void checkAuthAndLoadTenants();
   }, []);
 
   const checkAuthAndLoadTenants = async () => {
@@ -44,7 +44,7 @@ export default function TenantSelection() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate('/login');
+        void navigate('/login');
         return;
       }
 
@@ -61,14 +61,14 @@ export default function TenantSelection() {
 
       if (pendingInvites && pendingInvites.length > 0) {
         const invite = pendingInvites[0] as { id: string; tenant_id: string; name: string; role: string };
-        navigate(`/accept-invite?invitation_id=${invite.id}`);
+        void navigate(`/accept-invite?invitation_id=${invite.id}`);
         return;
       }
 
       // Auto-select when the user belongs to exactly one tenant — skip the picker
       if (tenantList.length === 1) {
         await reloadSubscription();
-        navigate('/dashboard');
+        void navigate('/dashboard');
         return;
       }
     } catch {
@@ -142,7 +142,7 @@ export default function TenantSelection() {
     // (via handleCreateTenant). Checking onboarding_completed here caused an
     // infinite loop for tenants where the flag was never set (pre-migration-000019 bug).
     await reloadSubscription();
-    navigate('/dashboard');
+    void navigate('/dashboard');
   };
 
   const generateSlug = (name: string) =>
@@ -161,7 +161,7 @@ export default function TenantSelection() {
         tenantName={onboardingTenantName}
         onComplete={() => {
           void reloadSubscription();
-          navigate('/dashboard');
+          void navigate('/dashboard');
         }}
       />
     );

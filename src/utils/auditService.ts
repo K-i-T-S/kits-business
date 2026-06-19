@@ -40,7 +40,7 @@ export class AuditLogger {
 
   private startBatchFlush(): void {
     this.flushTimer = setInterval(() => {
-      this.flushBatch();
+      void this.flushBatch();
     }, this.flushInterval);
   }
 

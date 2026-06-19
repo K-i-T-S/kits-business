@@ -1,7 +1,7 @@
 import { Star, Gift, TrendingUp, Award, Check } from 'lucide-react';
 import { useState } from 'react';
 
-import type { LoyaltyProgram, CustomerLoyalty, LoyaltyTier, LoyaltyReward } from '../types/pos';
+import type { LoyaltyProgram, CustomerLoyalty, LoyaltyReward } from '../types/pos';
 import { POSCalculator } from '../utils/posCalculations';
 
 interface LoyaltyModalProps {

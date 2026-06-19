@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface TouchGestureOptions {
@@ -70,7 +70,7 @@ export function useTouchGestures(options: TouchGestureOptions = {}) {
     };
   }, []);
 
-  const handleTouchEnd = useCallback((e: TouchEvent) => {
+  const handleTouchEnd = useCallback((_e: TouchEvent) => {
     // Clear long press timer
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
@@ -136,12 +136,12 @@ export function useTouchGestures(options: TouchGestureOptions = {}) {
 }
 
 export function useSwipeToNavigate() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   return useTouchGestures({
     onSwipeLeft: () => {
       // Navigate forward or to next section
-      const currentPath = window.location.pathname;
+      const _currentPath = window.location.pathname;
       // Add your navigation logic here
     },
     onSwipeRight: () => {

@@ -1,4 +1,4 @@
-import { securityMiddleware } from './securityMiddleware';
+
 import { supabase } from './supabaseClient';
 
 interface SecurityContext {
@@ -323,7 +323,7 @@ export class EnhancedAuditLogger {
     }
   }
 
-  private async logActivityEvent(event: AuditEvent, context: SecurityContext): Promise<void> {
+  private async logActivityEvent(event: AuditEvent, _context: SecurityContext): Promise<void> {
     const description = this.generateActivityDescription(event);
 
     await supabase.rpc('log_activity', {
@@ -335,7 +335,7 @@ export class EnhancedAuditLogger {
     });
   }
 
-  private async logSecurityEvent(event: AuditEvent, context: SecurityContext): Promise<void> {
+  private async logSecurityEvent(event: AuditEvent, _context: SecurityContext): Promise<void> {
     await supabase.rpc('log_security_event', {
       event_type: event.action,
       description: this.generateSecurityDescription(event),
@@ -406,7 +406,7 @@ export class EnhancedAuditLogger {
     return `${Math.round(totalBytes / (1024 * 1024))} MB`;
   }
 
-  private async getFailedLoginAttempts(email: string, ipAddress: string): Promise<number> {
+  private async getFailedLoginAttempts(email: string, _ipAddress: string): Promise<number> {
     // Query recent failed attempts for this email/IP
     const { count } = await supabase
       .from('audit_logs')

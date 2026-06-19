@@ -120,7 +120,7 @@ export function useOfflineSync() {
   useEffect(() => {
     const handleOnline = () => {
       setSyncStatus(prev => ({ ...prev, isOnline: true }));
-      syncActions(); // auto-sync on reconnection
+      void syncActions(); // auto-sync on reconnection
     };
     const handleOffline = () => {
       setSyncStatus(prev => ({ ...prev, isOnline: false }));

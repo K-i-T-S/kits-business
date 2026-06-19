@@ -38,7 +38,7 @@ export const prefetchStrategy = {
     return {
       onMouseEnter: () => {
         timeoutId = window.setTimeout(() => {
-          queryClient.prefetchQuery({
+          void queryClient.prefetchQuery({
             queryKey,
             queryFn: prefetchFn,
             staleTime: 1000 * 60 * 5, // 5 minutes
@@ -53,7 +53,7 @@ export const prefetchStrategy = {
 
   // Prefetch data on focus
   onFocus: (queryClient: QueryClient, queryKey: string[], prefetchFn: () => Promise<any>) => {
-    queryClient.prefetchQuery({
+    void queryClient.prefetchQuery({
       queryKey,
       queryFn: prefetchFn,
       staleTime: 1000 * 60 * 10, // 10 minutes
@@ -90,7 +90,7 @@ export const invalidationStrategy = {
   // Invalidate related queries when data changes
   invalidateRelated: (queryClient: QueryClient, baseQueryKey: string[]) => {
     // Invalidate all queries that start with the base key
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       predicate: (query) => {
         const queryKey = query.queryKey;
         return Array.isArray(queryKey) &&
@@ -105,10 +105,10 @@ export const invalidationStrategy = {
     queryClient: QueryClient,
     queryKey: string[],
     newData: T,
-    updateFn: () => Promise<T>,
+    _updateFn: () => Promise<T>,
   ) => {
     // Cancel any outgoing refetches
-    queryClient.cancelQueries({ queryKey });
+    void queryClient.cancelQueries({ queryKey });
 
     // Snapshot the previous value
     const previousData = queryClient.getQueryData(queryKey);

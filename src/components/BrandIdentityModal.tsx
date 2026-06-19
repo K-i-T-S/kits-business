@@ -184,7 +184,7 @@ export default function BrandIdentityModal({ open, onClose }: Props) {
                 href="https://kits.solutions"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ml-auto text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="ms-auto text-indigo-400 hover:text-indigo-300 transition-colors"
                 aria-label="Visit KiTS"
               >
                 <ExternalLink className="h-3 w-3" />

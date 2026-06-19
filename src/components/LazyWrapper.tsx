@@ -37,5 +37,5 @@ export const withLazyLoading = (
 // Preloading utility for critical components
 export const preloadComponent = (componentImport: () => Promise<any>) => {
   const componentLoader = componentImport;
-  componentLoader();
+  void componentLoader();
 };

@@ -1,6 +1,6 @@
-import { Mail, MessageCircle, Instagram, PhoneCall } from 'lucide-react';
+import { Mail, MessageCircle, Instagram } from 'lucide-react';
 import React, { memo } from 'react';
-import { Link } from 'react-router-dom';
+
 
 import { BRAND } from '../constants/branding';
 

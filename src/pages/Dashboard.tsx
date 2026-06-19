@@ -39,7 +39,7 @@ export default function Dashboard() {
 
     const target = ROLE_REDIRECT[currentTenant.userRole];
     if (target) {
-      navigate(target, { replace: true });
+      void navigate(target, { replace: true });
     }
   }, [currentTenant, loading, navigate, location.pathname]);
 
@@ -231,8 +231,8 @@ export default function Dashboard() {
                         {new Date(sale.date).toLocaleTimeString()}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-white">
+                    <div className="text-end">
+                      <p className="text-sm font-semibold text-white" dir="ltr">
                         ${sale.total.toFixed(2)}
                       </p>
                       <p className="text-xs capitalize text-white/70">{sale.paymentMethod}</p>

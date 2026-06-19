@@ -10,6 +10,7 @@ import SplitPaymentModal from '../components/SplitPaymentModal';
 import TipsModal from '../components/TipsModal';
 import { useApp } from '../context/AppContext';
 import type { Sale, Product } from '../context/AppContext';
+import { supabase } from '../utils/supabaseClient';
 import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
 import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
 import { formatTaxBreakdown } from '../utils/formatting';
@@ -72,7 +73,7 @@ export default function POS() {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showLoyaltyModal, setShowLoyaltyModal] = useState(false);
   const [showReceiptCustomization, setShowReceiptCustomization] = useState(false);
-  const [splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
+  const [_splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
   const [tipInfo, setTipInfo] = useState<TipInfo | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<DiscountCoupon | null>(null);
   const [loyaltyPointsRedeemed, setLoyaltyPointsRedeemed] = useState(0);
@@ -290,7 +291,7 @@ export default function POS() {
     return POSCalculator.calculateFinalTotal(subtotal, tax, discounts, tips);
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!cart?.length) {
       toast.error('Cart is empty', {
         description: 'Scan or add at least one product before completing a sale.',
@@ -398,7 +399,7 @@ export default function POS() {
                 : 'Scan a barcode or select a product to begin a new transaction.'}
             </p>
           </div>
-          <div className="rounded-3xl border border-white/50 bg-white/20 px-6 py-4 text-right text-xs uppercase tracking-[0.3em] text-white/80">
+          <div className="rounded-3xl border border-white/50 bg-white/20 px-6 py-4 text-end text-xs uppercase tracking-[0.3em] text-white/80">
             Operator: <span className="text-base font-semibold text-white">{currentEmployee?.name}</span>
           </div>
         </section>
@@ -467,14 +468,14 @@ export default function POS() {
               </div>
               <form onSubmit={handleBarcodeSubmit} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <div className="flex-1 relative">
-                  <Barcode className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
+                  <Barcode className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
                   <input
                     type="text"
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
                     onKeyDown={handleScannerKeyDown}
                     placeholder="Scan or enter barcode..."
-                    className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
+                    className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 ps-12 pe-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
                     autoFocus
                   />
                 </div>
@@ -564,11 +565,11 @@ export default function POS() {
               <p className="text-xs uppercase tracking-[0.3em] text-white/70">Customer</p>
               <h2 className="text-lg font-semibold text-white">Attach loyalty profile</h2>
               <div className="relative">
-                <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
+                <User className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
                 <select
                   value={selectedCustomer}
                   onChange={(e) => setSelectedCustomer(e.target.value)}
-                  className="w-full appearance-none rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-10 text-sm text-white shadow-inner focus:border-white/50 focus:outline-none"
+                  className="w-full appearance-none rounded-2xl border border-white/30 bg-white/20 py-3 ps-12 pe-10 text-sm text-white shadow-inner focus:border-white/50 focus:outline-none"
                 >
                   <option value="">Walk-in Customer</option>
                   {(customers || [])?.map(customer => (
@@ -691,7 +692,7 @@ export default function POS() {
                     <span>${(calculateTotal() || 0).toFixed(2)}</span>
                   </div>
                   {currentTenant?.show_dual_currency && currentTenant.exchange_rate && (
-                    <div className="text-right text-xs text-white/50 mt-0.5">
+                    <div className="text-end text-xs text-white/50 mt-0.5">
                       ≈ {Math.round((calculateTotal() || 0) * currentTenant.exchange_rate).toLocaleString()} {currentTenant.secondary_currency ?? 'LBP'}
                     </div>
                   )}
@@ -711,7 +712,7 @@ export default function POS() {
       </div>
 
       {/* ── Step 4: Sticky checkout footer — mobile only (hidden on lg+) ─────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-white/10 bg-slate-950/95 backdrop-blur-sm px-4 py-3">
+      <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-white/10 bg-slate-950/95 backdrop-blur-sm px-4 py-3">
         <div className="flex items-center justify-between mb-2 text-sm">
           <span className="text-white/60">
             {cart.length > 0
@@ -843,7 +844,7 @@ export default function POS() {
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-white/80">
                       {item.productName}
-                      <span className="ml-1 text-white/50">×{item.quantity}</span>
+                      <span className="ms-1 text-white/50">×{item.quantity}</span>
                     </span>
                     <span className="font-semibold text-white">
                       ${((item.price || 0) * item.quantity).toFixed(2)}

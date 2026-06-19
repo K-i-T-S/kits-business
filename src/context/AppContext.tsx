@@ -127,6 +127,9 @@ export interface Tenant {
   exchange_rate?: number;
   show_dual_currency?: boolean;
   tin?: string | null;
+  loyalty_enabled?: boolean;
+  loyalty_points_per_dollar?: number;
+  loyalty_points_redeem_rate?: number;
 }
 
 function applyBrandColors(primary?: string, secondary?: string) {
@@ -384,11 +387,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 brand_primary: tenantData.brand_primary ?? '#6366f1',
                 brand_secondary: tenantData.brand_secondary ?? '#0ea5e9',
                 brand_tagline: tenantData.brand_tagline ?? null,
-                tax_rate: tenantData.tax_rate != null ? Number(tenantData.tax_rate) : undefined,
+                tax_rate: tenantData.tax_rate !== null ? Number(tenantData.tax_rate) : undefined,
                 secondary_currency: tenantData.secondary_currency ?? 'LBP',
-                exchange_rate: tenantData.exchange_rate != null ? Number(tenantData.exchange_rate) : undefined,
+                exchange_rate: tenantData.exchange_rate !== null ? Number(tenantData.exchange_rate) : undefined,
                 show_dual_currency: tenantData.show_dual_currency ?? false,
                 tin: tenantData.tin ?? null,
+                loyalty_enabled: tenantData.loyalty_enabled ?? false,
+                loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
+                loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
               };
               setCurrentTenant(tenant);
               applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
@@ -398,7 +404,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const errorObj = tenantError instanceof Error ? tenantError : new Error(String(tenantError));
             log.error('Failed to load tenant', errorObj);
           }
-          if (isMounted) loadData();
+          if (isMounted) void loadData();
         }
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -408,7 +414,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    init();
+    void init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setHasSession(!!session);
@@ -425,11 +431,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
               brand_primary: tenantData.brand_primary ?? '#6366f1',
               brand_secondary: tenantData.brand_secondary ?? '#0ea5e9',
               brand_tagline: tenantData.brand_tagline ?? null,
-              tax_rate: tenantData.tax_rate != null ? Number(tenantData.tax_rate) : undefined,
+              tax_rate: tenantData.tax_rate !== null ? Number(tenantData.tax_rate) : undefined,
               secondary_currency: tenantData.secondary_currency ?? 'LBP',
-              exchange_rate: tenantData.exchange_rate != null ? Number(tenantData.exchange_rate) : undefined,
+              exchange_rate: tenantData.exchange_rate !== null ? Number(tenantData.exchange_rate) : undefined,
               show_dual_currency: tenantData.show_dual_currency ?? false,
               tin: tenantData.tin ?? null,
+              loyalty_enabled: tenantData.loyalty_enabled ?? false,
+              loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
+              loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
             };
             setCurrentTenant(tenant);
             applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
@@ -438,7 +447,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }).catch(error => {
           const errorObj = error instanceof Error ? error : new Error(String(error));
           log.error('Failed to load tenant on auth change', errorObj);
-        }).finally(() => { loadData(); });
+        }).finally(() => { void loadData(); });
       } else {
         setProducts([]);
         setSales([]);
@@ -911,8 +920,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Tenant ───────────────────────────────────────────────────────────────
 
-  const switchTenant = async (_tenantId: string) => {
-    setTimeout(() => { loadData(); }, 100);
+  const switchTenant = (_tenantId: string) => {
+    void setTimeout(() => { loadData(); }, 100);
   };
 
   if (loading && hasSession) {

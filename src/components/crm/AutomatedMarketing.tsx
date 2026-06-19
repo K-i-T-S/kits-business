@@ -31,7 +31,7 @@ interface AutomatedMarketingProps {
 
 export default function AutomatedMarketing({
   campaigns,
-  segments,
+
   workflows,
   onCreateCampaign: _onCreateCampaign,
   onUpdateCampaign: _onUpdateCampaign,

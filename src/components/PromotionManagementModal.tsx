@@ -1,4 +1,4 @@
-import { Tag, Percent, DollarSign, Gift, Plus, Edit, Trash2, Calendar, Users, Package } from 'lucide-react';
+import { Tag, Percent, DollarSign, Gift, Plus, Edit, Trash2, Calendar, Package } from 'lucide-react';
 import { useState } from 'react';
 
 import type { Promotion } from '../types/pos';

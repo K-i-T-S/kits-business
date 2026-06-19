@@ -1,28 +1,21 @@
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import {
   TrendingUp,
-  TrendingDown,
   Target,
-  Zap,
-  AlertTriangle,
-  CheckCircle,
   ArrowUpRight,
   ArrowDownRight,
   Minus,
   BarChart3,
-  PieChart,
-  Activity,
   DollarSign,
   Users,
   ShoppingCart,
-  Package,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart } from 'recharts';
 
 import type { Sale, Product, Customer, Employee } from '../context/AppContext';
 
-import { Badge } from './ui/badge';
+
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 
@@ -55,7 +48,7 @@ const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 
 export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('30d');
-  const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'profit' | 'orders' | 'customers'>('revenue');
+  const [_selectedMetric, _setSelectedMetric] = useState<'revenue' | 'profit' | 'orders' | 'customers'>('revenue');
 
   // Calculate date range based on selected period
   const getDateRange = () => {

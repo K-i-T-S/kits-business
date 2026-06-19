@@ -268,7 +268,7 @@ export class KeyboardNavigation {
     event: KeyboardEvent,
     items: HTMLElement[],
     currentIndex: number,
-    orientation: 'horizontal' | 'vertical' = 'vertical',
+    _orientation: 'horizontal' | 'vertical' = 'vertical',
   ): number {
     let newIndex = currentIndex;
 

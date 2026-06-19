@@ -1,4 +1,4 @@
-import { Calendar, TrendingUp, DollarSign, Package, Users, BarChart3, Download, Sparkles, Settings, FileText, Brain, Target } from 'lucide-react';
+import { TrendingUp, DollarSign, Users, BarChart3, Download, Sparkles, Settings, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
@@ -165,7 +165,7 @@ export default function Reports() {
 
   const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
-  const escapeCsv = (value: string | number | null | undefined) => {
+  const _escapeCsv = (value: string | number | null | undefined) => {
     if (value === null || value === undefined) return '';
     const str = String(value);
     if (/[",\n]/.test(str)) {

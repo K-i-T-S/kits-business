@@ -235,7 +235,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     // 3. Return keys that are not used
 
     const baseResources = i18n.getResourceBundle('en', 'translation') || {};
-    const allKeys = Object.keys(baseResources);
+    const _allKeys = Object.keys(baseResources);
 
     // For now, return empty array - this would need code analysis
     return [];
@@ -274,7 +274,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const suggestTranslation = useCallback(async (
     key: string,
     targetLanguage: string,
-    sourceLanguage: string = 'en',
+    _sourceLanguage: string = 'en',
   ): Promise<string> => {
     // This is a placeholder for future integration with translation APIs
     // For now, return the key as a fallback

@@ -233,7 +233,7 @@ export default function SystemSettings() {
         .eq('id', currentTenant.id);
       if (error) throw error;
       await supabase.auth.signOut();
-      navigate('/login');
+      void navigate('/login');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.serverError'));
       setDeletingBusiness(false);

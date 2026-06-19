@@ -182,7 +182,7 @@ export const createAuthRateLimiter = () => new RateLimiter({
     const email = request.body?.email || 'unknown';
     return `auth:${ip}:${email}`;
   },
-  onLimitReached: (request: any, response: any) => {
+  onLimitReached: (request: any, _response: any) => {
     console.warn(`Rate limit exceeded for auth attempt from IP: ${request.headers?.['x-forwarded-for']}`);
   },
 });

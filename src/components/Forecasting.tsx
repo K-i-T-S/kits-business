@@ -215,7 +215,7 @@ export default function Forecasting({ data }: ForecastingProps) {
 
       // Seasonality detection (simplified)
       const weeklyPattern = Array.from({ length: 7 }, () => 0);
-      data.sales.slice(-56).forEach((sale, i) => {
+      data.sales.slice(-56).forEach((sale, _i) => {
         const dayOfWeek = new Date(sale.date).getDay();
         const value = metric === 'revenue' ? sale.total || 0 :
           metric === 'orders' ? 1 :

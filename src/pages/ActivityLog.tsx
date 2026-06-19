@@ -105,7 +105,7 @@ export default function ActivityLog() {
   }, []);
 
   useEffect(() => {
-    fetchLogs();
+    void fetchLogs();
   }, [fetchLogs]);
 
   const filteredLogs = logs.filter(entry => {

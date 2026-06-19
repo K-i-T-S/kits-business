@@ -1,14 +1,13 @@
-import { Eye, EyeOff, Lock, Mail, User, Building2, Sparkles, MessageCircle, Instagram, Package, ShoppingCart, Users, TrendingUp, BarChart3, Shield, CheckCircle } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import { Mail, Sparkles, MessageCircle, Instagram, Package, ShoppingCart, Users, TrendingUp, BarChart3, Shield, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import CreateTenantModal from '../components/CreateTenantModal';
-import { BRAND, LOGO_PLACEHOLDER_MESSAGE } from '../constants/branding';
-import { useApp } from '../context/AppContext';
+import { BRAND } from '../constants/branding';
+
 import { supabase } from '../utils/supabaseClient';
-import { getCurrentUserTenant } from '../utils/tenantManager';
+
 
 interface LoginProps {
   onLogin?: () => void;
@@ -45,7 +44,7 @@ export default function Login({ onLogin }: LoginProps) {
         if (data.session) {
           // Email confirmation not required — signed in immediately
           toast.success('Account created! Setting up your workspace…');
-          navigate('/tenant-selection');
+          void navigate('/tenant-selection');
           if (onLogin) onLogin();
         } else {
           // Email confirmation required
@@ -63,7 +62,7 @@ export default function Login({ onLogin }: LoginProps) {
         if (signInError) throw signInError;
 
         toast.success('Welcome back!');
-        navigate('/tenant-selection');
+        void navigate('/tenant-selection');
         if (onLogin) onLogin();
       }
     } catch (err: unknown) {

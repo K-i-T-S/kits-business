@@ -8,7 +8,7 @@ import { useApp } from '../context/AppContext';
 
 export default function HelpSupport() {
   const navigate = useNavigate();
-  const { currentEmployee } = useApp();
+  const { currentEmployee: _currentEmployee } = useApp();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('faqs');
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,7 +205,7 @@ export default function HelpSupport() {
     }, 4000);
   };
 
-  const handleFaqHelpful = async (faqId: number, helpful: boolean) => {
+  const handleFaqHelpful = (faqId: number, helpful: boolean) => {
     // Update helpful count
     setFaqs(prev => prev.map(faq =>
       faq.id === faqId

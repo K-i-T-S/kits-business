@@ -17,7 +17,6 @@ import AutomatedMarketing from '../components/crm/AutomatedMarketing';
 import CRMAnalytics from '../components/crm/CRMAnalytics';
 import CustomerCommunicationHistory from '../components/crm/CustomerCommunicationHistory';
 import CustomerSegmentation from '../components/crm/CustomerSegmentation';
-import MarketingCampaigns from '../components/crm/MarketingCampaigns';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 

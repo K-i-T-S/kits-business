@@ -306,7 +306,7 @@ export function MobileNavigation() {
   return (
     <>
       {/* Mobile Menu Button - Hidden when drawer is open but maintains space */}
-      <div className="md:hidden fixed top-4 left-4 z-[60] w-12 h-12">
+      <div className="md:hidden fixed top-4 start-4 z-[60] w-12 h-12">
         <button
           onClick={handleDrawerToggle}
           className={`w-full h-full p-3 bg-slate-900/95 backdrop-blur-lg rounded-2xl border border-slate-700/50 shadow-xl hover:bg-slate-800/95 active:scale-95 transition-all duration-200 group ${
@@ -330,10 +330,10 @@ export function MobileNavigation() {
       />
 
       {/* Mobile Drawer */}
-      <aside className={`md:hidden fixed top-0 left-0 h-full w-80 max-w-[85vw] z-[55] transform transition-all duration-300 ease-out ${
-        isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
+      <aside className={`md:hidden fixed top-0 start-0 h-full w-80 max-w-[85vw] z-[55] transform transition-all duration-300 ease-out ${
+        isDrawerOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full'
       } ${isAnimating ? 'scale-[0.98]' : 'scale-100'}`}>
-        <div className="h-full bg-slate-900/98 backdrop-blur-xl border-r border-slate-800/30 shadow-2xl overflow-y-auto">
+        <div className="h-full bg-slate-900/98 backdrop-blur-xl border-e border-slate-800/30 shadow-2xl overflow-y-auto">
           {/* Drawer Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-800/30 bg-gradient-to-r from-slate-900/50 to-slate-800/50 sticky top-0 z-10">
             <div className="flex items-center gap-4">
@@ -380,7 +380,7 @@ export function MobileNavigation() {
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5">
                         <Icon className="h-5 w-5" />
                       </div>
-                      <div className="flex-1 text-left">
+                      <div className="flex-1 text-start">
                         <div className="font-medium">{item.label}</div>
                         {item.description && (
                           <div className="text-xs opacity-70 mt-0.5">{item.description}</div>
@@ -413,7 +413,7 @@ export function MobileNavigation() {
                         </span>
                       )}
                     </div>
-                    <div className="flex-1 text-left">
+                    <div className="flex-1 text-start">
                       <div className="font-medium">{item.label}</div>
                       {item.description && (
                         <div className="text-xs opacity-70 mt-0.5">{item.description}</div>
@@ -443,7 +443,7 @@ export function MobileNavigation() {
                             onClick={() => handleNavClick(subItem.path)}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
                               subActive
-                                ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-400'
+                                ? 'bg-indigo-600/10 text-indigo-400 border-s-2 border-indigo-400'
                                 : 'text-slate-500 hover:bg-slate-800/30 hover:text-slate-300'
                             }`}
                             style={{
@@ -451,7 +451,7 @@ export function MobileNavigation() {
                             }}
                           >
                             <SubIcon className={`h-4 w-4 transition-transform duration-200 group-hover:scale-110 ${subActive ? 'text-indigo-400' : ''}`} />
-                            <div className="flex-1 text-left">
+                            <div className="flex-1 text-start">
                               <div className="text-sm font-medium">{subItem.label}</div>
                               {subItem.description && (
                                 <div className="text-xs opacity-60 mt-0.5">{subItem.description}</div>
@@ -476,7 +476,7 @@ export function MobileNavigation() {
                 className="flex items-center gap-3 p-3 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 transition-all hover:bg-green-500/20 hover:border-green-500/50"
               >
                 <PhoneCall className="h-4 w-4" />
-                <div className="text-left">
+                <div className="text-start">
                   <div className="text-sm font-medium">WhatsApp Support</div>
                   <div className="text-xs opacity-70">Chat with support team</div>
                 </div>
@@ -487,7 +487,7 @@ export function MobileNavigation() {
                 className="flex items-center gap-3 p-3 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 transition-all hover:bg-purple-500/20 hover:border-purple-500/50"
               >
                 <MessageCircle className="h-4 w-4" />
-                <div className="text-left">
+                <div className="text-start">
                   <div className="text-sm font-medium">Instagram</div>
                   <div className="text-xs opacity-70">Follow us for updates</div>
                 </div>
@@ -498,7 +498,7 @@ export function MobileNavigation() {
                 className="flex items-center gap-3 p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 transition-all hover:bg-blue-500/20 hover:border-blue-500/50"
               >
                 <Mail className="h-4 w-4" />
-                <div className="text-left">
+                <div className="text-start">
                   <div className="text-sm font-medium">Email Support</div>
                   <div className="text-xs opacity-70">Send us a message</div>
                 </div>
@@ -530,7 +530,7 @@ export function MobileNavigation() {
       </aside>
 
       {/* Mobile Bottom Navigation — first 5 items only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800/30 z-50 mobile-bottom-safe" style={{ height: 'auto', minHeight: 'max(60px, env(safe-area-inset-bottom) + 60px)' }}>
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800/30 z-50 mobile-bottom-safe" style={{ height: 'auto', minHeight: 'max(60px, env(safe-area-inset-bottom) + 60px)' }}>
         <div className="flex justify-around items-center py-3 pb-safe-area">
           {navItems.slice(0, 5).map((item) => {
             const Icon = item.icon;

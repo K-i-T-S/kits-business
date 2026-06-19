@@ -152,7 +152,7 @@ export function usePushNotifications() {
   }, [isSupported, permission]);
 
   // Send push message from server (this would be called from your backend)
-  const sendPushNotification = useCallback(async (subscription: PushSubscription, payload: unknown) => {
+  const sendPushNotification = useCallback((subscription: PushSubscription, payload: unknown) => {
     // This is a placeholder for server-side push notification sending
     // In a real implementation, this would be called from your backend
     log.info('Sending push notification', { subscription, payload });

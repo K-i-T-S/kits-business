@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
-import { DataValidator } from '../utils/dataValidation';
-import { OperationQueue } from '../utils/raceConditionPrevention';
+
+
 import { TransactionManager } from '../utils/transactionManager';
 
 interface ImportInventoryModalProps {
@@ -19,7 +19,7 @@ interface ImportResult {
 }
 
 export default function EnhancedImportInventoryModal({ onClose }: ImportInventoryModalProps) {
-  const { products, addProduct, updateProduct, updateStock, setModalOpen } = useApp();
+  const { products, setModalOpen } = useApp();
   const [supplier, setSupplier] = useState('');
   const [costAdjustment, setCostAdjustment] = useState('fixed');
   const [adjustmentValue, setAdjustmentValue] = useState('0');
@@ -182,7 +182,7 @@ export default function EnhancedImportInventoryModal({ onClose }: ImportInventor
       const transactionResult = await TransactionManager.executeTransaction(allOperations);
 
       if (transactionResult.success) {
-        const updatedResults = lines.map((line, index) => {
+        const updatedResults = lines.map((line, _index) => {
           const barcode = line.split(',')[0]?.trim() || '';
           const product = products.find(p => p.barcode === barcode);
 

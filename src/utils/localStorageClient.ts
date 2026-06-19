@@ -77,7 +77,7 @@ export const localStorageClient = {
       },
     }),
 
-    signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
+    signInWithPassword: ({ email, password }: { email: string; password: string }) => {
       const data = getStorageData();
       const user = data.users.find((u: any) => u.email === email && u.password === password);
 
@@ -150,7 +150,7 @@ export const localStorageClient = {
       return { data: { user: newUser }, error: null };
     },
 
-    signUp: async ({ email, password }: { email: string; password: string }) => {
+    signUp: ({ email, password }: { email: string; password: string }) => {
       const data = getStorageData();
 
       if (data.users.find((u: any) => u.email === email)) {
@@ -195,12 +195,12 @@ export const localStorageClient = {
       return { data: { user: newUser }, error: null };
     },
 
-    signOut: async () => {
+    signOut: () => {
       currentUser = null;
       authStateChangeCallbacks.forEach(cb => cb('SIGNED_OUT', null));
       return { error: null };
     },
-    getUser: async () => {
+    getUser: () => {
       return { data: { user: currentUser?.user || null }, error: null };
     },
   },
@@ -269,7 +269,7 @@ export const localStorageClient = {
       builder.filters = filters;
 
       // Make the builder thenable so it executes when awaited
-      builder.then = (resolve: any, reject: any) => {
+      builder.then = (resolve: any, _reject: any) => {
         const filtered = tableData.filter((item: any) => {
           return filters.every(({ column, value }: any) => item[column] === value);
         });
@@ -281,7 +281,7 @@ export const localStorageClient = {
     };
 
     return {
-      select: (columns = '*') => {
+      select: (_columns = '*') => {
         return createQueryBuilder();
       },
 
@@ -330,7 +330,7 @@ export const localStorageClient = {
 };
 
 // Local API mock to replace Supabase Edge Function
-const LOCAL_API_BASE = '/api/local';
+const _LOCAL_API_BASE = '/api/local';
 
 export const localApi = {
   async get(endpoint: string) {
@@ -404,7 +404,7 @@ export const localApi = {
   },
 };
 
-export const getAuthHeaders = async () => {
+export const getAuthHeaders = () => {
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${currentUser?.access_token || 'local-token'}`,

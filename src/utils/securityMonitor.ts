@@ -1,6 +1,6 @@
 import { logSecurityEvent } from './auditLogger';
-import { SecurityValidator } from './enhancedValidation';
-import { securityMiddleware } from './securityMiddleware';
+
+
 
 // Security monitoring and alerting
 export class SecurityMonitor {
@@ -26,7 +26,7 @@ export class SecurityMonitor {
     tenantId?: string,
     details?: any,
   ): Promise<void> {
-    const eventKey = `${eventType}_${userId || 'anonymous'}_${Date.now()}`;
+    const _eventKey = `${eventType}_${userId || 'anonymous'}_${Date.now()}`;
 
     // Log the event
     await logSecurityEvent(eventType, `Security event: ${eventType}`, 'medium', {
@@ -117,7 +117,7 @@ export class SecurityMonitor {
     }
   }
 
-  private async getRecentEventCount(eventType: string, timeWindowMs: number, userId?: string): Promise<number> {
+  private async getRecentEventCount(_eventType: string, _timeWindowMs: number, _userId?: string): Promise<number> {
     // In a real implementation, this would query the audit log
     // For now, return a mock count
     return Math.floor(Math.random() * 10);

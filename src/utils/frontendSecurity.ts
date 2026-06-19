@@ -1,6 +1,6 @@
-import { logSecurityEvent } from './auditLogger';
+
 import { SecurityValidator } from './enhancedValidation';
-import { securityMiddleware } from './securityMiddleware';
+
 import { securityMonitor } from './securityMonitor';
 
 // Enhanced security utilities for frontend components
@@ -48,7 +48,7 @@ export class FrontendSecurity {
   }
 
   // Safe JSON parsing with validation
-  static safeJsonParse(jsonString: string, schema?: any): any {
+  static safeJsonParse(jsonString: string, _schema?: any): any {
     try {
       const parsed = JSON.parse(jsonString);
 
@@ -58,7 +58,7 @@ export class FrontendSecurity {
       }
 
       return parsed;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Invalid JSON format');
     }
   }
@@ -175,7 +175,7 @@ export class FrontendSecurity {
     }
 
     // Report to security monitor
-    securityMonitor.monitorSecurityEvent(eventType, details?.userId, details?.tenantId, details);
+    void securityMonitor.monitorSecurityEvent(eventType, details?.userId, details?.tenantId, details);
   }
 
   // Input sanitization for user inputs

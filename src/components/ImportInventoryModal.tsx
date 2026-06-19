@@ -1,5 +1,5 @@
 import { X, Upload } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';

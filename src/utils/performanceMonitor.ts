@@ -91,7 +91,7 @@ export class PerformanceMonitor {
 
         observer.observe({ entryTypes: ['longtask'] });
         this.observers.push(observer);
-      } catch (e) {
+      } catch (_e) {
         console.warn('Long task monitoring not supported');
       }
     }
@@ -107,7 +107,7 @@ export class PerformanceMonitor {
 
         observer.observe({ entryTypes: [type] });
         this.observers.push(observer);
-      } catch (e) {
+      } catch (_e) {
         console.warn(`Performance entry type ${type} not supported`);
       }
     }
@@ -275,7 +275,7 @@ export class PerformanceMonitor {
   static getPerformanceReport(): Record<string, any> {
     const report: Record<string, any> = {};
 
-    for (const [name, values] of this.metrics.entries()) {
+    for (const [name, _values] of this.metrics.entries()) {
       const stats = this.getMetricStats(name);
       if (stats) {
         report[name] = stats;

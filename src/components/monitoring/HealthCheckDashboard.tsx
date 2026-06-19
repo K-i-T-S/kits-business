@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Clock, RefreshCw, Activity, Database, Globe, Server } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, RefreshCw, Activity, Database, Server } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { supabase } from '../../utils/supabaseClient';
@@ -76,7 +76,7 @@ export default function HealthCheckDashboard() {
   }, []);
 
   useEffect(() => {
-    checkHealth();
+    void checkHealth();
     if (isAutoRefresh) {
       const interval = setInterval(checkHealth, 30000);
       return () => clearInterval(interval);

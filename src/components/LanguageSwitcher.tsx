@@ -23,7 +23,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className })
   const currentLanguage = supportedLanguages.find(lang => lang.code === i18n.language);
 
   const handleLanguageChange = (languageCode: string) => {
-    i18n.changeLanguage(languageCode);
+    void i18n.changeLanguage(languageCode);
     localStorage.setItem('language', languageCode);
     setIsOpen(false);
   };

@@ -94,12 +94,12 @@ export const apiClient = {
       }
     },
 
-    signOut: async () => {
+    signOut: () => {
       currentUser = null;
       authStateChangeCallbacks.forEach(cb => cb('SIGNED_OUT', null));
       return { error: null };
     },
-    getUser: async () => {
+    getUser: () => {
       return { data: { user: currentUser?.user || null }, error: null };
     },
   },
@@ -193,7 +193,7 @@ export const apiClient = {
     };
 
     return {
-      select: (columns = '*') => {
+      select: (_columns = '*') => {
         return createQueryBuilder();
       },
 
@@ -251,7 +251,7 @@ export const apiClient = {
   rpc: () => Promise.resolve({ data: [], error: null }),
 };
 
-export const getAuthHeaders = async () => {
+export const getAuthHeaders = () => {
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${currentUser?.access_token || 'api-token'}`,

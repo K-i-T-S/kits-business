@@ -96,7 +96,7 @@ export class AuthMockManager {
   private mockTenant: any;
 
   constructor() {
-    const { supabase, auth } = createSupabaseMock();
+    const { supabase: _supabase, auth } = createSupabaseMock();
     this.mockAuth = auth;
     this.mockTenant = tenantManagerMock;
   }

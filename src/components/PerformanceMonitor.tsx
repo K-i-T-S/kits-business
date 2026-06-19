@@ -82,7 +82,7 @@ export function PerformanceMonitor({
 
       try {
         observerRef.current.observe({ entryTypes: ['longtask'] });
-      } catch (e) {
+      } catch (_e) {
         // longtask might not be supported in all browsers
         console.debug('Long task observation not supported');
       }

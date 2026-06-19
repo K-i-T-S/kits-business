@@ -29,7 +29,7 @@ export function NotificationSettings() {
     }
   };
 
-  const handleDisableNotifications = async () => {
+  const _handleDisableNotifications = async () => {
     setIsLoading(true);
     try {
       await unsubscribe();

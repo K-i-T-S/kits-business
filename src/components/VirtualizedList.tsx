@@ -1,4 +1,4 @@
-import { AlertTriangle, Package } from 'lucide-react';
+import { Package } from 'lucide-react';
 import React, { memo, useMemo } from 'react';
 
 interface VirtualizedListProps {

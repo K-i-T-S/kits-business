@@ -22,7 +22,7 @@ export default function TenantSwitcher() {
   const [userTenants, setUserTenants] = useState<Tenant[]>([]);
 
   useEffect(() => {
-    loadUserTenants();
+    void loadUserTenants();
   }, []);
 
   const loadUserTenants = async () => {

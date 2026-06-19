@@ -1,4 +1,4 @@
-import { Building2, ChevronDown, Check, MapPin, Phone, Mail, Plus, Settings } from 'lucide-react';
+import { Building2, ChevronDown, Check, MapPin, Phone, Settings } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -25,7 +25,7 @@ export default function StoreSwitcher() {
 
   useEffect(() => {
     if (currentTenant) {
-      loadStores();
+      void loadStores();
     }
   }, [currentTenant]);
 

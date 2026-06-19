@@ -1,4 +1,4 @@
-import { ShoppingCart, CreditCard, DollarSign, Tag, Star, Settings, Receipt, Plus, Minus, X } from 'lucide-react';
+import { ShoppingCart, CreditCard, DollarSign, Tag, Star, Receipt, Plus, Minus, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 import type {
@@ -35,7 +35,7 @@ export default function EnhancedPOS({
   customerId,
   employeeId,
   availableCoupons,
-  availablePromotions,
+
   loyaltyPrograms,
   receiptTemplates,
   onCompleteSale,

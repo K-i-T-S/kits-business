@@ -233,8 +233,8 @@ export class EnhancedSecurityMiddleware {
 
   // Enhanced input validation with deep sanitization
   validateInput(input: any, type: 'email' | 'phone' | 'text' | 'number' | 'json' | 'array' | 'file'): ValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
+    const _errors: string[] = [];
+    const _warnings: string[] = [];
 
     try {
       switch (type) {
@@ -432,7 +432,7 @@ export class EnhancedSecurityMiddleware {
         warnings,
         sanitized,
       };
-    } catch (error) {
+    } catch (_error) {
       errors.push('JSON validation failed');
       return { isValid: false, errors, warnings };
     }

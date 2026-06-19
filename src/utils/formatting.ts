@@ -1,9 +1,9 @@
-import { format, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 
 import i18n from '../i18n';
 
 // Locale mappings for date-fns
-const dateLocales: Record<string, any> = {
+const _dateLocales: Record<string, any> = {
   en: 'en',
   es: 'es',
   fr: 'fr',
@@ -132,7 +132,7 @@ export const formatDateWithLocale = (
       hour: '2-digit',
       minute: '2-digit',
     }).format(dateObj);
-  } catch (error) {
+  } catch (_error) {
     console.warn(`Locale ${lang} formatting failed, using default`);
     return dateObj.toLocaleDateString();
   }

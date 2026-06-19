@@ -1,4 +1,4 @@
-import { User, Mail, Phone, Camera, Edit2, Save, X, Shield, Building2, Clock } from 'lucide-react';
+import { User, Camera, Edit2, Save, X, Shield, Building2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -66,7 +66,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
     }
   };
 
-  const handlePasswordChange = async (currentPassword: string, newPassword: string) => {
+  const _handlePasswordChange = async (currentPassword: string, newPassword: string) => {
     try {
       // Verify current password
       const { error: signInError } = await supabase.auth.signInWithPassword({

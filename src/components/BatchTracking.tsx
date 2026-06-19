@@ -49,7 +49,7 @@ export default function BatchTracking() {
   }, [setModalOpen]);
 
   useEffect(() => {
-    loadProducts();
+    void loadProducts();
   }, []);
 
   const loadProducts = async () => {

@@ -15,7 +15,7 @@ import { log } from '../utils/logger';
 
 export default function POSTestPage() {
   const [showPromotionManagement, setShowPromotionManagement] = useState(false);
-  const [coupons, setCoupons] = useState<DiscountCoupon[]>(sampleCoupons);
+  const [coupons, _setCoupons] = useState<DiscountCoupon[]>(sampleCoupons);
   const [promotions, setPromotions] = useState<Promotion[]>(samplePromotions);
   const [loyaltyPrograms] = useState<LoyaltyProgram[]>([sampleLoyaltyProgram]);
   const [receiptTemplates] = useState<ReceiptTemplate[]>(sampleReceiptTemplates);

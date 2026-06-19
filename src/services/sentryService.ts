@@ -46,7 +46,7 @@ export class SentryService {
         }
 
         // Add user context if available
-        this.addUserContext(event);
+        void this.addUserContext(event);
 
         return event;
       },
@@ -141,7 +141,7 @@ export class SentryService {
   }
 
   public destroy(): void {
-    Sentry.close();
+    void Sentry.close();
     this.initialized = false;
   }
 }

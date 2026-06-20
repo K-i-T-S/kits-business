@@ -99,7 +99,8 @@ The light/dark theme toggle exists (`ThemeContext`, `themes.css`) but does not a
 
 ---
 
-### Sprint 1.2 — Login Page Complete Overhaul [PENDING]
+### Sprint 1.2 — Login Page Complete Overhaul [COMPLETED]
+> Completed 2026-06-20: Redesigned login page with split layout, animated aurora background, 3D logo tilt, cycling feature cards, social proof stats, password strength indicator, and animated error states — all i18n-ready.
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** Critical — first impression
@@ -1179,7 +1180,7 @@ Build an in-app view of the automation log so the owner can see what the agents 
 | Sprint | Track | Status | Completed |
 |--------|-------|--------|-----------|
 | 1.1 — Theme System | Polish | COMPLETED | 2026-06-20 |
-| 1.2 — Login Overhaul | Polish | PENDING | — |
+| 1.2 — Login Overhaul | Polish | COMPLETED | 2026-06-20 |
 | 1.3 — Navigation & Search | Polish | PENDING | — |
 | 1.4 — 3D Dashboard | Polish | PENDING | — |
 | 1.5 — Notifications | Polish | PENDING | — |

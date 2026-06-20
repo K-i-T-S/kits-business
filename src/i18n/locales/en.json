@@ -406,5 +406,46 @@
     "valid": "Valid",
     "invalid": "Invalid",
     "languageStats": "Language Statistics"
+  },
+  "industry": {
+    "restaurant": "Restaurant / F&B",
+    "restaurantDesc": "Tables, KDS, menus, delivery integration",
+    "pharmacy": "Pharmacy",
+    "pharmacyDesc": "Drug database, prescriptions, FEFO tracking",
+    "supermarket": "Supermarket / Grocery",
+    "supermarketDesc": "Departments, FIFO, weight items, shelf-life",
+    "fashion": "Clothing & Fashion",
+    "fashionDesc": "Size-colour matrix, seasons, markdowns",
+    "electronics": "Electronics",
+    "electronicsDesc": "Serial numbers, warranty, repair orders",
+    "mobile": "Phone Shop / Mobile",
+    "mobileDesc": "IMEI tracking, carrier plans, SIM cards",
+    "retail": "General Retail",
+    "retailDesc": "Full platform, no vertical-specific features",
+    "selectTitle": "What type of business are you?",
+    "selectDesc": "Choose your industry to unlock vertical-specific features"
+  },
+  "nav": {
+    "vertical": {
+      "comingSoon": "Coming in the next sprint — stay tuned!",
+      "tables": "Table Management",
+      "kds": "Kitchen Display",
+      "reservations": "Reservations",
+      "menuManagement": "Menu Management",
+      "drugDatabase": "Drug Database",
+      "prescriptions": "Prescriptions",
+      "narcoticsRegister": "Narcotics Register",
+      "departments": "Departments",
+      "shelfLife": "Shelf Life",
+      "collections": "Collections",
+      "alterations": "Alterations",
+      "repairOrders": "Repair Orders",
+      "serialNumbers": "Serial Numbers",
+      "imei": "IMEI Tracker"
+    }
+  },
+  "dashboard": {
+    "industryMode": "Industry Mode",
+    "changeIndustry": "Change Industry"
   }
 }

@@ -130,6 +130,7 @@ export interface Tenant {
   loyalty_enabled?: boolean;
   loyalty_points_per_dollar?: number;
   loyalty_points_redeem_rate?: number;
+  industry?: string | null;
 }
 
 function applyBrandColors(primary?: string, secondary?: string) {
@@ -395,6 +396,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 loyalty_enabled: tenantData.loyalty_enabled ?? false,
                 loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
                 loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
+                industry: tenantData.industry ?? null,
               };
               setCurrentTenant(tenant);
               applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
@@ -439,6 +441,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               loyalty_enabled: tenantData.loyalty_enabled ?? false,
               loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
               loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
+              industry: tenantData.industry ?? null,
             };
             setCurrentTenant(tenant);
             applyBrandColors(tenant.brand_primary, tenant.brand_secondary);

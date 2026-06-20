@@ -14,6 +14,7 @@ import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { TranslationManager } from './components/TranslationManager';
 import { Toaster } from './components/ui/sonner';
 import { AppProvider } from './context/AppContext';
+import { IndustryProvider } from './context/IndustryContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
@@ -134,6 +135,7 @@ export default function App() {
         <Router>
           <AppProvider>
             <SubscriptionProvider>
+              <IndustryProvider>
               <QueryProvider>
                 <LanguageProvider>
                   <TranslationProvider>
@@ -400,6 +402,7 @@ export default function App() {
                   </TranslationProvider>
                 </LanguageProvider>
               </QueryProvider>
+              </IndustryProvider>
             </SubscriptionProvider>
           </AppProvider>
         </Router>

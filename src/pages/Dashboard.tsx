@@ -18,6 +18,8 @@ import RevenueChart from '@/components/dashboard/RevenueChart';
 import SalesByHourChart from '@/components/dashboard/SalesByHourChart';
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
+import { useIndustry } from '@/context/IndustryContext';
+import { INDUSTRY_CONFIGS } from '@/types/industry';
 
 const ROLE_REDIRECT: Partial<Record<string, string>> = {
   cashier: '/pos',
@@ -28,6 +30,7 @@ const ROLE_REDIRECT: Partial<Record<string, string>> = {
 export default function Dashboard() {
   const { t } = useTranslation();
   const { products, sales, customers, currentEmployee, currentTenant, loading } = useApp();
+  const { industry } = useIndustry();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -231,6 +234,38 @@ export default function Dashboard() {
             </div>
           </section>
         )}
+
+        {/* Vertical Mode Card — shown when industry is configured */}
+        {industry && (() => {
+          const cfg = INDUSTRY_CONFIGS.find((c) => c.key === industry);
+          if (!cfg) return null;
+          return (
+            <section className={`rounded-2xl border bg-gradient-to-br ${cfg.gradient} ${cfg.borderColor} p-5`}>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl" aria-hidden="true">{cfg.emoji}</span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-white/50">
+                      {t('dashboard.industryMode', 'Industry Mode')}
+                    </p>
+                    <p className="text-base font-bold text-white">
+                      {t(cfg.labelKey, cfg.labelFallback)}
+                    </p>
+                    <p className="text-xs text-white/60">
+                      {t(cfg.descriptionKey, cfg.descriptionFallback)}
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/system-settings"
+                  className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+                >
+                  {t('dashboard.changeIndustry', 'Change Industry')}
+                </Link>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* Charts Row */}
         <section className="grid gap-4 lg:grid-cols-2">

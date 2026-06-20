@@ -3,6 +3,7 @@ import {
   Bell,
   Building2,
   CreditCard,
+  Layers,
   Loader2,
   MessageCircle,
   Save,
@@ -18,13 +19,16 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import FeatureGate from '../components/FeatureGate';
+import IndustrySelector from '../components/industry/IndustrySelector';
 import { NotificationSettings } from '../components/NotificationSettings';
 import { useApp } from '../context/AppContext';
+import { INDUSTRY_CONFIGS, INDUSTRY_VERTICAL_FEATURES } from '../types/industry';
+import type { Industry } from '../types/industry';
 import { supabase } from '../utils/supabaseClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'notifications' | 'dangerZone';
+type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'notifications' | 'industry' | 'dangerZone';
 
 interface BusinessForm {
   name: string;
@@ -142,6 +146,13 @@ export default function SystemSettings() {
   });
   const [savingLoyalty, setSavingLoyalty] = useState(false);
 
+  // Industry
+  const [industryValue, setIndustryValue] = useState<Industry | ''>(() => {
+    const raw = (currentTenant as { industry?: string | null } | null)?.industry;
+    return raw as Industry | '' ?? '';
+  });
+  const [savingIndustry, setSavingIndustry] = useState(false);
+
   // Danger zone
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [deletingBusiness, setDeletingBusiness] = useState(false);
@@ -174,6 +185,8 @@ export default function SystemSettings() {
           : prev.exchangeRate,
       showDualCurrency: currentTenant.show_dual_currency ?? prev.showDualCurrency,
     }));
+    const tenantWithIndustry = currentTenant as { industry?: string | null } & typeof currentTenant;
+    setIndustryValue((tenantWithIndustry.industry as Industry | null | undefined) ?? '');
     setLoyaltyForm(prev => ({
       ...prev,
       loyaltyEnabled: currentTenant.loyalty_enabled ?? prev.loyaltyEnabled,
@@ -323,6 +336,24 @@ export default function SystemSettings() {
     }
   };
 
+  const handleSaveIndustry = async () => {
+    if (!currentTenant) return;
+    setSavingIndustry(true);
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .update({ industry: industryValue || null, business_type: industryValue || null })
+        .eq('id', currentTenant.id);
+      if (error) throw error;
+      setCurrentTenant({ ...currentTenant, industry: industryValue || null } as typeof currentTenant);
+      toast.success(t('settings.saved'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setSavingIndustry(false);
+    }
+  };
+
   const handleDeleteBusiness = async () => {
     if (!currentTenant) return;
     if (deleteConfirmName !== currentTenant.name) {
@@ -361,6 +392,7 @@ export default function SystemSettings() {
     { id: 'posBehaviour', label: t('settings.posBehaviour'), icon: ShoppingCart },
     { id: 'loyalty', label: t('settings.loyaltyProgram'), icon: Star },
     { id: 'notifications', label: t('settings.notifications'), icon: Bell },
+    { id: 'industry', label: t('settings.industry', 'Industry'), icon: Layers },
     { id: 'dangerZone', label: t('settings.dangerZone'), icon: AlertTriangle },
   ];
 
@@ -887,6 +919,79 @@ export default function SystemSettings() {
             {/* ── Notifications ─────────────────────────────────────────── */}
             {activeTab === 'notifications' && (
               <NotificationSettings />
+            )}
+
+            {/* ── Industry ──────────────────────────────────────────────── */}
+            {activeTab === 'industry' && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6">
+                <div className="flex items-center gap-3">
+                  <Layers className="h-5 w-5 text-indigo-400 shrink-0" />
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">
+                      {t('settings.industry', 'Industry')}
+                    </h2>
+                    <p className="text-xs text-white/50 mt-0.5">
+                      {t('settings.industryDesc', 'Select your business type to unlock vertical-specific features')}
+                    </p>
+                  </div>
+                </div>
+
+                <IndustrySelector
+                  value={industryValue}
+                  onChange={setIndustryValue}
+                  disabled={savingIndustry}
+                />
+
+                {/* Feature preview for selected industry */}
+                {industryValue && INDUSTRY_VERTICAL_FEATURES[industryValue].length > 0 && (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
+                      {t('settings.verticalFeatures', 'Vertical Features Unlocked')}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {INDUSTRY_VERTICAL_FEATURES[industryValue].map((f) => (
+                        <span
+                          key={f}
+                          className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-300"
+                        >
+                          {f.replace(/_/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-white/40">
+                      {t('settings.verticalFeaturesDesc', 'These features will appear in the navigation when the vertical module is released.')}
+                    </p>
+                  </div>
+                )}
+
+                {/* Current industry config card */}
+                {industryValue && (() => {
+                  const cfg = INDUSTRY_CONFIGS.find((c) => c.key === industryValue);
+                  if (!cfg) return null;
+                  return (
+                    <div className={`rounded-xl border bg-gradient-to-br ${cfg.gradient} ${cfg.borderColor} p-4`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl" aria-hidden="true">{cfg.emoji}</span>
+                        <div>
+                          <p className="text-sm font-semibold text-white">{t(cfg.labelKey, cfg.labelFallback)}</p>
+                          <p className="text-xs text-white/60">{t(cfg.descriptionKey, cfg.descriptionFallback)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => void handleSaveIndustry()}
+                    disabled={savingIndustry}
+                    className="btn-brand flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium disabled:opacity-50"
+                  >
+                    {savingIndustry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {savingIndustry ? t('settings.saving') : t('settings.saveChanges')}
+                  </button>
+                </div>
+              </div>
             )}
 
             {/* ── Danger Zone ───────────────────────────────────────────── */}

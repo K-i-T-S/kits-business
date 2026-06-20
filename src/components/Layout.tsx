@@ -29,6 +29,17 @@ import {
   TrendingDown,
   Calendar,
   HelpCircle,
+  UtensilsCrossed,
+  Pill,
+  ShoppingBasket,
+  Shirt,
+  Cpu,
+  Smartphone,
+  Clock,
+  BookOpen,
+  Wrench,
+  ScanLine,
+  FlaskConical,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -38,6 +49,7 @@ import { toast } from 'sonner';
 
 import { BRAND } from '../constants/branding';
 import { useApp } from '../context/AppContext';
+import { useIndustry } from '../context/IndustryContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useTheme } from '../context/ThemeContext';
@@ -75,6 +87,7 @@ export default function Layout({ children }: LayoutProps) {
   const { unreadCount, addNotification } = useNotifications();
   const { hasFeature } = useSubscription();
   const { theme, toggleTheme } = useTheme();
+  const { industry } = useIndustry();
   const { announce } = useAccessibility();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
@@ -100,68 +113,105 @@ export default function Layout({ children }: LayoutProps) {
 
   const isActive = useCallback((href: string) => location.pathname === href, [location.pathname]);
 
-  const navigationSections = useMemo(() => [
-    {
-      labelKey: 'nav.section.operations',
-      labelFallback: 'Operations',
-      items: [
-        { name: t('nav.dashboard', 'Dashboard'), href: '/dashboard', icon: LayoutDashboard, feature: undefined as Feature | undefined },
-        { name: t('nav.pos', 'POS / Sales'), href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature },
-        {
-          name: t('nav.inventory', 'Inventory'),
-          href: '/inventory',
-          icon: Package,
-          feature: 'inventory_management' as Feature,
-          subItems: [
-            { name: t('nav.products', 'Products'), href: '/inventory', icon: Package },
-            { name: t('nav.batchTracking', 'Batch Tracking'), href: '/inventory/batch-tracking', icon: Layers },
-            { name: t('nav.suppliers', 'Suppliers'), href: '/inventory/suppliers', icon: Users },
-            { name: t('nav.purchaseOrders', 'Purchase Orders'), href: '/inventory/purchase-orders', icon: ShoppingCart },
-            { name: t('nav.stockTransfers', 'Stock Transfers'), href: '/inventory/stock-transfers', icon: Truck },
-            { name: t('nav.reorderPoints', 'Reorder Points'), href: '/inventory/reorder-points', icon: AlertTriangle },
-          ],
-        },
-      ],
-    },
-    {
-      labelKey: 'nav.section.people',
-      labelFallback: 'People',
-      items: [
-        { name: t('nav.customers', 'Customers & CRM'), href: '/customers', icon: Users, feature: undefined as Feature | undefined },
-        { name: t('nav.employees', 'Employees'), href: '/employees', icon: UserCircle, feature: undefined as Feature | undefined },
-      ],
-    },
-    {
-      labelKey: 'nav.section.intelligence',
-      labelFallback: 'Intelligence',
-      items: [
-        { name: t('nav.reports', 'Reports'), href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
-        { name: t('nav.finance', 'Finance'), href: '/finance', icon: TrendingDown, feature: undefined as Feature | undefined },
-        { name: t('nav.forecasting', 'Forecasting'), href: '/forecasting', icon: TrendingUp, feature: 'forecasting' as Feature },
-      ],
-    },
-    {
-      labelKey: 'nav.section.platform',
-      labelFallback: 'Platform',
-      items: [
-        { name: t('nav.monitoring', 'Monitoring'), href: '/monitoring', icon: Activity, feature: 'monitoring' as Feature },
-        {
-          name: t('nav.enterprise', 'Enterprise'),
-          href: '/enterprise',
-          icon: Shield,
-          feature: 'enterprise_dashboard' as Feature,
-          subItems: [
-            { name: t('nav.enterpriseDashboard', 'Enterprise Dashboard'), href: '/enterprise', icon: Shield },
-            { name: t('nav.rolesPermissions', 'Roles & Permissions'), href: '/enterprise/roles', icon: Shield },
-            { name: t('nav.workflowAutomation', 'Workflow Automation'), href: '/enterprise/workflows', icon: Zap },
-            { name: t('nav.multiLocation', 'Multi-Location'), href: '/enterprise/locations', icon: MapPin },
-            { name: t('nav.apiWebhooks', 'API & Webhooks'), href: '/enterprise/api', icon: Key },
-          ],
-        },
-        { name: t('nav.settings', 'Settings'), href: '/system-settings', icon: Settings, feature: undefined as Feature | undefined },
-      ],
-    },
-  ], [t]);
+  const VERTICAL_NAV_ITEMS: Record<string, Array<{ name: string; icon: typeof LayoutDashboard }>> = useMemo(() => ({
+    restaurant: [
+      { name: t('nav.vertical.tables', 'Table Management'), icon: UtensilsCrossed },
+      { name: t('nav.vertical.kds', 'Kitchen Display'), icon: Cpu },
+      { name: t('nav.vertical.reservations', 'Reservations'), icon: Clock },
+      { name: t('nav.vertical.menuManagement', 'Menu Management'), icon: BookOpen },
+    ],
+    pharmacy: [
+      { name: t('nav.vertical.drugDatabase', 'Drug Database'), icon: Pill },
+      { name: t('nav.vertical.prescriptions', 'Prescriptions'), icon: FlaskConical },
+      { name: t('nav.vertical.narcoticsRegister', 'Narcotics Register'), icon: ScanLine },
+    ],
+    supermarket: [
+      { name: t('nav.vertical.departments', 'Departments'), icon: ShoppingBasket },
+      { name: t('nav.vertical.shelfLife', 'Shelf Life'), icon: AlertTriangle },
+    ],
+    fashion: [
+      { name: t('nav.vertical.collections', 'Collections'), icon: Shirt },
+      { name: t('nav.vertical.alterations', 'Alterations'), icon: Wrench },
+    ],
+    electronics: [
+      { name: t('nav.vertical.repairOrders', 'Repair Orders'), icon: Wrench },
+      { name: t('nav.vertical.serialNumbers', 'Serial Numbers'), icon: ScanLine },
+    ],
+    mobile: [
+      { name: t('nav.vertical.imei', 'IMEI Tracker'), icon: Smartphone },
+      { name: t('nav.vertical.repairOrders', 'Repair Orders'), icon: Wrench },
+    ],
+    retail: [],
+  }), [t]);
+
+  const navigationSections = useMemo(() => {
+    const baseOperationsItems = [
+      { name: t('nav.dashboard', 'Dashboard'), href: '/dashboard', icon: LayoutDashboard, feature: undefined as Feature | undefined },
+      { name: t('nav.pos', 'POS / Sales'), href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature },
+      {
+        name: t('nav.inventory', 'Inventory'),
+        href: '/inventory',
+        icon: Package,
+        feature: 'inventory_management' as Feature,
+        subItems: [
+          { name: t('nav.products', 'Products'), href: '/inventory', icon: Package },
+          { name: t('nav.batchTracking', 'Batch Tracking'), href: '/inventory/batch-tracking', icon: Layers },
+          { name: t('nav.suppliers', 'Suppliers'), href: '/inventory/suppliers', icon: Users },
+          { name: t('nav.purchaseOrders', 'Purchase Orders'), href: '/inventory/purchase-orders', icon: ShoppingCart },
+          { name: t('nav.stockTransfers', 'Stock Transfers'), href: '/inventory/stock-transfers', icon: Truck },
+          { name: t('nav.reorderPoints', 'Reorder Points'), href: '/inventory/reorder-points', icon: AlertTriangle },
+        ],
+      },
+    ];
+
+    const sections = [
+      {
+        labelKey: 'nav.section.operations',
+        labelFallback: 'Operations',
+        items: baseOperationsItems,
+      },
+      {
+        labelKey: 'nav.section.people',
+        labelFallback: 'People',
+        items: [
+          { name: t('nav.customers', 'Customers & CRM'), href: '/customers', icon: Users, feature: undefined as Feature | undefined },
+          { name: t('nav.employees', 'Employees'), href: '/employees', icon: UserCircle, feature: undefined as Feature | undefined },
+        ],
+      },
+      {
+        labelKey: 'nav.section.intelligence',
+        labelFallback: 'Intelligence',
+        items: [
+          { name: t('nav.reports', 'Reports'), href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
+          { name: t('nav.finance', 'Finance'), href: '/finance', icon: TrendingDown, feature: undefined as Feature | undefined },
+          { name: t('nav.forecasting', 'Forecasting'), href: '/forecasting', icon: TrendingUp, feature: 'forecasting' as Feature },
+        ],
+      },
+      {
+        labelKey: 'nav.section.platform',
+        labelFallback: 'Platform',
+        items: [
+          { name: t('nav.monitoring', 'Monitoring'), href: '/monitoring', icon: Activity, feature: 'monitoring' as Feature },
+          {
+            name: t('nav.enterprise', 'Enterprise'),
+            href: '/enterprise',
+            icon: Shield,
+            feature: 'enterprise_dashboard' as Feature,
+            subItems: [
+              { name: t('nav.enterpriseDashboard', 'Enterprise Dashboard'), href: '/enterprise', icon: Shield },
+              { name: t('nav.rolesPermissions', 'Roles & Permissions'), href: '/enterprise/roles', icon: Shield },
+              { name: t('nav.workflowAutomation', 'Workflow Automation'), href: '/enterprise/workflows', icon: Zap },
+              { name: t('nav.multiLocation', 'Multi-Location'), href: '/enterprise/locations', icon: MapPin },
+              { name: t('nav.apiWebhooks', 'API & Webhooks'), href: '/enterprise/api', icon: Key },
+            ],
+          },
+          { name: t('nav.settings', 'Settings'), href: '/system-settings', icon: Settings, feature: undefined as Feature | undefined },
+        ],
+      },
+    ];
+
+    return sections;
+  }, [t]);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -418,6 +468,34 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
               </div>
             ))}
+
+            {/* Vertical-specific nav items */}
+            {industry && VERTICAL_NAV_ITEMS[industry] && VERTICAL_NAV_ITEMS[industry].length > 0 && (
+              <div className="mt-3">
+                <div className="px-3 pb-1.5">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-widest text-indigo-400/60 nav-section-title">
+                    {t('nav.section.vertical', 'Vertical')}
+                  </h3>
+                </div>
+                <div className="space-y-1">
+                  {VERTICAL_NAV_ITEMS[industry].map((item) => (
+                    <button
+                      key={item.name}
+                      onClick={() => toast.info(t('nav.vertical.comingSoon', 'Coming in the next sprint — stay tuned!'))}
+                      className="group flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-white/40 transition-all duration-200 hover:bg-white/5 hover:text-white/70"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400/60">
+                        <item.icon className="h-4 w-4" />
+                      </div>
+                      <span className="flex-1 text-start">{item.name}</span>
+                      <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide bg-indigo-500/10 text-indigo-400/60">
+                        {t('common.soon', 'Soon')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </nav>
 
           {/* Support Section */}

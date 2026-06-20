@@ -2,7 +2,9 @@ import { CheckCircle, Building2, Package, Users } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
+import IndustrySelector from './industry/IndustrySelector';
 import { supabase } from '../utils/supabaseClient';
+import type { Industry } from '../types/industry';
 
 interface OnboardingWizardProps {
   tenantId: string;
@@ -17,7 +19,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
 
   // Step 1 state
   const [businessName, setBusinessName] = useState(tenantName);
-  const [industry, setIndustry] = useState('');
+  const [industry, setIndustry] = useState<Industry | ''>('');
   const [country, setCountry] = useState('Lebanon');
   const [currency, setCurrency] = useState('USD');
   const [phone, setPhone] = useState('');
@@ -61,6 +63,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
         .update({
           name: businessName.trim(),
           business_type: industry || null,
+          industry: industry || null,
           country: country || null,
           currency: currency || null,
           phone: phone || null,
@@ -204,12 +207,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
 
             <div>
               <label className={labelClass}>Industry</label>
-              <select value={industry} onChange={e => setIndustry(e.target.value)} className={selectClass}>
-                <option value="">Select industry…</option>
-                {['Retail', 'Food & Beverage', 'Pharmacy', 'Electronics', 'Clothing & Fashion', 'Supermarket', 'Services', 'Other'].map(i => (
-                  <option key={i} value={i}>{i}</option>
-                ))}
-              </select>
+              <IndustrySelector value={industry} onChange={setIndustry} disabled={loading} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

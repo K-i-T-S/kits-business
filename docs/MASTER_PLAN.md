@@ -62,7 +62,7 @@
 
 ---
 
-### Sprint 1.1 — Theme System Unification [PENDING]
+### Sprint 1.1 — Theme System Unification [IN_PROGRESS]
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** Critical — blocks everything visual

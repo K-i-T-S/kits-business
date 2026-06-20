@@ -41,3 +41,6 @@ logs/cron-*.log
 logs/sprint-*.log
 logs/loop-*.log
 logs/watchdog*.log
+
+# Claude Code internal worktrees — never commit these
+.claude/worktrees/

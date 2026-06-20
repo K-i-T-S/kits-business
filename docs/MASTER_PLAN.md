@@ -315,7 +315,7 @@ Replace the stale notification panel with a real-time, intelligent notification 
 
 ---
 
-### Sprint 2.1 — Industry Selection System & Vertical Routing [PENDING]
+### Sprint 2.1 — Industry Selection System & Vertical Routing [IN_PROGRESS]
 
 **Track:** 2 · Vertical Intelligence
 **Priority:** Critical — foundation for all verticals

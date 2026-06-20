@@ -34,7 +34,9 @@ loginctl enable-linger "$USER" 2>/dev/null && echo "  ✓ Linger enabled" || \
 
 echo "► Installing watchdog crontab..."
 CRON_LINE="*/30 * * * * bash $REPO/scripts/watchdog.sh >> $REPO/logs/watchdog.log 2>&1"
-( crontab -l 2>/dev/null | grep -v "kits-business/scripts/watchdog" ; echo "$CRON_LINE" ) | crontab -
+# `crontab -l` exits 1 when no crontab exists — the `|| true` prevents pipefail from killing the script
+# `grep -v` also exits 1 if nothing passes through — same fix
+{ crontab -l 2>/dev/null || true; } | { grep -v "kits-business/scripts/watchdog" || true; echo "$CRON_LINE"; } | crontab -
 echo "  ✓ Watchdog runs every 30 minutes"
 
 echo "► Starting tmux session..."

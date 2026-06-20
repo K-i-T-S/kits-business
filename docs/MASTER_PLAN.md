@@ -138,7 +138,7 @@ Redesign the login page from a static form into an animated, role-aware, visuall
 
 ---
 
-### Sprint 1.3 — Navigation Restructure & Search Enhancement [PENDING]
+### Sprint 1.3 — Navigation Restructure & Search Enhancement [IN_PROGRESS]
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** High

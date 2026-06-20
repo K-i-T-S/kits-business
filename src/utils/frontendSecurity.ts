@@ -1,6 +1,5 @@
 
 import { SecurityValidator } from './enhancedValidation';
-
 import { securityMonitor } from './securityMonitor';
 
 // Enhanced security utilities for frontend components

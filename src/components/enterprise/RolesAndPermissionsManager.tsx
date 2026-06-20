@@ -5,8 +5,6 @@ import { toast } from 'sonner';
 import { supabase } from '../../utils/supabaseClient';
 import Layout from '../Layout';
 
-
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';

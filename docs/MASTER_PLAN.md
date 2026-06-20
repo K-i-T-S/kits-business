@@ -62,7 +62,8 @@
 
 ---
 
-### Sprint 1.1 — Theme System Unification [IN_PROGRESS]
+### Sprint 1.1 — Theme System Unification [COMPLETED]
+> Completed 2026-06-20: ThemeContext now adds `.dark` class alongside `dark-theme` so Tailwind v4 `dark:` variants and shadcn CSS variables activate correctly in dark mode.
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** Critical — blocks everything visual

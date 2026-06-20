@@ -5,9 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { BRAND } from '../constants/branding';
-
 import { supabase } from '../utils/supabaseClient';
-
 
 interface LoginProps {
   onLogin?: () => void;

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { supabase } from '../utils/supabaseClient';
+
 import FeatureGate from './FeatureGate';
 
 // ── Types ─────────────────────────────────────────────────────────────────────

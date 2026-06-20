@@ -1,7 +1,6 @@
 import { Mail, MessageCircle, Instagram } from 'lucide-react';
 import React, { memo } from 'react';
 
-
 import { BRAND } from '../constants/branding';
 
 interface SupportCardProps {

@@ -1,7 +1,5 @@
 import { logSecurityEvent } from './auditLogger';
 
-
-
 // Security monitoring and alerting
 export class SecurityMonitor {
   private static instance: SecurityMonitor;

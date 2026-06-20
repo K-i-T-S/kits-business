@@ -11,11 +11,11 @@ import TipsModal from '../components/TipsModal';
 import { useApp } from '../context/AppContext';
 import type { Sale, Product } from '../context/AppContext';
 import { useSubscription } from '../context/SubscriptionContext';
-import { supabase } from '../utils/supabaseClient';
 import { demoCoupons, demoLoyaltyProgram, demoCustomerLoyalty, demoReceiptTemplates } from '../data/demoPosData';
 import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../types/pos';
 import { formatTaxBreakdown } from '../utils/formatting';
 import { POSCalculator } from '../utils/posCalculations';
+import { supabase } from '../utils/supabaseClient';
 import '../styles/print.css';
 
 // ─── Barcode scanner tuning ───────────────────────────────────────────────────
@@ -997,17 +997,17 @@ export default function POS() {
               {hasFeature('enterprise_dashboard') &&
                 selectedCustomer &&
                 customers.find(c => c.id === selectedCustomer)?.phone && (
-                  <button
-                    onClick={() => void handleSendWhatsApp()}
-                    disabled={whatsappSending}
-                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {whatsappSending
-                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <MessageCircle className="w-4 h-4" />}
-                    {whatsappSending ? 'Sending…' : 'Send via WhatsApp'}
-                  </button>
-                )}
+                <button
+                  onClick={() => void handleSendWhatsApp()}
+                  disabled={whatsappSending}
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {whatsappSending
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <MessageCircle className="w-4 h-4" />}
+                  {whatsappSending ? 'Sending…' : 'Send via WhatsApp'}
+                </button>
+              )}
             </div>
           </div>
         </div>

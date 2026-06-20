@@ -3,8 +3,6 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
-
-
 import { TransactionManager } from '../utils/transactionManager';
 
 interface ImportInventoryModalProps {

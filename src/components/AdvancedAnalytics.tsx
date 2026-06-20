@@ -15,7 +15,6 @@ import { ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart as RePieC
 
 import type { Sale, Product, Customer, Employee } from '../context/AppContext';
 
-
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 

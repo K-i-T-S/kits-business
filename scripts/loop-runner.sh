@@ -51,15 +51,15 @@ while true; do
     log "git pull failed (offline?). Continuing with local state."
   }
 
-  PENDING=$(grep -cE '\[PENDING\]|\[IN_PROGRESS\]' "$REPO/docs/MASTER_PLAN.md" 2>/dev/null || echo 0)
+  PENDING=$(grep -cE '^### Sprint.*\[(PENDING|IN_PROGRESS)\]' "$REPO/docs/MASTER_PLAN.md" 2>/dev/null || echo 0)
   if [ "$PENDING" -eq 0 ]; then
     log "🎉 ALL SPRINTS COMPLETE. Nothing left to build."
     log "Add new sprints to docs/MASTER_PLAN.md to continue."
     exit 0
   fi
 
-  NEXT=$(grep -E '\[PENDING\]|\[IN_PROGRESS\]' "$REPO/docs/MASTER_PLAN.md" | head -1 | \
-    sed 's/.*### Sprint /Sprint /' | sed 's/ \[PENDING\]//' | sed 's/ \[IN_PROGRESS\]//')
+  NEXT=$(grep -E '^### Sprint.*\[(PENDING|IN_PROGRESS)\]' "$REPO/docs/MASTER_PLAN.md" | head -1 | \
+    sed 's/^### Sprint /Sprint /' | sed 's/ \[PENDING\]//' | sed 's/ \[IN_PROGRESS\]//')
   log "▶ Executing: $NEXT"
 
   DATED_PROMPT=$(sed "s/{{DATE}}/$(date +%Y-%m-%d)/g" "$PROMPT")

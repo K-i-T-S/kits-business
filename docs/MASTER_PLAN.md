@@ -197,7 +197,7 @@ Section dividers with labels in the sidebar. Grouped logically.
 
 ---
 
-### Sprint 1.4 — 3D Dashboard Overhaul [PENDING]
+### Sprint 1.4 — 3D Dashboard Overhaul [IN_PROGRESS]
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** Critical — the hero demo screen

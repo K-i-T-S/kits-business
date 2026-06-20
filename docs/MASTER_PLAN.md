@@ -138,7 +138,8 @@ Redesign the login page from a static form into an animated, role-aware, visuall
 
 ---
 
-### Sprint 1.3 — Navigation Restructure & Search Enhancement [IN_PROGRESS]
+### Sprint 1.3 — Navigation Restructure & Search Enhancement [COMPLETED]
+> Completed 2026-06-20: Restructured sidebar nav into four labelled sections (Operations/People/Intelligence/Platform), wired Cmd/Ctrl+K global search with fuzzy matching, categorised results, and localStorage recent searches.
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** High
@@ -1181,7 +1182,7 @@ Build an in-app view of the automation log so the owner can see what the agents 
 |--------|-------|--------|-----------|
 | 1.1 — Theme System | Polish | COMPLETED | 2026-06-20 |
 | 1.2 — Login Overhaul | Polish | COMPLETED | 2026-06-20 |
-| 1.3 — Navigation & Search | Polish | PENDING | — |
+| 1.3 — Navigation & Search | Polish | COMPLETED | 2026-06-20 |
 | 1.4 — 3D Dashboard | Polish | PENDING | — |
 | 1.5 — Notifications | Polish | PENDING | — |
 | 2.1 — Industry System | Verticals | PENDING | — |

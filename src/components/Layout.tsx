@@ -7,21 +7,14 @@ import {
   BarChart3,
   LogOut,
   Sparkles,
-  Stars,
-  PhoneCall,
   Menu,
   X,
   Shield,
-  Mail,
-  MessageCircle,
-  Instagram,
   Search,
   Bell,
   Settings,
   ChevronDown,
   Activity,
-  Calendar,
-  HelpCircle,
   Layers,
   Truck,
   TrendingUp,
@@ -30,11 +23,12 @@ import {
   MapPin,
   Key,
   Lock,
-  Building2,
   Sun,
   Moon,
   Pencil,
   TrendingDown,
+  Calendar,
+  HelpCircle,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -73,13 +67,13 @@ export default function Layout({ children }: LayoutProps) {
   const { currentEmployee, isModalOpen, currentTenant } = useApp();
   const { hasFeature } = useSubscription();
   const { theme, toggleTheme } = useTheme();
-  const { announce, setAriaAttribute, setRole } = useAccessibility();
+  const { announce } = useAccessibility();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [logoError, setLogoError] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [brandModalOpen, setBrandModalOpen] = useState(false);
 
@@ -89,7 +83,7 @@ export default function Layout({ children }: LayoutProps) {
     try {
       announce('Logging out...', 'polite');
       await supabase.auth.signOut();
-      navigate('/login');
+      void navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
       announce('Logout failed. Please try again.', 'assertive');
@@ -98,57 +92,68 @@ export default function Layout({ children }: LayoutProps) {
 
   const isActive = useCallback((href: string) => location.pathname === href, [location.pathname]);
 
-  const navigation = useMemo(() => [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, feature: undefined },
+  const navigationSections = useMemo(() => [
     {
-      name: 'Inventory',
-      href: '/inventory',
-      icon: Package,
-      feature: 'inventory_management' as Feature,
-      subItems: [
-        { name: 'Products', href: '/inventory', icon: Package },
-        { name: 'Batch Tracking', href: '/inventory/batch-tracking', icon: Layers },
-        { name: 'Suppliers', href: '/inventory/suppliers', icon: Users },
-        { name: 'Purchase Orders', href: '/inventory/purchase-orders', icon: ShoppingCart },
-        { name: 'Stock Transfers', href: '/inventory/stock-transfers', icon: Truck },
-        { name: 'Reorder Points', href: '/inventory/reorder-points', icon: AlertTriangle },
+      labelKey: 'nav.section.operations',
+      labelFallback: 'Operations',
+      items: [
+        { name: t('nav.dashboard', 'Dashboard'), href: '/dashboard', icon: LayoutDashboard, feature: undefined as Feature | undefined },
+        { name: t('nav.pos', 'POS / Sales'), href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature },
+        {
+          name: t('nav.inventory', 'Inventory'),
+          href: '/inventory',
+          icon: Package,
+          feature: 'inventory_management' as Feature,
+          subItems: [
+            { name: t('nav.products', 'Products'), href: '/inventory', icon: Package },
+            { name: t('nav.batchTracking', 'Batch Tracking'), href: '/inventory/batch-tracking', icon: Layers },
+            { name: t('nav.suppliers', 'Suppliers'), href: '/inventory/suppliers', icon: Users },
+            { name: t('nav.purchaseOrders', 'Purchase Orders'), href: '/inventory/purchase-orders', icon: ShoppingCart },
+            { name: t('nav.stockTransfers', 'Stock Transfers'), href: '/inventory/stock-transfers', icon: Truck },
+            { name: t('nav.reorderPoints', 'Reorder Points'), href: '/inventory/reorder-points', icon: AlertTriangle },
+          ],
+        },
       ],
     },
-    { name: 'POS', href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature },
-    { name: 'Customers', href: '/customers', icon: Users, feature: undefined },
-    { name: 'Employees', href: '/employees', icon: UserCircle, feature: undefined },
-    { name: 'Monitoring', href: '/monitoring', icon: Activity, feature: 'monitoring' as Feature },
-    { name: 'Reports', href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
-    { name: 'Finance', href: '/finance', icon: TrendingDown, feature: undefined },
     {
-      name: 'Enterprise',
-      href: '/enterprise',
-      icon: Shield,
-      feature: 'enterprise_dashboard' as Feature,
-      subItems: [
-        { name: 'Enterprise Dashboard', href: '/enterprise', icon: Shield },
-        { name: 'Roles & Permissions', href: '/enterprise/roles', icon: Shield },
-        { name: 'Workflow Automation', href: '/enterprise/workflows', icon: Zap },
-        { name: 'Multi-Location', href: '/enterprise/locations', icon: MapPin },
-        { name: 'API & Webhooks', href: '/enterprise/api', icon: Key },
+      labelKey: 'nav.section.people',
+      labelFallback: 'People',
+      items: [
+        { name: t('nav.customers', 'Customers & CRM'), href: '/customers', icon: Users, feature: undefined as Feature | undefined },
+        { name: t('nav.employees', 'Employees'), href: '/employees', icon: UserCircle, feature: undefined as Feature | undefined },
       ],
     },
-    { name: 'Profile Settings', href: '/profile-settings', icon: Settings, feature: undefined },
-    { name: 'System Settings', href: '/system-settings', icon: Building2, feature: undefined },
-  ], []);
-
-  const supportActions = useMemo(() => [
     {
-      label: 'WhatsApp Support',
-      description: BRAND.supportWhatsApp,
-      icon: PhoneCall,
+      labelKey: 'nav.section.intelligence',
+      labelFallback: 'Intelligence',
+      items: [
+        { name: t('nav.reports', 'Reports'), href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
+        { name: t('nav.finance', 'Finance'), href: '/finance', icon: TrendingDown, feature: undefined as Feature | undefined },
+        { name: t('nav.forecasting', 'Forecasting'), href: '/forecasting', icon: TrendingUp, feature: 'forecasting' as Feature },
+      ],
     },
     {
-      label: 'Instagram',
-      description: BRAND.supportInstagram,
-      icon: Shield,
+      labelKey: 'nav.section.platform',
+      labelFallback: 'Platform',
+      items: [
+        { name: t('nav.monitoring', 'Monitoring'), href: '/monitoring', icon: Activity, feature: 'monitoring' as Feature },
+        {
+          name: t('nav.enterprise', 'Enterprise'),
+          href: '/enterprise',
+          icon: Shield,
+          feature: 'enterprise_dashboard' as Feature,
+          subItems: [
+            { name: t('nav.enterpriseDashboard', 'Enterprise Dashboard'), href: '/enterprise', icon: Shield },
+            { name: t('nav.rolesPermissions', 'Roles & Permissions'), href: '/enterprise/roles', icon: Shield },
+            { name: t('nav.workflowAutomation', 'Workflow Automation'), href: '/enterprise/workflows', icon: Zap },
+            { name: t('nav.multiLocation', 'Multi-Location'), href: '/enterprise/locations', icon: MapPin },
+            { name: t('nav.apiWebhooks', 'API & Webhooks'), href: '/enterprise/api', icon: Key },
+          ],
+        },
+        { name: t('nav.settings', 'Settings'), href: '/system-settings', icon: Settings, feature: undefined as Feature | undefined },
+      ],
     },
-  ], [BRAND.supportWhatsApp, BRAND.supportInstagram]);
+  ], [t]);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -355,38 +360,46 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2 overflow-y-auto" role="navigation" aria-label="Main menu">
-            <div className="px-3 py-2">
-              <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider nav-section-title">Main Menu</h3>
-            </div>
-            {navigation.map((item) => {
-              const locked = item.feature ? !hasFeature(item.feature) : false;
-              if (locked && item.feature) {
-                const featureInfo = FEATURE_DISPLAY[item.feature];
-                const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
-                return (
-                  <button
-                    key={item.name}
-                    onClick={() => toast.info(`Upgrade to ${planInfo.name} (${planInfo.price}) to unlock ${featureInfo.name}`)}
-                    className="group relative flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-white/30 opacity-50 transition-all duration-200 hover:opacity-70"
-                    aria-label={`${item.name} — requires ${planInfo.name} plan`}
-                  >
-                    <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/30">
-                      <item.icon className="h-4 w-4" />
-                    </div>
-                    <span className="flex-1 text-start">{item.name}</span>
-                    <Lock className="h-3 w-3 text-amber-400/70" aria-hidden="true" />
-                  </button>
-                );
-              }
-              return (
-                <NavItem
-                  key={item.name}
-                  item={item}
-                  isActive={isActive(item.href)}
-                />
-              );
-            })}
+          <nav className="flex-1 overflow-y-auto" role="navigation" aria-label="Main menu">
+            {navigationSections.map((section) => (
+              <div key={section.labelFallback} className="mt-3 first:mt-0">
+                <div className="px-3 pb-1.5">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-widest text-white/30 nav-section-title">
+                    {t(section.labelKey, section.labelFallback)}
+                  </h3>
+                </div>
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const locked = item.feature ? !hasFeature(item.feature) : false;
+                    if (locked && item.feature) {
+                      const featureInfo = FEATURE_DISPLAY[item.feature];
+                      const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
+                      return (
+                        <button
+                          key={item.name}
+                          onClick={() => toast.info(`Upgrade to ${planInfo.name} (${planInfo.price}) to unlock ${featureInfo.name}`)}
+                          className="group relative flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-white/30 opacity-50 transition-all duration-200 hover:opacity-70"
+                          aria-label={`${item.name} — requires ${planInfo.name} plan`}
+                        >
+                          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/30">
+                            <item.icon className="h-4 w-4" />
+                          </div>
+                          <span className="flex-1 text-start">{item.name}</span>
+                          <Lock className="h-3 w-3 text-amber-400/70" aria-hidden="true" />
+                        </button>
+                      );
+                    }
+                    return (
+                      <NavItem
+                        key={item.name}
+                        item={item}
+                        isActive={isActive(item.href)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
 
           {/* Support Section */}
@@ -403,7 +416,7 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* Logout Button */}
             <button
-              onClick={handleLogout}
+              onClick={() => { void handleLogout(); }}
               data-testid="logout-button"
               className="group flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 hover:shadow-lg hover:shadow-red-500/20 logout-button"
               aria-label="Sign out of your account"
@@ -655,7 +668,7 @@ export default function Layout({ children }: LayoutProps) {
                         </div>
                         <div className="border-t border-white/10 p-2">
                           <button
-                            onClick={handleLogout}
+                            onClick={() => { void handleLogout(); }}
                             className="w-full px-3 py-2 text-start text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors rounded-lg flex items-center gap-3"
                             role="menuitem"
                           >

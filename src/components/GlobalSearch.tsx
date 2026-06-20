@@ -1,4 +1,4 @@
-import { Package, Users, UserCircle, Search, X } from 'lucide-react';
+import { Package, Users, UserCircle, Search, X, Clock } from 'lucide-react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,10 +32,40 @@ type EmployeeResult = {
 export type SearchResult = ProductResult | CustomerResult | EmployeeResult;
 
 const MAX_PER_CATEGORY = 5;
+const RECENT_KEY = 'kits_recent_searches';
+const MAX_RECENT = 8;
 
-function matchesQuery(value: string | null | undefined, query: string): boolean {
+function getRecentSearches(): string[] {
+  try {
+    const stored = localStorage.getItem(RECENT_KEY);
+    return stored ? (JSON.parse(stored) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSearch(query: string): void {
+  const trimmed = query.trim();
+  if (!trimmed) return;
+  try {
+    const existing = getRecentSearches().filter((s) => s !== trimmed);
+    localStorage.setItem(RECENT_KEY, JSON.stringify([trimmed, ...existing].slice(0, MAX_RECENT)));
+  } catch {
+    // localStorage full — ignore
+  }
+}
+
+function fuzzyMatch(value: string | null | undefined, query: string): boolean {
   if (!value) return false;
-  return value.toLowerCase().includes(query.toLowerCase());
+  const v = value.toLowerCase();
+  const q = query.toLowerCase();
+  if (v.includes(q)) return true;
+  // All query chars appear in order
+  let qi = 0;
+  for (let i = 0; i < v.length && qi < q.length; i++) {
+    if (v[i] === q[qi]) qi++;
+  }
+  return qi === q.length;
 }
 
 // ── Result item component ────────────────────────────────────────────────────
@@ -155,15 +185,17 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset state when dialog opens
+  // Reset state and load recent searches when dialog opens
   useEffect(() => {
     if (open) {
       setQuery('');
       setDebouncedQuery('');
       setHighlightedIndex(-1);
+      setRecentSearches(getRecentSearches());
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [open]);
@@ -186,10 +218,10 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
     const productResults: ProductResult[] = products
       .filter(
         (p) =>
-          matchesQuery(p.name, q) ||
-          matchesQuery(p.sku, q) ||
-          matchesQuery(p.barcode, q) ||
-          matchesQuery(p.category, q),
+          fuzzyMatch(p.name, q) ||
+          fuzzyMatch(p.sku, q) ||
+          fuzzyMatch(p.barcode, q) ||
+          fuzzyMatch(p.category, q),
       )
       .slice(0, MAX_PER_CATEGORY)
       .map((p) => ({
@@ -203,9 +235,9 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
     const customerResults: CustomerResult[] = customers
       .filter(
         (c) =>
-          matchesQuery(c.name, q) ||
-          matchesQuery(c.email, q) ||
-          matchesQuery(c.phone, q),
+          fuzzyMatch(c.name, q) ||
+          fuzzyMatch(c.email, q) ||
+          fuzzyMatch(c.phone, q),
       )
       .slice(0, MAX_PER_CATEGORY)
       .map((c) => ({
@@ -218,9 +250,9 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
     const employeeResults: EmployeeResult[] = employees
       .filter(
         (e) =>
-          matchesQuery(e.name, q) ||
-          matchesQuery(e.email, q) ||
-          matchesQuery(e.role, q),
+          fuzzyMatch(e.name, q) ||
+          fuzzyMatch(e.email, q) ||
+          fuzzyMatch(e.role, q),
       )
       .slice(0, MAX_PER_CATEGORY)
       .map((e) => ({
@@ -236,16 +268,18 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
   const handleSelect = useCallback(
     (result: SearchResult) => {
+      if (debouncedQuery.trim()) {
+        saveRecentSearch(debouncedQuery.trim());
+      }
       onClose();
       const destinations: Record<SearchResult['type'], string> = {
         product: '/inventory',
         customer: '/customers',
         employee: '/employees',
       };
-      const path = destinations[result.type];
-      void navigate(path);
+      void navigate(destinations[result.type]);
     },
-    [navigate, onClose],
+    [navigate, onClose, debouncedQuery],
   );
 
   // Keyboard navigation
@@ -350,11 +384,42 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
           aria-label="Search results"
           className="overflow-y-auto flex-1"
         >
-          {isIdle && (
+          {isIdle && recentSearches.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 gap-2 text-white/40">
               <Search className="h-8 w-8 opacity-40" aria-hidden="true" />
               <p className="text-sm">Start typing to search&hellip;</p>
               <p className="text-xs text-white/25">Products, customers, employees</p>
+            </div>
+          )}
+
+          {isIdle && recentSearches.length > 0 && (
+            <div>
+              <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                <span className="text-white/40 text-xs uppercase tracking-wider font-semibold">Recent</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem(RECENT_KEY);
+                    setRecentSearches([]);
+                  }}
+                  className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+              {recentSearches.map((recent) => (
+                <button
+                  key={recent}
+                  type="button"
+                  onClick={() => setQuery(recent)}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-start hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 flex-shrink-0">
+                    <Clock className="h-4 w-4 text-white/30" aria-hidden="true" />
+                  </div>
+                  <span className="text-sm text-white/60 truncate">{recent}</span>
+                </button>
+              ))}
             </div>
           )}
 

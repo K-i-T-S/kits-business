@@ -340,6 +340,43 @@
     "lastYear": "Last Year",
     "custom": "Custom Range"
   },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "clearAll": "Clear all",
+    "empty": "You're all caught up!",
+    "emptyDesc": "New alerts will appear here.",
+    "view": "View",
+    "dismiss": "Dismiss",
+    "preferences": "Alert Preferences",
+    "preferencesDesc": "Choose which types of alerts you want to receive.",
+    "justNow": "Just now",
+    "minsAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "category": {
+      "inventory": "Inventory",
+      "sales": "Sales",
+      "employees": "Employees",
+      "finance": "Finance",
+      "system": "System",
+      "ai": "AI Insights"
+    },
+    "push": {
+      "title": "Push Notifications",
+      "desc": "Stay updated with important business alerts via browser notifications.",
+      "status": "Status",
+      "notSupported": "Not Supported",
+      "notSupportedDesc": "Push notifications are not supported in this browser.",
+      "enabled": "Enabled",
+      "blocked": "Blocked",
+      "notRequested": "Not Requested",
+      "enable": "Enable Notifications",
+      "enabling": "Enabling...",
+      "deniedDesc": "Notifications are blocked in your browser. Please enable them in your browser preferences.",
+      "activeDesc": "Push notifications are enabled for this device."
+    }
+  },
   "translationManager": {
     "title": "Translation Manager",
     "add": "Add",

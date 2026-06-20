@@ -15,6 +15,7 @@ import { TranslationManager } from './components/TranslationManager';
 import { Toaster } from './components/ui/sonner';
 import { AppProvider } from './context/AppContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { TranslationProvider } from './context/TranslationContext';
@@ -137,262 +138,264 @@ export default function App() {
                 <LanguageProvider>
                   <TranslationProvider>
                     <AccessibilityProvider>
-                      <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
-                        <Suspense fallback={<LoadingSpinner />}>
-                          <Routes>
-                            {/* ── Public routes ── */}
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/tenant-selection" element={<TenantSelection />} />
-                            <Route path="/accept-invite" element={<AcceptInvite />} />
+                      <NotificationProvider>
+                        <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
+                          <Suspense fallback={<LoadingSpinner />}>
+                            <Routes>
+                              {/* ── Public routes ── */}
+                              <Route path="/login" element={<Login />} />
+                              <Route path="/tenant-selection" element={<TenantSelection />} />
+                              <Route path="/accept-invite" element={<AcceptInvite />} />
 
-                            {/* ── Starter+ routes (all authenticated users) ── */}
-                            <Route
-                              path="/dashboard"
-                              element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/pos"
-                              element={isAuthenticated ? <POS /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/reports"
-                              element={isAuthenticated ? <Reports /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/finance"
-                              element={isAuthenticated ? <Finance /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/employees"
-                              element={isAuthenticated ? <Employees /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/profile-settings"
-                              element={isAuthenticated ? <ProfileSettings /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/system-settings"
-                              element={isAuthenticated ? <SystemSettings /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/activity-log"
-                              element={isAuthenticated ? <ActivityLog /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/help-support"
-                              element={isAuthenticated ? <HelpSupport /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/translation-manager"
-                              element={isAuthenticated ? <TranslationManager /> : <Navigate to="/login" replace />}
-                            />
-                            <Route
-                              path="/admin"
-                              element={isAuthenticated ? <AdminPanel /> : <Navigate to="/login" replace />}
-                            />
+                              {/* ── Starter+ routes (all authenticated users) ── */}
+                              <Route
+                                path="/dashboard"
+                                element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/pos"
+                                element={isAuthenticated ? <POS /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/reports"
+                                element={isAuthenticated ? <Reports /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/finance"
+                                element={isAuthenticated ? <Finance /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/employees"
+                                element={isAuthenticated ? <Employees /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/profile-settings"
+                                element={isAuthenticated ? <ProfileSettings /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/system-settings"
+                                element={isAuthenticated ? <SystemSettings /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/activity-log"
+                                element={isAuthenticated ? <ActivityLog /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/help-support"
+                                element={isAuthenticated ? <HelpSupport /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/translation-manager"
+                                element={isAuthenticated ? <TranslationManager /> : <Navigate to="/login" replace />}
+                              />
+                              <Route
+                                path="/admin"
+                                element={isAuthenticated ? <AdminPanel /> : <Navigate to="/login" replace />}
+                              />
 
-                            {/* ── Growth+ routes (forecasting) ── */}
-                            <Route
-                              path="/forecasting"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="forecasting">
-                                    <ForecastingPage />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
+                              {/* ── Growth+ routes (forecasting) ── */}
+                              <Route
+                                path="/forecasting"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="forecasting">
+                                      <ForecastingPage />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
 
-                            {/* ── Growth+ routes (inventory_management) ── */}
-                            <Route
-                              path="/inventory"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="inventory_management">
-                                    <Inventory />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
-                            <Route
-                              path="/inventory/batch-tracking"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="inventory_management">
-                                    <BatchTracking />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
-                            <Route
-                              path="/inventory/suppliers"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="inventory_management">
-                                    <SupplierManagement />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
-                            <Route
-                              path="/inventory/purchase-orders"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="inventory_management">
-                                    <PurchaseOrderManagement />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
-                            <Route
-                              path="/inventory/stock-transfers"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="inventory_management">
-                                    <StockTransferManagement />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
-                            <Route
-                              path="/inventory/reorder-points"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="inventory_management">
-                                    <ReorderPointManagement />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
+                              {/* ── Growth+ routes (inventory_management) ── */}
+                              <Route
+                                path="/inventory"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="inventory_management">
+                                      <Inventory />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
+                              <Route
+                                path="/inventory/batch-tracking"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="inventory_management">
+                                      <BatchTracking />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
+                              <Route
+                                path="/inventory/suppliers"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="inventory_management">
+                                      <SupplierManagement />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
+                              <Route
+                                path="/inventory/purchase-orders"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="inventory_management">
+                                      <PurchaseOrderManagement />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
+                              <Route
+                                path="/inventory/stock-transfers"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="inventory_management">
+                                      <StockTransferManagement />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
+                              <Route
+                                path="/inventory/reorder-points"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="inventory_management">
+                                      <ReorderPointManagement />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
 
-                            {/* ── Growth+ routes (crm) ── */}
-                            <Route
-                              path="/customers"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="crm">
-                                    <Customers />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
+                              {/* ── Growth+ routes (crm) ── */}
+                              <Route
+                                path="/customers"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="crm">
+                                      <Customers />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
 
-                            {/* ── Business+ routes (enterprise_dashboard) ── */}
-                            <Route
-                              path="/enterprise"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="enterprise_dashboard">
-                                    <EnterpriseDashboard />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
-                            <Route
-                              path="/enterprise/roles"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="enterprise_dashboard">
-                                    <RolesAndPermissionsManager />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
-                            <Route
-                              path="/enterprise/workflows"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="enterprise_dashboard">
-                                    <WorkflowAutomation />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
+                              {/* ── Business+ routes (enterprise_dashboard) ── */}
+                              <Route
+                                path="/enterprise"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="enterprise_dashboard">
+                                      <EnterpriseDashboard />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
+                              <Route
+                                path="/enterprise/roles"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="enterprise_dashboard">
+                                      <RolesAndPermissionsManager />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
+                              <Route
+                                path="/enterprise/workflows"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="enterprise_dashboard">
+                                      <WorkflowAutomation />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
 
-                            {/* ── Business+ routes (multi_location) ── */}
-                            <Route
-                              path="/enterprise/locations"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="multi_location">
-                                    <MultiLocationSupport />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
+                              {/* ── Business+ routes (multi_location) ── */}
+                              <Route
+                                path="/enterprise/locations"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="multi_location">
+                                      <MultiLocationSupport />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
 
-                            {/* ── Business+ routes (api_webhooks) ── */}
-                            <Route
-                              path="/enterprise/api"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="api_webhooks">
-                                    <ApiAndWebhooks />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
+                              {/* ── Business+ routes (api_webhooks) ── */}
+                              <Route
+                                path="/enterprise/api"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="api_webhooks">
+                                      <ApiAndWebhooks />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
 
-                            {/* ── Business+ routes (monitoring) ── */}
-                            <Route
-                              path="/monitoring"
-                              element={
-                                isAuthenticated ? (
-                                  <FeatureRoute feature="monitoring">
-                                    <MonitoringDashboard />
-                                  </FeatureRoute>
-                                ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              }
-                            />
+                              {/* ── Business+ routes (monitoring) ── */}
+                              <Route
+                                path="/monitoring"
+                                element={
+                                  isAuthenticated ? (
+                                    <FeatureRoute feature="monitoring">
+                                      <MonitoringDashboard />
+                                    </FeatureRoute>
+                                  ) : (
+                                    <Navigate to="/login" replace />
+                                  )
+                                }
+                              />
 
-                            {/* ── Fallbacks ── */}
-                            <Route path="/" element={<Navigate to="/login" replace />} />
-                            <Route
-                              path="*"
-                              element={
-                                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
-                              }
-                            />
-                          </Routes>
-                        </Suspense>
+                              {/* ── Fallbacks ── */}
+                              <Route path="/" element={<Navigate to="/login" replace />} />
+                              <Route
+                                path="*"
+                                element={
+                                  isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+                                }
+                              />
+                            </Routes>
+                          </Suspense>
 
-                        {/* Mobile components wrapper inside Router context */}
-                        <MobileComponents isAuthenticated={isAuthenticated} loading={loading} />
+                          {/* Mobile components wrapper inside Router context */}
+                          <MobileComponents isAuthenticated={isAuthenticated} loading={loading} />
 
-                        <KeyboardNavigationHelper />
-                        <AccessibilityAudit />
-                        <Toaster />
-                        <SpeedInsights />
-                        <Analytics />
-                      </div>
+                          <KeyboardNavigationHelper />
+                          <AccessibilityAudit />
+                          <Toaster />
+                          <SpeedInsights />
+                          <Analytics />
+                        </div>
+                      </NotificationProvider>
                     </AccessibilityProvider>
                   </TranslationProvider>
                 </LanguageProvider>

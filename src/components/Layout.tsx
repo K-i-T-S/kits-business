@@ -38,18 +38,25 @@ import { toast } from 'sonner';
 
 import { BRAND } from '../constants/branding';
 import { useApp } from '../context/AppContext';
+import { useNotifications } from '../context/NotificationContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAccessibility } from '../providers/AccessibilityProvider';
 import type { Feature } from '../types/subscription';
 import { FEATURE_DISPLAY, PLAN_DISPLAY } from '../types/subscription';
+import {
+  generateCustomerAlerts,
+  generateInventoryAlerts,
+  generateSalesAlerts,
+  generateSystemNotification,
+} from '../utils/notificationEngine';
 import { supabase } from '../utils/supabaseClient';
 
 import BrandIdentityModal from './BrandIdentityModal';
 import GlobalSearch from './GlobalSearch';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import NavItem from './NavItem';
-import NotificationItem from './NotificationItem';
+import NotificationCenter from './NotificationCenter';
 import StoreSwitcher from './StoreSwitcher';
 import SupportCard from './SupportCard';
 import TenantInfo from './TenantInfo';
@@ -64,7 +71,8 @@ export default function Layout({ children }: LayoutProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentEmployee, isModalOpen, currentTenant } = useApp();
+  const { currentEmployee, isModalOpen, currentTenant, products, sales, customers } = useApp();
+  const { unreadCount, addNotification } = useNotifications();
   const { hasFeature } = useSubscription();
   const { theme, toggleTheme } = useTheme();
   const { announce } = useAccessibility();
@@ -175,6 +183,16 @@ export default function Layout({ children }: LayoutProps) {
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
+
+  useEffect(() => {
+    const alerts = [
+      ...generateInventoryAlerts(products),
+      ...generateSalesAlerts(sales),
+      ...generateCustomerAlerts(customers),
+      generateSystemNotification(),
+    ];
+    alerts.forEach(addNotification);
+  }, [products, sales, customers, addNotification]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-900 text-slate-100 md:flex">
@@ -557,38 +575,19 @@ export default function Layout({ children }: LayoutProps) {
                     <button
                       className="rounded-xl border border-white/20 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20 hover:scale-105 relative header-button"
                       onClick={() => setNotificationsOpen(!notificationsOpen)}
-                      aria-label="View notifications"
+                      aria-label={t('notifications.title', 'Notifications')}
                       aria-expanded={notificationsOpen}
                     >
                       <Bell className="h-5 w-5" />
-                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 animate-pulse notification-badge" aria-label="New notifications"></span>
+                      {unreadCount > 0 && (
+                        <span
+                          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center notification-badge"
+                          aria-label={`${unreadCount} unread notifications`}
+                        >
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
                     </button>
-
-                    {notificationsOpen && (
-                      <div
-                        className="absolute right-0 mt-2 w-80 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 dropdown-menu"
-                        role="region"
-                        aria-label="Notifications"
-                      >
-                        <div className="p-4 border-b border-white/10">
-                          <h3 className="font-semibold text-white">Notifications</h3>
-                        </div>
-                        <div className="max-h-96 overflow-y-auto" role="list">
-                          <NotificationItem
-                            type="order"
-                            title="New order received"
-                            description="Order #1234 - $250.00"
-                            time="2 minutes ago"
-                          />
-                          <NotificationItem
-                            type="stock"
-                            title="Low stock alert"
-                            description="5 items need restocking"
-                            time="1 hour ago"
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {/* Language Switcher */}
@@ -698,6 +697,12 @@ export default function Layout({ children }: LayoutProps) {
         <GlobalSearch
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
+        />
+
+        {/* Notification Center */}
+        <NotificationCenter
+          open={notificationsOpen}
+          onClose={() => setNotificationsOpen(false)}
         />
 
         {/* Brand Identity Modal */}

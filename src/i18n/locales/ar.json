@@ -340,6 +340,43 @@
     "lastYear": "العام الماضي",
     "custom": "نطاق مخصص"
   },
+  "notifications": {
+    "title": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "clearAll": "مسح الكل",
+    "empty": "لا توجد إشعارات جديدة!",
+    "emptyDesc": "ستظهر التنبيهات الجديدة هنا.",
+    "view": "عرض",
+    "dismiss": "رفض",
+    "preferences": "تفضيلات التنبيهات",
+    "preferencesDesc": "اختر أنواع التنبيهات التي تريد تلقيها.",
+    "justNow": "الآن",
+    "minsAgo": "{{count}} د",
+    "hoursAgo": "{{count}} س",
+    "daysAgo": "{{count}} ي",
+    "category": {
+      "inventory": "المخزون",
+      "sales": "المبيعات",
+      "employees": "الموظفون",
+      "finance": "المالية",
+      "system": "النظام",
+      "ai": "رؤى الذكاء الاصطناعي"
+    },
+    "push": {
+      "title": "إشعارات الدفع",
+      "desc": "ابقَ على اطلاع بالتنبيهات الهامة عبر إشعارات المتصفح.",
+      "status": "الحالة",
+      "notSupported": "غير مدعوم",
+      "notSupportedDesc": "إشعارات الدفع غير مدعومة في هذا المتصفح.",
+      "enabled": "مفعّل",
+      "blocked": "محظور",
+      "notRequested": "غير مطلوب",
+      "enable": "تفعيل الإشعارات",
+      "enabling": "جاري التفعيل...",
+      "deniedDesc": "الإشعارات محظورة في متصفحك. يرجى تفعيلها في إعدادات المتصفح.",
+      "activeDesc": "إشعارات الدفع مفعّلة لهذا الجهاز."
+    }
+  },
   "translationManager": {
     "title": "مدير الترجمة",
     "add": "إضافة",

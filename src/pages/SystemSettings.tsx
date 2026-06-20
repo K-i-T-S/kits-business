@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  Bell,
   Building2,
   CreditCard,
   Loader2,
@@ -17,12 +18,13 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import FeatureGate from '../components/FeatureGate';
+import { NotificationSettings } from '../components/NotificationSettings';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'dangerZone';
+type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'notifications' | 'dangerZone';
 
 interface BusinessForm {
   name: string;
@@ -358,6 +360,7 @@ export default function SystemSettings() {
     { id: 'financial', label: t('settings.financial'), icon: CreditCard },
     { id: 'posBehaviour', label: t('settings.posBehaviour'), icon: ShoppingCart },
     { id: 'loyalty', label: t('settings.loyaltyProgram'), icon: Star },
+    { id: 'notifications', label: t('settings.notifications'), icon: Bell },
     { id: 'dangerZone', label: t('settings.dangerZone'), icon: AlertTriangle },
   ];
 
@@ -879,6 +882,11 @@ export default function SystemSettings() {
                   </button>
                 </div>
               </div>
+            )}
+
+            {/* ── Notifications ─────────────────────────────────────────── */}
+            {activeTab === 'notifications' && (
+              <NotificationSettings />
             )}
 
             {/* ── Danger Zone ───────────────────────────────────────────── */}

@@ -261,7 +261,8 @@ npm install @react-three/fiber @react-three/drei recharts framer-motion
 
 ---
 
-### Sprint 1.5 — Notification System Overhaul [IN_PROGRESS]
+### Sprint 1.5 — Notification System Overhaul [COMPLETED]
+> Completed 2026-06-20: Built full notification engine with NotificationContext (localStorage persistence), 5 alert types generated from app data (low stock, out-of-stock, large sales, customer debt, system), slide-out NotificationCenter panel with category grouping/mark-read/dismiss/preferences, and Notifications tab in System Settings.
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** High
@@ -1185,7 +1186,7 @@ Build an in-app view of the automation log so the owner can see what the agents 
 | 1.2 — Login Overhaul | Polish | COMPLETED | 2026-06-20 |
 | 1.3 — Navigation & Search | Polish | COMPLETED | 2026-06-20 |
 | 1.4 — 3D Dashboard | Polish | COMPLETED | 2026-06-20 |
-| 1.5 — Notifications | Polish | PENDING | — |
+| 1.5 — Notifications | Polish | COMPLETED | 2026-06-20 |
 | 2.1 — Industry System | Verticals | PENDING | — |
 | 2.2 — Restaurant | Verticals | PENDING | — |
 | 2.3 — Pharmacy | Verticals | PENDING | — |

@@ -99,7 +99,7 @@ The light/dark theme toggle exists (`ThemeContext`, `themes.css`) but does not a
 
 ---
 
-### Sprint 1.2 — Login Page Complete Overhaul [PENDING]
+### Sprint 1.2 — Login Page Complete Overhaul [IN_PROGRESS]
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** Critical — first impression

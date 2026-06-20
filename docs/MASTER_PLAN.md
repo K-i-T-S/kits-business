@@ -197,7 +197,8 @@ Section dividers with labels in the sidebar. Grouped logically.
 
 ---
 
-### Sprint 1.4 — 3D Dashboard Overhaul [IN_PROGRESS]
+### Sprint 1.4 — 3D Dashboard Overhaul [COMPLETED]
+> Completed 2026-06-20: Rewrote Dashboard with 3D tilt KPI cards, count-up animation, 30-day revenue AreaChart, hourly BarChart, live activity feed, data-driven AI insight cards, quick action grid, and greeting hero — all i18n-ready with Arabic translations added.
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** Critical — the hero demo screen
@@ -1183,7 +1184,7 @@ Build an in-app view of the automation log so the owner can see what the agents 
 | 1.1 — Theme System | Polish | COMPLETED | 2026-06-20 |
 | 1.2 — Login Overhaul | Polish | COMPLETED | 2026-06-20 |
 | 1.3 — Navigation & Search | Polish | COMPLETED | 2026-06-20 |
-| 1.4 — 3D Dashboard | Polish | PENDING | — |
+| 1.4 — 3D Dashboard | Polish | COMPLETED | 2026-06-20 |
 | 1.5 — Notifications | Polish | PENDING | — |
 | 2.1 — Industry System | Verticals | PENDING | — |
 | 2.2 — Restaurant | Verticals | PENDING | — |

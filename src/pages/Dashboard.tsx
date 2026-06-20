@@ -1,23 +1,24 @@
 import {
-  Package,
-  ShoppingCart,
-  Users,
-  UserCircle,
-  TrendingUp,
   AlertTriangle,
   DollarSign,
-  BarChart3,
-  Sparkles,
+  Package,
+  Percent,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
+import AIInsightCard from '@/components/dashboard/AIInsightCard';
+import KPICard from '@/components/dashboard/KPICard';
+import LiveActivityFeed from '@/components/dashboard/LiveActivityFeed';
+import QuickActions from '@/components/dashboard/QuickActions';
+import RevenueChart from '@/components/dashboard/RevenueChart';
+import SalesByHourChart from '@/components/dashboard/SalesByHourChart';
+import Layout from '@/components/Layout';
+import { useApp } from '@/context/AppContext';
 
-// Roles that are redirected away from /dashboard on initial landing.
-// owner | admin | manager | supervisor | viewer stay on /dashboard.
 const ROLE_REDIRECT: Partial<Record<string, string>> = {
   cashier: '/pos',
   stockkeeper: '/inventory',
@@ -30,257 +31,224 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Role-based redirect: fires once when tenant data becomes available and the
-  // current path is /dashboard (the default post-login landing). Uses replace
-  // so the back button goes to the page before login, not back to /dashboard.
   useEffect(() => {
     if (loading || !currentTenant) return;
     if (location.pathname !== '/dashboard') return;
-
     const target = ROLE_REDIRECT[currentTenant.userRole];
-    if (target) {
-      void navigate(target, { replace: true });
-    }
+    if (target) void navigate(target, { replace: true });
   }, [currentTenant, loading, navigate, location.pathname]);
 
-  const totalProducts = products?.reduce((acc, p) => acc + (p.variants?.length || 0), 0) || 0;
-  const totalStock = products?.reduce(
-    (acc, p) => acc + (p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0),
-    0,
-  ) || 0;
-  const lowStockItems = products?.reduce(
-    (acc, p) => acc + (p.variants?.filter((v) => v.stock <= v.reorderLevel).length || 0),
-    0,
-  ) || 0;
+  const now = useMemo(() => new Date(), []);
+  const today = now.toDateString();
 
-  const todaySales = sales?.filter((s) => {
-    const today = new Date().toDateString();
-    return new Date(s.date).toDateString() === today;
-  }) || [];
+  const todaySales = useMemo(
+    () => sales.filter((s) => new Date(s.date).toDateString() === today),
+    [sales, today],
+  );
 
-  const todayRevenue = todaySales?.reduce((acc, s) => acc + s.total, 0) || 0;
-  const todayProfit = todaySales?.reduce(
-    (acc, s) =>
-      acc + s.items?.reduce((sum, item) => sum + (item.price - item.cost) * item.quantity, 0),
-    0,
-  ) || 0;
+  const todayRevenue = useMemo(
+    () => todaySales.reduce((sum, s) => sum + s.total, 0),
+    [todaySales],
+  );
 
-  const totalCustomers = customers?.length || 0;
-  const customersWithDebt = customers?.filter((c) => c.debtBalance > 0).length || 0;
+  const todayProfit = useMemo(
+    () =>
+      todaySales.reduce(
+        (sum, s) =>
+          sum +
+          s.items.reduce((iSum, item) => iSum + (item.price - item.cost) * item.quantity, 0),
+        0,
+      ),
+    [todaySales],
+  );
 
-  const quickStats = [
-    {
-      title: t('dashboard.totalProducts', 'Total Products'),
-      value: totalProducts,
-      subtitle: `${totalStock} ${t('inventory.unitsInStock', 'units in stock')}`,
-      icon: Package,
-      accent: 'from-blue-500/75 to-cyan-400/50',
-      link: '/inventory',
-      testId: 'total-products',
-    },
-    {
-      title: t('dashboard.todaysSales', "Today's Sales"),
-      value: `$${todayRevenue.toFixed(2)}`,
-      subtitle: `${todaySales.length} ${t('pos.transactions', 'transactions')}`,
-      icon: ShoppingCart,
-      accent: 'from-emerald-500/70 to-lime-400/50',
-      link: '/pos',
-      testId: 'total-revenue',
-    },
-    {
-      title: t('customers.title', 'Customers'),
-      value: totalCustomers,
-      subtitle: `${customersWithDebt} ${t('customers.withDebt', 'with debt')}`,
-      icon: Users,
-      accent: 'from-purple-500/70 to-pink-400/50',
-      link: '/customers',
-      testId: 'total-customers',
-    },
-    {
-      title: t('dashboard.todaysProfit', "Today's Profit"),
-      value: `$${todayProfit.toFixed(2)}`,
-      subtitle: `${((todayProfit / todayRevenue) * 100 || 0).toFixed(1)}% ${t('dashboard.margin', 'margin')}`,
-      icon: TrendingUp,
-      accent: 'from-amber-500/70 to-orange-400/50',
-      link: '/reports',
-      testId: 'total-orders',
-    },
-  ];
+  const totalProducts = useMemo(
+    () => products.reduce((acc, p) => acc + (p.variants?.length ?? 0), 0),
+    [products],
+  );
 
-  const quickActions = [
-    { title: t('dashboard.newOrder', 'New Sale'), icon: ShoppingCart, link: '/pos', accent: 'from-green-500 to-emerald-400' },
-    { title: t('dashboard.addProduct', 'Add Product'), icon: Package, link: '/inventory', accent: 'from-blue-600 to-indigo-500' },
-    { title: t('dashboard.viewReports', 'View Reports'), icon: BarChart3, link: '/reports', accent: 'from-purple-600 to-fuchsia-500' },
-    { title: t('employees.manageTeam', 'Manage Team'), icon: UserCircle, link: '/employees', accent: 'from-slate-700 to-slate-500' },
-  ];
+  const lowStockItems = useMemo(
+    () =>
+      products.reduce(
+        (acc, p) =>
+          acc + (p.variants ?? []).filter((v) => v.stock > 0 && v.stock <= v.reorderLevel).length,
+        0,
+      ),
+    [products],
+  );
+
+  const totalCustomers = customers.length;
+  const grossMarginPct = todayRevenue > 0 ? (todayProfit / todayRevenue) * 100 : 0;
+
+  const greeting = useMemo(() => {
+    const h = now.getHours();
+    if (h < 12) return t('dashboard.goodMorning', 'Good morning');
+    if (h < 17) return t('dashboard.goodAfternoon', 'Good afternoon');
+    return t('dashboard.goodEvening', 'Good evening');
+  }, [now, t]);
 
   return (
     <Layout>
-      <div className="space-y-10 pb-20 lg:pb-0">
-        <section className="hero-gradient glass-panel relative overflow-hidden p-6 sm:p-8 text-white">
-          <Sparkles className="pointer-events-none absolute right-8 top-6 h-16 w-16 text-white/20" />
-          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="space-y-8 pb-20 lg:pb-8">
+        {/* Hero Header */}
+        <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-600/20 via-slate-800/80 to-slate-900 p-6 sm:p-8">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse at 0% 0%, rgba(99,102,241,0.2) 0%, transparent 60%), radial-gradient(ellipse at 100% 100%, rgba(168,85,247,0.15) 0%, transparent 60%)',
+            }}
+          />
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-wider px-3 py-1 rounded-full bg-white/10 text-white/80 inline-block">Operations dashboard</p>
-              <h1 className="mt-3 text-3xl font-semibold">
-                Welcome back, {currentEmployee?.name ?? 'Operator'}
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" aria-hidden="true" />
+                <p className="text-xs font-medium uppercase tracking-[0.3em] text-green-400">
+                  {t('dashboard.systemActive', 'System Active')}
+                </p>
+              </div>
+              <h1 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+                {greeting},{' '}
+                <span className="text-indigo-300">
+                  {currentEmployee?.name ?? currentTenant?.name ?? 'Operator'}
+                </span>
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-white/80">
-                {todaySales.length > 0
-                  ? `${todaySales.length} transaction${todaySales.length !== 1 ? 's' : ''} completed today · $${todayRevenue.toFixed(2)} in revenue`
-                  : 'No transactions recorded yet today. Start a new sale from the POS terminal.'}
+              <p className="mt-1 text-sm text-white/60">
+                {currentTenant?.name ?? t('dashboard.yourBusiness', 'Your Business')}
+                {todaySales.length > 0 && (
+                  <>
+                    {' · '}
+                    {todaySales.length}{' '}
+                    {t('dashboard.transactionsToday', 'transactions today')}
+                    {' · '}
+                    <span dir="ltr">${todayRevenue.toFixed(2)}</span>
+                    {' '}
+                    {t('dashboard.inRevenue', 'in revenue')}
+                  </>
+                )}
               </p>
             </div>
-            <div className="rounded-3xl border border-white/25 bg-white/10 px-6 py-4 text-center text-white/90">
-              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Today</p>
-              <p className="text-lg font-semibold">
-                {new Date().toLocaleDateString(undefined, {
+            <div className="flex shrink-0 flex-col gap-1 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-end">
+              <p className="text-[10px] uppercase tracking-[0.4em] text-white/40">
+                {t('dashboard.today', 'Today')}
+              </p>
+              <p className="text-base font-semibold text-white">
+                {now.toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric',
                 })}
               </p>
+              <p className="text-xs text-white/50" dir="ltr">
+                {now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {quickStats.map((stat) => (
-            <Link
-              key={stat.title}
-              to={stat.link}
-              data-testid={stat.testId}
-              className="hero-gradient tilt-hover rounded-3xl border border-white/30 p-5 shadow-lg shadow-slate-900/5 text-white"
-            >
-              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${stat.accent}`}>
-                <stat.icon className="h-5 w-5 text-white" />
-              </div>
-              <p className="mt-4 text-xs uppercase tracking-[0.2em] text-white/70">{stat.title}</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{stat.value}</p>
-              <p className="text-sm text-white/80">{stat.subtitle}</p>
-            </Link>
-          ))}
+        {/* KPI Bento Grid */}
+        <section>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
+            <KPICard
+              title={t('dashboard.todayRevenue', "Today's Revenue")}
+              numericValue={todayRevenue}
+              format={(v) => `$${v.toFixed(2)}`}
+              subtitle={`${todaySales.length} ${t('pos.transactions', 'transactions')}`}
+              icon={DollarSign}
+              gradient={['#6366f1', '#818cf8']}
+              link="/reports"
+              testId="total-revenue"
+            />
+            <KPICard
+              title={t('dashboard.totalProducts', 'Total Products')}
+              numericValue={totalProducts}
+              format={(v) => Math.round(v).toLocaleString()}
+              subtitle={t('dashboard.variants', 'variants')}
+              icon={Package}
+              gradient={['#06b6d4', '#22d3ee']}
+              link="/inventory"
+              testId="total-products"
+            />
+            <KPICard
+              title={t('customers.title', 'Customers')}
+              numericValue={totalCustomers}
+              format={(v) => Math.round(v).toLocaleString()}
+              subtitle={t('dashboard.registeredCustomers', 'registered')}
+              icon={Users}
+              gradient={['#a855f7', '#c084fc']}
+              link="/customers"
+              testId="total-customers"
+            />
+            <KPICard
+              title={t('dashboard.todaysProfit', "Today's Profit")}
+              numericValue={todayProfit}
+              format={(v) => `$${v.toFixed(2)}`}
+              subtitle={t('dashboard.grossProfit', 'gross profit')}
+              icon={TrendingUp}
+              gradient={['#10b981', '#34d399']}
+              link="/reports"
+              testId="total-orders"
+            />
+            <KPICard
+              title={t('dashboard.grossMargin', 'Gross Margin')}
+              numericValue={grossMarginPct}
+              format={(v) => `${v.toFixed(1)}%`}
+              subtitle={t('dashboard.margin', 'margin')}
+              icon={Percent}
+              gradient={['#f59e0b', '#fbbf24']}
+              link="/reports"
+            />
+            <KPICard
+              title={t('dashboard.lowStockAlerts', 'Low Stock Alerts')}
+              numericValue={lowStockItems}
+              format={(v) => Math.round(v).toLocaleString()}
+              subtitle={t('dashboard.variantsBelowReorder', 'below reorder point')}
+              icon={AlertTriangle}
+              gradient={lowStockItems > 0 ? ['#ef4444', '#f87171'] : ['#475569', '#64748b']}
+              link="/inventory"
+            />
+          </div>
         </section>
 
+        {/* Low Stock Banner */}
         {lowStockItems > 0 && (
-          <section className="glass-panel border border-amber-500/30 bg-amber-500/10 p-5">
+          <section className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-4">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-3 text-amber-400">
-                <AlertTriangle className="h-5 w-5" />
-                <p className="text-sm font-semibold uppercase tracking-[0.2em]">
-                  Low stock detected
+              <div className="flex items-center gap-2 text-amber-400">
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                <p className="text-sm font-semibold uppercase tracking-[0.15em]">
+                  {t('dashboard.lowStockAlert', 'Low Stock Alert')}
                 </p>
               </div>
               <p className="text-sm text-white/70">
-                {lowStockItems} variant{lowStockItems > 1 ? 's are' : ' is'} approaching the reorder
-                threshold.{' '}
+                {lowStockItems}{' '}
+                {t('dashboard.variantsNeedRestocking', 'variant(s) need restocking.')}{' '}
                 <Link to="/inventory" className="text-amber-400 underline">
-                  Review inventory
+                  {t('dashboard.reviewInventory', 'Review inventory')}
                 </Link>
               </p>
             </div>
           </section>
         )}
 
-        <section>
-          <h2 className="text-sm uppercase tracking-[0.3em] text-slate-500">Operator shortcuts</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {quickActions.map((action) => (
-              <Link
-                key={action.title}
-                to={action.link}
-                data-testid={`nav-${action.link.replace('/', '')}`}
-                className={`tilt-hover flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br ${action.accent} px-6 py-6 text-white shadow-xl shadow-slate-900/20`}
-              >
-                <action.icon className="h-7 w-7" />
-                <span className="mt-3 text-base font-semibold">{action.title}</span>
-                <span className="text-xs uppercase tracking-[0.3em] text-white/60">
-                  Tap to open
-                </span>
-              </Link>
-            ))}
-          </div>
+        {/* Charts Row */}
+        <section className="grid gap-4 lg:grid-cols-2">
+          <RevenueChart sales={sales} />
+          <SalesByHourChart sales={sales} />
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-2">
-          <div className="hero-gradient glass-panel p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Live feed</p>
-                <h3 className="text-xl font-semibold text-white">Recent Sales</h3>
-              </div>
-              <Link to="/reports" className="text-sm font-medium text-white/90">
-                View all
-              </Link>
-            </div>
-            {todaySales.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center text-white/60">
-                <DollarSign className="h-8 w-8 text-white/40" />
-                <p className="mt-3 text-sm">No sales yet—keep the scanners ready.</p>
-              </div>
-            ) : (
-              <div className="mt-6 space-y-4">
-                {todaySales.slice(0, 5).map((sale) => (
-                  <div
-                    key={sale.id}
-                    className="flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-white">Sale #{sale.id}</p>
-                      <p className="text-xs text-white/70">
-                        {new Date(sale.date).toLocaleTimeString()}
-                      </p>
-                    </div>
-                    <div className="text-end">
-                      <p className="text-sm font-semibold text-white" dir="ltr">
-                        ${sale.total.toFixed(2)}
-                      </p>
-                      <p className="text-xs capitalize text-white/70">{sale.paymentMethod}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Activity Feed + AI Insights */}
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <LiveActivityFeed sales={sales} />
           </div>
+          <AIInsightCard sales={sales} products={products} />
+        </section>
 
-          <div className="hero-gradient glass-panel p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Stock pulse</p>
-                <h3 className="text-xl font-semibold text-white">Inventory Overview</h3>
-              </div>
-              <Link to="/inventory" className="text-sm font-medium text-white/90">
-                Manage
-              </Link>
-            </div>
-            <div className="mt-6 space-y-4">
-              {products?.slice(0, 5).map((product) => {
-                const total = product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
-                const isLowStock = product.variants?.some((v) => v.stock <= v.reorderLevel) || false;
-                return (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-white">{product.name}</p>
-                      <p className="text-xs text-white/70">{product.sku}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isLowStock && <AlertTriangle className="h-4 w-4 text-amber-500" />}
-                      <span
-                        className={`text-xs font-semibold ${
-                          isLowStock ? 'text-amber-300' : 'text-white/80'
-                        }`}
-                      >
-                        {total} units
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {/* Quick Actions */}
+        <section>
+          <QuickActions />
         </section>
       </div>
     </Layout>

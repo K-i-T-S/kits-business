@@ -96,15 +96,32 @@ while true; do
     ERRORS=0
     countdown $DELAY_BLOCKED "skipping blocked sprint"
 
-  elif echo "$OUTPUT" | grep -qiE "usage.?limit|rate.?limit|too many requests|overloaded|capacity|429|Claude AI is unavailable"; then
-    log "🔄 Pro usage limit detected. Sleeping 5 hours."
-    # Save any partial work
+  elif echo "$OUTPUT" | grep -qiE "session.?limit|usage.?limit|rate.?limit|too many requests|overloaded|capacity|429|Claude AI is unavailable|hit your.*limit|resets.*[0-9]+(am|pm)"; then
+    # Save any partial work before sleeping
     git add src/ docs/MASTER_PLAN.md 2>/dev/null || true
     git diff --cached --quiet 2>/dev/null || \
-      git commit -m "chore: partial checkpoint [usage limit $(date +%H:%M)]" 2>/dev/null || true
+      git commit -m "chore: partial checkpoint [limit hit $(date +%H:%M)]" 2>/dev/null || true
     git push origin main 2>/dev/null || true
+
+    # Try to extract reset time from the message (e.g. "resets 11pm (Asia/Beirut)")
+    RESET_STR=$(echo "$OUTPUT" | grep -ioE "resets [0-9]+(:[0-9]+)?(am|pm)" | head -1 || true)
+    if [ -n "$RESET_STR" ]; then
+      # Parse reset hour from string like "resets 11pm"
+      RESET_TIME=$(echo "$RESET_STR" | grep -oE "[0-9]+(:[0-9]+)?(am|pm)")
+      RESET_EPOCH=$(date -d "today $RESET_TIME" +%s 2>/dev/null || echo 0)
+      NOW_EPOCH=$(date +%s)
+      # If reset time already passed today, add 24 hours
+      if [ "$RESET_EPOCH" -le "$NOW_EPOCH" ]; then
+        RESET_EPOCH=$(( RESET_EPOCH + 86400 ))
+      fi
+      SLEEP_SECS=$(( RESET_EPOCH - NOW_EPOCH + 120 ))  # +2 min buffer after reset
+      log "🔄 Session limit hit. Sleeping until $RESET_TIME (${SLEEP_SECS}s)."
+    else
+      SLEEP_SECS=$DELAY_LIMIT
+      log "🔄 Session limit hit (no reset time found). Sleeping ${SLEEP_SECS}s."
+    fi
     ERRORS=0
-    countdown $DELAY_LIMIT "Pro token window refresh"
+    countdown $SLEEP_SECS "session limit — sleeping until reset"
 
   elif [ "$EXIT_CODE" -ne 0 ]; then
     ERRORS=$(( ERRORS + 1 ))

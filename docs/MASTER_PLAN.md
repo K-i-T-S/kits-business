@@ -62,7 +62,8 @@
 
 ---
 
-### Sprint 1.1 — Theme System Unification [IN_PROGRESS]
+### Sprint 1.1 — Theme System Unification [COMPLETED]
+> Completed 2026-06-20: Fixed ThemeContext to apply both `dark-theme` and `dark` CSS classes simultaneously, aligning Tailwind dark: variants with the CSS override system in themes.css.
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** Critical — blocks everything visual
@@ -1177,7 +1178,7 @@ Build an in-app view of the automation log so the owner can see what the agents 
 
 | Sprint | Track | Status | Completed |
 |--------|-------|--------|-----------|
-| 1.1 — Theme System | Polish | PENDING | — |
+| 1.1 — Theme System | Polish | COMPLETED | 2026-06-20 |
 | 1.2 — Login Overhaul | Polish | PENDING | — |
 | 1.3 — Navigation & Search | Polish | PENDING | — |
 | 1.4 — 3D Dashboard | Polish | PENDING | — |

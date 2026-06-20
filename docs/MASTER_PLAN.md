@@ -261,7 +261,7 @@ npm install @react-three/fiber @react-three/drei recharts framer-motion
 
 ---
 
-### Sprint 1.5 — Notification System Overhaul [PENDING]
+### Sprint 1.5 — Notification System Overhaul [IN_PROGRESS]
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** High

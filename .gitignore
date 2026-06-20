@@ -34,3 +34,10 @@ coverage/
 
 # Dev artifacts
 visual-tests/
+
+# Automation logs (keep .gitkeep, ignore log files)
+logs/*.log
+logs/cron-*.log
+logs/sprint-*.log
+logs/loop-*.log
+logs/watchdog*.log

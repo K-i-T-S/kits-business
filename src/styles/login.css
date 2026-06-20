@@ -1,0 +1,97 @@
+/* ── KiTS Login Page — Aurora & Micro-interaction Styles ──────────────────── */
+
+@keyframes aurora-shift {
+  0%   { transform: scale(1)    translate(0%, 0%)  rotate(0deg);  }
+  33%  { transform: scale(1.12) translate(3%, -4%) rotate(6deg);  }
+  66%  { transform: scale(0.92) translate(-3%, 3%) rotate(-5deg); }
+  100% { transform: scale(1)    translate(0%, 0%)  rotate(0deg);  }
+}
+
+@keyframes aurora-drift {
+  0%   { transform: translate(-50%, -50%) scale(1);    }
+  50%  { transform: translate(-50%, -50%) scale(1.18) translate(-4%, 5%); }
+  100% { transform: translate(-50%, -50%) scale(1);    }
+}
+
+@keyframes feature-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+
+@keyframes login-error-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.6; }
+  70%  { transform: scale(1.5);  opacity: 0;   }
+  100% { transform: scale(1.5);  opacity: 0;   }
+}
+
+/* Aurora background blobs */
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.aurora-blob-1 {
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.6) 0%, transparent 70%);
+  top: -120px;
+  left: -120px;
+  animation: aurora-shift 14s ease-in-out infinite;
+}
+
+.aurora-blob-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.5) 0%, transparent 70%);
+  bottom: -100px;
+  right: -80px;
+  animation: aurora-shift 18s ease-in-out infinite 3s reverse;
+}
+
+.aurora-blob-3 {
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: aurora-drift 22s ease-in-out infinite 7s;
+}
+
+/* Feature card slide-in animation */
+.feature-in {
+  animation: feature-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Error/success message animated entrance */
+.login-message-animated {
+  animation: login-error-in 0.22s ease-out forwards;
+}
+
+/* 3D logo tilt card */
+.logo-3d-card {
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+  transform-style: preserve-3d;
+}
+
+/* Live dot pulse ring */
+.live-pulse {
+  position: relative;
+}
+
+.live-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid #22c55e;
+  animation: pulse-ring 2s ease-out infinite;
+}

@@ -99,7 +99,8 @@ The light/dark theme toggle exists (`ThemeContext`, `themes.css`) but does not a
 
 ---
 
-### Sprint 1.2 — Login Page Complete Overhaul [IN_PROGRESS]
+### Sprint 1.2 — Login Page Complete Overhaul [COMPLETED]
+> Completed 2026-06-20: Redesigned login into a split-layout with animated aurora BrandPanel (left) and a polished LoginForm (right) featuring password show/hide, strength meter, forgot-password, and animated error states — all i18n-ready.
 
 **Track:** 1 · Polish & Demo-Readiness
 **Priority:** Critical — first impression

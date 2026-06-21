@@ -98,9 +98,16 @@ export default function QRCart({ items, tableId, totalPrice, onUpdateQuantity, o
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
-        <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}>
-          Your Order
-        </h3>
+        <div>
+          <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}>
+            Your Order
+          </h3>
+          {tableId && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--qr-text-muted)' }}>
+              🪑 Table {tableId.replace('table-', '')}
+            </p>
+          )}
+        </div>
         <button
           onClick={onClose}
           className="flex h-8 w-8 items-center justify-center rounded-full"

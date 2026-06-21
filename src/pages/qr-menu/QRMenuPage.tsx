@@ -37,14 +37,14 @@ export default function QRMenuPage() {
   const [showBanner, setShowBanner] = useState(false);
   const [calledWaiter, setCalledWaiter] = useState(false);
 
-  // Transition from splash to menu after 1.4s
+  // Transition from splash after 1.4s once data load resolves (success or error)
   useEffect(() => {
-    if (!loading && data) {
+    if (!loading) {
       const timer = setTimeout(() => setView('menu'), 1400);
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [loading, data]);
+  }, [loading]);
 
   const palette = data?.tenant?.qr_menu_palette ?? 'dark-luxury';
   const paletteClass = PALETTE_CLASS[palette] ?? 'qr-dark-luxury';
@@ -106,12 +106,22 @@ export default function QRMenuPage() {
 
   if (error || !data) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-slate-950 p-8 text-center text-white">
-        <p className="mb-2 text-4xl">🍽️</p>
-        <h1 className="mb-2 text-xl font-bold">Menu not found</h1>
-        <p className="text-sm text-white/50">
-          {error ?? 'This restaurant has not configured their digital menu yet.'}
-        </p>
+      <div className={`${paletteClass} qr-menu-root flex min-h-dvh flex-col items-center justify-center p-8 text-center`}>
+        <div className="qr-glass rounded-3xl p-10 max-w-sm w-full" style={{ border: '1px solid var(--qr-border)' }}>
+          <p className="mb-4 text-5xl">🍽️</p>
+          <h1 className="mb-2 text-xl font-black" style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}>
+            Menu Not Found
+          </h1>
+          <p className="text-sm mb-6" style={{ color: 'var(--qr-text-muted)' }}>
+            {error === 'Menu not found'
+              ? 'This restaurant hasn\'t activated their digital menu yet.'
+              : (error ?? 'This restaurant has not configured their digital menu yet.')}
+          </p>
+          <div className="qr-kits-fingerprint" style={{ justifyContent: 'center' }}>
+            <span>Digital menu by</span>
+            <span style={{ fontWeight: 700, letterSpacing: '0.1em' }}>KiTS</span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -170,12 +180,13 @@ export default function QRMenuPage() {
             <QRMenuHome
               menuData={data}
               lang={lang}
+              tableId={tableId}
               totalCartItems={totalItems}
               onSelectItem={handleSelectItem}
               onOpenCart={() => setView('cart')}
               onCallWaiter={handleCallWaiter}
               onFa7em={handleFa7em}
-              promotionalBanner={data.tenant.qr_menu_promotional_banner ?? 'While you wait — freshly made desserts 🍮'}
+              promotionalBanner={data.tenant.qr_menu_promotional_banner ?? 'While you wait — try our freshly made desserts 🍮'}
               showBanner={showBanner}
               onBannerTap={handleBannerTap}
             />

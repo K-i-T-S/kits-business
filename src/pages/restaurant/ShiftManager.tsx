@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, UserPlus, Clock, CheckCircle, LogIn, LogOut, X } from 'lucide-react';
 
+import Layout from '@/components/Layout';
 import { supabase } from '@/utils/supabaseClient';
 import { useApp } from '@/context/AppContext';
 import type { RestaurantShift, ShiftAssignment, ShiftType, StaffRole } from '@/types/restaurant';
@@ -119,6 +120,7 @@ export default function ShiftManager() {
   };
 
   return (
+    <Layout>
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex items-center gap-3">
         <Calendar className="h-6 w-6 text-indigo-400" />
@@ -285,5 +287,6 @@ export default function ShiftManager() {
         </div>
       )}
     </div>
+    </Layout>
   );
 }

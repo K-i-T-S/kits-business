@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BarChart2, Users, Clock, Star, TrendingUp, AlertCircle } from 'lucide-react';
 
+import Layout from '@/components/Layout';
 import { supabase } from '@/utils/supabaseClient';
 import { rankWaiters } from '@/utils/restaurantScoring';
 import type { WaiterPerformanceStats, TableFeedback } from '@/types/restaurant';
@@ -116,13 +117,16 @@ export default function RestaurantAnalytics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </Layout>
     );
   }
 
   return (
+    <Layout>
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex items-center gap-3">
         <BarChart2 className="h-6 w-6 text-indigo-400" />
@@ -272,5 +276,6 @@ export default function RestaurantAnalytics() {
         </div>
       </section>
     </div>
+    </Layout>
   );
 }

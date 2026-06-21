@@ -7,6 +7,7 @@ import type { QRMenuData, RestaurantMenuItem, QRMenuTenant } from '@/types/resta
 interface QRMenuHomeProps {
   menuData: QRMenuData;
   lang: 'en' | 'ar';
+  tableId: string;
   totalCartItems: number;
   onSelectItem: (item: RestaurantMenuItem) => void;
   onOpenCart: () => void;
@@ -234,7 +235,7 @@ function CategoryPills({
             }}
             dir={lang === 'ar' ? 'rtl' : 'ltr'}
           >
-            {cat.icon === 'utensils' ? '🍽️' : cat.icon} {catName}
+            {cat.icon || '🍽️'} {catName}
           </button>
         );
       })}
@@ -243,7 +244,7 @@ function CategoryPills({
 }
 
 // Tenant hero header
-function TenantHero({ tenant, lang }: { tenant: QRMenuTenant; lang: 'en' | 'ar' }) {
+function TenantHero({ tenant, lang, tableId }: { tenant: QRMenuTenant; lang: 'en' | 'ar'; tableId: string }) {
   return (
     <div className="relative overflow-hidden px-4 pt-6 pb-4">
       {/* Ambient glow */}
@@ -285,11 +286,21 @@ function TenantHero({ tenant, lang }: { tenant: QRMenuTenant; lang: 'en' | 'ar' 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex items-center gap-2 text-xs"
+          className="flex items-center gap-3 text-xs"
           style={{ color: 'var(--qr-text-muted)' }}
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          Kitchen Open
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            Kitchen Open
+          </span>
+          {tableId && (
+            <span
+              className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+              style={{ background: 'var(--qr-surface)', border: '1px solid var(--qr-border)', color: 'var(--qr-accent)' }}
+            >
+              🪑 Table {tableId.replace('table-', '')}
+            </span>
+          )}
         </motion.div>
       </div>
     </div>
@@ -299,6 +310,7 @@ function TenantHero({ tenant, lang }: { tenant: QRMenuTenant; lang: 'en' | 'ar' 
 export default function QRMenuHome({
   menuData,
   lang,
+  tableId,
   totalCartItems,
   onSelectItem,
   onOpenCart,
@@ -340,7 +352,7 @@ export default function QRMenuHome({
       </AnimatePresence>
 
       {/* Language + restaurant header */}
-      <TenantHero tenant={menuData.tenant} lang={lang} />
+      <TenantHero tenant={menuData.tenant} lang={lang} tableId={tableId} />
 
       {/* Featured */}
       {!selectedCategoryId && (

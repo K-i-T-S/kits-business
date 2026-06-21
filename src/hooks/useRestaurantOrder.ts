@@ -239,6 +239,10 @@ export function useRestaurantOrder(
         .update({ status: 'cleaning' })
         .eq('id', tableId);
     }
+    // Bridge to main sales ledger — non-blocking, failure doesn't block UI
+    void supabase.rpc('finalize_restaurant_order', { p_order_id: orderId }).then(({ error: rpcErr }) => {
+      if (rpcErr) console.warn('[closeBill] finalize_restaurant_order failed:', rpcErr.message);
+    });
     toast.success('Bill closed. Table set to cleaning.');
   }, [orderId, tableId]);
 

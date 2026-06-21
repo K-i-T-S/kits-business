@@ -442,7 +442,7 @@ Build the core restaurant management module. When industry = restaurant, the pla
 
 ---
 
-### Sprint 2.3 — Pharmacy Vertical [PENDING]
+### Sprint 2.3 — Pharmacy Vertical [IN_PROGRESS]
 
 **Track:** 2 · Vertical Intelligence
 **Priority:** High
@@ -1191,7 +1191,7 @@ Build an in-app view of the automation log so the owner can see what the agents 
 | 1.5 — Notifications | Polish | COMPLETED | 2026-06-20 |
 | 2.1 — Industry System | Verticals | COMPLETED | 2026-06-21 |
 | 2.2 — Restaurant | Verticals | COMPLETED | 2026-06-21 |
-| 2.3 — Pharmacy | Verticals | PENDING | — |
+| 2.3 — Pharmacy | Verticals | IN_PROGRESS | — |
 | 2.4 — Supermarket | Verticals | PENDING | — |
 | 2.5 — Fashion | Verticals | PENDING | — |
 | 2.6 — Electronics | Verticals | PENDING | — |

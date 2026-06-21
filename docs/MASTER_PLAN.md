@@ -366,7 +366,7 @@ Build the industry selection system that determines which vertical-specific feat
 
 ---
 
-### Sprint 2.2 — Restaurant Vertical [PENDING]
+### Sprint 2.2 — Restaurant Vertical [IN_PROGRESS]
 
 **Track:** 2 · Vertical Intelligence
 **Priority:** High

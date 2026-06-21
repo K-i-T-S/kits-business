@@ -1084,7 +1084,7 @@ export default function MenuManagement() {
         {/* Page Header */}
         <div className="mb-5 flex items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => { void navigate(-1); }}
             className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
             aria-label="Back"
           >
@@ -1126,13 +1126,13 @@ export default function MenuManagement() {
           ) : (
             <>
               {activeTab === 'builder' && (
-                <MenuBuilder categories={categories} items={items} onRefresh={loadData} />
+                <MenuBuilder categories={categories} items={items} onRefresh={() => { void loadData(); }} />
               )}
               {activeTab === 'waiter' && (
                 <WaiterOrderPanel categories={categories} items={items} />
               )}
               {activeTab === 'qr' && (
-                <QRMenuSettings items={items} onRefresh={loadData} />
+                <QRMenuSettings items={items} onRefresh={() => { void loadData(); }} />
               )}
             </>
           )}

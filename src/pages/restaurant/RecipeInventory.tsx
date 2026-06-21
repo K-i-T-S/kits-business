@@ -5,7 +5,6 @@ import {
   RefreshCw,
   X,
   Package,
-  FlaskConical,
   TrendingDown,
   Truck,
   Trash2,
@@ -254,7 +253,7 @@ export default function RecipeInventory() {
 
   const filteredRecipes = useMemo(() => {
     return recipes.filter((r) =>
-      r.name.toLowerCase().includes(recipeSearch.toLowerCase())
+      r.name.toLowerCase().includes(recipeSearch.toLowerCase()),
     );
   }, [recipes, recipeSearch]);
 

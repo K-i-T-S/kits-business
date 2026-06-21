@@ -1,12 +1,12 @@
 import { ArrowLeft, DollarSign, Users, Percent, SlidersHorizontal, Save } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import Layout from '@/components/Layout';
-import { supabase } from '@/utils/supabaseClient';
 import { useApp } from '@/context/AppContext';
+import { supabase } from '@/utils/supabaseClient';
 
 type AlgorithmId = 'waiter_full' | 'waiter_pool' | 'communal' | 'role_split';
 
@@ -200,7 +200,7 @@ export default function TipsManagement() {
         {/* Header */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => { void navigate(-1); }}
             className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
             aria-label={t('common.back', 'Back')}
           >

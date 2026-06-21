@@ -3,7 +3,6 @@ import {
   Building2,
   CheckCircle,
   ChevronRight,
-  Clock,
   Edit2,
   Phone,
   Plus,
@@ -17,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Bar,
   BarChart,
@@ -27,13 +27,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
-import { supabase } from '@/utils/supabaseClient';
 import type { BranchMetrics, RestaurantBranch } from '@/types/restaurant';
+import { supabase } from '@/utils/supabaseClient';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -47,12 +46,6 @@ function foodCostStatus(pct: number | null): { color: string; icon: string; labe
 function ratingStars(rating: number | null): string {
   if (rating === null) return '—';
   return `⭐${rating.toFixed(1)}`;
-}
-
-function metricColor(value: number, thresholds: { green: number; amber: number }): string {
-  if (value >= thresholds.green) return 'text-emerald-400';
-  if (value >= thresholds.amber) return 'text-amber-400';
-  return 'text-red-400';
 }
 
 // ── Branch Form Modal ─────────────────────────────────────────────────────────

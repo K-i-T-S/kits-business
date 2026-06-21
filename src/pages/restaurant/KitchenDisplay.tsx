@@ -17,8 +17,8 @@ import {
   X,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useApp } from '@/context/AppContext';
@@ -353,8 +353,8 @@ function TicketCard({
                         isReady
                           ? 'bg-emerald-500/10 opacity-50'
                           : isSelected
-                          ? 'bg-indigo-500/20 ring-1 ring-indigo-500/50'
-                          : 'bg-white/5'
+                            ? 'bg-indigo-500/20 ring-1 ring-indigo-500/50'
+                            : 'bg-white/5'
                       }`}
                     >
                       {partial && !isReady && (
@@ -675,13 +675,13 @@ export default function KitchenDisplay() {
         prev.map((tk) =>
           tk.order.id === orderId
             ? {
-                ...tk,
-                items: tk.items.map((i) =>
-                  ids.includes(i.id)
-                    ? { ...i, status: 'ready' as const, ready_at: new Date().toISOString() }
-                    : i,
-                ),
-              }
+              ...tk,
+              items: tk.items.map((i) =>
+                ids.includes(i.id)
+                  ? { ...i, status: 'ready' as const, ready_at: new Date().toISOString() }
+                  : i,
+              ),
+            }
             : tk,
         ),
       );
@@ -708,11 +708,11 @@ export default function KitchenDisplay() {
           .map((tk) =>
             tk.order.id === orderId
               ? {
-                  ...tk,
-                  items: tk.items.map((i) =>
-                    ids.includes(i.id) ? { ...i, status: 'served' as const } : i,
-                  ),
-                }
+                ...tk,
+                items: tk.items.map((i) =>
+                  ids.includes(i.id) ? { ...i, status: 'served' as const } : i,
+                ),
+              }
               : tk,
           )
           .filter((tk) => tk.items.some((i) => i.status !== 'served')),
@@ -745,14 +745,14 @@ export default function KitchenDisplay() {
     activeStation === 'all'
       ? tickets
       : tickets.filter((tk) => {
-          const station = stations.find((s) => s.id === activeStation);
-          if (!station) return true;
-          return tk.items.some(
-            (item) =>
-              item.course === station.name.toLowerCase() ||
+        const station = stations.find((s) => s.id === activeStation);
+        if (!station) return true;
+        return tk.items.some(
+          (item) =>
+            item.course === station.name.toLowerCase() ||
               item.product_name.toLowerCase().includes(station.name.toLowerCase()),
-          );
-        });
+        );
+      });
 
   const pendingCount = tickets.reduce(
     (acc, tk) =>
@@ -777,7 +777,7 @@ export default function KitchenDisplay() {
       {/* ── Header ── */}
       <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/10 bg-slate-900/95 px-4 py-3 backdrop-blur-xl">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => { void navigate(-1); }}
           className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
           aria-label={t('common.back', 'Back')}
         >
@@ -850,12 +850,12 @@ export default function KitchenDisplay() {
             station.id === 'all'
               ? tickets.length
               : tickets.filter((tk) =>
-                  tk.items.some(
-                    (item) =>
-                      item.course === station.name.toLowerCase() ||
+                tk.items.some(
+                  (item) =>
+                    item.course === station.name.toLowerCase() ||
                       item.product_name.toLowerCase().includes(station.name.toLowerCase()),
-                  ),
-                ).length;
+                ),
+              ).length;
           const isActive = activeStation === station.id;
           return (
             <button
@@ -865,10 +865,10 @@ export default function KitchenDisplay() {
               style={
                 isActive
                   ? {
-                      backgroundColor: station.color + '33',
-                      boxShadow: `0 0 0 1px ${station.color}66`,
-                      color: 'white',
-                    }
+                    backgroundColor: station.color + '33',
+                    boxShadow: `0 0 0 1px ${station.color}66`,
+                    color: 'white',
+                  }
                   : { backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }
               }
             >

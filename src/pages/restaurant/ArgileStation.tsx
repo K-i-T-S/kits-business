@@ -3,7 +3,6 @@ import {
   Flame,
   Wind,
   Plus,
-  CheckCircle,
   AlertTriangle,
   RefreshCw,
   X,
@@ -12,8 +11,8 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useApp } from '@/context/AppContext';
@@ -118,14 +117,14 @@ function SessionCard({
   const cardBorder = isUrgent
     ? 'border-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.35)]'
     : hasFa7em
-    ? 'border-amber-500/60 shadow-[0_0_16px_rgba(245,158,11,0.25)]'
-    : 'border-white/10';
+      ? 'border-amber-500/60 shadow-[0_0_16px_rgba(245,158,11,0.25)]'
+      : 'border-white/10';
 
   const cardBg = isUrgent
     ? 'bg-red-950/40'
     : hasFa7em
-    ? 'bg-amber-950/30'
-    : 'bg-slate-900';
+      ? 'bg-amber-950/30'
+      : 'bg-slate-900';
 
   return (
     <div
@@ -779,7 +778,7 @@ export default function ArgileStation() {
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => { void navigate(-1); }}
               className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
               aria-label={t('common.back', 'Back')}
             >

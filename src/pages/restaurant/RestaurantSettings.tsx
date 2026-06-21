@@ -69,7 +69,7 @@ export default function RestaurantSettings() {
         .eq('tenant_id', tenantId)
         .maybeSingle();
       if (data) {
-        const { id, tenant_id, ...rest } = data as RestaurantSettings;
+        const { id, tenant_id: _tenantId, ...rest } = data as RestaurantSettings;
         setSettingsId(id);
         setSettings(rest);
       }

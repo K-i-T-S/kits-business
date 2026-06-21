@@ -13,14 +13,13 @@ import {
   StickyNote,
   AlertTriangle,
   Check,
-  Settings,
   RefreshCw,
   Clock,
   Users,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import BillSplitter from '@/components/restaurant/BillSplitter';
@@ -36,7 +35,6 @@ import type {
   PendingOrderItem,
   SplitType,
   BillSplitPart,
-  TableStatus,
   RestaurantSettings,
 } from '@/types/restaurant';
 import { COURSE_LABELS } from '@/types/restaurant';
@@ -302,7 +300,6 @@ function TableDetail({ tableData, settings, onClose, onOrderClosed }: TableDetai
     splitBySeat,
     splitByItem,
     saveBillSplit,
-    refreshPendingOrders,
   } = useRestaurantOrder(table.id, order?.id ?? null);
 
   const [activeTab, setActiveTab] = useState<DetailTab>('orders');
@@ -463,26 +460,28 @@ function TableDetail({ tableData, settings, onClose, onOrderClosed }: TableDetai
                 <ClipboardList className="mb-3 h-10 w-10 text-white/20" />
                 <p className="text-sm text-white/40">{t('restaurant.noOrder', 'No open order for this table')}</p>
                 <button
-                  onClick={async () => {
-                    if (!tenantId) return;
-                    const rsSettings = settings;
-                    const { data, error } = await supabase.from('table_orders').insert({
-                      tenant_id: tenantId,
-                      table_id: table.id,
-                      status: 'open',
-                      current_course: 'mains',
-                      order_flow: rsSettings?.default_order_flow ?? 'waiter_confirm',
-                      payment_mode: rsSettings?.default_payment_mode ?? 'waiter_only',
-                      service_charge_pct: rsSettings?.service_charge_pct ?? 10,
-                      vat_pct: rsSettings?.vat_pct ?? 11,
-                    }).select().single();
-                    if (error) { toast.error(error.message); return; }
-                    if (data) {
-                      await supabase.from('restaurant_tables').update({ status: 'occupied' }).eq('id', table.id);
-                      toast.success(t('restaurant.orderOpened', 'Order opened'));
-                      onOrderClosed(); // triggers parent refresh
-                      onClose();
-                    }
+                  onClick={() => {
+                    void (async () => {
+                      if (!tenantId) return;
+                      const rsSettings = settings;
+                      const { data, error } = await supabase.from('table_orders').insert({
+                        tenant_id: tenantId,
+                        table_id: table.id,
+                        status: 'open',
+                        current_course: 'mains',
+                        order_flow: rsSettings?.default_order_flow ?? 'waiter_confirm',
+                        payment_mode: rsSettings?.default_payment_mode ?? 'waiter_only',
+                        service_charge_pct: rsSettings?.service_charge_pct ?? 10,
+                        vat_pct: rsSettings?.vat_pct ?? 11,
+                      }).select().single();
+                      if (error) { toast.error(error.message); return; }
+                      if (data) {
+                        await supabase.from('restaurant_tables').update({ status: 'occupied' }).eq('id', table.id);
+                        toast.success(t('restaurant.orderOpened', 'Order opened'));
+                        onOrderClosed();
+                        onClose();
+                      }
+                    })();
                   }}
                   className="mt-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-3 text-sm font-bold text-white"
                 >
@@ -887,7 +886,7 @@ export default function WaiterInterface() {
           <div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => { void navigate(-1); }}
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
                 aria-label={t('common.back', 'Back')}
               >

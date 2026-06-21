@@ -15,15 +15,15 @@
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface DailyRevenue {
-  date: string;        // YYYY-MM-DD (Beirut TZ)
-  dayOfWeek: number;   // 0=Sun … 6=Sat
+  date: string; // YYYY-MM-DD (Beirut TZ)
+  dayOfWeek: number; // 0=Sun … 6=Sat
   totalUsd: number;
   orderCount: number;
   avgCheck: number;
 }
 
 export interface HourlySlice {
-  hour: number;        // 0–23
+  hour: number; // 0–23
   revenue: number;
   covers: number;
 }
@@ -31,8 +31,8 @@ export interface HourlySlice {
 export interface ForecastPoint {
   date: string;
   predicted: number;
-  lower: number;       // 80% prediction interval lower
-  upper: number;       // 80% prediction interval upper
+  lower: number; // 80% prediction interval lower
+  upper: number; // 80% prediction interval upper
   isRamadan: boolean;
 }
 
@@ -40,8 +40,8 @@ export interface ItemVelocity {
   name: string;
   last7DayQty: number;
   prev7DayQty: number;
-  trend: number;       // pct change; negative = falling
-  zScore: number;      // vs. item's own history
+  trend: number; // pct change; negative = falling
+  zScore: number; // vs. item's own history
   alert: 'rising' | 'falling' | 'normal';
 }
 
@@ -53,11 +53,11 @@ export interface AnomalyAlert {
 }
 
 export interface WeeklyPattern {
-  dayOfWeek: number;   // 0–6
+  dayOfWeek: number; // 0–6
   label: string;
   avgRevenue: number;
   peakHour: number;
-  indexVsWeekAvg: number;   // 1.0 = average; >1 = above average
+  indexVsWeekAvg: number; // 1.0 = average; >1 = above average
 }
 
 export interface MLInsight {
@@ -128,8 +128,8 @@ interface HoltResult {
 
 export function holtSmoothing(
   series: number[],
-  alpha = 0.3,   // level smoothing
-  beta = 0.1,    // trend smoothing
+  alpha = 0.3, // level smoothing
+  beta = 0.1, // trend smoothing
   steps = 7,
 ): HoltResult {
   if (series.length < 2) {
@@ -221,9 +221,9 @@ export interface CustomerRFM {
   customerId: string;
   name: string;
   recencyDays: number;
-  frequency: number;    // visits in 90 days
-  monetaryAvg: number;  // avg spend per visit
-  clvEstimate: number;  // 12-month projected value
+  frequency: number; // visits in 90 days
+  monetaryAvg: number; // avg spend per visit
+  clvEstimate: number; // 12-month projected value
   segment: 'champion' | 'loyal' | 'at_risk' | 'lost' | 'prospect';
 }
 
@@ -250,10 +250,10 @@ export function computeRFM(visits: Array<{ customerId: string; name: string; dat
 
     const segment: CustomerRFM['segment'] =
       recencyDays <= 14 && recent >= 4 ? 'champion'
-      : recencyDays <= 30 && recent >= 2 ? 'loyal'
-      : recencyDays <= 60 ? 'at_risk'
-      : recencyDays <= 90 ? 'lost'
-      : 'prospect';
+        : recencyDays <= 30 && recent >= 2 ? 'loyal'
+          : recencyDays <= 60 ? 'at_risk'
+            : recencyDays <= 90 ? 'lost'
+              : 'prospect';
 
     result.push({ customerId, name, recencyDays, frequency: recent, monetaryAvg, clvEstimate, segment });
   }
@@ -307,7 +307,7 @@ export function generateForecast(history: DailyRevenue[], daysAhead = 7): Foreca
   if (history.length === 0) return [];
 
   const revenues = history.map((d) => d.totalUsd);
-  const { forecast, level, trend } = holtSmoothing(revenues, 0.3, 0.1, daysAhead);
+  const { forecast, level, trend: _trend } = holtSmoothing(revenues, 0.3, 0.1, daysAhead);
 
   // Std-dev for 80% prediction interval (±1.28σ)
   const residuals = history.map((d, i) => {

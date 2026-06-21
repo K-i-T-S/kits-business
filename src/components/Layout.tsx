@@ -9,19 +9,11 @@ import {
   Sparkles,
   Menu,
   X,
-  Shield,
   Search,
   Bell,
   Settings,
   ChevronDown,
-  Activity,
-  Layers,
-  Truck,
-  TrendingUp,
   AlertTriangle,
-  Zap,
-  MapPin,
-  Key,
   Lock,
   Sun,
   Moon,
@@ -47,6 +39,9 @@ import {
   Building2,
   User,
   DollarSign,
+  Mail,
+  MessageCircle,
+  Instagram,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -74,10 +69,8 @@ import { supabase } from '../utils/supabaseClient';
 import BrandIdentityModal from './BrandIdentityModal';
 import GlobalSearch from './GlobalSearch';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import NavItem from './NavItem';
 import NotificationCenter from './NotificationCenter';
 import StoreSwitcher from './StoreSwitcher';
-import SupportCard from './SupportCard';
 import TenantInfo from './TenantInfo';
 import TenantSwitcher from './TenantSwitcher';
 import UserProfileModal from './UserProfileModal';
@@ -160,74 +153,52 @@ export default function Layout({ children }: LayoutProps) {
     retail: [],
   }), [t]);
 
-  const navigationSections = useMemo(() => {
-    const baseOperationsItems = [
-      { name: t('nav.dashboard', 'Dashboard'), href: '/dashboard', icon: LayoutDashboard, feature: undefined as Feature | undefined },
-      { name: t('nav.pos', 'POS / Sales'), href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature },
-      {
-        name: t('nav.inventory', 'Inventory'),
-        href: '/inventory',
-        icon: Package,
-        feature: 'inventory_management' as Feature,
-        subItems: [
-          { name: t('nav.products', 'Products'), href: '/inventory', icon: Package },
-          { name: t('nav.batchTracking', 'Batch Tracking'), href: '/inventory/batch-tracking', icon: Layers },
-          { name: t('nav.suppliers', 'Suppliers'), href: '/inventory/suppliers', icon: Users },
-          { name: t('nav.purchaseOrders', 'Purchase Orders'), href: '/inventory/purchase-orders', icon: ShoppingCart },
-          { name: t('nav.stockTransfers', 'Stock Transfers'), href: '/inventory/stock-transfers', icon: Truck },
-          { name: t('nav.reorderPoints', 'Reorder Points'), href: '/inventory/reorder-points', icon: AlertTriangle },
-        ],
-      },
-    ];
+  const PLATFORM_ITEMS = useMemo(() => [
+    { name: t('nav.dashboard', 'Dashboard'), short: 'Home', href: '/dashboard', icon: LayoutDashboard, feature: undefined as Feature | undefined },
+    { name: t('nav.pos', 'POS / Sales'), short: 'POS', href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature },
+    { name: t('nav.inventory', 'Inventory'), short: 'Stock', href: '/inventory', icon: Package, feature: 'inventory_management' as Feature },
+    { name: t('nav.customers', 'Customers'), short: 'CRM', href: '/customers', icon: Users, feature: undefined as Feature | undefined },
+    { name: t('nav.employees', 'Employees'), short: 'Team', href: '/employees', icon: UserCircle, feature: undefined as Feature | undefined },
+    { name: t('nav.finance', 'Finance'), short: 'Finance', href: '/finance', icon: TrendingDown, feature: undefined as Feature | undefined },
+    { name: t('nav.reports', 'Reports'), short: 'Reports', href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
+    { name: t('nav.settings', 'Settings'), short: 'Settings', href: '/system-settings', icon: Settings, feature: undefined as Feature | undefined },
+  ], [t]);
 
-    const sections = [
-      {
-        labelKey: 'nav.section.operations',
-        labelFallback: 'Operations',
-        items: baseOperationsItems,
-      },
-      {
-        labelKey: 'nav.section.people',
-        labelFallback: 'People',
-        items: [
-          { name: t('nav.customers', 'Customers & CRM'), href: '/customers', icon: Users, feature: undefined as Feature | undefined },
-          { name: t('nav.employees', 'Employees'), href: '/employees', icon: UserCircle, feature: undefined as Feature | undefined },
-        ],
-      },
-      {
-        labelKey: 'nav.section.intelligence',
-        labelFallback: 'Intelligence',
-        items: [
-          { name: t('nav.reports', 'Reports'), href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
-          { name: t('nav.finance', 'Finance'), href: '/finance', icon: TrendingDown, feature: undefined as Feature | undefined },
-          { name: t('nav.forecasting', 'Forecasting'), href: '/forecasting', icon: TrendingUp, feature: 'forecasting' as Feature },
-        ],
-      },
-      {
-        labelKey: 'nav.section.platform',
-        labelFallback: 'Platform',
-        items: [
-          { name: t('nav.monitoring', 'Monitoring'), href: '/monitoring', icon: Activity, feature: 'monitoring' as Feature },
-          {
-            name: t('nav.enterprise', 'Enterprise'),
-            href: '/enterprise',
-            icon: Shield,
-            feature: 'enterprise_dashboard' as Feature,
-            subItems: [
-              { name: t('nav.enterpriseDashboard', 'Enterprise Dashboard'), href: '/enterprise', icon: Shield },
-              { name: t('nav.rolesPermissions', 'Roles & Permissions'), href: '/enterprise/roles', icon: Shield },
-              { name: t('nav.workflowAutomation', 'Workflow Automation'), href: '/enterprise/workflows', icon: Zap },
-              { name: t('nav.multiLocation', 'Multi-Location'), href: '/enterprise/locations', icon: MapPin },
-              { name: t('nav.apiWebhooks', 'API & Webhooks'), href: '/enterprise/api', icon: Key },
-            ],
-          },
-          { name: t('nav.settings', 'Settings'), href: '/system-settings', icon: Settings, feature: undefined as Feature | undefined },
-        ],
-      },
-    ];
-
-    return sections;
-  }, [t]);
+  const RESTAURANT_NAV_GROUPS = useMemo(() => [
+    {
+      label: 'Front of House',
+      items: [
+        { name: t('nav.vertical.tables', 'Tables'), icon: UtensilsCrossed, href: '/restaurant/tables' },
+        { name: t('nav.vertical.menuManagement', 'Menu'), icon: BookOpen, href: '/restaurant/menu' },
+        { name: t('nav.vertical.waiter', 'Waiter'), icon: User, href: '/restaurant/waiter' },
+        { name: t('nav.vertical.reservations', 'Reservations'), icon: Clock, href: '/restaurant/reservations' },
+      ],
+    },
+    {
+      label: 'Back of House',
+      items: [
+        { name: t('nav.vertical.kds', 'Kitchen Display'), icon: Cpu, href: '/restaurant/kds' },
+        { name: t('nav.vertical.argile', 'Argile Station'), icon: Flame, href: '/restaurant/argile' },
+      ],
+    },
+    {
+      label: 'Management',
+      items: [
+        { name: t('nav.vertical.analytics', 'Analytics'), icon: BarChart2, href: '/restaurant/analytics' },
+        { name: t('nav.vertical.shifts', 'Shifts'), icon: Calendar, href: '/restaurant/shifts' },
+        { name: t('nav.vertical.tips', 'Tips'), icon: DollarSign, href: '/restaurant/tips' },
+        { name: t('nav.vertical.eod', 'EOD Report'), icon: FileText, href: '/restaurant/eod' },
+      ],
+    },
+    {
+      label: 'Setup',
+      items: [
+        { name: t('nav.vertical.recipes', 'Recipes & Cost'), icon: ChefHat, href: '/restaurant/recipes' },
+        { name: t('nav.vertical.branches', 'Branches'), icon: Building2, href: '/restaurant/branches' },
+        { name: t('nav.vertical.restaurantSettings', 'Settings'), icon: Settings, href: '/restaurant/settings' },
+      ],
+    },
+  ], [t]);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -445,90 +416,129 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto" role="navigation" aria-label="Main menu">
-            {navigationSections.map((section) => (
-              <div key={section.labelFallback} className="mt-3 first:mt-0">
-                <div className="px-3 pb-1.5">
-                  <h3 className="text-[10px] font-semibold uppercase tracking-widest text-white/30 nav-section-title">
-                    {t(section.labelKey, section.labelFallback)}
-                  </h3>
-                </div>
-                <div className="space-y-1">
-                  {section.items.map((item) => {
-                    const locked = item.feature ? !hasFeature(item.feature) : false;
-                    if (locked && item.feature) {
-                      const featureInfo = FEATURE_DISPLAY[item.feature];
-                      const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
-                      return (
-                        <button
-                          key={item.name}
-                          onClick={() => toast.info(`Upgrade to ${planInfo.name} (${planInfo.price}) to unlock ${featureInfo.name}`)}
-                          className="group relative flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-white/30 opacity-50 transition-all duration-200 hover:opacity-70"
-                          aria-label={`${item.name} — requires ${planInfo.name} plan`}
-                        >
-                          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/30">
-                            <item.icon className="h-4 w-4" />
-                          </div>
-                          <span className="flex-1 text-start">{item.name}</span>
-                          <Lock className="h-3 w-3 text-amber-400/70" aria-hidden="true" />
-                        </button>
-                      );
-                    }
-                    return (
-                      <NavItem
-                        key={item.name}
-                        item={item}
-                        isActive={isActive(item.href)}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
 
-            {/* Vertical-specific nav items */}
-            {industry && VERTICAL_NAV_ITEMS[industry] && VERTICAL_NAV_ITEMS[industry].length > 0 && (
-              <div className="mt-3">
-                <div className="px-3 pb-1.5">
-                  <h3 className="text-[10px] font-semibold uppercase tracking-widest text-indigo-400/60 nav-section-title">
-                    {t('nav.section.vertical', 'Vertical')}
-                  </h3>
+            {/* ── Platform compact icon grid ── */}
+            <div className="mb-3">
+              <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.2em] text-white/25">Platform</p>
+              <div className="grid grid-cols-4 gap-1">
+                {PLATFORM_ITEMS.map((item) => {
+                  const locked = item.feature ? !hasFeature(item.feature) : false;
+                  const active = isActive(item.href);
+                  if (locked && item.feature) {
+                    const featureInfo = FEATURE_DISPLAY[item.feature];
+                    const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
+                    return (
+                      <button
+                        key={item.href}
+                        title={`${item.name} — requires ${planInfo.name}`}
+                        onClick={() => toast.info(`Upgrade to ${planInfo.name} to unlock ${featureInfo.name}`)}
+                        className="relative flex flex-col items-center gap-1 rounded-xl p-2.5 text-white/25 opacity-50 hover:opacity-60 transition-opacity"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="text-[9px] font-medium leading-none">{item.short}</span>
+                        <Lock className="absolute top-1 right-1 h-2.5 w-2.5 text-amber-400/60" aria-hidden="true" />
+                      </button>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      title={item.name}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex flex-col items-center gap-1 rounded-xl p-2.5 transition-all ${
+                        active
+                          ? 'bg-indigo-500/20 text-indigo-300'
+                          : 'text-white/40 hover:bg-white/5 hover:text-white/70'
+                      }`}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="text-[9px] font-medium leading-none">{item.short}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Restaurant Pro — 4 grouped sections ── */}
+            {industry === 'restaurant' && (
+              <div className="mt-1">
+                <div className="mb-2 flex items-center gap-1.5 border-t border-white/8 pt-3">
+                  <UtensilsCrossed className="h-3 w-3 text-amber-400/80" />
+                  <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-amber-400/80">Restaurant Pro</span>
                 </div>
-                <div className="space-y-1">
+                {RESTAURANT_NAV_GROUPS.map((group) => (
+                  <div key={group.label} className="mb-2.5">
+                    <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-wider text-white/20">{group.label}</p>
+                    <div className="space-y-0.5">
+                      {group.items.map((item) => {
+                        const active = isActive(item.href);
+                        return (
+                          <Link
+                            key={item.href}
+                            to={item.href}
+                            aria-current={active ? 'page' : undefined}
+                            className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
+                              active
+                                ? 'bg-amber-500/15 border border-amber-500/25 text-amber-200'
+                                : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                            }`}
+                          >
+                            <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg ${
+                              active ? 'bg-amber-500/25 text-amber-300' : 'bg-white/5 text-white/35'
+                            }`}>
+                              <item.icon className="h-3.5 w-3.5" />
+                            </div>
+                            <span className="text-xs font-medium">{item.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── Other vertical nav items (pharmacy, supermarket, etc.) ── */}
+            {industry && industry !== 'restaurant' && VERTICAL_NAV_ITEMS[industry] && VERTICAL_NAV_ITEMS[industry].length > 0 && (
+              <div className="mt-1 border-t border-white/8 pt-3">
+                <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400/70">
+                  {industry.charAt(0).toUpperCase() + industry.slice(1)} Pro
+                </p>
+                <div className="space-y-0.5">
                   {VERTICAL_NAV_ITEMS[industry].map((item) => {
                     const active = item.href ? isActive(item.href) : false;
-                    const baseClass = 'group flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200';
-                    const iconClass = 'flex h-8 w-8 items-center justify-center rounded-lg';
-
                     if (item.href) {
                       return (
                         <Link
                           key={item.name}
                           to={item.href}
-                          className={`${baseClass} ${
-                            active
-                              ? 'border-indigo-500/30 bg-indigo-500/15 text-indigo-300'
-                              : 'border-transparent text-white/50 hover:bg-white/5 hover:text-white/80'
-                          }`}
                           aria-current={active ? 'page' : undefined}
+                          className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
+                            active
+                              ? 'bg-indigo-500/15 border border-indigo-500/25 text-indigo-300'
+                              : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                          }`}
                         >
-                          <div className={`${iconClass} ${active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-500/10 text-indigo-400/60'}`}>
-                            <item.icon className="h-4 w-4" />
+                          <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${
+                            active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-indigo-400/50'
+                          }`}>
+                            <item.icon className="h-3.5 w-3.5" />
                           </div>
-                          <span className="flex-1 text-start">{item.name}</span>
+                          <span className="text-xs font-medium">{item.name}</span>
                         </Link>
                       );
                     }
-
                     return (
                       <button
                         key={item.name}
                         onClick={() => toast.info(t('nav.vertical.comingSoon', 'Coming in the next sprint — stay tuned!'))}
-                        className={`${baseClass} border-transparent text-white/40 hover:bg-white/5 hover:text-white/70`}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-white/40 hover:bg-white/5 hover:text-white/70 transition-all"
                       >
-                        <div className={`${iconClass} bg-indigo-500/10 text-indigo-400/60`}>
-                          <item.icon className="h-4 w-4" />
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/5 text-indigo-400/40">
+                          <item.icon className="h-3.5 w-3.5" />
                         </div>
-                        <span className="flex-1 text-start">{item.name}</span>
+                        <span className="flex-1 text-start text-xs font-medium">{item.name}</span>
                         <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide bg-indigo-500/10 text-indigo-400/60">
                           {t('common.soon', 'Soon')}
                         </span>
@@ -540,28 +550,45 @@ export default function Layout({ children }: LayoutProps) {
             )}
           </nav>
 
-          {/* Support Section */}
-          <div className="space-y-4">
-            <div className="px-3 py-2">
-              <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider nav-section-title">Support</h3>
+          {/* ── Bottom bar: compact support links + logout ── */}
+          <div className="border-t border-white/8 pt-3 space-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] uppercase tracking-[0.15em] text-white/20 font-semibold mr-1">Help</span>
+              <a
+                href={`mailto:${BRAND.supportEmail}`}
+                title={`Email: ${BRAND.supportEmail}`}
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-white/35 hover:bg-blue-500/20 hover:text-blue-400 transition-all"
+              >
+                <Mail className="h-3.5 w-3.5" />
+              </a>
+              <a
+                href={`https://wa.me/${BRAND.supportWhatsApp.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`WhatsApp: ${BRAND.supportWhatsApp}`}
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-white/35 hover:bg-green-500/20 hover:text-green-400 transition-all"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+              </a>
+              <a
+                href={`https://instagram.com/${BRAND.supportInstagram.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Instagram: ${BRAND.supportInstagram}`}
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-white/35 hover:bg-pink-500/20 hover:text-pink-400 transition-all"
+              >
+                <Instagram className="h-3.5 w-3.5" />
+              </a>
+              <button
+                onClick={() => { void handleLogout(); }}
+                data-testid="logout-button"
+                aria-label="Sign out of your account"
+                className="logout-button ml-auto flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300"
+              >
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                Logout
+              </button>
             </div>
-
-            <div className="grid grid-cols-1 gap-3" role="complementary" aria-label="Support options">
-              <SupportCard type="email" />
-              <SupportCard type="whatsapp" />
-              <SupportCard type="instagram" />
-            </div>
-
-            {/* Logout Button */}
-            <button
-              onClick={() => { void handleLogout(); }}
-              data-testid="logout-button"
-              className="group flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 hover:shadow-lg hover:shadow-red-500/20 logout-button"
-              aria-label="Sign out of your account"
-            >
-              <LogOut className="h-4 w-4 transition-transform group-hover:rotate-12" aria-hidden="true" />
-              Secure Logout
-            </button>
           </div>
         </div>
       </aside>

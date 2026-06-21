@@ -206,16 +206,16 @@ export default function TipsManagement() {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-500">
-            <DollarSign className="h-5 w-5 text-white" />
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/25 to-yellow-500/10 shadow-lg shadow-amber-500/10">
+            <DollarSign className="h-5 w-5 text-amber-400" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">{t('restaurant.tips.title', 'Tips Management')}</h1>
-            <p className="text-xs text-white/40">{t('restaurant.tips.subtitle', 'Configure how tips are distributed among staff')}</p>
+            <p className="text-xs text-white/35">{t('restaurant.tips.subtitle', 'Configure how tips are distributed among staff')}</p>
           </div>
           <button
             onClick={saveConfig}
-            className="ml-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-semibold text-white"
+            className="ml-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all"
           >
             <Save className="h-4 w-4" />
             {t('common.save', 'Save')}
@@ -224,7 +224,7 @@ export default function TipsManagement() {
 
         {/* Algorithm Cards */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+          <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
             {t('restaurant.tips.algorithm', 'Distribution Algorithm')}
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -234,18 +234,26 @@ export default function TipsManagement() {
                 <button
                   key={id}
                   onClick={() => setConfig(c => ({ ...c, algorithm: id }))}
-                  className={`rounded-2xl border p-4 text-left transition-all ${
+                  className={`rounded-2xl border p-4 text-left transition-all shadow-2xl ${
                     active
-                      ? 'border-indigo-500/60 bg-indigo-500/10 ring-1 ring-indigo-500/40'
-                      : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8'
+                      ? 'border-amber-500/30 bg-amber-500/10 shadow-amber-500/10'
+                      : 'backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border-white/10 hover:border-white/20 hover:bg-white/10'
                   }`}
                 >
                   <div className="mb-2 flex items-center gap-2">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${active ? 'bg-indigo-500/30' : 'bg-white/10'}`}>
-                      <Icon className={`h-4 w-4 ${active ? 'text-indigo-300' : 'text-white/50'}`} />
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+                      active
+                        ? 'bg-gradient-to-br from-amber-500/30 to-yellow-500/15 text-amber-300'
+                        : 'bg-gradient-to-br from-white/10 to-white/5 text-white/40'
+                    }`}>
+                      <Icon className="h-4 w-4" />
                     </div>
-                    <span className={`text-sm font-semibold ${active ? 'text-indigo-200' : 'text-white/70'}`}>{title}</span>
-                    {active && <span className="ml-auto text-[10px] font-bold text-indigo-400 bg-indigo-500/20 px-2 py-0.5 rounded-full">ACTIVE</span>}
+                    <span className={`text-sm font-semibold ${active ? 'text-amber-200' : 'text-white/70'}`}>{title}</span>
+                    {active && (
+                      <span className="ml-auto text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                        Active
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-white/40">{desc}</p>
                 </button>
@@ -255,10 +263,13 @@ export default function TipsManagement() {
 
           {/* Waiter % config */}
           {config.algorithm === 'waiter_pool' && (
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+            <div className="mt-4 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4 space-y-3">
               <label className="block text-sm font-semibold text-white">
-                Waiter's Share: <span className="text-indigo-400">{config.waiterSharePct}%</span>
-                <span className="ml-2 text-white/40 text-xs">(pool gets {100 - config.waiterSharePct}%)</span>
+                Waiter's Share:{' '}
+                <span className="bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent font-bold">
+                  {config.waiterSharePct}%
+                </span>
+                <span className="ml-2 text-white/35 text-xs">(pool gets {100 - config.waiterSharePct}%)</span>
               </label>
               <input
                 type="range"
@@ -266,14 +277,14 @@ export default function TipsManagement() {
                 max={100}
                 value={config.waiterSharePct}
                 onChange={e => setConfig(c => ({ ...c, waiterSharePct: Number(e.target.value) }))}
-                className="w-full accent-indigo-500"
+                className="w-full accent-amber-400"
               />
             </div>
           )}
 
           {/* Role split config */}
           {config.algorithm === 'role_split' && (
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+            <div className="mt-4 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-white">Role Allocation</p>
                 <span className={`text-sm font-bold ${roleSplitTotal === 100 ? 'text-green-400' : 'text-red-400'}`}>
@@ -307,23 +318,25 @@ export default function TipsManagement() {
 
         {/* Today's Tip Pool */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+          <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
             {t('restaurant.tips.todayPool', "Today's Tip Pool")}
           </h2>
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-5 space-y-4">
+          <div className="backdrop-blur-md bg-gradient-to-br from-amber-500/10 via-white/5 to-white/3 border border-amber-500/20 rounded-2xl shadow-2xl shadow-amber-500/5 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-white/40">Estimated Tips (10% of revenue)</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-400/60 mb-1">Estimated Tips (10% of revenue)</p>
                 {loadingTips ? (
-                  <div className="h-8 w-24 animate-pulse rounded bg-white/10 mt-1" />
+                  <div className="h-9 w-28 animate-pulse rounded-xl bg-white/10 mt-1" />
                 ) : (
-                  <p className="text-3xl font-bold text-emerald-400">${todayTips.toFixed(2)}</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
+                    ${todayTips.toFixed(2)}
+                  </p>
                 )}
               </div>
               <button
                 onClick={recordTips}
                 disabled={todayTips === 0}
-                className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+                className="rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/20 disabled:opacity-40 hover:shadow-amber-500/30 transition-all"
               >
                 Record Tips
               </button>
@@ -331,18 +344,20 @@ export default function TipsManagement() {
 
             {breakdown.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Breakdown</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/60">Breakdown</p>
                 {breakdown.map((b, i) => (
                   <div key={i} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                    <span className="text-sm text-white/70">{b.name}</span>
-                    <span className="text-sm font-bold text-emerald-400">${b.amount.toFixed(2)}</span>
+                    <span className="text-sm text-white/65">{b.name}</span>
+                    <span className="text-sm font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
+                      ${b.amount.toFixed(2)}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
 
             {todayTips === 0 && !loadingTips && (
-              <p className="text-xs text-white/30 text-center py-2">No orders recorded today yet</p>
+              <p className="text-xs text-white/25 text-center py-2">No orders recorded today yet</p>
             )}
           </div>
         </section>
@@ -350,17 +365,22 @@ export default function TipsManagement() {
         {/* Recent Records */}
         {records.length > 0 && (
           <section>
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+            <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
               Recent Records
             </h2>
             <div className="space-y-2">
               {records.slice(0, 5).map(r => (
-                <div key={r.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl px-4 py-3"
+                >
                   <div>
-                    <p className="text-sm font-medium text-white">{r.date}</p>
+                    <p className="text-sm font-semibold text-white">{r.date}</p>
                     <p className="text-xs text-white/40 capitalize">{capFirst(r.algorithm.replace(/_/g, ' '))}</p>
                   </div>
-                  <p className="text-sm font-bold text-emerald-400">${r.totalTips.toFixed(2)}</p>
+                  <p className="text-sm font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
+                    ${r.totalTips.toFixed(2)}
+                  </p>
                 </div>
               ))}
             </div>

@@ -27,6 +27,39 @@ import { supabase } from '@/utils/supabaseClient';
 
 // ── Helpers ───────────────────────────────────────────────────
 
+/**
+ * If the given table has an open order, appends an argile charge line item to it.
+ * Returns true if a charge was added, false if table has no open order.
+ */
+async function addArgileChargeToOrder(
+  tableId: string,
+  tenantId: string,
+  productName: string,
+  unitPrice: number,
+): Promise<boolean> {
+  if (unitPrice <= 0) return false;
+  const { data: orders } = await supabase
+    .from('table_orders')
+    .select('id')
+    .eq('table_id', tableId)
+    .eq('status', 'open')
+    .limit(1);
+  const orderId = orders?.[0]?.id as string | undefined;
+  if (!orderId) return false;
+  await supabase.from('restaurant_order_items').insert({
+    tenant_id: tenantId,
+    order_id: orderId,
+    product_name: productName,
+    quantity: 1,
+    unit_price: unitPrice,
+    modifiers: [],
+    course: 'mains',
+    status: 'served',
+    sent_at: new Date().toISOString(),
+  });
+  return true;
+}
+
 function useElapsedMinutes(since: string): number {
   const [mins, setMins] = useState(() =>
     Math.floor((Date.now() - new Date(since).getTime()) / 60_000),
@@ -266,7 +299,23 @@ function NewSessionModal({
         refill_price_usd: selectedFlavor?.refill_price_usd ?? 0,
       });
       if (error) throw error;
-      toast.success(t('argile.sessionOpened', 'Session opened'));
+
+      // Auto-charge the base argile price to the table's open order (if any)
+      const flavorLabel = selectedFlavor
+        ? `${selectedFlavor.brand} — ${selectedFlavor.flavor}`
+        : t('argile.unknownFlavor', 'Argile');
+      const basePrice = selectedFlavor?.base_price_usd ?? 0;
+      const charged = await addArgileChargeToOrder(
+        tableId,
+        tenantId,
+        `🔥 Argile — ${flavorLabel}`,
+        basePrice,
+      );
+      toast.success(
+        charged
+          ? t('argile.sessionOpenedWithTab', 'Session opened · ${{price}} added to tab', { price: basePrice.toFixed(2) })
+          : t('argile.sessionOpened', 'Session opened'),
+      );
       onCreated();
       onClose();
     } catch (err) {
@@ -449,7 +498,21 @@ function RefillModal({ session, table, onClose, onConfirmed }: RefillModalProps)
         .eq('id', session.id);
       if (upErr) throw upErr;
 
-      toast.success(t('argile.refillLogged', 'Refill logged'));
+      // Auto-charge the refill price to the table's open order (if any)
+      const refillLabel = [session.tobacco_brand, session.tobacco_flavor]
+        .filter(Boolean)
+        .join(' — ') || t('argile.unknownFlavor', 'Argile');
+      const charged = await addArgileChargeToOrder(
+        session.table_id,
+        session.tenant_id,
+        `🔥 Argile Refill — ${refillLabel}`,
+        session.refill_price_usd,
+      );
+      toast.success(
+        charged
+          ? t('argile.refillWithTab', 'Refill logged · ${{price}} added to tab', { price: session.refill_price_usd.toFixed(2) })
+          : t('argile.refillLogged', 'Refill logged'),
+      );
       onConfirmed(session.id);
       onClose();
     } catch (err) {

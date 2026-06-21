@@ -64,6 +64,12 @@ const RestaurantTableManagement = lazy(() => import('./pages/restaurant/TableMan
 const RestaurantKDS = lazy(() => import('./pages/restaurant/KitchenDisplay'));
 const RestaurantReservations = lazy(() => import('./pages/restaurant/Reservations'));
 
+// Pharmacy Vertical Components
+const PharmacyHub = lazy(() => import('./pages/pharmacy/PharmacyHub'));
+const PharmacyDrugDatabase = lazy(() => import('./pages/pharmacy/DrugDatabase'));
+const PharmacyPrescriptions = lazy(() => import('./pages/pharmacy/Prescriptions'));
+const PharmacyNarcoticsRegister = lazy(() => import('./pages/pharmacy/NarcoticsRegister'));
+
 // Mobile components wrapper that needs access to Router context
 function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
   const location = useLocation();
@@ -394,6 +400,24 @@ export default function App() {
                                 <Route
                                   path="/restaurant/reservations"
                                   element={isAuthenticated ? <RestaurantReservations /> : <Navigate to="/login" replace />}
+                                />
+
+                                {/* ── Pharmacy Vertical routes ── */}
+                                <Route
+                                  path="/pharmacy"
+                                  element={isAuthenticated ? <PharmacyHub /> : <Navigate to="/login" replace />}
+                                />
+                                <Route
+                                  path="/pharmacy/drugs"
+                                  element={isAuthenticated ? <PharmacyDrugDatabase /> : <Navigate to="/login" replace />}
+                                />
+                                <Route
+                                  path="/pharmacy/prescriptions"
+                                  element={isAuthenticated ? <PharmacyPrescriptions /> : <Navigate to="/login" replace />}
+                                />
+                                <Route
+                                  path="/pharmacy/narcotics"
+                                  element={isAuthenticated ? <PharmacyNarcoticsRegister /> : <Navigate to="/login" replace />}
                                 />
 
                                 {/* ── Fallbacks ── */}

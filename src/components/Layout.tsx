@@ -121,9 +121,9 @@ export default function Layout({ children }: LayoutProps) {
       { name: t('nav.vertical.menuManagement', 'Menu Management'), icon: BookOpen, href: '/restaurant/tables' },
     ],
     pharmacy: [
-      { name: t('nav.vertical.drugDatabase', 'Drug Database'), icon: Pill },
-      { name: t('nav.vertical.prescriptions', 'Prescriptions'), icon: FlaskConical },
-      { name: t('nav.vertical.narcoticsRegister', 'Narcotics Register'), icon: ScanLine },
+      { name: t('nav.vertical.drugDatabase', 'Drug Database'), icon: Pill, href: '/pharmacy/drugs' },
+      { name: t('nav.vertical.prescriptions', 'Prescriptions'), icon: FlaskConical, href: '/pharmacy/prescriptions' },
+      { name: t('nav.vertical.narcoticsRegister', 'Narcotics Register'), icon: ScanLine, href: '/pharmacy/narcotics' },
     ],
     supermarket: [
       { name: t('nav.vertical.departments', 'Departments'), icon: ShoppingBasket },

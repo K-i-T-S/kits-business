@@ -37,6 +37,7 @@ export interface RestaurantOrderItem {
   id: string;
   tenant_id: string;
   order_id: string;
+  menu_item_id: string | null;
   product_name: string;
   quantity: number;
   unit_price: number;

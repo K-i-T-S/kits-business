@@ -25,6 +25,7 @@ interface AddItemParams {
   course: CourseType;
   notes?: string;
   modifiers?: Array<{ name: string; price_delta: number }>;
+  menu_item_id?: string;
 }
 
 interface BillTotals {
@@ -147,6 +148,7 @@ export function useRestaurantOrder(
       .insert({
         tenant_id: tenantId,
         order_id: orderId,
+        menu_item_id: params.menu_item_id ?? null,
         product_name: params.product_name,
         quantity: params.quantity,
         unit_price: params.unit_price,
@@ -221,30 +223,15 @@ export function useRestaurantOrder(
   // ── Close bill ───────────────────────────────────────────────────────────
   const closeBill = useCallback(async (paymentMethod: string) => {
     if (!orderId) return;
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('table_orders')
-      .update({
-        status: 'paid',
-        paid_at: now,
-        closed_at: now,
-        payment_method: paymentMethod,
-      })
-      .eq('id', orderId);
-    if (error) { toast.error(error.message); return; }
-    // Update table status to cleaning
-    if (tableId) {
-      await supabase
-        .from('restaurant_tables')
-        .update({ status: 'cleaning' })
-        .eq('id', tableId);
-    }
-    // Bridge to main sales ledger — non-blocking, failure doesn't block UI
-    void supabase.rpc('finalize_restaurant_order', { p_order_id: orderId }).then(({ error: rpcErr }) => {
-      if (rpcErr) console.warn('[closeBill] finalize_restaurant_order failed:', rpcErr.message);
+    // fn_close_restaurant_bill closes the order, sets table to cleaning,
+    // and writes a sales + sale_items record into the main platform ledger.
+    const { data: saleId, error } = await supabase.rpc('fn_close_restaurant_bill', {
+      p_order_id: orderId,
+      p_payment_method: paymentMethod,
     });
-    toast.success('Bill closed. Table set to cleaning.');
-  }, [orderId, tableId]);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Bill closed · Sale #${String(saleId).slice(-6).toUpperCase()} recorded`);
+  }, [orderId]);
 
   // ── Confirm pending order ────────────────────────────────────────────────
   const confirmPendingOrder = useCallback(async (

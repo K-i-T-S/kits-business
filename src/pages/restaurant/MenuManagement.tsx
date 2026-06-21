@@ -736,6 +736,7 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
       }
       const orderItems = orderLines.map(l => ({
         order_id: orderId,
+        menu_item_id: l.item.id,
         product_name: l.item.name,
         quantity: l.qty,
         unit_price: l.item.base_price_usd,

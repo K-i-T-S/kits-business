@@ -1059,21 +1059,23 @@ type Tab = 'builder' | 'waiter' | 'qr';
 
 export default function MenuManagement() {
   const navigate = useNavigate();
+  const { currentTenant } = useApp();
   const [activeTab, setActiveTab] = useState<Tab>('builder');
   const [categories, setCategories] = useState<RestaurantMenuCategory[]>([]);
   const [items, setItems] = useState<RestaurantMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
+    if (!currentTenant?.id) return;
     setLoading(true);
     const [catRes, itemRes] = await Promise.all([
-      supabase.from('restaurant_menu_categories').select('*').order('sort_order'),
-      supabase.from('restaurant_menu_items').select('*').order('sort_order'),
+      supabase.from('restaurant_menu_categories').select('*').eq('tenant_id', currentTenant.id).order('sort_order'),
+      supabase.from('restaurant_menu_items').select('*').eq('tenant_id', currentTenant.id).order('sort_order'),
     ]);
     setCategories((catRes.data ?? []) as RestaurantMenuCategory[]);
     setItems((itemRes.data ?? []) as RestaurantMenuItem[]);
     setLoading(false);
-  }, []);
+  }, [currentTenant?.id]);
 
   useEffect(() => { void loadData(); }, [loadData]);
 

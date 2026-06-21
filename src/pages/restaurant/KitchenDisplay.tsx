@@ -535,6 +535,7 @@ export default function KitchenDisplay() {
     const { data } = await supabase
       .from('restaurant_kds_stations')
       .select('*')
+      .eq('tenant_id', tenantId)
       .eq('is_active', true)
       .order('sort_order');
     if (data && data.length > 0) {
@@ -551,14 +552,16 @@ export default function KitchenDisplay() {
           supabase
             .from('table_orders')
             .select('*')
+            .eq('tenant_id', tenantId)
             .eq('status', 'open')
             .order('opened_at', { ascending: true }),
           supabase
             .from('restaurant_order_items')
             .select('*')
+            .eq('tenant_id', tenantId)
             .in('status', ['pending', 'in_progress', 'ready'])
             .order('sent_at', { ascending: true }),
-          supabase.from('restaurant_tables').select('*'),
+          supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId),
         ]);
 
         const orders = (ordersRes.data ?? []) as TableOrder[];

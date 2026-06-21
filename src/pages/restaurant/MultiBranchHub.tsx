@@ -465,7 +465,8 @@ function RatingChart({ branches, metricsMap }: {
 
 export default function MultiBranchHub() {
   const { t } = useTranslation();
-  const { employees } = useApp();
+  const { employees, currentTenant } = useApp();
+  const tenantId = currentTenant?.id;
 
   const [branches, setBranches] = useState<RestaurantBranch[]>([]);
   const [metricsMap, setMetricsMap] = useState<Record<string, BranchMetrics>>({});
@@ -476,11 +477,13 @@ export default function MultiBranchHub() {
   const [addingBranch, setAddingBranch] = useState(false);
 
   const loadBranches = useCallback(async () => {
+    if (!tenantId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('restaurant_branches')
         .select('*')
+        .eq('tenant_id', tenantId)
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
@@ -493,6 +496,7 @@ export default function MultiBranchHub() {
         const { data: mData } = await supabase
           .from('restaurant_branch_metrics')
           .select('*')
+          .eq('tenant_id', tenantId)
           .eq('metric_date', today);
 
         if (mData) {
@@ -509,7 +513,7 @@ export default function MultiBranchHub() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
     void loadBranches();
@@ -550,6 +554,7 @@ export default function MultiBranchHub() {
     (activeBranches.length || 1);
 
   const handleSaveBranch = async (data: Partial<RestaurantBranch>) => {
+    if (!tenantId) return;
     if (editingBranch?.id) {
       const { error } = await supabase
         .from('restaurant_branches')
@@ -560,7 +565,7 @@ export default function MultiBranchHub() {
     } else {
       const { error } = await supabase
         .from('restaurant_branches')
-        .insert(data);
+        .insert({ ...data, tenant_id: tenantId });
       if (error) throw new Error(error.message);
       toast.success(t('restaurant.branches.branchAdded', 'Branch added'));
     }

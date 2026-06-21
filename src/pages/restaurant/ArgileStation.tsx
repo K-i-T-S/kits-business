@@ -584,18 +584,21 @@ export default function ArgileStation() {
         supabase
           .from('restaurant_argile_sessions')
           .select('*')
+          .eq('tenant_id', tenantId)
           .eq('status', 'active')
           .order('opened_at', { ascending: false }),
         supabase
           .from('restaurant_argile_events')
           .select('*')
+          .eq('tenant_id', tenantId)
           .eq('event_type', 'fa7em_request')
           .is('handled_at', null)
           .order('created_at', { ascending: true }),
-        supabase.from('restaurant_tables').select('*'),
+        supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId),
         supabase
           .from('restaurant_argile_flavors')
           .select('*')
+          .eq('tenant_id', tenantId)
           .eq('is_active', true)
           .order('sort_order'),
       ]);

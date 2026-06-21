@@ -195,14 +195,14 @@ export default function RecipeInventory() {
     setLoading(true);
     try {
       const [ingRes, recRes, rlRes, supRes, wlRes, mvRes, menuRes, mirRes] = await Promise.all([
-        supabase.from('restaurant_ingredients').select('*').order('name'),
-        supabase.from('restaurant_recipes').select('*').order('name'),
-        supabase.from('restaurant_recipe_ingredients').select('*'),
-        supabase.from('restaurant_ingredient_suppliers').select('*').order('name'),
-        supabase.from('restaurant_waste_log').select('*').order('logged_at', { ascending: false }).limit(100),
-        supabase.from('restaurant_ingredient_movements').select('*').order('created_at', { ascending: false }).limit(500),
-        supabase.from('products').select('id, name, price').order('name'),
-        supabase.from('restaurant_menu_item_recipes').select('*'),
+        supabase.from('restaurant_ingredients').select('*').eq('tenant_id', tenantId).order('name'),
+        supabase.from('restaurant_recipes').select('*').eq('tenant_id', tenantId).order('name'),
+        supabase.from('restaurant_recipe_ingredients').select('*').eq('tenant_id', tenantId),
+        supabase.from('restaurant_ingredient_suppliers').select('*').eq('tenant_id', tenantId).order('name'),
+        supabase.from('restaurant_waste_log').select('*').eq('tenant_id', tenantId).order('logged_at', { ascending: false }).limit(100),
+        supabase.from('restaurant_ingredient_movements').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(500),
+        supabase.from('products').select('id, name, price').eq('tenant_id', tenantId).order('name'),
+        supabase.from('restaurant_menu_item_recipes').select('*').eq('tenant_id', tenantId),
       ]);
 
       if (ingRes.data) setIngredients(ingRes.data as RestaurantIngredient[]);

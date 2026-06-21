@@ -95,6 +95,7 @@ export default function TipsManagement() {
       const { data } = await supabase
         .from('restaurant_order_items')
         .select('unit_price, quantity')
+        .eq('tenant_id', tenantId)
         .gte('sent_at', `${todayISO}T00:00:00`);
       const revenue = (data ?? []).reduce((s, i) => s + i.unit_price * i.quantity, 0);
       setTodayTips(revenue * 0.1);

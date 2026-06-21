@@ -127,9 +127,9 @@ export default function TableManagement() {
     setLoading(true);
     try {
       const [tRes, oRes, oiRes] = await Promise.all([
-        supabase.from('restaurant_tables').select('*').order('number'),
-        supabase.from('table_orders').select('*').eq('status', 'open').order('opened_at'),
-        supabase.from('restaurant_order_items').select('*').neq('status', 'served').order('id'),
+        supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId).order('number'),
+        supabase.from('table_orders').select('*').eq('tenant_id', tenantId).eq('status', 'open').order('opened_at'),
+        supabase.from('restaurant_order_items').select('*').eq('tenant_id', tenantId).neq('status', 'served').order('id'),
       ]);
       if (tRes.data) setTables(tRes.data as RestaurantTable[]);
       if (oRes.data) setOrders(oRes.data as TableOrder[]);

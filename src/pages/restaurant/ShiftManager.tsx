@@ -1,11 +1,11 @@
+import { Calendar, UserPlus, Clock, CheckCircle, LogIn, LogOut, X, Plus, Trash2, DollarSign, Link } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, UserPlus, Clock, CheckCircle, LogIn, LogOut, X, Plus, Trash2, DollarSign, Link } from 'lucide-react';
 
 import Layout from '@/components/Layout';
-import { supabase } from '@/utils/supabaseClient';
 import { useApp } from '@/context/AppContext';
 import type { RestaurantShift, ShiftAssignment, ShiftType, StaffRole } from '@/types/restaurant';
+import { supabase } from '@/utils/supabaseClient';
 
 const SHIFT_COLORS: Record<ShiftType, string> = {
   morning: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
@@ -92,16 +92,18 @@ export default function ShiftManager() {
   const weekDays = Array.from({ length: 7 }, (_, i) => getDayOfWeek(i));
 
   const loadShifts = useCallback(async () => {
+    if (!tenantId || tenantId === 'default') return;
     const startOfWeek = weekDays[0] ?? '';
     const endOfWeek = weekDays[6] ?? '';
     const { data } = await supabase
       .from('restaurant_shifts')
       .select('*')
+      .eq('tenant_id', tenantId)
       .gte('shift_date', startOfWeek)
       .lte('shift_date', endOfWeek)
       .order('shift_date');
     setShifts((data ?? []) as RestaurantShift[]);
-  }, [weekDays]);
+  }, [weekDays, tenantId]);
 
   const loadAssignments = useCallback(async () => {
     if (!selectedShiftId) return;

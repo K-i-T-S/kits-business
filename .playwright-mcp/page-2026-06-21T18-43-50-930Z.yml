@@ -1,0 +1,305 @@
+- generic [ref=e2]:
+  - generic [ref=e21]:
+    - generic [ref=e22]:
+      - link "Skip to main content" [ref=e23] [cursor=pointer]:
+        - /url: "#main-content"
+      - link "Skip to navigation" [ref=e24] [cursor=pointer]:
+        - /url: "#navigation"
+      - link "Skip to search" [ref=e25] [cursor=pointer]:
+        - /url: "#search"
+      - navigation "Main navigation" [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - button "Customise brand identity" [ref=e29] [cursor=pointer]:
+              - generic [ref=e30]:
+                - img "Kits - Khoder's IT Solutions logo" [ref=e32]
+                - generic [ref=e34]:
+                  - generic [ref=e35]: Your Business
+                  - heading "KiTS" [level=1] [ref=e36]
+                  - paragraph [ref=e37]: Our tech. empowering your success
+                - img [ref=e39]
+            - generic [ref=e42]:
+              - img "KiTS" [ref=e43]
+              - generic [ref=e44]: Powered by KiTS · Khoder's IT Solutions
+          - navigation "Main menu" [ref=e45]:
+            - generic [ref=e46]:
+              - paragraph [ref=e47]: Platform
+              - generic [ref=e48]:
+                - link "Home" [ref=e49] [cursor=pointer]:
+                  - /url: /dashboard
+                  - img [ref=e50]
+                  - generic [ref=e55]: Home
+                - link "POS" [ref=e56] [cursor=pointer]:
+                  - /url: /pos
+                  - img [ref=e57]
+                  - generic [ref=e61]: POS
+                - link "Stock" [ref=e62] [cursor=pointer]:
+                  - /url: /inventory
+                  - img [ref=e63]
+                  - generic [ref=e67]: Stock
+                - link "CRM" [ref=e68] [cursor=pointer]:
+                  - /url: /customers
+                  - img [ref=e69]
+                  - generic [ref=e74]: CRM
+                - link "Team" [ref=e75] [cursor=pointer]:
+                  - /url: /employees
+                  - img [ref=e76]
+                  - generic [ref=e80]: Team
+                - link "Finance" [ref=e81] [cursor=pointer]:
+                  - /url: /finance
+                  - img [ref=e82]
+                  - generic [ref=e85]: Finance
+                - link "Reports" [ref=e86] [cursor=pointer]:
+                  - /url: /reports
+                  - img [ref=e87]
+                  - generic [ref=e89]: Reports
+                - link "Settings" [ref=e90] [cursor=pointer]:
+                  - /url: /system-settings
+                  - img [ref=e91]
+                  - generic [ref=e94]: Settings
+            - generic [ref=e95]:
+              - generic [ref=e96]:
+                - img [ref=e97]
+                - generic [ref=e102]: Restaurant Pro
+              - generic [ref=e103]:
+                - paragraph [ref=e104]: Front of House
+                - generic [ref=e105]:
+                  - link "Table Management" [ref=e106] [cursor=pointer]:
+                    - /url: /restaurant/tables
+                    - img [ref=e108]
+                    - generic [ref=e113]: Table Management
+                  - link "Menu Management" [ref=e114] [cursor=pointer]:
+                    - /url: /restaurant/menu
+                    - img [ref=e116]
+                    - generic [ref=e118]: Menu Management
+                  - link "Waiter" [ref=e119] [cursor=pointer]:
+                    - /url: /restaurant/waiter
+                    - img [ref=e121]
+                    - generic [ref=e124]: Waiter
+                  - link "Reservations" [ref=e125] [cursor=pointer]:
+                    - /url: /restaurant/reservations
+                    - img [ref=e127]
+                    - generic [ref=e130]: Reservations
+              - generic [ref=e131]:
+                - paragraph [ref=e132]: Back of House
+                - generic [ref=e133]:
+                  - link "Kitchen Display" [ref=e134] [cursor=pointer]:
+                    - /url: /restaurant/kds
+                    - img [ref=e136]
+                    - generic [ref=e139]: Kitchen Display
+                  - link "Argile Station" [ref=e140] [cursor=pointer]:
+                    - /url: /restaurant/argile
+                    - img [ref=e142]
+                    - generic [ref=e144]: Argile Station
+              - generic [ref=e145]:
+                - paragraph [ref=e146]: Management
+                - generic [ref=e147]:
+                  - link "Analytics" [ref=e148] [cursor=pointer]:
+                    - /url: /restaurant/analytics
+                    - img [ref=e150]
+                    - generic [ref=e151]: Analytics
+                  - link "Shifts" [ref=e152] [cursor=pointer]:
+                    - /url: /restaurant/shifts
+                    - img [ref=e154]
+                    - generic [ref=e156]: Shifts
+                  - link "Tips" [ref=e157] [cursor=pointer]:
+                    - /url: /restaurant/tips
+                    - img [ref=e159]
+                    - generic [ref=e161]: Tips
+                  - link "EOD Report" [ref=e162] [cursor=pointer]:
+                    - /url: /restaurant/eod
+                    - img [ref=e164]
+                    - generic [ref=e167]: EOD Report
+              - generic [ref=e168]:
+                - paragraph [ref=e169]: Setup
+                - generic [ref=e170]:
+                  - link "Recipes & Cost" [ref=e171] [cursor=pointer]:
+                    - /url: /restaurant/recipes
+                    - img [ref=e173]
+                    - generic [ref=e175]: Recipes & Cost
+                  - link "Branches" [ref=e176] [cursor=pointer]:
+                    - /url: /restaurant/branches
+                    - img [ref=e178]
+                    - generic [ref=e182]: Branches
+                  - link "Settings" [ref=e183] [cursor=pointer]:
+                    - /url: /restaurant/settings
+                    - img [ref=e185]
+                    - generic [ref=e188]: Settings
+          - generic [ref=e190]:
+            - generic [ref=e191]: Help
+            - 'link "Email: kits.tech.co@gmail.com" [ref=e192] [cursor=pointer]':
+              - /url: mailto:kits.tech.co@gmail.com
+              - img [ref=e193]
+            - 'link "WhatsApp: +961 81 290 662" [ref=e196] [cursor=pointer]':
+              - /url: https://wa.me/96181290662
+              - img [ref=e197]
+            - 'link "Instagram: @kits_solutions" [ref=e199] [cursor=pointer]':
+              - /url: https://instagram.com/kits_solutions
+              - img [ref=e200]
+            - button "Sign out of your account" [ref=e203]:
+              - img [ref=e204]
+              - text: Logout
+      - generic [ref=e207]:
+        - generic [ref=e209]:
+          - banner [ref=e210]:
+            - generic [ref=e211]:
+              - generic [ref=e213]:
+                - img "Kits - Khoder's IT Solutions logo" [ref=e216]
+                - generic [ref=e218]:
+                  - generic [ref=e219]:
+                    - heading "Kits - Khoder's IT Solutions" [level=1] [ref=e220]
+                    - generic [ref=e221]: PRO
+                  - paragraph [ref=e222]: Our tech. empowering your success
+              - search [ref=e223]:
+                - button "Search" [ref=e224]:
+                  - img [ref=e225]
+                  - generic [ref=e228]: Search…
+              - generic [ref=e229]:
+                - generic [ref=e231]:
+                  - generic [ref=e232]: KiTS
+                  - generic [ref=e233]: owner
+                - button "Switch to light mode" [ref=e234]:
+                  - img [ref=e235]
+                - button "Notifications" [ref=e242]:
+                  - img [ref=e243]
+                  - generic "3 unread notifications" [ref=e246]: "3"
+                - button [ref=e248]:
+                  - img
+                  - img
+                - button "User profile menu" [ref=e250]:
+                  - generic [ref=e252]: AH
+                  - img [ref=e253]
+          - main [ref=e255]:
+            - generic [ref=e256]:
+              - generic [ref=e257]:
+                - button "Back" [ref=e258]:
+                  - img [ref=e259]
+                - img [ref=e262]
+                - generic [ref=e264]:
+                  - heading "Menu Management" [level=1] [ref=e265]
+                  - paragraph [ref=e266]: 0 items · 0 categories
+              - generic [ref=e267]:
+                - button "Menu Builder" [ref=e268]:
+                  - img [ref=e269]
+                  - generic [ref=e271]: Menu Builder
+                - button "Waiter Order" [ref=e272]:
+                  - img [ref=e273]
+                  - generic [ref=e277]: Waiter Order
+                - button "QR Menu" [ref=e278]:
+                  - img [ref=e279]
+                  - generic [ref=e285]: QR Menu
+              - generic [ref=e563]:
+                - generic [ref=e564]:
+                  - generic [ref=e565]:
+                    - paragraph [ref=e566]: Categories
+                    - button "Add category" [ref=e567]:
+                      - img [ref=e568]
+                  - button "🍽️ All Items 0" [ref=e569]:
+                    - generic [ref=e570]:
+                      - generic [ref=e571]: 🍽️
+                      - generic [ref=e572]: All Items
+                      - generic [ref=e573]: "0"
+                - generic [ref=e574]:
+                  - generic [ref=e575]:
+                    - generic [ref=e576]:
+                      - img [ref=e577]
+                      - textbox "Search items..." [ref=e580]
+                    - button "Add Item" [ref=e581]:
+                      - img [ref=e582]
+                      - text: Add Item
+                  - generic [ref=e583]:
+                    - img [ref=e584]
+                    - paragraph [ref=e589]: No menu items yet
+                    - paragraph [ref=e590]: Click "Add Item" to get started
+        - dialog "Notifications" [ref=e315]:
+          - generic [ref=e316]:
+            - generic [ref=e317]:
+              - img [ref=e318]
+              - heading "Notifications" [level=2] [ref=e321]
+              - generic [ref=e322]: "3"
+            - generic [ref=e323]:
+              - button "Mark all read" [ref=e324]:
+                - img [ref=e325]
+                - text: Mark all read
+              - button "Clear all" [ref=e327]
+              - button "Cancel" [ref=e328]:
+                - img [ref=e329]
+          - list "Notifications" [ref=e332]:
+            - generic [ref=e334]:
+              - img [ref=e336]
+              - generic [ref=e340]: Inventory
+              - generic [ref=e341]: "2"
+            - listitem [ref=e342] [cursor=pointer]:
+              - img [ref=e344]
+              - generic [ref=e346]:
+                - paragraph [ref=e348]: "Out of Stock: ex"
+                - paragraph [ref=e350]: ex is completely out of stock. Reorder immediately.
+                - generic [ref=e351]:
+                  - generic [ref=e352]: Just now
+                  - link "View" [ref=e353]:
+                    - /url: /inventory
+                    - text: View
+                    - img [ref=e354]
+              - button "Dismiss" [ref=e358]:
+                - img [ref=e359]
+            - listitem [ref=e362] [cursor=pointer]:
+              - img [ref=e364]
+              - generic [ref=e366]:
+                - paragraph [ref=e368]: "Out of Stock: 2"
+                - paragraph [ref=e370]: 2 is completely out of stock. Reorder immediately.
+                - generic [ref=e371]:
+                  - generic [ref=e372]: Just now
+                  - link "View" [ref=e373]:
+                    - /url: /inventory
+                    - text: View
+                    - img [ref=e374]
+              - button "Dismiss" [ref=e378]:
+                - img [ref=e379]
+            - generic [ref=e383]:
+              - img [ref=e385]
+              - generic [ref=e388]: System
+              - generic [ref=e389]: "1"
+            - listitem [ref=e390] [cursor=pointer]:
+              - img [ref=e392]
+              - generic [ref=e394]:
+                - paragraph [ref=e396]: KiTS Business Terminal Active
+                - paragraph [ref=e398]: All systems operational. Your data is syncing normally.
+                - generic [ref=e399]:
+                  - generic [ref=e400]: Just now
+                  - link "View" [ref=e401]:
+                    - /url: /dashboard
+                    - text: View
+                    - img [ref=e402]
+              - button "Dismiss" [ref=e406]:
+                - img [ref=e407]
+          - generic [ref=e410]:
+            - paragraph [ref=e411]: Alert Preferences
+            - generic [ref=e412]:
+              - button "Inventory" [pressed] [ref=e413]:
+                - img [ref=e415]
+                - generic [ref=e419]: Inventory
+              - button "Sales" [pressed] [ref=e420]:
+                - img [ref=e422]
+                - generic [ref=e426]: Sales
+              - button "Finance" [pressed] [ref=e427]:
+                - img [ref=e429]
+                - generic [ref=e431]: Finance
+              - button "Employees" [pressed] [ref=e432]:
+                - img [ref=e434]
+                - generic [ref=e439]: Employees
+              - button "System" [pressed] [ref=e440]:
+                - img [ref=e442]
+                - generic [ref=e445]: System
+              - button "AI Insights" [pressed] [ref=e446]:
+                - img [ref=e448]
+                - generic [ref=e450]: AI Insights
+    - button "Show keyboard shortcuts" [ref=e452]:
+      - img [ref=e453]
+    - button "Show accessibility audit" [ref=e456]:
+      - img [ref=e457]
+      - generic [ref=e460]: A11y Audit
+    - region "Notifications alt+T"
+  - generic [ref=e461]:
+    - img [ref=e463]
+    - button "Open Tanstack query devtools" [ref=e511] [cursor=pointer]:
+      - img [ref=e512]

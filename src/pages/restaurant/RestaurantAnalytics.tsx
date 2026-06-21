@@ -1,17 +1,17 @@
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ComposedChart, Line, Area, ReferenceLine,
-} from 'recharts';
-import {
   BarChart2, Users, Clock, TrendingUp, AlertCircle, Flame,
   Brain, Zap, ChevronDown, RefreshCw, Star,
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, Line, Area, ReferenceLine,
+} from 'recharts';
 
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
-import { supabase } from '@/utils/supabaseClient';
+import type { WaiterPerformanceStats, TableFeedback } from '@/types/restaurant';
 import {
   generateForecast,
   analyzeWeeklyPattern,
@@ -28,7 +28,7 @@ import type {
   MLInsight,
 } from '@/utils/restaurantML';
 import { rankWaiters } from '@/utils/restaurantScoring';
-import type { WaiterPerformanceStats, TableFeedback } from '@/types/restaurant';
+import { supabase } from '@/utils/supabaseClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -74,13 +74,13 @@ function InsightCard({ insight }: { insight: MLInsight }) {
   const bg = insight.severity === 'warning'
     ? 'border-amber-500/30 bg-amber-500/8'
     : insight.severity === 'opportunity'
-    ? 'border-emerald-500/30 bg-emerald-500/8'
-    : 'border-white/10 bg-white/5';
+      ? 'border-emerald-500/30 bg-emerald-500/8'
+      : 'border-white/10 bg-white/5';
   const textColor = insight.severity === 'warning'
     ? 'text-amber-300'
     : insight.severity === 'opportunity'
-    ? 'text-emerald-300'
-    : 'text-sky-300';
+      ? 'text-emerald-300'
+      : 'text-sky-300';
 
   return (
     <div className={`rounded-2xl border backdrop-blur-md p-4 space-y-1.5 ${bg}`}>
@@ -134,12 +134,12 @@ export default function RestaurantAnalytics() {
       const todayISO = new Date().toISOString().split('T')[0]!;
 
       const [tablesRes, ordersRes, argileRes, itemsRes, feedbackRes, slowRes] = await Promise.all([
-        supabase.from('restaurant_tables').select('id, status'),
-        supabase.from('table_orders').select('id, status, opened_at, closed_at, paid_at, waiter_id, tip_amount_usd, discount_pct, service_charge_pct, vat_pct').gte('opened_at', sinceISO),
-        supabase.from('restaurant_argile_sessions').select('id, base_price_usd, refill_price_usd, refill_count:tobacco_refill_count, opened_at').gte('opened_at', sinceISO),
-        supabase.from('restaurant_order_items').select('order_id, product_name, unit_price, quantity, sent_at').gte('sent_at', sinceISO).not('sent_at', 'is', null),
-        supabase.from('restaurant_table_feedback').select('*').gte('submitted_at', `${todayISO}T00:00:00`).order('submitted_at', { ascending: false }).limit(10),
-        supabase.from('restaurant_slow_alerts').select('id').is('resolved_at', null),
+        supabase.from('restaurant_tables').select('id, status').eq('tenant_id', tenantId),
+        supabase.from('table_orders').select('id, status, opened_at, closed_at, paid_at, waiter_id, tip_amount_usd, discount_pct, service_charge_pct, vat_pct').eq('tenant_id', tenantId).gte('opened_at', sinceISO),
+        supabase.from('restaurant_argile_sessions').select('id, base_price_usd, refill_price_usd, refill_count:tobacco_refill_count, opened_at').eq('tenant_id', tenantId).gte('opened_at', sinceISO),
+        supabase.from('restaurant_order_items').select('order_id, product_name, unit_price, quantity, sent_at').eq('tenant_id', tenantId).gte('sent_at', sinceISO).not('sent_at', 'is', null),
+        supabase.from('restaurant_table_feedback').select('*').eq('tenant_id', tenantId).gte('submitted_at', `${todayISO}T00:00:00`).order('submitted_at', { ascending: false }).limit(10),
+        supabase.from('restaurant_slow_alerts').select('id').eq('tenant_id', tenantId).is('resolved_at', null),
       ]);
 
       const tables = tablesRes.data ?? [];
@@ -284,7 +284,7 @@ export default function RestaurantAnalytics() {
   // Combine history + forecast for the trend chart
   const trendData = [
     ...history.slice(-14).map((d) => ({
-      date: d.date.slice(5),     // MM-DD
+      date: d.date.slice(5), // MM-DD
       actual: d.totalUsd,
       predicted: undefined as number | undefined,
       lower: undefined as number | undefined,
@@ -543,8 +543,8 @@ export default function RestaurantAnalytics() {
                         <td className="px-4 py-3 text-right">
                           <span className={`rounded-lg px-2 py-0.5 text-[10px] font-semibold ${
                             item.alert === 'rising' ? 'bg-emerald-500/20 text-emerald-400'
-                            : item.alert === 'falling' ? 'bg-red-500/20 text-red-400'
-                            : 'bg-white/5 text-white/30'
+                              : item.alert === 'falling' ? 'bg-red-500/20 text-red-400'
+                                : 'bg-white/5 text-white/30'
                           }`}>
                             {item.alert === 'rising' ? '↑ Rising' : item.alert === 'falling' ? '↓ Falling' : 'Stable'}
                           </span>

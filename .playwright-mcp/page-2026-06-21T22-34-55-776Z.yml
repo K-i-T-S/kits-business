@@ -1,0 +1,9 @@
+- generic [ref=e4]:
+  - status "Loading application" [ref=e5]:
+    - paragraph [ref=e8]: Loading...
+  - button "Show keyboard shortcuts" [ref=e10]:
+    - img [ref=e11]
+  - button "Show accessibility audit" [ref=e14]:
+    - img [ref=e15]
+    - generic [ref=e18]: A11y Audit
+  - region "Notifications alt+T"

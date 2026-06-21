@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   FileText, Share2, Printer, RefreshCw,
   TrendingUp, DollarSign, Users, Clock,
   AlertTriangle, CheckCircle, Flame, ChefHat,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import Layout from '@/components/Layout';
-import { supabase } from '@/utils/supabaseClient';
 import { useApp } from '@/context/AppContext';
+import { supabase } from '@/utils/supabaseClient';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -124,23 +124,30 @@ export default function EODReport() {
     try {
       const dayStart = `${todayISO}T00:00:00`;
 
+      const tid = currentTenant?.id;
+      if (!tid) { setLoading(false); return; }
+
       const [ordersRes, itemsRes, argileRes, shiftRes] = await Promise.all([
         supabase
           .from('table_orders')
           .select('id, status, opened_at, paid_at')
+          .eq('tenant_id', tid)
           .gte('opened_at', dayStart)
           .eq('status', 'paid'),
         supabase
           .from('restaurant_order_items')
           .select('product_name, quantity, unit_price, status, sent_at')
+          .eq('tenant_id', tid)
           .gte('sent_at', dayStart),
         supabase
           .from('restaurant_argile_sessions')
           .select('base_price_usd, refill_price_usd, tobacco_refill_count')
+          .eq('tenant_id', tid)
           .gte('opened_at', dayStart),
         supabase
           .from('restaurant_shift_assignments')
           .select('clocked_in_at, clocked_out_at')
+          .eq('tenant_id', tid)
           .gte('clocked_in_at', dayStart),
       ]);
 
@@ -257,27 +264,27 @@ export default function EODReport() {
     const lines = [
       `📊 EOD Report — ${eod.date}`,
       `🏪 ${currentTenant?.name ?? 'Restaurant'}`,
-      ``,
-      `💰 REVENUE`,
+      '',
+      '💰 REVENUE',
       `  Food & Bev: $${eod.foodRevenue.toFixed(2)} | Argile: $${eod.argileRevenue.toFixed(2)}`,
       `  Service: $${eod.serviceCharge.toFixed(2)} | VAT: $${eod.vat.toFixed(2)}`,
       `  GROSS TOTAL: $${eod.grossTotal.toFixed(2)}`,
-      ``,
+      '',
       `📉 COSTS (est.) — COGS: $${eod.estCOGS.toFixed(2)} | Margin: ${eod.grossMarginPct.toFixed(1)}%`,
       `👥 Staff: ${eod.staffCount} | Hours: ${eod.totalHours.toFixed(1)} | Labor: $${eod.estLaborCost.toFixed(2)}`,
-      ``,
-      `📋 OPERATIONS`,
+      '',
+      '📋 OPERATIONS',
       `  Orders: ${eod.totalOrders} | Avg Ticket: $${eod.avgTicket.toFixed(2)} | Peak: ${eod.peakHour}`,
       eod.cancelledItems > 0 ? `  Cancellations: ${eod.cancelledItems}` : '',
       eod.slowTablesCount > 0 ? `  Slow Tables (>90min): ${eod.slowTablesCount}` : '',
-      ``,
+      '',
       eod.topDishes.length > 0
-        ? `🍽 TOP DISHES\n${eod.topDishes.map((d, i) => `  ${(['🥇','🥈','🥉','4.','5.'] as const)[i] ?? '•'} ${d.name} (${d.qty})`).join('\n')}`
+        ? `🍽 TOP DISHES\n${eod.topDishes.map((d, i) => `  ${(['🥇', '🥈', '🥉', '4.', '5.'] as const)[i] ?? '•'} ${d.name} (${d.qty})`).join('\n')}`
         : '',
-      ``,
+      '',
       `📋 ${eod.alerts.join('\n  ')}`,
-      ``,
-      `Powered by KiTS`,
+      '',
+      'Powered by KiTS',
     ].filter(Boolean).join('\n');
     window.open(`https://wa.me/?text=${encodeURIComponent(lines)}`, '_blank');
   };
@@ -336,9 +343,9 @@ export default function EODReport() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {([
                 { label: 'Gross Revenue', value: `$${eod.grossTotal.toFixed(2)}`, Icon: TrendingUp },
-                { label: 'Gross Margin',  value: `${eod.grossMarginPct.toFixed(1)}%`, Icon: DollarSign },
-                { label: 'Covers',        value: String(eod.covers), Icon: Users },
-                { label: 'Avg Ticket',    value: `$${eod.avgTicket.toFixed(2)}`, Icon: Clock },
+                { label: 'Gross Margin', value: `${eod.grossMarginPct.toFixed(1)}%`, Icon: DollarSign },
+                { label: 'Covers', value: String(eod.covers), Icon: Users },
+                { label: 'Avg Ticket', value: `$${eod.avgTicket.toFixed(2)}`, Icon: Clock },
               ] as const).map(({ label, value, Icon }) => (
                 <div
                   key={label}
@@ -366,43 +373,43 @@ export default function EODReport() {
               </div>
 
               <ReportSection title="Revenue Summary" icon={TrendingUp}>
-                <Row label="Food & Beverage"      value={`$${eod.foodRevenue.toFixed(2)}`} />
-                <Row label="Argile Revenue"        value={`$${eod.argileRevenue.toFixed(2)}`} />
-                <Row label="Service Charge (10%)"  value={`$${eod.serviceCharge.toFixed(2)}`} />
-                <Row label="VAT Collected (11%)"   value={`$${eod.vat.toFixed(2)}`} />
-                <Row label="Gross Total"           value={`$${eod.grossTotal.toFixed(2)}`} highlight />
+                <Row label="Food & Beverage" value={`$${eod.foodRevenue.toFixed(2)}`} />
+                <Row label="Argile Revenue" value={`$${eod.argileRevenue.toFixed(2)}`} />
+                <Row label="Service Charge (10%)" value={`$${eod.serviceCharge.toFixed(2)}`} />
+                <Row label="VAT Collected (11%)" value={`$${eod.vat.toFixed(2)}`} />
+                <Row label="Gross Total" value={`$${eod.grossTotal.toFixed(2)}`} highlight />
               </ReportSection>
 
               <ReportSection title="Cost & Margin *" icon={DollarSign}>
                 <p className="text-[10px] text-white/30 mb-2">* estimates — food cost 28%, argile 15%</p>
-                <Row label="Est. Food Cost"    value={`$${eod.estFoodCost.toFixed(2)}`} />
-                <Row label="Est. Argile Cost"  value={`$${eod.estArgileCost.toFixed(2)}`} />
-                <Row label="Total Est. COGS"   value={`$${eod.estCOGS.toFixed(2)}`} />
+                <Row label="Est. Food Cost" value={`$${eod.estFoodCost.toFixed(2)}`} />
+                <Row label="Est. Argile Cost" value={`$${eod.estArgileCost.toFixed(2)}`} />
+                <Row label="Total Est. COGS" value={`$${eod.estCOGS.toFixed(2)}`} />
                 <Row label="Est. Gross Profit" value={`$${eod.estGrossProfit.toFixed(2)}`} />
-                <Row label="Gross Margin"      value={`${eod.grossMarginPct.toFixed(1)}%`} highlight />
+                <Row label="Gross Margin" value={`${eod.grossMarginPct.toFixed(1)}%`} highlight />
               </ReportSection>
 
               <ReportSection title="Labor" icon={Users}>
                 <p className="text-[10px] text-white/30 mb-2">$8/hr placeholder — configure in Settings</p>
-                <Row label="Staff Worked Today"    value={`${eod.staffCount} staff`} />
-                <Row label="Total Hours Clocked"   value={`${eod.totalHours.toFixed(1)} hrs`} />
-                <Row label="Est. Labor Cost"       value={`$${eod.estLaborCost.toFixed(2)}`} highlight />
+                <Row label="Staff Worked Today" value={`${eod.staffCount} staff`} />
+                <Row label="Total Hours Clocked" value={`${eod.totalHours.toFixed(1)} hrs`} />
+                <Row label="Est. Labor Cost" value={`$${eod.estLaborCost.toFixed(2)}`} highlight />
               </ReportSection>
 
               <ReportSection title="Operations" icon={Clock}>
-                <Row label="Total Orders"      value={String(eod.totalOrders)} />
-                <Row label="Peak Hour"         value={eod.peakHour} />
-                <Row label="Fastest Service"   value={`${Math.round(eod.minServiceMins)} min`} />
-                <Row label="Slowest Service"   value={`${Math.round(eod.maxServiceMins)} min`} />
+                <Row label="Total Orders" value={String(eod.totalOrders)} />
+                <Row label="Peak Hour" value={eod.peakHour} />
+                <Row label="Fastest Service" value={`${Math.round(eod.minServiceMins)} min`} />
+                <Row label="Slowest Service" value={`${Math.round(eod.maxServiceMins)} min`} />
                 {eod.slowTablesCount > 0 && <Row label="Tables >90 min ⚠️" value={String(eod.slowTablesCount)} />}
-                <Row label="Cancelled Items"   value={String(eod.cancelledItems)} />
+                <Row label="Cancelled Items" value={String(eod.cancelledItems)} />
               </ReportSection>
 
               {eod.topDishes.length > 0 && (
                 <ReportSection title="Top Dishes" icon={ChefHat}>
                   {eod.topDishes.map((d, i) => (
                     <div key={d.name} className="flex justify-between items-center py-1">
-                      <span className="text-sm text-white/60">{(['🥇','🥈','🥉','4.','5.'] as const)[i] ?? `${i + 1}.`} {d.name}</span>
+                      <span className="text-sm text-white/60">{(['🥇', '🥈', '🥉', '4.', '5.'] as const)[i] ?? `${i + 1}.`} {d.name}</span>
                       <span className="text-sm font-semibold text-white/80">{d.qty} served</span>
                     </div>
                   ))}
@@ -422,10 +429,10 @@ export default function EODReport() {
 
               {eod.argileSessions > 0 && (
                 <ReportSection title="Argile / Shisha" icon={Flame}>
-                  <Row label="Sessions"          value={String(eod.argileSessions)} />
-                  <Row label="Revenue"           value={`$${eod.argileRevenue.toFixed(2)}`} />
+                  <Row label="Sessions" value={String(eod.argileSessions)} />
+                  <Row label="Revenue" value={`$${eod.argileRevenue.toFixed(2)}`} />
                   <Row label="Avg Session Value" value={`$${eod.avgArgileValue.toFixed(2)}`} />
-                  <Row label="Tobacco Refills"   value={String(eod.argileRefills)} />
+                  <Row label="Tobacco Refills" value={String(eod.argileRefills)} />
                 </ReportSection>
               )}
 

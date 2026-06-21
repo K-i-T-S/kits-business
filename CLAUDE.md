@@ -150,6 +150,9 @@ Run in this order in Supabase Dashboard → SQL Editor:
 27. `20260619_000026_crm.sql` — customer segments, communication history, CRM analytics helper views
 28. `20260619_000027_campaigns.sql` — campaigns table (marketing campaigns CRUD); automated_workflows table (trigger-based automations)
 29. `20260619_000028_finance.sql` — expense_categories (34 Lebanese system defaults seeded); expenses (USD/LBP dual-currency, VAT, receipt upload); expense_budgets; payroll_entries (NSSF 22.5%, EOS 8.5% accrual, transport allowance)
+30. *(gap — 000029 was skipped by automation; next sequential file is 000030)*
+31. `20260620_000030_industry_column.sql` — backfills industry from business_type; extends get_current_user_tenant() to expose industry field
+32. `20260620_000031_restaurant_schema.sql` — restaurant_tables, table_orders, kitchen_display_items, restaurant_reservations tables with RLS
 
 ## Edge Functions
 

@@ -47,6 +47,7 @@ NON-NEGOTIABLE CODE STANDARDS:
 • Mobile-first: mentally verify every layout works at 375px width
 • Imports: always use @/ alias, never ../../.. relative paths
 • New components: colocate in src/components/<feature>/ or src/pages/ as appropriate
+• New migrations: run `ls supabase/migrations/ | sort | tail -1` to find the last number, then increment by exactly 1. Never skip numbers.
 
 ════════════════════════════════════════════════════════
 STEP 4 — QUALITY GATE (MANDATORY — do not skip)

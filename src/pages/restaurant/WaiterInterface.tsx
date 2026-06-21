@@ -3,6 +3,7 @@
  * Full-screen, no sidebar, touch-optimized.
  */
 import {
+  ArrowLeft,
   X,
   ChevronRight,
   Flame,
@@ -18,6 +19,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -798,6 +800,7 @@ function TableDetail({ tableData, settings, onClose, onOrderClosed }: TableDetai
 
 export default function WaiterInterface() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { currentTenant, currentEmployee } = useApp();
   const tenantId = currentTenant?.id;
   const now = useClock();
@@ -883,6 +886,13 @@ export default function WaiterInterface() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+                aria-label={t('common.back', 'Back')}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500">
                 <span className="text-xs font-black text-white">
                   {currentEmployee?.name?.slice(0, 2).toUpperCase() ?? 'W'}

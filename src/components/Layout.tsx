@@ -46,6 +46,7 @@ import {
   FileText,
   Building2,
   User,
+  DollarSign,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -124,13 +125,14 @@ export default function Layout({ children }: LayoutProps) {
       { name: t('nav.vertical.tables', 'Table Management'), icon: UtensilsCrossed, href: '/restaurant/tables' },
       { name: t('nav.vertical.kds', 'Kitchen Display'), icon: Cpu, href: '/restaurant/kds' },
       { name: t('nav.vertical.reservations', 'Reservations'), icon: Clock, href: '/restaurant/reservations' },
-      { name: t('nav.vertical.menuManagement', 'Menu Management'), icon: BookOpen, href: '/restaurant/tables' },
+      { name: t('nav.vertical.menuManagement', 'Menu Management'), icon: BookOpen, href: '/restaurant/menu' },
       { name: t('nav.vertical.waiter', 'Waiter Interface'), icon: User, href: '/restaurant/waiter' },
       { name: t('nav.vertical.argile', 'Argile Station'), icon: Flame, href: '/restaurant/argile' },
       { name: t('nav.vertical.recipes', 'Recipes & Cost'), icon: ChefHat, href: '/restaurant/recipes' },
       { name: t('nav.vertical.analytics', 'Analytics'), icon: BarChart2, href: '/restaurant/analytics' },
       { name: t('nav.vertical.shifts', 'Shifts'), icon: Calendar, href: '/restaurant/shifts' },
       { name: t('nav.vertical.eod', 'EOD Report'), icon: FileText, href: '/restaurant/eod' },
+      { name: t('nav.vertical.tips', 'Tips Management'), icon: DollarSign, href: '/restaurant/tips' },
       { name: t('nav.vertical.branches', 'Branches'), icon: Building2, href: '/restaurant/branches' },
       { name: t('nav.vertical.restaurantSettings', 'Settings'), icon: Settings, href: '/restaurant/settings' },
     ],

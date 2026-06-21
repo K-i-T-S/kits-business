@@ -69,6 +69,8 @@ const RestaurantRecipes = lazy(() => import('./pages/restaurant/RecipeInventory'
 const RestaurantAnalytics = lazy(() => import('./pages/restaurant/RestaurantAnalytics'));
 const RestaurantShifts = lazy(() => import('./pages/restaurant/ShiftManager'));
 const RestaurantEOD = lazy(() => import('./pages/restaurant/EODReport'));
+const RestaurantTips = lazy(() => import('./pages/restaurant/TipsManagement'));
+const RestaurantMenuManagement = lazy(() => import('./pages/restaurant/MenuManagement'));
 const RestaurantBranches = lazy(() => import('./pages/restaurant/MultiBranchHub'));
 const RestaurantSettings = lazy(() => import('./pages/restaurant/RestaurantSettings'));
 const QRMenuPage = lazy(() => import('./pages/qr-menu/QRMenuPage'));
@@ -417,6 +419,8 @@ export default function App() {
                                 <Route path="/restaurant/analytics" element={isAuthenticated ? <RestaurantAnalytics /> : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/shifts" element={isAuthenticated ? <RestaurantShifts /> : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/eod" element={isAuthenticated ? <RestaurantEOD /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/tips" element={isAuthenticated ? <RestaurantTips /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/menu" element={isAuthenticated ? <RestaurantMenuManagement /> : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/branches" element={isAuthenticated ? <RestaurantBranches /> : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/settings" element={isAuthenticated ? <RestaurantSettings /> : <Navigate to="/login" replace />} />
 

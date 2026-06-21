@@ -55,92 +55,6 @@ function metricColor(value: number, thresholds: { green: number; amber: number }
   return 'text-red-400';
 }
 
-// ── Demo data seed (used in local mode / empty state) ────────────────────────
-
-const DEMO_BRANCHES: RestaurantBranch[] = [
-  {
-    id: 'branch-hamra',
-    tenant_id: 'demo',
-    name: 'Hamra',
-    name_ar: 'الحمرا',
-    address: 'Hamra Street, Beirut',
-    phone: '+961 1 740 000',
-    whatsapp: '+961 70 740 000',
-    manager_employee_id: null,
-    is_active: true,
-    sort_order: 0,
-  },
-  {
-    id: 'branch-ashrafieh',
-    tenant_id: 'demo',
-    name: 'Ashrafieh',
-    name_ar: 'الأشرفية',
-    address: 'Sassine Square, Ashrafieh',
-    phone: '+961 1 200 000',
-    whatsapp: '+961 70 200 000',
-    manager_employee_id: null,
-    is_active: true,
-    sort_order: 1,
-  },
-  {
-    id: 'branch-verdun',
-    tenant_id: 'demo',
-    name: 'Verdun',
-    name_ar: 'فردان',
-    address: 'Verdun Street, Beirut',
-    phone: '+961 1 800 000',
-    whatsapp: null,
-    manager_employee_id: null,
-    is_active: true,
-    sort_order: 2,
-  },
-];
-
-const DEMO_METRICS: Record<string, BranchMetrics> = {
-  'branch-hamra': {
-    branch_id: 'branch-hamra',
-    metric_date: '2026-06-21',
-    total_revenue_usd: 4240,
-    total_orders: 89,
-    total_covers: 212,
-    avg_ticket_usd: 47.6,
-    food_cost_pct: 28,
-    table_turnover_rate: 3.2,
-    avg_service_minutes: 42,
-    argile_revenue_usd: 680,
-    delivery_revenue_usd: 1020,
-    customer_rating_avg: 4.6,
-  },
-  'branch-ashrafieh': {
-    branch_id: 'branch-ashrafieh',
-    metric_date: '2026-06-21',
-    total_revenue_usd: 2100,
-    total_orders: 45,
-    total_covers: 108,
-    avg_ticket_usd: 46.7,
-    food_cost_pct: 35,
-    table_turnover_rate: 2.1,
-    avg_service_minutes: 58,
-    argile_revenue_usd: 240,
-    delivery_revenue_usd: 520,
-    customer_rating_avg: 4.1,
-  },
-  'branch-verdun': {
-    branch_id: 'branch-verdun',
-    metric_date: '2026-06-21',
-    total_revenue_usd: 3100,
-    total_orders: 67,
-    total_covers: 154,
-    avg_ticket_usd: 46.3,
-    food_cost_pct: 31,
-    table_turnover_rate: 2.8,
-    avg_service_minutes: 49,
-    argile_revenue_usd: 410,
-    delivery_revenue_usd: 720,
-    customer_rating_avg: 4.4,
-  },
-};
-
 // ── Branch Form Modal ─────────────────────────────────────────────────────────
 
 interface BranchFormModalProps {
@@ -595,15 +509,10 @@ export default function MultiBranchHub() {
           }
           setMetricsMap(map);
         }
-      } else {
-        // Use demo data
-        setBranches(DEMO_BRANCHES);
-        setMetricsMap(DEMO_METRICS);
       }
     } catch {
-      // Fallback to demo data (local mode or missing table)
-      setBranches(DEMO_BRANCHES);
-      setMetricsMap(DEMO_METRICS);
+      setBranches([]);
+      setMetricsMap({});
     } finally {
       setLoading(false);
     }
@@ -787,26 +696,44 @@ export default function MultiBranchHub() {
         </div>
 
         {/* ── Branch Comparison Cards ── */}
-        <div
-          className={`mb-8 grid gap-4 ${
-            displayedBranches.length === 1
-              ? 'max-w-sm'
-              : displayedBranches.length === 2
-                ? 'sm:grid-cols-2'
-                : 'sm:grid-cols-2 lg:grid-cols-3'
-          }`}
-        >
-          {displayedBranches.map((b) => (
-            <BranchCard
-              key={b.id}
-              branch={b}
-              metrics={metricsMap[b.id]}
-              isTop={b.id === topBranchId && selectedBranch === 'all'}
-              onViewDetails={(id) => setSelectedBranch(id)}
-              onEdit={setEditingBranch}
-            />
-          ))}
-        </div>
+        {activeBranches.length === 0 ? (
+          <div className="mb-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 py-16 text-center">
+            <Building2 className="mb-4 h-10 w-10 text-white/20" />
+            <p className="text-lg font-semibold text-white/40">
+              {t('restaurant.branches.noBranches', 'No branches configured')}
+            </p>
+            <p className="mt-1 text-sm text-white/25">
+              {t('restaurant.branches.noBranchesHint', 'Add your first branch location to get started')}
+            </p>
+            <button
+              onClick={() => { setEditingBranch(null); setSettingsOpen(true); }}
+              className="mt-6 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-2.5 text-sm font-semibold text-white"
+            >
+              {t('restaurant.branches.addFirstBranch', '+ Add Branch')}
+            </button>
+          </div>
+        ) : (
+          <div
+            className={`mb-8 grid gap-4 ${
+              displayedBranches.length === 1
+                ? 'max-w-sm'
+                : displayedBranches.length === 2
+                  ? 'sm:grid-cols-2'
+                  : 'sm:grid-cols-2 lg:grid-cols-3'
+            }`}
+          >
+            {displayedBranches.map((b) => (
+              <BranchCard
+                key={b.id}
+                branch={b}
+                metrics={metricsMap[b.id]}
+                isTop={b.id === topBranchId && selectedBranch === 'all'}
+                onViewDetails={(id) => setSelectedBranch(id)}
+                onEdit={setEditingBranch}
+              />
+            ))}
+          </div>
+        )}
 
         {/* ── Charts (only in "All Branches" mode) ── */}
         {selectedBranch === 'all' && activeBranches.length > 1 && (

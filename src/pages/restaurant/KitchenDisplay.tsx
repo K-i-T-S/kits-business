@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   ChefHat,
   RefreshCw,
   Settings,
@@ -16,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -489,6 +491,7 @@ const ALL_STATION: KDSStation = {
 
 export default function KitchenDisplay() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { currentTenant } = useApp();
   const tenantId = currentTenant?.id;
 
@@ -773,6 +776,13 @@ export default function KitchenDisplay() {
     >
       {/* ── Header ── */}
       <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/10 bg-slate-900/95 px-4 py-3 backdrop-blur-xl">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+          aria-label={t('common.back', 'Back')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600">
           <ChefHat className="h-5 w-5 text-white" />
         </div>

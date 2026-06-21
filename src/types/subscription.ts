@@ -146,6 +146,7 @@ const ROLE_ACTIONS: Record<UserRole, RoleAction[]> = {
     'edit_products',
     'view_reports',
     'view_employees',
+    'manage_settings',
   ],
   owner: [
     'view_dashboard',
@@ -159,6 +160,7 @@ const ROLE_ACTIONS: Record<UserRole, RoleAction[]> = {
     'edit_employees',
     'access_settings',
     'access_enterprise',
+    'manage_settings',
   ],
 };
 

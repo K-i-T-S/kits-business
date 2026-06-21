@@ -259,7 +259,7 @@ export default function Layout({ children }: LayoutProps) {
   }, [products, sales, customers, addNotification]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-900 text-slate-100 md:flex">
+    <div className="relative h-dvh overflow-hidden bg-slate-900 text-slate-100 md:flex">
       {/* Skip Links - Completely hidden until focused */}
       <a
         href="#main-content"
@@ -574,8 +574,8 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="md:flex-1">
-        <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
+      <div className="md:flex-1 md:h-full md:overflow-y-auto">
+        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 opacity-70"
@@ -584,7 +584,7 @@ export default function Layout({ children }: LayoutProps) {
                 'radial-gradient(circle at 15% 20%, rgba(44,61,227,0.08), transparent 42%), radial-gradient(circle at 80% 0%, rgba(249,115,22,0.07), transparent 45%)',
             }}
           />
-          <div className="relative flex min-h-screen flex-col">
+          <div className="relative flex min-h-full flex-col">
             <header
               className={`sticky top-0 z-50 border-b border-white/10 bg-slate-900/95 backdrop-blur-2xl text-white transition-all duration-300 ease-in-out ${
                 scrollY > 12 ? 'shadow-2xl shadow-slate-900/50 border-white/20' : 'shadow-lg shadow-slate-900/20'

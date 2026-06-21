@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   Flame,
   Wind,
   Plus,
@@ -11,6 +12,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -499,6 +501,7 @@ function RefillModal({ session, table, onClose, onConfirmed }: RefillModalProps)
 
 export default function ArgileStation() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { currentTenant } = useApp();
   const tenantId = currentTenant?.id;
 
@@ -712,6 +715,13 @@ export default function ArgileStation() {
       <div className="sticky top-0 z-10 border-b border-white/10 bg-slate-900/95 backdrop-blur-xl">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+              aria-label={t('common.back', 'Back')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-600 to-red-600">
               <Wind className="h-5 w-5 text-white" />
             </div>

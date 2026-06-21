@@ -175,7 +175,9 @@ export default function Reservations() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`rounded-xl px-4 py-2 text-sm font-semibold capitalize transition-all ${
-                  filter === f ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'
+                  filter === f
+                    ? 'border border-amber-500/30 bg-amber-500/15 text-amber-200 shadow-lg shadow-amber-500/10'
+                    : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:border-white/20'
                 }`}
               >
                 {t(`restaurant.filter.${f}`, f === 'today' ? 'Today' : f === 'upcoming' ? 'Upcoming' : 'All')}
@@ -192,7 +194,7 @@ export default function Reservations() {
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-indigo-500" />
             </div>
           ) : filteredReservations.length === 0 ? (
-            <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-slate-800/30">
+            <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl">
               <Calendar className="h-8 w-8 text-white/20" />
               <p className="text-sm text-white/30">{t('restaurant.noReservations', 'No reservations')}</p>
             </div>
@@ -207,7 +209,7 @@ export default function Reservations() {
                 return (
                   <div
                     key={reservation.id}
-                    className="flex flex-wrap items-start gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-4 transition-all hover:border-white/20"
+                    className="flex flex-wrap items-start gap-4 rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 p-4 shadow-xl transition-all hover:border-amber-500/20 hover:shadow-amber-500/5"
                   >
                     {/* Guest info */}
                     <div className="flex-1 min-w-0">
@@ -307,7 +309,7 @@ export default function Reservations() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">{t('restaurant.newReservation', 'New Reservation')}</h2>
               <button onClick={() => setModalOpen(false)} className="rounded-lg p-1.5 text-white/40 hover:bg-white/10">

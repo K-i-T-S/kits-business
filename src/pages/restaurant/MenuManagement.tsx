@@ -109,7 +109,7 @@ interface MenuItemCardProps {
 
 function MenuItemCard({ item, onEdit, onDelete, onToggleAvailable }: MenuItemCardProps) {
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm shadow-lg transition-all duration-300 hover:border-white/30 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-0.5">
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-white/10 to-white/3 backdrop-blur-md shadow-xl transition-all duration-300 hover:border-amber-500/25 hover:shadow-2xl hover:shadow-amber-500/8 hover:-translate-y-0.5">
       {/* Photo area */}
       <div className="relative h-32 overflow-hidden bg-white/5">
         {item.photo_url ? (
@@ -520,7 +520,7 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
       {/* Left: Category panel */}
       <div className="w-56 flex-shrink-0 space-y-1">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Categories</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">Categories</p>
           <button
             onClick={() => setAddingCat(true)}
             className="rounded-lg p-1 text-white/40 hover:bg-white/10 hover:text-indigo-400 transition-colors"
@@ -554,7 +554,7 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
           onClick={() => setSelectedCategoryId(null)}
           className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all ${
             selectedCategoryId === null
-              ? 'bg-indigo-600/30 border border-indigo-500/40 text-indigo-300'
+              ? 'bg-amber-500/15 border border-amber-500/30 text-amber-200'
               : 'border border-transparent text-white/60 hover:bg-white/5 hover:text-white'
           }`}
         >
@@ -571,7 +571,7 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
               onClick={() => setSelectedCategoryId(cat.id)}
               className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all ${
                 selectedCategoryId === cat.id
-                  ? 'bg-indigo-600/30 border border-indigo-500/40 text-indigo-300'
+                  ? 'bg-amber-500/15 border border-amber-500/30 text-amber-200'
                   : 'border border-transparent text-white/60 hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -788,7 +788,7 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
             onClick={() => setSelectedCatId('all')}
             className={`flex-shrink-0 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
               selectedCatId === 'all'
-                ? 'bg-indigo-600 text-white'
+                ? 'border border-amber-500/30 bg-amber-500/15 text-amber-200 shadow-lg shadow-amber-500/10'
                 : 'border border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:text-white'
             }`}
           >
@@ -800,7 +800,7 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
               onClick={() => setSelectedCatId(cat.id)}
               className={`flex-shrink-0 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
                 selectedCatId === cat.id
-                  ? 'bg-indigo-600 text-white'
+                  ? 'border border-amber-500/30 bg-amber-500/15 text-amber-200 shadow-lg shadow-amber-500/10'
                   : 'border border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:text-white'
               }`}
             >
@@ -855,7 +855,7 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
       </div>
 
       {/* Right: Running order */}
-      <div className="w-72 flex-shrink-0 flex flex-col rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
+      <div className="w-72 flex-shrink-0 flex flex-col rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl">
         <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
           <ShoppingCart className="h-4 w-4 text-indigo-400" />
           <h3 className="text-sm font-bold text-white">Order</h3>
@@ -913,7 +913,7 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
           {orderLines.length > 0 && (
             <div className="flex items-center justify-between px-1">
               <span className="text-xs text-white/50">Total</span>
-              <span className="text-base font-bold text-white">${orderTotal.toFixed(2)}</span>
+              <span className="text-base font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">${orderTotal.toFixed(2)}</span>
             </div>
           )}
           <button
@@ -988,7 +988,7 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
       <div>
         <h3 className="mb-3 text-sm font-semibold text-white/70">QR Menu URLs</h3>
         <div className="space-y-2">
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+          <div className="flex items-center justify-between rounded-xl border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/8 to-white/3 shadow-lg px-4 py-3">
             <div>
               <p className="text-sm font-medium text-white">Main Menu URL</p>
               <p className="mt-0.5 text-xs text-white/40 truncate">{qrBase}/main</p>
@@ -1002,7 +1002,7 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
             </button>
           </div>
           {[1, 2, 3, 4, 5].map(n => (
-            <div key={n} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2">
+            <div key={n} className="flex items-center justify-between rounded-xl border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/6 to-white/2 px-4 py-2">
               <p className="text-sm text-white/60">Table {n}</p>
               <button
                 onClick={() => { void handleCopyUrl(n); }}
@@ -1021,7 +1021,7 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
         <h3 className="mb-3 text-sm font-semibold text-white/70">Item Visibility on QR Menu</h3>
         <div className="space-y-1.5">
           {items.map(item => (
-            <div key={item.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2.5">
+            <div key={item.id} className="flex items-center justify-between rounded-xl border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/6 to-white/2 px-4 py-2.5 hover:border-amber-500/20 transition-colors">
               <div className="min-w-0">
                 <p className="truncate text-sm text-white">{item.name}</p>
                 <p className="text-xs text-white/40">${item.base_price_usd.toFixed(2)}</p>
@@ -1089,7 +1089,7 @@ export default function MenuManagement() {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/25">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg shadow-amber-500/30">
             <ChefHat className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -1106,7 +1106,7 @@ export default function MenuManagement() {
               onClick={() => setActiveTab(tab.key)}
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all ${
                 activeTab === tab.key
-                  ? 'bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-lg shadow-indigo-500/25'
+                  ? 'bg-gradient-to-r from-amber-600 to-yellow-500 text-white shadow-lg shadow-amber-500/25'
                   : 'text-white/50 hover:text-white/80'
               }`}
             >

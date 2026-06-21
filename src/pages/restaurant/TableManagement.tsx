@@ -326,9 +326,9 @@ export default function TableManagement() {
 
           {/* ── Section Manager Panel ── */}
           {showSectionManager && (
-            <div className="mb-5 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5">
+            <div className="mb-5 rounded-2xl border border-amber-500/15 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-5">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">Floor Sections</h2>
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">Floor Sections</h2>
                 <button onClick={() => setShowSectionManager(false)} className="rounded-lg p-1 text-white/30 hover:text-white/60">
                   <X className="h-4 w-4" />
                 </button>
@@ -437,7 +437,7 @@ export default function TableManagement() {
           )}
 
           {tab === 'menu' ? (
-            <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-6">
+            <div className="rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-6">
               <MenuEditor />
             </div>
           ) : (
@@ -448,8 +448,8 @@ export default function TableManagement() {
                   onClick={() => setSectionFilter('all')}
                   className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                     sectionFilter === 'all'
-                      ? 'bg-indigo-600 text-white'
-                      : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10'
+                      ? 'border border-amber-500/30 bg-amber-500/15 text-amber-200 shadow-amber-500/10 shadow-lg'
+                      : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
                   All
@@ -478,7 +478,7 @@ export default function TableManagement() {
 
               <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
                 {/* Left: Floor Plan */}
-                <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-4">
+                <div className="rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-4">
                   {loading ? (
                     <div className="flex h-64 items-center justify-center">
                       <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-indigo-500" />
@@ -498,7 +498,7 @@ export default function TableManagement() {
                 {/* Right: Order Panel */}
                 <div className="flex flex-col gap-4">
                   {!selectedTable ? (
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-slate-800/50 p-8 text-center">
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-8 text-center">
                       <Utensils className="mb-3 h-8 w-8 text-white/20" />
                       <p className="text-sm text-white/40">{t('restaurant.selectTable', 'Select a table on the floor plan')}</p>
                     </div>
@@ -559,7 +559,7 @@ export default function TableManagement() {
                           {t('restaurant.openOrder', 'Open New Order')}
                         </button>
                       ) : (
-                        <div className="rounded-2xl border border-white/10 bg-slate-800/50 overflow-hidden">
+                        <div className="rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl overflow-hidden">
                           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                             <h3 className="text-sm font-semibold text-white">{t('restaurant.activeOrder', 'Active Order')}</h3>
                             <div className="flex gap-1.5">
@@ -590,7 +590,7 @@ export default function TableManagement() {
                               if (courseItems.length === 0) return null;
                               return (
                                 <div key={course}>
-                                  <div className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/30">
+                                  <div className="mb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
                                     {COURSE_LABELS[course]}
                                   </div>
                                   {courseItems.map((item) => (
@@ -696,10 +696,10 @@ export default function TableManagement() {
 
                           {/* Bill section */}
                           {showBill && (
-                            <div className="border-t border-white/10 bg-slate-900/50 p-4 space-y-3">
+                            <div className="border-t border-white/10 bg-black/20 backdrop-blur-sm p-4 space-y-3">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-white/60">{t('restaurant.total', 'Total')}</span>
-                                <span className="text-lg font-bold text-white">${orderTotal.toFixed(2)}</span>
+                                <span className="text-lg font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">${orderTotal.toFixed(2)}</span>
                               </div>
 
                               {/* Split mode */}
@@ -786,7 +786,7 @@ export default function TableManagement() {
       {/* Add Table Modal */}
       {addTableOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900 p-6">
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">{t('restaurant.addTable', 'Add Table')}</h2>
               <button onClick={() => setAddTableOpen(false)} className="rounded-lg p-1.5 text-white/30 hover:text-white/60">

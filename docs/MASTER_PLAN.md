@@ -366,7 +366,8 @@ Build the industry selection system that determines which vertical-specific feat
 
 ---
 
-### Sprint 2.2 — Restaurant Vertical [IN_PROGRESS]
+### Sprint 2.2 — Restaurant Vertical [COMPLETED]
+> Completed 2026-06-21: Built restaurant vertical with DnD floor plan (tables, status management), order management (add items by course, fire to KDS, bill with 3 split modes), full-screen KDS with age timers and bump, reservations CRUD with WhatsApp confirmation links, and menu 86-list editor. Routes wired at /restaurant/tables, /restaurant/kds, /restaurant/reservations with active sidebar nav.
 
 **Track:** 2 · Vertical Intelligence
 **Priority:** High
@@ -1189,7 +1190,7 @@ Build an in-app view of the automation log so the owner can see what the agents 
 | 1.4 — 3D Dashboard | Polish | COMPLETED | 2026-06-20 |
 | 1.5 — Notifications | Polish | COMPLETED | 2026-06-20 |
 | 2.1 — Industry System | Verticals | COMPLETED | 2026-06-21 |
-| 2.2 — Restaurant | Verticals | PENDING | — |
+| 2.2 — Restaurant | Verticals | COMPLETED | 2026-06-21 |
 | 2.3 — Pharmacy | Verticals | PENDING | — |
 | 2.4 — Supermarket | Verticals | PENDING | — |
 | 2.5 — Fashion | Verticals | PENDING | — |

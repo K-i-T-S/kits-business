@@ -59,6 +59,11 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const ForecastingPage = lazy(() => import('./pages/Forecasting'));
 const Finance = lazy(() => import('./pages/Finance'));
 
+// Restaurant Vertical Components
+const RestaurantTableManagement = lazy(() => import('./pages/restaurant/TableManagement'));
+const RestaurantKDS = lazy(() => import('./pages/restaurant/KitchenDisplay'));
+const RestaurantReservations = lazy(() => import('./pages/restaurant/Reservations'));
+
 // Mobile components wrapper that needs access to Router context
 function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
   const location = useLocation();
@@ -375,6 +380,20 @@ export default function App() {
                                       <Navigate to="/login" replace />
                                     )
                                   }
+                                />
+
+                                {/* ── Restaurant Vertical routes ── */}
+                                <Route
+                                  path="/restaurant/tables"
+                                  element={isAuthenticated ? <RestaurantTableManagement /> : <Navigate to="/login" replace />}
+                                />
+                                <Route
+                                  path="/restaurant/kds"
+                                  element={isAuthenticated ? <RestaurantKDS /> : <Navigate to="/login" replace />}
+                                />
+                                <Route
+                                  path="/restaurant/reservations"
+                                  element={isAuthenticated ? <RestaurantReservations /> : <Navigate to="/login" replace />}
                                 />
 
                                 {/* ── Fallbacks ── */}

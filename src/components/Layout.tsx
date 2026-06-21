@@ -113,12 +113,12 @@ export default function Layout({ children }: LayoutProps) {
 
   const isActive = useCallback((href: string) => location.pathname === href, [location.pathname]);
 
-  const VERTICAL_NAV_ITEMS: Record<string, Array<{ name: string; icon: typeof LayoutDashboard }>> = useMemo(() => ({
+  const VERTICAL_NAV_ITEMS: Record<string, Array<{ name: string; icon: typeof LayoutDashboard; href?: string }>> = useMemo(() => ({
     restaurant: [
-      { name: t('nav.vertical.tables', 'Table Management'), icon: UtensilsCrossed },
-      { name: t('nav.vertical.kds', 'Kitchen Display'), icon: Cpu },
-      { name: t('nav.vertical.reservations', 'Reservations'), icon: Clock },
-      { name: t('nav.vertical.menuManagement', 'Menu Management'), icon: BookOpen },
+      { name: t('nav.vertical.tables', 'Table Management'), icon: UtensilsCrossed, href: '/restaurant/tables' },
+      { name: t('nav.vertical.kds', 'Kitchen Display'), icon: Cpu, href: '/restaurant/kds' },
+      { name: t('nav.vertical.reservations', 'Reservations'), icon: Clock, href: '/restaurant/reservations' },
+      { name: t('nav.vertical.menuManagement', 'Menu Management'), icon: BookOpen, href: '/restaurant/tables' },
     ],
     pharmacy: [
       { name: t('nav.vertical.drugDatabase', 'Drug Database'), icon: Pill },
@@ -478,21 +478,47 @@ export default function Layout({ children }: LayoutProps) {
                   </h3>
                 </div>
                 <div className="space-y-1">
-                  {VERTICAL_NAV_ITEMS[industry].map((item) => (
-                    <button
-                      key={item.name}
-                      onClick={() => toast.info(t('nav.vertical.comingSoon', 'Coming in the next sprint — stay tuned!'))}
-                      className="group flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-white/40 transition-all duration-200 hover:bg-white/5 hover:text-white/70"
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400/60">
-                        <item.icon className="h-4 w-4" />
-                      </div>
-                      <span className="flex-1 text-start">{item.name}</span>
-                      <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide bg-indigo-500/10 text-indigo-400/60">
-                        {t('common.soon', 'Soon')}
-                      </span>
-                    </button>
-                  ))}
+                  {VERTICAL_NAV_ITEMS[industry].map((item) => {
+                    const active = item.href ? isActive(item.href) : false;
+                    const baseClass = 'group flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200';
+                    const iconClass = 'flex h-8 w-8 items-center justify-center rounded-lg';
+
+                    if (item.href) {
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          className={`${baseClass} ${
+                            active
+                              ? 'border-indigo-500/30 bg-indigo-500/15 text-indigo-300'
+                              : 'border-transparent text-white/50 hover:bg-white/5 hover:text-white/80'
+                          }`}
+                          aria-current={active ? 'page' : undefined}
+                        >
+                          <div className={`${iconClass} ${active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-500/10 text-indigo-400/60'}`}>
+                            <item.icon className="h-4 w-4" />
+                          </div>
+                          <span className="flex-1 text-start">{item.name}</span>
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={item.name}
+                        onClick={() => toast.info(t('nav.vertical.comingSoon', 'Coming in the next sprint — stay tuned!'))}
+                        className={`${baseClass} border-transparent text-white/40 hover:bg-white/5 hover:text-white/70`}
+                      >
+                        <div className={`${iconClass} bg-indigo-500/10 text-indigo-400/60`}>
+                          <item.icon className="h-4 w-4" />
+                        </div>
+                        <span className="flex-1 text-start">{item.name}</span>
+                        <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide bg-indigo-500/10 text-indigo-400/60">
+                          {t('common.soon', 'Soon')}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

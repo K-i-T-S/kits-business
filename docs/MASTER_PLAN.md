@@ -315,7 +315,8 @@ Replace the stale notification panel with a real-time, intelligent notification 
 
 ---
 
-### Sprint 2.1 — Industry Selection System & Vertical Routing [IN_PROGRESS]
+### Sprint 2.1 — Industry Selection System & Vertical Routing [COMPLETED]
+> Completed 2026-06-21: Built IndustryContext with hasVerticalFeature(), 7-industry type system, visual IndustrySelector card picker, OnboardingWizard industry step, conditional vertical nav in Layout, and industry widget slot on Dashboard.
 
 **Track:** 2 · Vertical Intelligence
 **Priority:** Critical — foundation for all verticals
@@ -1187,7 +1188,7 @@ Build an in-app view of the automation log so the owner can see what the agents 
 | 1.3 — Navigation & Search | Polish | COMPLETED | 2026-06-20 |
 | 1.4 — 3D Dashboard | Polish | COMPLETED | 2026-06-20 |
 | 1.5 — Notifications | Polish | COMPLETED | 2026-06-20 |
-| 2.1 — Industry System | Verticals | PENDING | — |
+| 2.1 — Industry System | Verticals | COMPLETED | 2026-06-21 |
 | 2.2 — Restaurant | Verticals | PENDING | — |
 | 2.3 — Pharmacy | Verticals | PENDING | — |
 | 2.4 — Supermarket | Verticals | PENDING | — |

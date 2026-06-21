@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
 
-import { useApp } from './AppContext';
 import { INDUSTRIES, INDUSTRY_VERTICAL_FEATURES } from '../types/industry';
 import type { Industry, VerticalFeature } from '../types/industry';
+
+import { useApp } from './AppContext';
 
 interface IndustryContextType {
   industry: Industry | null;

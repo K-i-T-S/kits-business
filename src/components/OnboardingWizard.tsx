@@ -2,9 +2,10 @@ import { CheckCircle, Building2, Package, Users } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
-import IndustrySelector from './industry/IndustrySelector';
-import { supabase } from '../utils/supabaseClient';
 import type { Industry } from '../types/industry';
+import { supabase } from '../utils/supabaseClient';
+
+import IndustrySelector from './industry/IndustrySelector';
 
 interface OnboardingWizardProps {
   tenantId: string;

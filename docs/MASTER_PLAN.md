@@ -2,7 +2,7 @@
 
 > **Vision:** The all-in-one, multi-vertical, AI-powered business platform that dominates the Lebanese and MENA market. Beautiful enough to stop a conversation. Intelligent enough to replace a consultant. Simple enough for a 19-year-old cashier on day one. Built for Lebanon — designed to scale globally.
 
-> **Last Updated:** 2026-06-20
+> **Last Updated:** 2026-06-21
 > **Status Legend:** `[PENDING]` → `[IN_PROGRESS]` → `[COMPLETED]` | `[BLOCKED]`
 
 ---
@@ -1103,6 +1103,175 @@ Finance and Reports are currently separate. Integrate them so that reports are d
 - Multi-location inventory management (already has migrations — complete the UI)
 - Group-level budget setting with entity allocation
 - Holding company reporting package
+
+---
+
+## Track R — Restaurant Pro System
+
+> **Launched:** 2026-06-21 · Six parallel agents + manual consolidation  
+> **Status:** ALL SPRINTS COMPLETED  
+> **Scope:** Full F&B vertical expansion — QR menu, waiter PWA, KDS Pro, argile station, recipe/cost management, analytics, shift management, multi-branch, delivery integration
+
+---
+
+### Sprint R.1 — QR Menu System [COMPLETED]
+
+**Track:** R · Restaurant Pro  
+**Priority:** Flagship differentiator  
+**Depends on:** Sprint 2.2 (Restaurant Vertical base)
+
+#### Goal
+Public-facing digital menu with 6 luxury palette themes, 3D card effects, KiTS branded splash, and realtime order-to-kitchen capability.
+
+#### Delivered
+- **6 CSS palette themes** — dark-luxury, beirut-night, mediterranean, lebanese-garden, classic-bistro, modern-minimal (all via CSS custom properties in `src/styles/qr-menu-themes.css`)
+- **Public route** `/menu/:tenantSlug/:tableId` — no auth required, data via `get_public_menu()` SECURITY DEFINER RPC
+- **3D card tilt effects** — CSS `perspective(600px)` + mouse tracking (±12°) + Framer Motion animations
+- **KiTS fingerprint** — 0.8s branded splash (`QRSplash.tsx`) on every first load + footer on all customer views
+- **Cart → order flow** — customer can place order directly; optional waiter-confirm mode per restaurant settings
+- **Fa7em (coal call) button** — Supabase Realtime → argile boy dashboard instant notification + promotional banner shown post-coal-request
+- **Migration:** `20260621_000034_restaurant_menu_system.sql`
+
+#### Files Created
+- `src/pages/qr-menu/QRMenuPage.tsx` — state machine (splash→menu→item-detail→cart→success)
+- `src/pages/qr-menu/QRMenuHome.tsx` — home with hero, category pills, 3D item cards
+- `src/pages/qr-menu/QRSplash.tsx` — KiTS branded 0.8s splash with Framer Motion
+- `src/pages/qr-menu/QRItemDetail.tsx` — bottom-sheet with modifiers, allergens, calories
+- `src/pages/qr-menu/QRCart.tsx` — cart + order placement
+- `src/pages/qr-menu/QROrderSuccess.tsx` — success screen
+- `src/pages/qr-menu/useQRMenu.ts` — data fetching via `get_public_menu` RPC
+- `src/pages/qr-menu/useCart.ts` — cart state management
+- `src/styles/qr-menu-themes.css` — 6 complete palette themes
+
+---
+
+### Sprint R.2 — Order Flow & Waiter Interface [COMPLETED]
+
+**Track:** R · Restaurant Pro  
+**Depends on:** Sprint R.1
+
+#### Goal
+Full order lifecycle management — waiter PWA, bill splitting, pending order confirmation, service charge + VAT + tips.
+
+#### Delivered
+- **Waiter mobile PWA** (`/restaurant/waiter`) — section view, pending order confirmation, course management, table status
+- **Order flow modes** — `direct` (customer order → KDS immediately) vs `waiter_confirm` (waiter reviews before KDS)
+- **Payment modes** — `customer_can_pay` vs `waiter_only` per restaurant toggle
+- **Bill splitting** — 3 modes: equal / by_seat / by_item (`BillSplitter.tsx`)
+- **Restaurant settings page** — order flow/payment toggles, service charge %, VAT %, slow service threshold
+- **Migration:** `20260621_000035_restaurant_order_flow.sql`
+
+#### Files Created
+- `src/pages/restaurant/WaiterInterface.tsx`
+- `src/pages/restaurant/RestaurantSettings.tsx`
+- `src/components/restaurant/BillSplitter.tsx`
+- `src/hooks/useRestaurantOrder.ts`
+
+---
+
+### Sprint R.3 — Argile Station [COMPLETED]
+
+**Track:** R · Restaurant Pro  
+**Depends on:** Sprint R.1
+
+#### Goal
+Dedicated argile boy dashboard with realtime fa7em requests, session management, tobacco refill tracking (billing event), and coal delivery tracking (service action).
+
+#### Delivered
+- **Argile boy dashboard** (`/restaurant/argile`) — realtime fa7em notifications via Supabase Realtime, session management
+- **Fa7em flow** — customer taps "Call Coal" on QR menu → `fa7em_request` INSERT → argile boy phone vibrates (`navigator.vibrate(300)`) → after `coal_delivered` → promotional banner shown to customer
+- **Tobacco refill tracking** — separate pricing from new session (billable event); coal delivery = service action (not billed)
+- **Session tracking** — tobacco_brand, tobacco_flavor, coal_type, head_size, tobacco_refill_count
+- **Migration:** `20260621_000036_restaurant_argile.sql`
+
+#### Files Created
+- `src/pages/restaurant/ArgileStation.tsx`
+
+---
+
+### Sprint R.4 — Recipe & Cost Management [COMPLETED]
+
+**Track:** R · Restaurant Pro  
+**Depends on:** Sprint 2.2
+
+#### Goal
+Restaurant-grade ingredient inventory, recipe costing, supplier management, waste tracking, and automatic deduction when items are marked served.
+
+#### Delivered
+- **5-tab recipe management** (`/restaurant/recipes`) — Ingredients, Recipes (with food cost %), Food Cost Dashboard, Suppliers, Waste Log
+- **Recipe costing** — `get_recipe_cost()` DB function; waste factors per ingredient (fish 35%, shellfish 50%, etc.)
+- **Automatic deduction** — `deduct_recipe_ingredients()` SECURITY DEFINER function called by `useRecipeDeduction` hook when item served
+- **Ingredient alerts** — `useIngredientAlerts` hook; refreshes every 5 min; returns criticalItems / lowItems / totalAlertCount
+- **Lebanese ingredient categories** — 16 categories from meat through packaging
+- **Migration:** `20260621_000037_restaurant_recipes.sql`
+
+#### Files Created
+- `src/pages/restaurant/RecipeInventory.tsx`
+- `src/hooks/useIngredientAlerts.ts`
+- `src/hooks/useRecipeDeduction.ts`
+
+---
+
+### Sprint R.5 — Intelligence & Analytics [COMPLETED]
+
+**Track:** R · Restaurant Pro  
+**Depends on:** Sprint R.2, R.3, R.4
+
+#### Goal
+Restaurant analytics, shift management, EOD reporting, slow service monitoring, waiter leaderboard, and employee-of-month scoring.
+
+#### Delivered
+- **Restaurant Analytics** (`/restaurant/analytics`) — live KPIs (4 tiles), hourly revenue BarChart, waiter leaderboard, argile tiles, customer feedback + 7-day rating trend LineChart
+- **Shift Management** (`/restaurant/shifts`) — week-grid left panel, shift detail right panel, clock in/out, assign staff modal, open/close shift
+- **EOD Report** (`/restaurant/eod`) — auto-generates from today's Supabase data; print-friendly layout; WhatsApp share; save to `restaurant_eod_reports`
+- **Slow service alerts** — `useSlowServiceAlerts` hook polls every 2 min; `SlowServiceAlertBadge` pulsing red badge in nav
+- **Waiter scoring algorithm** — 40% revenue + 30% tables served + 20% rating + 10% speed (inverse avg service time)
+- **Migration:** `20260621_000038_restaurant_intelligence.sql`
+
+#### Files Created
+- `src/pages/restaurant/RestaurantAnalytics.tsx`
+- `src/pages/restaurant/ShiftManager.tsx`
+- `src/pages/restaurant/EODReport.tsx`
+- `src/utils/restaurantScoring.ts`
+- `src/hooks/useSlowServiceAlerts.ts`
+- `src/components/restaurant/SlowServiceAlertBadge.tsx`
+
+---
+
+### Sprint R.6 — Multi-Branch & Delivery Hub [COMPLETED]
+
+**Track:** R · Restaurant Pro  
+**Depends on:** Sprint R.5
+
+#### Goal
+Multi-branch comparison, cross-branch leaderboards, delivery platform integration (Toters / Zomato / Talabat / Careem Food), and KDS routing for delivery orders.
+
+#### Delivered
+- **Multi-branch hub** (`/restaurant/branches`) — branch comparison cards with food cost status, table turnover, service time, argile revenue, delivery revenue; cross-branch leaderboards
+- **Branch management** — add/edit/activate branches, assign manager; Lebanese branch demo data (Hamra, Ashrafieh, Verdun)
+- **Delivery integration** — webhook receiver Edge Function; `inject_delivery_order()` RPC creates both delivery_order AND table_order for KDS routing; supports Toters / Zomato / Talabat / Careem Food
+- **Menu management** (`/restaurant/menu`) — 5-tab admin: Categories, Menu Items, Modifier Groups, 86 Board, QR & Palette
+- **KDS Pro** — multi-station (Grill/Cold/Hot/Bar/Pastry), age-based color coding, course holding
+- **Migration:** `20260621_000039_restaurant_multi_branch.sql`
+
+#### Files Created
+- `src/pages/restaurant/MultiBranchHub.tsx`
+- `src/components/restaurant/MenuManagement.tsx`
+- `src/pages/restaurant/KitchenDisplay.tsx` (enhanced from Sprint 2.2 version)
+- `supabase/functions/delivery-webhook/index.ts`
+
+---
+
+### Track R — Cumulative DB Migrations
+
+| File | Content |
+|---|---|
+| `20260621_000034_restaurant_menu_system.sql` | Menu categories, items, modifier groups, branch overrides, tenant QR columns, `get_public_menu()` RPC, PUBLIC RLS |
+| `20260621_000035_restaurant_order_flow.sql` | Extends table_orders, restaurant_pending_orders, restaurant_bill_splits, restaurant_settings |
+| `20260621_000036_restaurant_argile.sql` | KDS stations, argile sessions, argile events (with PUBLIC INSERT for fa7em), argile flavors |
+| `20260621_000037_restaurant_recipes.sql` | Ingredients, recipes, recipe_ingredients, ingredient_movements, waste_log, suppliers; `deduct_recipe_ingredients()`, `get_recipe_cost()` |
+| `20260621_000038_restaurant_intelligence.sql` | Shifts, shift_assignments, slow_alerts, table_feedback, eod_reports; `generate_eod_report()` |
+| `20260621_000039_restaurant_multi_branch.sql` | Branches, delivery_integrations, delivery_orders, branch_metrics; `inject_delivery_order()` |
 
 ---
 

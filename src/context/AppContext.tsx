@@ -131,6 +131,9 @@ export interface Tenant {
   loyalty_points_per_dollar?: number;
   loyalty_points_redeem_rate?: number;
   industry?: string | null;
+  qr_menu_palette?: string | null;
+  tenant_slug?: string | null;
+  qr_menu_promotional_banner?: string | null;
 }
 
 function applyBrandColors(primary?: string, secondary?: string) {

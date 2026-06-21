@@ -1,0 +1,144 @@
+/* KiTS QR Menu — 6 tenant-selectable palette themes */
+
+.qr-dark-luxury {
+  --qr-bg: #08060f;
+  --qr-surface: #110e1d;
+  --qr-surface-2: #1a1630;
+  --qr-accent: #c9a84c;
+  --qr-accent-rgb: 201, 168, 76;
+  --qr-text: #f5f0e8;
+  --qr-text-muted: rgba(245,240,232,0.55);
+  --qr-border: rgba(201,168,76,0.18);
+  --qr-card-bg: rgba(17,14,29,0.92);
+  --qr-badge-bg: rgba(201,168,76,0.15);
+  --qr-heading-font: 'Playfair Display', Georgia, serif;
+  --qr-body-font: 'Inter', system-ui, sans-serif;
+  --qr-splash-bg: #000;
+}
+
+.qr-beirut-night {
+  --qr-bg: #020818;
+  --qr-surface: #0a0f27;
+  --qr-surface-2: #111c40;
+  --qr-accent: #7c3aed;
+  --qr-accent-secondary: #06b6d4;
+  --qr-accent-rgb: 124, 58, 237;
+  --qr-text: #f0f4ff;
+  --qr-text-muted: rgba(240,244,255,0.55);
+  --qr-border: rgba(124,58,237,0.22);
+  --qr-card-bg: rgba(10,15,39,0.88);
+  --qr-badge-bg: rgba(124,58,237,0.15);
+  --qr-heading-font: 'Inter', system-ui, sans-serif;
+  --qr-body-font: 'Inter', system-ui, sans-serif;
+  --qr-splash-bg: #020818;
+}
+
+.qr-mediterranean {
+  --qr-bg: #faf6f0;
+  --qr-surface: #ffffff;
+  --qr-surface-2: #f5ede0;
+  --qr-accent: #c2622b;
+  --qr-accent-rgb: 194, 98, 43;
+  --qr-text: #2c1810;
+  --qr-text-muted: rgba(44,24,16,0.58);
+  --qr-border: rgba(194,98,43,0.15);
+  --qr-card-bg: rgba(255,255,255,0.92);
+  --qr-badge-bg: rgba(194,98,43,0.1);
+  --qr-heading-font: 'Cormorant Garamond', Georgia, serif;
+  --qr-body-font: 'Inter', system-ui, sans-serif;
+  --qr-splash-bg: #fff;
+}
+
+.qr-lebanese-garden {
+  --qr-bg: #0c1a0e;
+  --qr-surface: #122015;
+  --qr-surface-2: #1a2e1d;
+  --qr-accent: #4ade80;
+  --qr-accent-rgb: 74, 222, 128;
+  --qr-text: #f0fdf4;
+  --qr-text-muted: rgba(240,253,244,0.58);
+  --qr-border: rgba(74,222,128,0.15);
+  --qr-card-bg: rgba(18,32,21,0.92);
+  --qr-badge-bg: rgba(74,222,128,0.12);
+  --qr-heading-font: 'DM Serif Display', Georgia, serif;
+  --qr-body-font: 'Inter', system-ui, sans-serif;
+  --qr-splash-bg: #0c1a0e;
+}
+
+.qr-classic-bistro {
+  --qr-bg: #0f0508;
+  --qr-surface: #1a0a10;
+  --qr-surface-2: #261018;
+  --qr-accent: #e8b04a;
+  --qr-accent-rgb: 232, 176, 74;
+  --qr-text: #f8f0e8;
+  --qr-text-muted: rgba(248,240,232,0.55);
+  --qr-border: rgba(139,0,30,0.3);
+  --qr-card-bg: rgba(26,10,16,0.92);
+  --qr-badge-bg: rgba(232,176,74,0.12);
+  --qr-heading-font: 'Libre Baskerville', Georgia, serif;
+  --qr-body-font: 'Inter', system-ui, sans-serif;
+  --qr-splash-bg: #0f0508;
+}
+
+.qr-modern-minimal {
+  --qr-bg: #000000;
+  --qr-surface: #0a0a0a;
+  --qr-surface-2: #141414;
+  --qr-accent: #ffffff;
+  --qr-accent-rgb: 255, 255, 255;
+  --qr-text: #ffffff;
+  --qr-text-muted: rgba(255,255,255,0.5);
+  --qr-border: rgba(255,255,255,0.1);
+  --qr-card-bg: rgba(10,10,10,0.96);
+  --qr-badge-bg: rgba(255,255,255,0.08);
+  --qr-heading-font: 'Inter', system-ui, sans-serif;
+  --qr-body-font: 'Inter', system-ui, sans-serif;
+  --qr-splash-bg: #000;
+}
+
+/* Shared QR menu base styles */
+.qr-menu-root {
+  background: var(--qr-bg);
+  color: var(--qr-text);
+  font-family: var(--qr-body-font);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+.qr-menu-root h1, .qr-menu-root h2, .qr-menu-root h3 {
+  font-family: var(--qr-heading-font);
+}
+
+/* 3D card tilt effect */
+.qr-item-card {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
+}
+
+/* Glassmorphism surface */
+.qr-glass {
+  background: var(--qr-card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--qr-border);
+}
+
+/* Accent glow effect */
+.qr-accent-glow {
+  box-shadow: 0 0 24px rgba(var(--qr-accent-rgb), 0.25);
+}
+
+/* KiTS brand fingerprint */
+.qr-kits-fingerprint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1.5rem 0 2rem;
+  opacity: 0.45;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--qr-text-muted);
+}

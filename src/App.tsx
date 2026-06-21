@@ -63,6 +63,15 @@ const Finance = lazy(() => import('./pages/Finance'));
 const RestaurantTableManagement = lazy(() => import('./pages/restaurant/TableManagement'));
 const RestaurantKDS = lazy(() => import('./pages/restaurant/KitchenDisplay'));
 const RestaurantReservations = lazy(() => import('./pages/restaurant/Reservations'));
+const RestaurantWaiter = lazy(() => import('./pages/restaurant/WaiterInterface'));
+const RestaurantArgile = lazy(() => import('./pages/restaurant/ArgileStation'));
+const RestaurantRecipes = lazy(() => import('./pages/restaurant/RecipeInventory'));
+const RestaurantAnalytics = lazy(() => import('./pages/restaurant/RestaurantAnalytics'));
+const RestaurantShifts = lazy(() => import('./pages/restaurant/ShiftManager'));
+const RestaurantEOD = lazy(() => import('./pages/restaurant/EODReport'));
+const RestaurantBranches = lazy(() => import('./pages/restaurant/MultiBranchHub'));
+const RestaurantSettings = lazy(() => import('./pages/restaurant/RestaurantSettings'));
+const QRMenuPage = lazy(() => import('./pages/qr-menu/QRMenuPage'));
 
 // Pharmacy Vertical Components
 const PharmacyHub = lazy(() => import('./pages/pharmacy/PharmacyHub'));
@@ -389,6 +398,7 @@ export default function App() {
                                 />
 
                                 {/* ── Restaurant Vertical routes ── */}
+                                <Route path="/menu/:tenantSlug/:tableId" element={<QRMenuPage />} />
                                 <Route
                                   path="/restaurant/tables"
                                   element={isAuthenticated ? <RestaurantTableManagement /> : <Navigate to="/login" replace />}
@@ -401,6 +411,14 @@ export default function App() {
                                   path="/restaurant/reservations"
                                   element={isAuthenticated ? <RestaurantReservations /> : <Navigate to="/login" replace />}
                                 />
+                                <Route path="/restaurant/waiter" element={isAuthenticated ? <RestaurantWaiter /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/argile" element={isAuthenticated ? <RestaurantArgile /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/recipes" element={isAuthenticated ? <RestaurantRecipes /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/analytics" element={isAuthenticated ? <RestaurantAnalytics /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/shifts" element={isAuthenticated ? <RestaurantShifts /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/eod" element={isAuthenticated ? <RestaurantEOD /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/branches" element={isAuthenticated ? <RestaurantBranches /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/settings" element={isAuthenticated ? <RestaurantSettings /> : <Navigate to="/login" replace />} />
 
                                 {/* ── Pharmacy Vertical routes ── */}
                                 <Route

@@ -70,14 +70,20 @@ while true; do
   log "Log file: $SPRINT_LOG"
   echo ""
 
-  # Run Claude — output streams to terminal AND log simultaneously
+  # Run Claude — stream-json gives live tool call badges; tee captures to log
   EXIT_CODE=0
   set +e
-  "$CLAUDE" --dangerously-skip-permissions -p "$DATED_PROMPT" 2>&1 | tee "$SPRINT_LOG"
+  "$CLAUDE" \
+    --dangerously-skip-permissions \
+    --output-format stream-json \
+    --include-partial-messages \
+    -p "$DATED_PROMPT" \
+    2>&1 | python3 "$REPO/scripts/sprint-formatter.py" | tee "$SPRINT_LOG"
   EXIT_CODE=${PIPESTATUS[0]}
   set -e
 
-  OUTPUT=$(cat "$SPRINT_LOG")
+  # Strip ANSI codes before keyword search
+  OUTPUT=$(sed 's/\x1B\[[0-9;]*[mK]//g' "$SPRINT_LOG")
   echo ""
 
   # ── Classify outcome ─────────────────────────────────────────────

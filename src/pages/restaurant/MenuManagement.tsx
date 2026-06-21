@@ -200,6 +200,7 @@ interface ItemFormModalProps {
 }
 
 function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps) {
+  const { currentTenant } = useApp();
   const [form, setForm] = useState<ItemFormState>(() => {
     if (!item) return EMPTY_ITEM_FORM;
     return {
@@ -231,9 +232,11 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
       toast.error('Name and price are required');
       return;
     }
+    if (!currentTenant?.id) { toast.error('No active tenant'); return; }
     setSaving(true);
     try {
       const payload = {
+        tenant_id: currentTenant.id,
         name: form.name.trim(),
         name_ar: form.name_ar.trim() || null,
         description: form.description.trim() || null,
@@ -460,6 +463,7 @@ interface MenuBuilderProps {
 }
 
 function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
+  const { currentTenant } = useApp();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<RestaurantMenuItem | null | undefined>(undefined);
   const [newCatName, setNewCatName] = useState('');
@@ -477,9 +481,10 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
   });
 
   const handleAddCategory = async () => {
-    if (!newCatName.trim()) return;
+    if (!newCatName.trim() || !currentTenant?.id) return;
     setSavingCat(true);
     const { error } = await supabase.from('restaurant_menu_categories').insert({
+      tenant_id: currentTenant.id,
       name: newCatName.trim(),
       icon: '🍽️',
       sort_order: categories.length,
@@ -940,7 +945,7 @@ interface QRMenuSettingsProps {
 
 function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
   const { currentTenant } = useApp();
-  const tenantSlug = currentTenant?.tenant_slug ?? '';
+  const tenantSlug = currentTenant?.slug ?? '';
   const qrBase = `${window.location.origin}/menu/${tenantSlug}`;
 
   const handleCopyUrl = async (tableNum?: number) => {

@@ -400,6 +400,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
                 loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
                 industry: tenantData.industry ?? null,
+                qr_menu_palette: tenantData.qr_menu_palette ?? null,
+                qr_menu_promotional_banner: tenantData.qr_menu_promotional_banner ?? null,
               };
               setCurrentTenant(tenant);
               applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
@@ -445,6 +447,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
               loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
               industry: tenantData.industry ?? null,
+              qr_menu_palette: tenantData.qr_menu_palette ?? null,
+              qr_menu_promotional_banner: tenantData.qr_menu_promotional_banner ?? null,
             };
             setCurrentTenant(tenant);
             applyBrandColors(tenant.brand_primary, tenant.brand_secondary);

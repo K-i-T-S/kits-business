@@ -16,6 +16,9 @@ import {
   RefreshCw,
   Clock,
   Users,
+  Search,
+  Minus,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +39,8 @@ import type {
   SplitType,
   BillSplitPart,
   RestaurantSettings,
+  RestaurantMenuCategory,
+  RestaurantMenuItem,
 } from '@/types/restaurant';
 import { COURSE_LABELS } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
@@ -269,16 +274,260 @@ function PendingOrderModal({ pendingOrder, onConfirm, onReject, onClose }: Pendi
   );
 }
 
+// ── Quick Add Modal ───────────────────────────────────────────────────────────
+
+interface QuickAddModalProps {
+  item: RestaurantMenuItem;
+  onClose: () => void;
+  onConfirm: (qty: number, notes: string) => void;
+}
+
+function QuickAddModal({ item, onClose, onConfirm }: QuickAddModalProps) {
+  const { t } = useTranslation();
+  const [qty, setQty] = useState(1);
+  const [notes, setNotes] = useState('');
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-t-3xl border-t border-white/10 bg-slate-900 p-5 pb-safe">
+        {/* Item header */}
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-base font-bold text-white">{item.name}</h3>
+            {item.name_ar && <p className="text-sm text-white/40" dir="rtl">{item.name_ar}</p>}
+            <p className="mt-0.5 text-lg font-black text-emerald-400">${item.base_price_usd.toFixed(2)}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-xl p-2 text-white/40 hover:bg-white/10 transition-all"
+            aria-label={t('common.close', 'Close')}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Allergens */}
+        {item.allergens.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            {item.allergens.map((a) => (
+              <span key={a} className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/60">
+                {a}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Quantity stepper */}
+        <div className="mb-4">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-white/40">
+            {t('restaurant.quantity', 'Quantity')}
+          </label>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white active:scale-95 transition-all"
+              aria-label="Decrease quantity"
+            >
+              <Minus className="h-5 w-5" />
+            </button>
+            <span className="w-12 text-center text-2xl font-black text-white">{qty}</span>
+            <button
+              onClick={() => setQty((q) => q + 1)}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white active:scale-95 transition-all"
+              aria-label="Increase quantity"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+            <span className="ml-2 text-sm text-white/40">= ${(item.base_price_usd * qty).toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div className="mb-5">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-white/40">
+            {t('restaurant.specialNotes', 'Special Notes')}
+          </label>
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t('restaurant.notesPlaceholder', 'e.g. no onions, extra spicy…')}
+            className="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
+            autoComplete="off"
+          />
+        </div>
+
+        {/* Confirm */}
+        <button
+          onClick={() => { onConfirm(qty, notes); onClose(); }}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-4 text-sm font-bold text-white active:scale-[0.98] transition-all"
+        >
+          <Plus className="h-5 w-5" />
+          {t('restaurant.addToOrder', 'Add to Order')} · ${(item.base_price_usd * qty).toFixed(2)}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Menu Browser Sheet ────────────────────────────────────────────────────────
+
+interface MenuBrowserSheetProps {
+  categories: RestaurantMenuCategory[];
+  items: RestaurantMenuItem[];
+  onClose: () => void;
+  onSelect: (item: RestaurantMenuItem) => void;
+}
+
+function MenuBrowserSheet({ categories, items, onClose, onSelect }: MenuBrowserSheetProps) {
+  const { t } = useTranslation();
+  const [selectedCat, setSelectedCat] = useState<string>('all');
+  const [search, setSearch] = useState('');
+
+  const displayed = items.filter((i) => {
+    if (!i.is_active) return false;
+    if (selectedCat !== 'all' && i.category_id !== selectedCat) return false;
+    if (search && !i.name.toLowerCase().includes(search.toLowerCase()) && !(i.name_ar ?? '').includes(search)) return false;
+    return true;
+  });
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-slate-950">
+      {/* Header */}
+      <div className="flex-none border-b border-white/10 bg-slate-900 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+            aria-label={t('common.close', 'Close')}
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <h2 className="text-base font-bold text-white">{t('restaurant.menu', 'Menu')}</h2>
+          <span className="ml-auto rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/50">{displayed.length}</span>
+        </div>
+        {/* Search */}
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+          <Search className="h-4 w-4 flex-none text-white/30" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('restaurant.searchMenu', 'Search menu…')}
+            className="flex-1 bg-transparent text-sm text-white placeholder-white/30 focus:outline-none"
+            autoComplete="off"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="text-white/30 hover:text-white/60">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Category pills */}
+      <div className="flex-none overflow-x-auto border-b border-white/10 bg-slate-900">
+        <div className="flex gap-2 px-4 pb-3 pt-2" style={{ width: 'max-content' }}>
+          <button
+            onClick={() => setSelectedCat('all')}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+              selectedCat === 'all'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-white/10 text-white/60 hover:bg-white/15'
+            }`}
+          >
+            {t('common.all', 'All')}
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCat(cat.id)}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
+                selectedCat === cat.id
+                  ? 'bg-amber-500/80 text-white'
+                  : 'bg-white/10 text-white/60 hover:bg-white/15'
+              }`}
+            >
+              <span>{cat.icon}</span>
+              <span>{cat.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Item grid */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {displayed.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <UtensilsCrossed className="mb-3 h-10 w-10 text-white/20" />
+            <p className="text-sm text-white/40">{t('restaurant.noItemsFound', 'No items found')}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {displayed.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => onSelect(item)}
+                disabled={!!item.is_eighty_sixd}
+                className={`relative flex flex-col rounded-2xl border text-start transition-all active:scale-95 ${
+                  item.is_eighty_sixd
+                    ? 'cursor-not-allowed border-white/5 bg-white/3 opacity-50'
+                    : 'border-white/10 bg-white/5 hover:border-amber-500/30 hover:bg-white/8'
+                }`}
+              >
+                {/* Photo / placeholder */}
+                <div className="relative h-24 w-full overflow-hidden rounded-t-2xl bg-white/5">
+                  {item.photo_url ? (
+                    <img src={item.photo_url} alt={item.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-3xl opacity-30">🍽️</div>
+                  )}
+                  {item.is_eighty_sixd && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-[10px] font-black text-red-400 uppercase tracking-widest">
+                      86&apos;d
+                    </div>
+                  )}
+                  {item.is_featured && !item.is_eighty_sixd && (
+                    <span className="absolute left-1.5 top-1.5 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-bold text-white">⭐</span>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex flex-1 flex-col p-2.5">
+                  <p className="text-xs font-semibold leading-tight text-white line-clamp-2">{item.name}</p>
+                  {item.name_ar && (
+                    <p className="mt-0.5 text-[10px] text-white/40 line-clamp-1" dir="rtl">{item.name_ar}</p>
+                  )}
+                  <p className="mt-1.5 text-sm font-black text-emerald-400">${item.base_price_usd.toFixed(2)}</p>
+                  {item.allergens.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-0.5">
+                      {item.allergens.slice(0, 3).map((a) => (
+                        <span key={a} className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] text-white/50">{a}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Table Detail (full-screen overlay) ───────────────────────────────────────
 
 interface TableDetailProps {
   tableData: TableWithOrder;
   settings: RestaurantSettings | null;
+  menuCategories: RestaurantMenuCategory[];
+  menuItems: RestaurantMenuItem[];
   onClose: () => void;
   onOrderClosed: () => void;
 }
 
-function TableDetail({ tableData, settings, onClose, onOrderClosed }: TableDetailProps) {
+function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, onOrderClosed }: TableDetailProps) {
   const { t } = useTranslation();
   const { currentTenant } = useApp();
   const { table, order } = tableData;
@@ -305,15 +554,9 @@ function TableDetail({ tableData, settings, onClose, onOrderClosed }: TableDetai
   const [activeTab, setActiveTab] = useState<DetailTab>('orders');
   const [selectedPendingOrder, setSelectedPendingOrder] = useState<PendingOrder | null>(null);
 
-  // Add item state
-  const [addingItem, setAddingItem] = useState(false);
-  const [newItemForm, setNewItemForm] = useState({
-    product_name: '',
-    quantity: 1,
-    unit_price: 0,
-    course: 'mains' as CourseType,
-    notes: '',
-  });
+  // Menu browser state
+  const [showMenuBrowser, setShowMenuBrowser] = useState(false);
+  const [selectedMenuItem, setSelectedMenuItem] = useState<RestaurantMenuItem | null>(null);
 
   // Bill state
   const [tipInput, setTipInput] = useState(String(order ? ((order as TableOrderExtended).tip_amount_usd ?? 0) : 0));
@@ -354,16 +597,6 @@ function TableDetail({ tableData, settings, onClose, onOrderClosed }: TableDetai
     await supabase.from('table_orders').update({ notes }).eq('id', order.id);
     setSavingNotes(false);
     toast.success(t('restaurant.notesSaved', 'Notes saved'));
-  };
-
-  const handleAddItem = async () => {
-    if (!newItemForm.product_name.trim()) {
-      toast.error(t('restaurant.itemNameRequired', 'Item name required'));
-      return;
-    }
-    await addItem(newItemForm);
-    setNewItemForm({ product_name: '', quantity: 1, unit_price: 0, course: 'mains', notes: '' });
-    setAddingItem(false);
   };
 
   const handlePrint = (split: BillSplitPart) => {
@@ -553,80 +786,14 @@ function TableDetail({ tableData, settings, onClose, onOrderClosed }: TableDetai
                   );
                 })}
 
-                {/* Add item */}
-                {addingItem ? (
-                  <div className="rounded-2xl border border-indigo-500/20 bg-white/5 p-4 space-y-3">
-                    <h4 className="text-sm font-semibold text-white">{t('restaurant.addItem', 'Add Item')}</h4>
-                    <input
-                      type="text"
-                      placeholder={t('restaurant.itemName', 'Item name')}
-                      value={newItemForm.product_name}
-                      onChange={(e) => setNewItemForm((p) => ({ ...p, product_name: e.target.value }))}
-                      className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
-                      autoFocus
-                    />
-                    <div className="grid grid-cols-3 gap-2">
-                      <input
-                        type="number"
-                        min={1}
-                        value={newItemForm.quantity}
-                        onChange={(e) => setNewItemForm((p) => ({ ...p, quantity: Math.max(1, parseInt(e.target.value) || 1) }))}
-                        className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-center text-sm text-white focus:border-indigo-500/50 focus:outline-none"
-                        aria-label="Quantity"
-                        placeholder="Qty"
-                      />
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.5}
-                        value={newItemForm.unit_price}
-                        onChange={(e) => setNewItemForm((p) => ({ ...p, unit_price: parseFloat(e.target.value) || 0 }))}
-                        className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
-                        aria-label="Unit price"
-                        placeholder="Price"
-                      />
-                      <select
-                        value={newItemForm.course}
-                        onChange={(e) => setNewItemForm((p) => ({ ...p, course: e.target.value as CourseType }))}
-                        className="rounded-xl border border-white/20 bg-slate-800 px-2 py-2.5 text-xs text-white focus:outline-none"
-                        aria-label="Course"
-                      >
-                        {courses.map((c) => (
-                          <option key={c} value={c}>{COURSE_LABELS[c]}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder={t('restaurant.notes', 'Special notes')}
-                      value={newItemForm.notes}
-                      onChange={(e) => setNewItemForm((p) => ({ ...p, notes: e.target.value }))}
-                      className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { void handleAddItem(); }}
-                        className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-3 text-sm font-bold text-white"
-                      >
-                        {t('restaurant.addItem', 'Add Item')}
-                      </button>
-                      <button
-                        onClick={() => setAddingItem(false)}
-                        className="rounded-xl border border-white/10 px-4 py-3 text-sm text-white/40 hover:bg-white/5 transition-all"
-                      >
-                        {t('common.cancel', 'Cancel')}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingItem(true)}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/10 py-4 text-sm text-white/40 hover:border-indigo-500/30 hover:text-indigo-400 transition-all"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t('restaurant.addItem', 'Add Item')}
-                  </button>
-                )}
+                {/* Add item via menu browser */}
+                <button
+                  onClick={() => setShowMenuBrowser(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-500/30 bg-indigo-500/5 py-4 text-sm font-semibold text-indigo-400 hover:border-indigo-500/50 hover:bg-indigo-500/10 active:scale-[0.98] transition-all"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('restaurant.addFromMenu', 'Add from Menu')}
+                </button>
               </>
             )}
           </div>
@@ -791,6 +958,37 @@ function TableDetail({ tableData, settings, onClose, onOrderClosed }: TableDetai
           onClose={() => setSelectedPendingOrder(null)}
         />
       )}
+
+      {/* Menu browser */}
+      {showMenuBrowser && (
+        <MenuBrowserSheet
+          categories={menuCategories}
+          items={menuItems}
+          onClose={() => setShowMenuBrowser(false)}
+          onSelect={(item) => {
+            setSelectedMenuItem(item);
+            setShowMenuBrowser(false);
+          }}
+        />
+      )}
+
+      {/* Quick add modal */}
+      {selectedMenuItem && (
+        <QuickAddModal
+          item={selectedMenuItem}
+          onClose={() => setSelectedMenuItem(null)}
+          onConfirm={(qty, notes) => {
+            void addItem({
+              product_name: selectedMenuItem.name,
+              quantity: qty,
+              unit_price: selectedMenuItem.base_price_usd,
+              course: 'mains',
+              notes: notes || undefined,
+              menu_item_id: selectedMenuItem.id,
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -809,6 +1007,8 @@ export default function WaiterInterface() {
   const [allItems, setAllItems] = useState<RestaurantOrderItem[]>([]);
   const [pendingOrderCounts, setPendingOrderCounts] = useState<Record<string, number>>({});
   const [settings, setSettings] = useState<RestaurantSettings | null>(null);
+  const [menuCategories, setMenuCategories] = useState<RestaurantMenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<RestaurantMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [filterSection, setFilterSection] = useState<string>('all');
@@ -818,12 +1018,14 @@ export default function WaiterInterface() {
   const loadData = useCallback(async () => {
     if (!tenantId) return;
     try {
-      const [tRes, oRes, oiRes, poRes, sRes] = await Promise.all([
+      const [tRes, oRes, oiRes, poRes, sRes, catRes, miRes] = await Promise.all([
         supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId).order('number'),
         supabase.from('table_orders').select('*').eq('tenant_id', tenantId).eq('status', 'open'),
         supabase.from('restaurant_order_items').select('*').eq('tenant_id', tenantId).neq('status', 'served'),
         supabase.from('restaurant_pending_orders').select('table_id').eq('tenant_id', tenantId).eq('status', 'pending'),
         supabase.from('restaurant_settings').select('*').eq('tenant_id', tenantId).maybeSingle(),
+        supabase.from('restaurant_menu_categories').select('*').eq('tenant_id', tenantId).order('sort_order'),
+        supabase.from('restaurant_menu_items').select('*').eq('tenant_id', tenantId).eq('is_active', true).order('sort_order'),
       ]);
       if (tRes.data) setTables(tRes.data as RestaurantTable[]);
       if (oRes.data) setOrders(oRes.data as TableOrder[]);
@@ -836,6 +1038,8 @@ export default function WaiterInterface() {
         setPendingOrderCounts(counts);
       }
       if (sRes.data) setSettings(sRes.data as RestaurantSettings);
+      if (catRes.data) setMenuCategories(catRes.data as RestaurantMenuCategory[]);
+      if (miRes.data) setMenuItems(miRes.data as RestaurantMenuItem[]);
     } catch (err) {
       console.error('[WaiterInterface] load error:', err);
     } finally {
@@ -976,6 +1180,8 @@ export default function WaiterInterface() {
         <TableDetail
           tableData={selectedTableData}
           settings={settings}
+          menuCategories={menuCategories}
+          menuItems={menuItems}
           onClose={() => setSelectedTableId(null)}
           onOrderClosed={() => { void loadData(); }}
         />

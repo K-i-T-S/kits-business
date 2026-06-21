@@ -1,6 +1,3 @@
-/**
- * RestaurantSettings — Per-tenant restaurant configuration page
- */
 import { Settings2, Save, ToggleLeft, ToggleRight, AlertCircle } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +36,7 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
       </div>
       <button
         onClick={() => onChange(!checked)}
-        className={`flex-none transition-colors ${checked ? 'text-indigo-400' : 'text-white/30'}`}
+        className={`flex-none transition-colors ${checked ? 'text-amber-400' : 'text-white/30'}`}
         aria-pressed={checked}
         aria-label={label}
       >
@@ -121,7 +118,7 @@ export default function RestaurantSettings() {
     return (
       <Layout>
         <div className="flex min-h-[50vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-indigo-500" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-amber-500" />
         </div>
       </Layout>
     );
@@ -129,21 +126,21 @@ export default function RestaurantSettings() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-slate-900 p-4 sm:p-6">
+      <div className="p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
 
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/30 to-yellow-500/10 border border-amber-500/20">
+              <Settings2 className="h-6 w-6 text-amber-400" />
+            </div>
             <div>
               <h1 className="text-2xl font-bold text-white">
                 {t('restaurant.settings.title', 'Restaurant Settings')}
               </h1>
-              <p className="mt-1 text-sm text-white/40">
+              <p className="mt-0.5 text-sm text-white/40">
                 {t('restaurant.settings.desc', 'Configure order flow, service charges, and operational defaults')}
               </p>
-            </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <Settings2 className="h-6 w-6 text-indigo-400" />
             </div>
           </div>
 
@@ -161,12 +158,11 @@ export default function RestaurantSettings() {
             <div className="space-y-4">
 
               {/* Order Flow */}
-              <section className="rounded-2xl border border-white/10 bg-slate-800/50 p-5">
-                <h2 className="mb-4 text-base font-bold text-white">
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-4">
                   {t('restaurant.settings.orderFlow', 'Order Flow')}
                 </h2>
                 <div className="space-y-4">
-                  {/* Order flow toggle */}
                   <div>
                     <p className="mb-2 text-sm font-semibold text-white">
                       {t('restaurant.settings.defaultOrderFlow', 'Default Order Flow')}
@@ -181,11 +177,11 @@ export default function RestaurantSettings() {
                           onClick={() => update('default_order_flow', key)}
                           className={`flex-1 rounded-xl border-2 p-3 text-start transition-all ${
                             settings.default_order_flow === key
-                              ? 'border-indigo-500/60 bg-indigo-500/15'
+                              ? 'border-amber-500/50 bg-amber-500/10 shadow-amber-500/10 shadow-lg'
                               : 'border-white/10 bg-white/5 hover:border-white/20'
                           }`}
                         >
-                          <p className={`text-sm font-semibold ${settings.default_order_flow === key ? 'text-indigo-300' : 'text-white/70'}`}>
+                          <p className={`text-sm font-semibold ${settings.default_order_flow === key ? 'text-amber-300' : 'text-white/70'}`}>
                             {label}
                           </p>
                           <p className="mt-0.5 text-xs text-white/40">{desc}</p>
@@ -194,7 +190,6 @@ export default function RestaurantSettings() {
                     </div>
                   </div>
 
-                  {/* Payment mode */}
                   <div>
                     <p className="mb-2 text-sm font-semibold text-white">
                       {t('restaurant.settings.paymentMode', 'Payment Mode')}
@@ -209,11 +204,11 @@ export default function RestaurantSettings() {
                           onClick={() => update('default_payment_mode', key)}
                           className={`flex-1 rounded-xl border-2 p-3 text-start transition-all ${
                             settings.default_payment_mode === key
-                              ? 'border-indigo-500/60 bg-indigo-500/15'
+                              ? 'border-amber-500/50 bg-amber-500/10 shadow-amber-500/10 shadow-lg'
                               : 'border-white/10 bg-white/5 hover:border-white/20'
                           }`}
                         >
-                          <p className={`text-sm font-semibold ${settings.default_payment_mode === key ? 'text-indigo-300' : 'text-white/70'}`}>
+                          <p className={`text-sm font-semibold ${settings.default_payment_mode === key ? 'text-amber-300' : 'text-white/70'}`}>
                             {label}
                           </p>
                           <p className="mt-0.5 text-xs text-white/40">{desc}</p>
@@ -225,8 +220,8 @@ export default function RestaurantSettings() {
               </section>
 
               {/* Charges */}
-              <section className="rounded-2xl border border-white/10 bg-slate-800/50 p-5 space-y-4">
-                <h2 className="text-base font-bold text-white">
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
                   {t('restaurant.settings.charges', 'Charges & Tax')}
                 </h2>
 
@@ -238,10 +233,10 @@ export default function RestaurantSettings() {
                 />
 
                 {settings.service_charge_enabled && (
-                  <div className="ps-4 border-s-2 border-indigo-500/30">
+                  <div className="ps-4 border-s-2 border-amber-500/30">
                     <label className="mb-2 flex items-center justify-between text-xs text-white/50">
                       <span>{t('restaurant.settings.serviceChargePct', 'Service Charge %')}</span>
-                      <span className="font-bold text-white">{settings.service_charge_pct}%</span>
+                      <span className="font-bold text-amber-400">{settings.service_charge_pct}%</span>
                     </label>
                     <input
                       type="range"
@@ -250,7 +245,7 @@ export default function RestaurantSettings() {
                       step={0.5}
                       value={settings.service_charge_pct}
                       onChange={(e) => update('service_charge_pct', parseFloat(e.target.value))}
-                      className="w-full accent-indigo-500"
+                      className="w-full accent-amber-500"
                       aria-label="Service charge percentage"
                     />
                     <div className="flex justify-between text-[10px] text-white/30 mt-1">
@@ -259,7 +254,7 @@ export default function RestaurantSettings() {
                   </div>
                 )}
 
-                <div className="border-t border-white/10" />
+                <div className="border-t border-white/8" />
 
                 <ToggleRow
                   label={t('restaurant.settings.vatEnabled', 'VAT (Value Added Tax)')}
@@ -269,7 +264,7 @@ export default function RestaurantSettings() {
                 />
 
                 {settings.vat_enabled && (
-                  <div className="ps-4 border-s-2 border-indigo-500/30">
+                  <div className="ps-4 border-s-2 border-amber-500/30">
                     <label className="mb-1.5 block text-xs text-white/50">
                       {t('restaurant.settings.vatPct', 'VAT %')}
                     </label>
@@ -280,7 +275,7 @@ export default function RestaurantSettings() {
                       step={0.5}
                       value={settings.vat_pct}
                       onChange={(e) => update('vat_pct', parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-slate-800/80 px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
                       aria-label="VAT percentage"
                     />
                   </div>
@@ -288,8 +283,8 @@ export default function RestaurantSettings() {
               </section>
 
               {/* Tips & Alerts */}
-              <section className="rounded-2xl border border-white/10 bg-slate-800/50 p-5 space-y-4">
-                <h2 className="text-base font-bold text-white">
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
                   {t('restaurant.settings.tipsAlerts', 'Tips & Alerts')}
                 </h2>
 
@@ -300,12 +295,12 @@ export default function RestaurantSettings() {
                   onChange={(v) => update('tip_pool_enabled', v)}
                 />
 
-                <div className="border-t border-white/10" />
+                <div className="border-t border-white/8" />
 
                 <div>
                   <label className="mb-1 flex items-center justify-between text-xs text-white/50">
                     <span>{t('restaurant.settings.slowServiceThreshold', 'Slow Service Alert (minutes)')}</span>
-                    <span className="font-bold text-white">{settings.slow_service_threshold_minutes}m</span>
+                    <span className="font-bold text-amber-400">{settings.slow_service_threshold_minutes}m</span>
                   </label>
                   <p className="mb-2 text-xs text-white/30">
                     {t('restaurant.settings.slowServiceDesc', 'Tables open longer than this threshold are highlighted in orange')}
@@ -317,7 +312,7 @@ export default function RestaurantSettings() {
                     step={5}
                     value={settings.slow_service_threshold_minutes}
                     onChange={(e) => update('slow_service_threshold_minutes', parseInt(e.target.value))}
-                    className="w-full accent-indigo-500"
+                    className="w-full accent-amber-500"
                     aria-label="Slow service threshold in minutes"
                   />
                   <div className="flex justify-between text-[10px] text-white/30 mt-1">
@@ -330,7 +325,7 @@ export default function RestaurantSettings() {
               <button
                 onClick={() => { void handleSave(); }}
                 disabled={saving}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-4 text-base font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 py-4 text-base font-bold text-slate-900 transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 shadow-lg shadow-amber-500/20"
               >
                 <Save className="h-5 w-5" />
                 {saving

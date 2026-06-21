@@ -86,7 +86,7 @@ function BranchFormModal({ branch, onClose, onSave }: BranchFormModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6">
+      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl p-6">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">
             {branch?.id
@@ -217,10 +217,10 @@ function BranchCard({ branch, metrics, isTop, onViewDetails, onEdit }: BranchCar
 
   return (
     <div
-      className={`relative rounded-2xl border p-5 transition-all ${
+      className={`relative rounded-2xl border p-5 transition-all backdrop-blur-md shadow-2xl ${
         isTop
-          ? 'border-amber-500/50 bg-amber-500/5 shadow-amber-500/10 shadow-lg'
-          : 'border-white/10 bg-white/5 hover:border-white/20'
+          ? 'border-amber-500/40 bg-gradient-to-br from-amber-500/15 to-yellow-500/5 shadow-amber-500/15'
+          : 'border-white/10 bg-gradient-to-br from-white/8 to-white/3 hover:border-white/20'
       }`}
     >
       {isTop && (
@@ -296,7 +296,7 @@ function BranchCard({ branch, metrics, isTop, onViewDetails, onEdit }: BranchCar
 
       <button
         onClick={() => onViewDetails(branch.id)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 py-2 text-sm text-white/80 hover:bg-white/15"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 py-2 text-sm font-medium text-amber-300 hover:bg-amber-500/20 transition-all"
       >
         {t('restaurant.branches.viewDetails', 'View Details')}
         <ChevronRight className="h-4 w-4" />
@@ -323,8 +323,8 @@ function RevenueComparisonChart({ branches, metricsMap }: {
   const COLORS = ['#6366f1', '#38bdf8', '#34d399'];
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <h3 className="mb-4 font-semibold text-white">
+    <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5">
+      <h3 className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
         {t('restaurant.branches.revenueByBranch', 'Revenue by Branch (Today)')}
       </h3>
       <ResponsiveContainer width="100%" height={220}>
@@ -370,8 +370,8 @@ function FoodCostChart({ branches, metricsMap }: {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <h3 className="mb-4 font-semibold text-white">
+    <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5">
+      <h3 className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
         {t('restaurant.branches.foodCostByBranch', 'Food Cost % by Branch')}
       </h3>
       <ResponsiveContainer width="100%" height={180}>
@@ -411,8 +411,8 @@ function ServiceTimeChart({ branches, metricsMap }: {
   }));
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <h3 className="mb-1 font-semibold text-white">
+    <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5">
+      <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
         {t('restaurant.branches.avgServiceTime', 'Avg Service Time (min)')}
       </h3>
       <p className="mb-4 text-xs text-white/40">
@@ -448,8 +448,8 @@ function RatingChart({ branches, metricsMap }: {
   }));
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <h3 className="mb-4 font-semibold text-white">
+    <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5">
+      <h3 className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
         {t('restaurant.branches.customerRating', 'Customer Rating by Branch')}
       </h3>
       <ResponsiveContainer width="100%" height={180}>
@@ -598,25 +598,30 @@ export default function MultiBranchHub() {
       <div className="min-h-screen p-4 md:p-6">
         {/* ── Header ── */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              {t('restaurant.branches.title', 'Multi-Branch Command Center')}
-            </h1>
-            <p className="text-sm text-white/50">
-              {t('restaurant.branches.subtitle', 'Real-time view across all your restaurant locations')}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/30 to-yellow-500/10">
+              <Building2 className="h-5 w-5 text-amber-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">
+                {t('restaurant.branches.title', 'Multi-Branch Command Center')}
+              </h1>
+              <p className="text-sm text-white/50">
+                {t('restaurant.branches.subtitle', 'Real-time view across all your restaurant locations')}
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => void loadBranches()}
-              className="flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-sm text-white/70 hover:bg-white/5"
+              className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/70 hover:bg-white/10 transition-all"
             >
               <RefreshCw className="h-4 w-4" />
               {t('common.refresh', 'Refresh')}
             </button>
             <button
               onClick={() => setSettingsOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-sm text-white/70 hover:bg-white/5"
+              className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-300 hover:bg-amber-500/20 transition-all"
             >
               <Settings className="h-4 w-4" />
               {t('restaurant.branches.branchSettings', 'Branch Settings')}
@@ -631,36 +636,36 @@ export default function MultiBranchHub() {
               label: t('restaurant.branches.totalRevenue', 'Total Revenue'),
               value: `$${totalRevenue.toLocaleString()}`,
               icon: TrendingUp,
-              color: 'text-emerald-400',
+              iconClass: 'from-emerald-500/20 to-emerald-500/5 text-emerald-400',
             },
             {
               label: t('restaurant.branches.totalCovers', 'Total Covers'),
               value: totalCovers.toLocaleString(),
               icon: Users,
-              color: 'text-sky-400',
+              iconClass: 'from-sky-500/20 to-sky-500/5 text-sky-400',
             },
             {
               label: t('restaurant.branches.totalOrders', 'Total Orders'),
               value: totalOrders.toLocaleString(),
               icon: CheckCircle,
-              color: 'text-indigo-400',
+              iconClass: 'from-amber-500/20 to-yellow-500/5 text-amber-400',
             },
             {
               label: t('restaurant.branches.avgRating', 'Avg Rating'),
               value: `⭐ ${avgRating.toFixed(1)}`,
               icon: Star,
-              color: 'text-amber-400',
+              iconClass: 'from-amber-500/20 to-yellow-500/5 text-amber-400',
             },
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4"
+              className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4"
             >
-              <div className={`mb-2 ${kpi.color}`}>
-                <kpi.icon className="h-5 w-5" />
+              <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${kpi.iconClass}`}>
+                <kpi.icon className="h-4 w-4" />
               </div>
-              <p className="text-2xl font-bold text-white">{kpi.value}</p>
-              <p className="text-xs text-white/50">{kpi.label}</p>
+              <p className="text-2xl font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">{kpi.value}</p>
+              <p className="text-xs text-white/50 mt-1">{kpi.label}</p>
             </div>
           ))}
         </div>
@@ -669,9 +674,9 @@ export default function MultiBranchHub() {
         <div className="mb-6 flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedBranch('all')}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
               selectedBranch === 'all'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg shadow-amber-500/20'
                 : 'border border-white/20 text-white/60 hover:bg-white/5'
             }`}
           >
@@ -681,9 +686,9 @@ export default function MultiBranchHub() {
             <button
               key={b.id}
               onClick={() => setSelectedBranch(b.id)}
-              className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
                 selectedBranch === b.id
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg shadow-amber-500/20'
                   : 'border border-white/20 text-white/60 hover:bg-white/5'
               }`}
             >
@@ -747,8 +752,8 @@ export default function MultiBranchHub() {
 
         {/* ── Cross-Branch Leaderboard ── */}
         {selectedBranch === 'all' && (
-          <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-5">
-            <h3 className="mb-4 font-semibold text-white">
+          <div className="mb-8 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5">
+            <h3 className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
               {t('restaurant.branches.leaderboard', 'Cross-Branch Leaderboard')}
             </h3>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -876,9 +881,9 @@ export default function MultiBranchHub() {
         {/* ── Settings Panel ── */}
         {settingsOpen && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-            <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-900 p-6">
+            <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl p-6">
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
                   {t('restaurant.branches.branchSettings', 'Branch Settings')}
                 </h2>
                 <button

@@ -510,7 +510,7 @@ Build the pharmacy management module aligned with Lebanese MoPH regulations and 
 
 ---
 
-### Sprint 2.4 — Supermarket / Grocery Vertical [PENDING]
+### Sprint 2.4 — Supermarket / Grocery Vertical [IN_PROGRESS]
 
 **Track:** 2 · Vertical Intelligence
 **Priority:** High

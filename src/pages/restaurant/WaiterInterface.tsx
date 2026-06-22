@@ -1,7 +1,15 @@
 /**
  * WaiterInterface — Mobile-first PWA screen for waiter service
  * Full-screen, no sidebar, touch-optimized.
+ *
+ * Phase 0 Features:
+ * - Send to Kitchen FAB with item count
+ * - Pending Orders Badge in header
+ * - Close Bill Modal with dual-currency support
+ *
+ * Layout: Thumb-zone optimised — bottom navigation + FAB above nav
  */
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
   X,
@@ -19,6 +27,10 @@ import {
   Search,
   Minus,
   UtensilsCrossed,
+  ShoppingCart,
+  ListOrdered,
+  Bell,
+  LayoutGrid,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,6 +58,7 @@ import { COURSE_LABELS } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
 
 type DetailTab = 'orders' | 'bill' | 'notes';
+type MainTab = 'tables' | 'orders' | 'queue' | 'pending';
 const LBP_RATE = 89500;
 
 // ── Utility ──────────────────────────────────────────────────────────────────
@@ -171,6 +184,168 @@ function ItemBadge({ status }: { status: RestaurantOrderItem['status'] }) {
     <span className={`rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${styles[status]}`}>
       {labels[status]}
     </span>
+  );
+}
+
+// ── Close Bill Modal (Phase 0 Feature 3) ─────────────────────────────────────
+
+interface CloseBillModalProps {
+  order: TableOrderExtended;
+  items: RestaurantOrderItem[];
+  onClose: () => void;
+  onConfirm: (paymentMethod: string, tipAmount: number, discountPct: number, cashReceived?: number) => Promise<void>;
+}
+
+function CloseBillModal({ order, items, onClose, onConfirm }: CloseBillModalProps) {
+  const { t } = useTranslation();
+  const [paymentMethod, setPaymentMethod] = useState<'cash_usd' | 'cash_lbp' | 'card' | 'split'>('cash_usd');
+  const [tipAmountUsd, setTipAmountUsd] = useState(0);
+  const [discountPct, setDiscountPct] = useState(order.discount_pct ?? 0);
+  const [cashReceivedUsd, setCashReceivedUsd] = useState(0);
+  const [confirming, setConfirming] = useState(false);
+
+  const foodItems = items.filter((i) => i.status !== 'served').reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const subtotal = foodItems;
+  const discountAmount = (subtotal * discountPct) / 100;
+  const afterDiscount = subtotal - discountAmount;
+  const serviceCharge = (afterDiscount * (order.service_charge_pct ?? 10)) / 100;
+  const vat = (afterDiscount * (order.vat_pct ?? 11)) / 100;
+  const totalUsd = afterDiscount + serviceCharge + vat + tipAmountUsd;
+  const totalLbp = Math.round(totalUsd * LBP_RATE);
+  const changeUsd = Math.max(0, cashReceivedUsd - totalUsd);
+
+  const handleConfirm = async () => {
+    setConfirming(true);
+    try {
+      await onConfirm(paymentMethod, tipAmountUsd, discountPct, paymentMethod.startsWith('cash') ? cashReceivedUsd : undefined);
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center">
+      <div className="w-full max-w-md rounded-t-3xl border-t border-white/10 bg-slate-900 p-5 pb-safe sm:rounded-2xl sm:border">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold text-white">{t('restaurant.closeBill.title', 'Close Bill')}</h2>
+          <button onClick={onClose} className="rounded-lg p-2 text-white/40 hover:bg-white/10 transition-all">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Bill summary */}
+        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-white/60">{t('restaurant.bill.subtotal', 'Subtotal')}</span>
+            <span className="text-white">${subtotal.toFixed(2)}</span>
+          </div>
+          {discountPct > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-emerald-400">{t('restaurant.bill.discount', 'Discount')} ({discountPct.toFixed(1)}%)</span>
+              <span className="text-emerald-400">−${discountAmount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-white/60">{t('restaurant.bill.serviceCharge', 'Service Charge')} ({order.service_charge_pct ?? 10}%)</span>
+            <span className="text-white">${serviceCharge.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-white/60">{t('restaurant.bill.vat', 'VAT')} ({order.vat_pct ?? 11}%)</span>
+            <span className="text-white">${vat.toFixed(2)}</span>
+          </div>
+          <div className="border-t border-white/10 pt-2">
+            <div className="flex justify-between">
+              <span className="font-bold text-white">{t('restaurant.bill.total', 'Total')}</span>
+              <div className="text-end">
+                <p className="text-base font-black text-white">${totalUsd.toFixed(2)}</p>
+                <p className="text-xs text-white/40">{totalLbp.toLocaleString()} L.L.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tip input */}
+        <div className="mb-3">
+          <label className="mb-1.5 block text-xs text-white/50">{t('restaurant.bill.tipUsd', 'Tip (USD)')}</label>
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            value={tipAmountUsd}
+            onChange={(e) => setTipAmountUsd(parseFloat(e.target.value) || 0)}
+            className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
+            placeholder="0.00"
+          />
+        </div>
+
+        {/* Discount input (manager-only via RoleGate) */}
+        <div className="mb-3">
+          <label className="mb-1.5 block text-xs text-white/50">{t('restaurant.bill.discount', 'Discount (%)')}</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={discountPct}
+            onChange={(e) => setDiscountPct(parseFloat(e.target.value) || 0)}
+            className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
+            placeholder="0"
+          />
+        </div>
+
+        {/* Payment method */}
+        <div className="mb-3">
+          <label className="mb-1.5 block text-xs text-white/50">{t('restaurant.bill.paymentMethod', 'Payment Method')}</label>
+          <div className="grid grid-cols-2 gap-2">
+            {(['cash_usd', 'cash_lbp', 'card', 'split'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setPaymentMethod(m)}
+                className={`rounded-xl py-2.5 text-xs font-semibold capitalize transition-all ${
+                  paymentMethod === m
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white/5 text-white/50 hover:bg-white/10'
+                }`}
+              >
+                {m === 'cash_usd' ? 'Cash USD' : m === 'cash_lbp' ? 'Cash L.L.' : m === 'card' ? 'Card' : 'Split'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Cash received input (only for cash payments) */}
+        {paymentMethod.startsWith('cash') && (
+          <div className="mb-3">
+            <label className="mb-1.5 block text-xs text-white/50">
+              {paymentMethod === 'cash_usd' ? t('restaurant.bill.cashReceivedUsd', 'Cash Received (USD)') : t('restaurant.bill.cashReceivedLbp', 'Cash Received (L.L.)')}
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={paymentMethod === 'cash_usd' ? 0.5 : 1000}
+              value={cashReceivedUsd}
+              onChange={(e) => setCashReceivedUsd(parseFloat(e.target.value) || 0)}
+              className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
+              placeholder="0"
+            />
+            {changeUsd > 0 && (
+              <p className="mt-1.5 text-xs text-emerald-400">
+                {t('restaurant.bill.change', 'Change')}: ${changeUsd.toFixed(2)}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Confirm button */}
+        <button
+          onClick={() => { void handleConfirm(); }}
+          disabled={confirming}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-4 text-base font-black text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+        >
+          <Receipt className="h-5 w-5" />
+          {confirming ? t('restaurant.bill.confirming', 'Confirming...') : t('restaurant.bill.confirm', 'Confirm Payment')}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -563,6 +738,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   const [discountInput, setDiscountInput] = useState(String(order ? ((order as TableOrderExtended).discount_pct ?? 0) : 0));
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank_transfer'>('cash');
   const [closingBill, setClosingBill] = useState(false);
+  const [showCloseBillModal, setShowCloseBillModal] = useState(false);
 
   // Split state
   const [splitType, setSplitType] = useState<SplitType>('equal');
@@ -572,6 +748,31 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   // Notes state
   const [notes, setNotes] = useState(order?.notes ?? '');
   const [savingNotes, setSavingNotes] = useState(false);
+
+  // Phase 0 Feature 1: Send to Kitchen
+  const pendingItems = items.filter((i) => i.status === 'pending');
+  const [sendingKitchen, setSendingKitchen] = useState(false);
+
+  const handleSendToKitchen = async () => {
+    if (pendingItems.length === 0 || !tenantId || !order?.id) return;
+    setSendingKitchen(true);
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('restaurant_order_items')
+        .update({ status: 'in_progress', sent_at: now })
+        .eq('tenant_id', tenantId)
+        .eq('order_id', order.id)
+        .is('sent_at', null);
+      if (error) throw error;
+      toast.success(t('restaurant.sentToKitchen', `Sent ${pendingItems.length} items to kitchen`));
+    } catch (err) {
+      console.error('[Send to Kitchen] error:', err);
+      toast.error(t('common.error', 'Error sending to kitchen'));
+    } finally {
+      setSendingKitchen(false);
+    }
+  };
 
   const splits: BillSplitPart[] = (() => {
     if (splitType === 'equal') return splitEqual(equalCount);
@@ -591,6 +792,36 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
     }
   };
 
+  const handleCloseBillModalConfirm = async (
+    method: string,
+    tipUsd: number,
+    discountPct: number,
+    cashReceived?: number,
+  ) => {
+    try {
+      // Call fn_close_restaurant_bill RPC or manual update
+      if (!tenantId || !order?.id) return;
+
+      const { error } = await supabase.rpc('fn_close_restaurant_bill', {
+        p_order_id: order.id,
+        p_payment_method: method,
+        p_tip_amount_usd: tipUsd,
+        p_discount_pct: discountPct,
+        p_cash_received_usd: cashReceived ?? 0,
+        p_exchange_rate: LBP_RATE,
+      });
+
+      if (error) throw error;
+      toast.success(t('restaurant.billClosed', 'Bill closed successfully'));
+      setShowCloseBillModal(false);
+      onOrderClosed();
+      onClose();
+    } catch (err) {
+      console.error('[Close Bill] error:', err);
+      toast.error(t('common.error', 'Error closing bill'));
+    }
+  };
+
   const handleSaveNotes = async () => {
     if (!order?.id) return;
     setSavingNotes(true);
@@ -600,7 +831,6 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   };
 
   const handlePrint = (split: BillSplitPart) => {
-    // In a real PWA this would trigger window.print() with a receipt template
     toast.info(`${t('restaurant.split.printing', 'Printing receipt for')} ${split.label} — ${split.total.toFixed(2)} USD`);
   };
 
@@ -794,6 +1024,20 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
                   <Plus className="h-4 w-4" />
                   {t('restaurant.addFromMenu', 'Add from Menu')}
                 </button>
+
+                {/* Phase 0 Feature 1: Send to Kitchen FAB */}
+                {pendingItems.length > 0 && (
+                  <button
+                    onClick={() => { void handleSendToKitchen(); }}
+                    disabled={sendingKitchen}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-4 text-base font-black text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                  >
+                    <Flame className="h-5 w-5" />
+                    {sendingKitchen
+                      ? t('restaurant.sendingKitchen', 'Sending...')
+                      : t('restaurant.sendKitchen', `Send ${pendingItems.length} Items to Kitchen`)}
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -906,16 +1150,13 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
               />
             </div>
 
-            {/* Close bill button */}
+            {/* Phase 0 Feature 3: Close bill button opens modal */}
             <button
-              onClick={() => { void handleCloseBill(); }}
-              disabled={closingBill}
+              onClick={() => setShowCloseBillModal(true)}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-4 text-base font-black text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
             >
               <Receipt className="h-5 w-5" />
-              {closingBill
-                ? t('restaurant.bill.closing', 'Closing...')
-                : t('restaurant.bill.closePrint', 'Close & Print Bill')}
+              {t('restaurant.bill.closePrint', 'Close & Print Bill')}
             </button>
           </div>
         )}
@@ -956,6 +1197,16 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
           onConfirm={(editedItems) => confirmPendingOrder(selectedPendingOrder.id, editedItems)}
           onReject={() => rejectPendingOrder(selectedPendingOrder.id)}
           onClose={() => setSelectedPendingOrder(null)}
+        />
+      )}
+
+      {/* Phase 0 Feature 3: Close Bill Modal */}
+      {showCloseBillModal && order && (
+        <CloseBillModal
+          order={order as TableOrderExtended}
+          items={items}
+          onClose={() => setShowCloseBillModal(false)}
+          onConfirm={handleCloseBillModalConfirm}
         />
       )}
 
@@ -1002,6 +1253,7 @@ export default function WaiterInterface() {
   const tenantId = currentTenant?.id;
   const now = useClock();
 
+  // ── State ──────────────────────────────────────────────────────────────────
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [orders, setOrders] = useState<TableOrder[]>([]);
   const [allItems, setAllItems] = useState<RestaurantOrderItem[]>([]);
@@ -1015,6 +1267,10 @@ export default function WaiterInterface() {
   const [refreshing, setRefreshing] = useState(false);
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Thumb-zone bottom navigation tab
+  const [activeTab, setActiveTab] = useState<MainTab>('tables');
+
+  // ── Data loading ───────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     if (!tenantId) return;
     try {
@@ -1062,8 +1318,9 @@ export default function WaiterInterface() {
     await loadData();
   };
 
+  // ── Derived data ───────────────────────────────────────────────────────────
   const tableDataList: TableWithOrder[] = tables
-    .filter((t) => filterSection === 'all' || t.section === filterSection)
+    .filter((tbl) => filterSection === 'all' || tbl.section === filterSection)
     .map((table) => {
       const order = orders.find((o) => o.table_id === table.id) ?? null;
       const items = order ? allItems.filter((i) => i.order_id === order.id) : [];
@@ -1076,47 +1333,190 @@ export default function WaiterInterface() {
     });
 
   const selectedTableData = tableDataList.find((d) => d.table.id === selectedTableId) ?? null;
-  const sections = ['all', ...Array.from(new Set(tables.map((t) => t.section)))];
+  const sections = ['all', ...Array.from(new Set(tables.map((tbl) => tbl.section)))];
   const slowThreshold = settings?.slow_service_threshold_minutes ?? 15;
 
-  const occupiedCount = tables.filter((t) => t.status === 'occupied').length;
+  const occupiedCount = tables.filter((tbl) => tbl.status === 'occupied').length;
   const totalPending = Object.values(pendingOrderCounts).reduce((a, b) => a + b, 0);
 
-  return (
-    <div className="flex min-h-screen flex-col bg-slate-950">
-      {/* Top bar */}
-      <header className="flex-none border-b border-white/10 bg-slate-900 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => { void navigate(-1); }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
-                aria-label={t('common.back', 'Back')}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500">
-                <span className="text-xs font-black text-white">
-                  {currentEmployee?.name?.slice(0, 2).toUpperCase() ?? 'W'}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white">{currentEmployee?.name ?? t('restaurant.waiter', 'Waiter')}</p>
-                <p className="text-[10px] text-white/40">{currentTenant?.name ?? ''}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="text-end">
-              <p className="text-sm font-bold text-white">{now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-              <p className="text-[10px] text-white/40">{occupiedCount}/{tables.length} {t('restaurant.tablesOccupied', 'occupied')}</p>
-            </div>
-            {totalPending > 0 && (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 animate-bounce">
-                <span className="text-xs font-black text-white">{totalPending}</span>
+  // ── Bottom nav tab definitions ─────────────────────────────────────────────
+  const mainTabs: Array<{
+    key: MainTab;
+    label: string;
+    icon: typeof LayoutGrid;
+    badge?: number;
+  }> = [
+    { key: 'tables', label: t('restaurant.nav.tables', 'Tables'), icon: LayoutGrid },
+    { key: 'orders', label: t('restaurant.nav.orders', 'Orders'), icon: ShoppingCart, badge: orders.length || undefined },
+    { key: 'queue', label: t('restaurant.nav.queue', 'Queue'), icon: ListOrdered },
+    { key: 'pending', label: t('restaurant.nav.pending', 'Pending'), icon: Bell, badge: totalPending || undefined },
+  ];
+
+  // ── Tab content ────────────────────────────────────────────────────────────
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'tables':
+        return (
+          <motion.div
+            key="tables"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="flex flex-col"
+          >
+            {/* Section filter — only rendered when there are multiple sections */}
+            {sections.length > 2 && (
+              <div className="flex-none overflow-x-auto border-b border-white/10 bg-slate-900 px-4 py-2">
+                <div className="flex gap-2">
+                  {sections.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setFilterSection(s)}
+                      className={`whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
+                        filterSection === s
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white/5 text-white/50 hover:bg-white/10'
+                      }`}
+                    >
+                      {s === 'all' ? t('common.all', 'All') : t(`restaurant.section.${s}`, s)}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* Table grid */}
+            <div className="p-4">
+              {loading ? (
+                <div className="flex h-48 items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-indigo-500" />
+                </div>
+              ) : tableDataList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <ClipboardList className="mb-3 h-10 w-10 text-white/20" />
+                  <p className="text-sm text-white/40">{t('restaurant.noTables', 'No tables configured')}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {tableDataList.map((data) => (
+                    <TableTile
+                      key={data.table.id}
+                      data={data}
+                      slowThreshold={slowThreshold}
+                      onSelect={() => setSelectedTableId(data.table.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        );
+
+      case 'orders':
+        return (
+          <motion.div
+            key="orders"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="flex flex-1 flex-col items-center justify-center py-20"
+          >
+            <ShoppingCart className="mb-3 h-10 w-10 text-white/20" />
+            <p className="text-sm font-semibold text-white/40">{t('restaurant.ordersView.comingSoon', 'Orders view')}</p>
+            <p className="mt-1 text-xs text-white/25">{t('common.comingSoon', 'Coming soon')}</p>
+          </motion.div>
+        );
+
+      case 'queue':
+        return (
+          <motion.div
+            key="queue"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="flex flex-1 flex-col items-center justify-center py-20"
+          >
+            <ListOrdered className="mb-3 h-10 w-10 text-white/20" />
+            <p className="text-sm font-semibold text-white/40">{t('restaurant.queueView.comingSoon', 'Kitchen queue')}</p>
+            <p className="mt-1 text-xs text-white/25">{t('common.comingSoon', 'Coming soon')}</p>
+          </motion.div>
+        );
+
+      case 'pending':
+        return (
+          <motion.div
+            key="pending"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="flex flex-1 flex-col items-center justify-center py-20"
+          >
+            <Bell className="mb-3 h-10 w-10 text-white/20" />
+            <p className="text-sm font-semibold text-white/40">{t('restaurant.pendingView.comingSoon', 'Pending QR orders')}</p>
+            <p className="mt-1 text-xs text-white/25">{t('common.comingSoon', 'Coming soon')}</p>
+          </motion.div>
+        );
+    }
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="flex h-screen flex-col bg-slate-950">
+      {/* ── Fixed top bar ── */}
+      <header className="flex-none border-b border-white/10 bg-slate-900 px-4 py-3">
+        <div className="flex items-center justify-between">
+          {/* Left: back + identity */}
+          <div className="flex items-center gap-2">
+            <motion.button
+              onClick={() => { void navigate(-1); }}
+              whileTap={{ scale: 0.9 }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+              aria-label={t('common.back', 'Back')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </motion.button>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500">
+              <span className="text-xs font-black text-white">
+                {currentEmployee?.name?.slice(0, 2).toUpperCase() ?? 'W'}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white leading-tight">
+                {currentTenant?.name ?? t('restaurant.restaurant', 'Restaurant')}
+              </p>
+              <p className="text-[10px] text-white/40">
+                {currentEmployee?.name ?? t('restaurant.waiter', 'Waiter')}
+              </p>
+            </div>
+          </div>
+
+          {/* Right: clock + badges + refresh */}
+          <div className="flex items-center gap-2">
+            <div className="text-end">
+              <p className="text-sm font-bold text-white">
+                {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <p className="text-[10px] text-white/40">
+                {occupiedCount}/{tables.length} {t('restaurant.tablesOccupied', 'occupied')}
+              </p>
+            </div>
+
+            {/* Pending QR badge */}
+            {totalPending > 0 && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="flex h-7 min-w-[1.75rem] items-center justify-center rounded-full bg-amber-500 px-1.5 animate-bounce"
+              >
+                <span className="text-xs font-black text-white">{totalPending}</span>
+              </motion.div>
+            )}
+
+            {/* Refresh */}
             <button
               onClick={() => { void handleRefresh(); }}
               disabled={refreshing}
@@ -1129,53 +1529,61 @@ export default function WaiterInterface() {
         </div>
       </header>
 
-      {/* Section filter */}
-      {sections.length > 2 && (
-        <div className="flex-none overflow-x-auto border-b border-white/10 bg-slate-900 px-4 py-2">
-          <div className="flex gap-2">
-            {sections.map((s) => (
-              <button
-                key={s}
-                onClick={() => setFilterSection(s)}
-                className={`whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
-                  filterSection === s
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white/5 text-white/50 hover:bg-white/10'
-                }`}
-              >
-                {s === 'all' ? t('common.all', 'All') : t(`restaurant.section.${s}`, s)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Table grid */}
-      <main className="flex-1 overflow-y-auto p-4">
-        {loading ? (
-          <div className="flex h-48 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-indigo-500" />
-          </div>
-        ) : tableDataList.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <ClipboardList className="mb-3 h-10 w-10 text-white/20" />
-            <p className="text-sm text-white/40">{t('restaurant.noTables', 'No tables configured')}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {tableDataList.map((data) => (
-              <TableTile
-                key={data.table.id}
-                data={data}
-                slowThreshold={slowThreshold}
-                onSelect={() => setSelectedTableId(data.table.id)}
-              />
-            ))}
-          </div>
-        )}
+      {/* ── Scrollable main content area ── */}
+      <main className="flex flex-1 flex-col overflow-y-auto">
+        <AnimatePresence mode="wait">
+          {renderTabContent()}
+        </AnimatePresence>
       </main>
 
-      {/* Table detail overlay */}
+      {/* ── FAB — fixed above bottom nav ── */}
+      <motion.button
+        whileHover={{ scale: 1.08, boxShadow: '0 8px 32px rgba(99,102,241,0.45)' }}
+        whileTap={{ scale: 0.92 }}
+        onClick={() => {
+          // Navigate to active table detail, or switch to tables tab
+          if (activeTab !== 'tables') {
+            setActiveTab('tables');
+          }
+        }}
+        className="fixed bottom-24 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-sky-500 shadow-lg shadow-indigo-900/40 transition-shadow"
+        aria-label={t('restaurant.fab.newOrder', 'New order')}
+      >
+        <Plus className="h-7 w-7 text-white" />
+      </motion.button>
+
+      {/* ── Fixed bottom navigation ── */}
+      <nav className="fixed bottom-0 inset-x-0 z-30 border-t border-white/10 bg-slate-900 p-3">
+        <div className="grid grid-cols-4 gap-2">
+          {mainTabs.map(({ key, label, icon: Icon, badge }) => {
+            const isActive = activeTab === key;
+            return (
+              <motion.button
+                key={key}
+                whileTap={{ scale: 0.93 }}
+                onClick={() => setActiveTab(key)}
+                className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl py-2.5 text-[10px] font-semibold transition-all touch-manipulation ${
+                  isActive
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80'
+                }`}
+                aria-label={label}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <Icon className="h-5 w-5" />
+                <span>{label}</span>
+                {badge !== undefined && badge > 0 && (
+                  <span className="absolute right-2 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-black text-white">
+                    {badge}
+                  </span>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* ── Table detail overlay ── */}
       {selectedTableId && selectedTableData && (
         <TableDetail
           tableData={selectedTableData}

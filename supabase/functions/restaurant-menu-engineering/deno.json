@@ -1,0 +1,7 @@
+{
+  "name": "restaurant-menu-engineering",
+  "version": "1.0.0",
+  "imports": {
+    "supabase": "https://esm.sh/@supabase/supabase-js@2.38.4"
+  }
+}

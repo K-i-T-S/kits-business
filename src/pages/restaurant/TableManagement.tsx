@@ -211,13 +211,15 @@ export default function TableManagement() {
   };
 
   const handleMoveTable = async (id: string, x: number, y: number) => {
+    if (!tenantId) return;
     setTables((prev) => prev.map((t) => t.id === id ? { ...t, x, y } : t));
-    await supabase.from('restaurant_tables').update({ x, y }).eq('id', id);
+    await supabase.from('restaurant_tables').update({ x, y }).eq('id', id).eq('tenant_id', tenantId);
   };
 
   const handleStatusChange = async (tableId: string, status: TableStatus) => {
+    if (!tenantId) return;
     setTables((prev) => prev.map((t) => t.id === tableId ? { ...t, status } : t));
-    await supabase.from('restaurant_tables').update({ status }).eq('id', tableId);
+    await supabase.from('restaurant_tables').update({ status }).eq('id', tableId).eq('tenant_id', tenantId);
   };
 
   const handleOpenOrder = async () => {
@@ -257,22 +259,23 @@ export default function TableManagement() {
   };
 
   const handleSendToKDS = async () => {
-    if (!selectedOrder) return;
+    if (!selectedOrder || !tenantId) return;
     const pendingIds = selectedOrderItems.filter((i) => i.status === 'pending').map((i) => i.id);
     if (pendingIds.length === 0) { toast.info(t('restaurant.noItemsToSend', 'No pending items to send')); return; }
-    await supabase.from('restaurant_order_items').update({ status: 'in_progress', sent_at: new Date().toISOString() }).in('id', pendingIds);
+    await supabase.from('restaurant_order_items').update({ status: 'in_progress', sent_at: new Date().toISOString() }).in('id', pendingIds).eq('tenant_id', tenantId);
     setOrderItems((prev) => prev.map((i) => pendingIds.includes(i.id) ? { ...i, status: 'in_progress', sent_at: new Date().toISOString() } : i));
     toast.success(`${t('restaurant.sentToKDS', 'Sent to kitchen')} — ${pendingIds.length} ${t('restaurant.items', 'items')}`);
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    await supabase.from('restaurant_order_items').delete().eq('id', itemId);
+    if (!tenantId) return;
+    await supabase.from('restaurant_order_items').delete().eq('id', itemId).eq('tenant_id', tenantId);
     setOrderItems((prev) => prev.filter((i) => i.id !== itemId));
   };
 
   const handleCloseOrder = async () => {
-    if (!selectedOrder || !selectedTableId) return;
-    await supabase.from('table_orders').update({ status: 'paid', closed_at: new Date().toISOString() }).eq('id', selectedOrder.id);
+    if (!selectedOrder || !selectedTableId || !tenantId) return;
+    await supabase.from('table_orders').update({ status: 'paid', closed_at: new Date().toISOString() }).eq('id', selectedOrder.id).eq('tenant_id', tenantId);
     setOrders((prev) => prev.filter((o) => o.id !== selectedOrder.id));
     setOrderItems((prev) => prev.filter((i) => i.order_id !== selectedOrder.id));
     await handleStatusChange(selectedTableId, 'cleaning');

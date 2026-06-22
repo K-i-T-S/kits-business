@@ -638,10 +638,12 @@ export default function KitchenDisplay() {
 
   // ── Bump handlers ─────────────────────────────────────────────
   const handleBumpItem = useCallback(async (itemId: string) => {
+    if (!tenantId) return;
     const { error } = await supabase
       .from('restaurant_order_items')
       .update({ status: 'ready', ready_at: new Date().toISOString() })
-      .eq('id', itemId);
+      .eq('id', itemId)
+      .eq('tenant_id', tenantId);
     if (error) {
       toast.error(error.message);
       return;
@@ -656,7 +658,7 @@ export default function KitchenDisplay() {
         ),
       })),
     );
-  }, []);
+  }, [tenantId]);
 
   const handleBumpAll = useCallback(
     async (orderId: string) => {
@@ -666,10 +668,12 @@ export default function KitchenDisplay() {
         .filter((i) => i.status === 'pending' || i.status === 'in_progress')
         .map((i) => i.id);
       if (ids.length === 0) return;
+      if (!tenantId) return;
       const { error } = await supabase
         .from('restaurant_order_items')
         .update({ status: 'ready', ready_at: new Date().toISOString() })
-        .in('id', ids);
+        .in('id', ids)
+        .eq('tenant_id', tenantId);
       if (error) {
         toast.error(error.message);
         return;
@@ -689,7 +693,7 @@ export default function KitchenDisplay() {
         ),
       );
     },
-    [tickets],
+    [tickets, tenantId],
   );
 
   const handleBumpAllReady = useCallback(
@@ -698,10 +702,12 @@ export default function KitchenDisplay() {
       if (!ticket) return;
       const ids = ticket.items.filter((i) => i.status === 'ready').map((i) => i.id);
       if (ids.length === 0) return;
+      if (!tenantId) return;
       const { error } = await supabase
         .from('restaurant_order_items')
         .update({ status: 'served' })
-        .in('id', ids);
+        .in('id', ids)
+        .eq('tenant_id', tenantId);
       if (error) {
         toast.error(error.message);
         return;
@@ -721,7 +727,7 @@ export default function KitchenDisplay() {
           .filter((tk) => tk.items.some((i) => i.status !== 'served')),
       );
     },
-    [tickets],
+    [tickets, tenantId],
   );
 
   const handleTogglePriority = useCallback((orderId: string) => {

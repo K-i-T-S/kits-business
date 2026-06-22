@@ -46,7 +46,7 @@ interface TipsConfig {
 export default function ShiftManager() {
   const { t } = useTranslation();
   const { employees, currentTenant } = useApp();
-  const tenantId = currentTenant?.id ?? 'default';
+  const tenantId = currentTenant?.id;
 
   const feesKey = `shift_fees_${tenantId}`;
   const tipsKey = `tips_config_${tenantId}`;
@@ -92,7 +92,7 @@ export default function ShiftManager() {
   const weekDays = Array.from({ length: 7 }, (_, i) => getDayOfWeek(i));
 
   const loadShifts = useCallback(async () => {
-    if (!tenantId || tenantId === 'default') return;
+    if (!tenantId) return;
     const startOfWeek = weekDays[0] ?? '';
     const endOfWeek = weekDays[6] ?? '';
     const { data } = await supabase
@@ -106,13 +106,14 @@ export default function ShiftManager() {
   }, [weekDays, tenantId]);
 
   const loadAssignments = useCallback(async () => {
-    if (!selectedShiftId) return;
+    if (!selectedShiftId || !tenantId) return;
     const { data } = await supabase
       .from('restaurant_shift_assignments')
       .select('*')
-      .eq('shift_id', selectedShiftId);
+      .eq('shift_id', selectedShiftId)
+      .eq('tenant_id', tenantId);
     setAssignments((data ?? []) as ShiftAssignment[]);
-  }, [selectedShiftId]);
+  }, [selectedShiftId, tenantId]);
 
   useEffect(() => { void loadShifts(); }, [loadShifts]);
   useEffect(() => { void loadAssignments(); }, [loadAssignments]);
@@ -125,10 +126,11 @@ export default function ShiftManager() {
   }, [tipsKey]);
 
   const openShift = async () => {
+    if (!tenantId) return;
     const today = new Date().toISOString().split('T')[0] ?? '';
     const { data } = await supabase
       .from('restaurant_shifts')
-      .insert({ shift_date: today, ...newShift })
+      .insert({ tenant_id: tenantId, shift_date: today, ...newShift })
       .select()
       .single();
     if (data) {
@@ -139,18 +141,20 @@ export default function ShiftManager() {
   };
 
   const closeShift = async (shiftId: string) => {
+    if (!tenantId) return;
     await supabase
       .from('restaurant_shifts')
       .update({ is_closed: true, closed_at: new Date().toISOString() })
-      .eq('id', shiftId);
+      .eq('id', shiftId)
+      .eq('tenant_id', tenantId);
     setShifts(prev => prev.map(s => s.id === shiftId ? { ...s, is_closed: true } : s));
   };
 
   const assignStaff = async () => {
-    if (!selectedShiftId || !newAssignment.employee_id) return;
+    if (!selectedShiftId || !newAssignment.employee_id || !tenantId) return;
     const { data } = await supabase
       .from('restaurant_shift_assignments')
-      .insert({ shift_id: selectedShiftId, ...newAssignment })
+      .insert({ tenant_id: tenantId, shift_id: selectedShiftId, ...newAssignment })
       .select()
       .single();
     if (data) setAssignments(prev => [...prev, data as ShiftAssignment]);
@@ -159,18 +163,22 @@ export default function ShiftManager() {
   };
 
   const clockIn = async (assignmentId: string) => {
+    if (!tenantId) return;
     await supabase
       .from('restaurant_shift_assignments')
       .update({ clocked_in_at: new Date().toISOString() })
-      .eq('id', assignmentId);
+      .eq('id', assignmentId)
+      .eq('tenant_id', tenantId);
     setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, clocked_in_at: new Date().toISOString() } : a));
   };
 
   const clockOut = async (assignmentId: string) => {
+    if (!tenantId) return;
     await supabase
       .from('restaurant_shift_assignments')
       .update({ clocked_out_at: new Date().toISOString() })
-      .eq('id', assignmentId);
+      .eq('id', assignmentId)
+      .eq('tenant_id', tenantId);
     setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, clocked_out_at: new Date().toISOString() } : a));
   };
 

@@ -871,9 +871,9 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   };
 
   const handleSaveNotes = async () => {
-    if (!order?.id) return;
+    if (!order?.id || !tenantId) return;
     setSavingNotes(true);
-    await supabase.from('table_orders').update({ notes }).eq('id', order.id);
+    await supabase.from('table_orders').update({ notes }).eq('id', order.id).eq('tenant_id', tenantId);
     setSavingNotes(false);
     toast.success(t('restaurant.notesSaved', 'Notes saved'));
   };

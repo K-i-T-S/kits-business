@@ -130,14 +130,16 @@ export default function Reservations() {
   };
 
   const handleStatusChange = async (id: string, status: ReservationStatus) => {
-    const { error } = await supabase.from('reservations').update({ status }).eq('id', id);
+    if (!tenantId) return;
+    const { error } = await supabase.from('reservations').update({ status }).eq('id', id).eq('tenant_id', tenantId);
     if (error) { toast.error(error.message); return; }
     setReservations((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
     setStatusMenuId(null);
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from('reservations').delete().eq('id', id);
+    if (!tenantId) return;
+    await supabase.from('reservations').delete().eq('id', id).eq('tenant_id', tenantId);
     setReservations((prev) => prev.filter((r) => r.id !== id));
     toast.success(t('restaurant.reservation.deleted', 'Reservation deleted'));
   };

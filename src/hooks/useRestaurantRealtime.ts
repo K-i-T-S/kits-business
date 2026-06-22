@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabaseClient';
 
 /**
  * Subscribe to real-time changes for restaurant tables, orders, and order items.
  * Replace all polling (setInterval) with this hook.
  */
+type RealtimePayload = RealtimePostgresChangesPayload<Record<string, unknown>>;
+
 export function useRestaurantRealtime(
   tenantId: string,
   callbacks: {
-    onTableChange?: (payload: any) => void;
-    onOrderChange?: (payload: any) => void;
-    onOrderItemChange?: (payload: any) => void;
+    onTableChange?: (payload: RealtimePayload) => void;
+    onOrderChange?: (payload: RealtimePayload) => void;
+    onOrderItemChange?: (payload: RealtimePayload) => void;
   } = {},
 ): void {
+  const { onTableChange, onOrderChange, onOrderItemChange } = callbacks;
+
   useEffect(() => {
     if (!tenantId) return;
 
@@ -26,7 +31,7 @@ export function useRestaurantRealtime(
           table: 'restaurant_tables',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => callbacks.onTableChange?.(payload),
+        (payload) => onTableChange?.(payload),
       )
       .on(
         'postgres_changes',
@@ -36,7 +41,7 @@ export function useRestaurantRealtime(
           table: 'table_orders',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => callbacks.onOrderChange?.(payload),
+        (payload) => onOrderChange?.(payload),
       )
       .on(
         'postgres_changes',
@@ -46,14 +51,14 @@ export function useRestaurantRealtime(
           table: 'restaurant_order_items',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => callbacks.onOrderItemChange?.(payload),
+        (payload) => onOrderItemChange?.(payload),
       )
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [tenantId, callbacks.onTableChange, callbacks.onOrderChange, callbacks.onOrderItemChange]);
+  }, [tenantId, onTableChange, onOrderChange, onOrderItemChange]);
 }
 
 /**

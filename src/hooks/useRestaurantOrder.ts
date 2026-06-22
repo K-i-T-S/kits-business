@@ -196,29 +196,30 @@ export function useRestaurantOrder(
     // Update current_course to signal progression
     const courseOrder: CourseType[] = ['appetizers', 'mains', 'desserts'];
     const nextCourse = courseOrder[courseOrder.indexOf(course) + 1];
-    if (nextCourse && orderId) {
+    if (nextCourse && orderId && tenantId) {
       await supabase
         .from('table_orders')
         .update({ current_course: nextCourse })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId);
       setOrder((prev) => prev ? { ...prev, current_course: nextCourse } : prev);
     }
     toast.success(`Fired ${course} to kitchen — ${pendingIds.length} item${pendingIds.length > 1 ? 's' : ''}`);
-  }, [orderId, items]);
+  }, [orderId, tenantId, items]);
 
   // ── Update tip ───────────────────────────────────────────────────────────
   const updateTip = useCallback(async (tipUsd: number) => {
-    if (!orderId) return;
-    await supabase.from('table_orders').update({ tip_amount_usd: tipUsd }).eq('id', orderId);
+    if (!orderId || !tenantId) return;
+    await supabase.from('table_orders').update({ tip_amount_usd: tipUsd }).eq('id', orderId).eq('tenant_id', tenantId);
     setOrder((prev) => prev ? { ...prev, tip_amount_usd: tipUsd } : prev);
-  }, [orderId]);
+  }, [orderId, tenantId]);
 
   // ── Update discount ──────────────────────────────────────────────────────
   const updateDiscount = useCallback(async (pct: number) => {
-    if (!orderId) return;
-    await supabase.from('table_orders').update({ discount_pct: pct }).eq('id', orderId);
+    if (!orderId || !tenantId) return;
+    await supabase.from('table_orders').update({ discount_pct: pct }).eq('id', orderId).eq('tenant_id', tenantId);
     setOrder((prev) => prev ? { ...prev, discount_pct: pct } : prev);
-  }, [orderId]);
+  }, [orderId, tenantId]);
 
   // ── Close bill ───────────────────────────────────────────────────────────
   const closeBill = useCallback(async (paymentMethod: string) => {

@@ -76,6 +76,7 @@ const RestaurantBranches = lazy(() => import('./pages/restaurant/MultiBranchHub'
 const RestaurantSettings = lazy(() => import('./pages/restaurant/RestaurantSettings'));
 const RestaurantAIAssistant = lazy(() => import('./pages/restaurant/AIAssistant'));
 const RestaurantDelivery = lazy(() => import('./pages/restaurant/DeliveryIntegrations'));
+const RestaurantCashManagement = lazy(() => import('./pages/restaurant/CashManagement'));
 const QRMenuPage = lazy(() => import('./pages/qr-menu/QRMenuPage'));
 
 // Pharmacy Vertical Components
@@ -435,6 +436,7 @@ export default function App() {
                                 <Route path="/restaurant/settings" element={isAuthenticated ? <RestaurantSettings /> : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/ai" element={isAuthenticated ? <RestaurantAIAssistant /> : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/delivery" element={isAuthenticated ? <RestaurantDelivery /> : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/cash" element={isAuthenticated ? <RestaurantCashManagement /> : <Navigate to="/login" replace />} />
 
                                 {/* ── Pharmacy Vertical routes ── */}
                                 <Route

@@ -43,6 +43,7 @@ import {
   MessageCircle,
   Instagram,
   Truck,
+  Landmark,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -125,6 +126,7 @@ export default function Layout({ children }: LayoutProps) {
       { name: t('nav.vertical.recipes', 'Recipes & Cost'), icon: ChefHat, href: '/restaurant/recipes' },
       { name: t('nav.vertical.analytics', 'Analytics'), icon: BarChart2, href: '/restaurant/analytics' },
       { name: t('nav.vertical.shifts', 'Shifts'), icon: Calendar, href: '/restaurant/shifts' },
+      { name: t('nav.vertical.cashDrawer', 'Cash Drawer'), icon: Landmark, href: '/restaurant/cash' },
       { name: t('nav.vertical.eod', 'EOD Report'), icon: FileText, href: '/restaurant/eod' },
       { name: t('nav.vertical.tips', 'Tips Management'), icon: DollarSign, href: '/restaurant/tips' },
       { name: t('nav.vertical.branches', 'Branches'), icon: Building2, href: '/restaurant/branches' },
@@ -187,6 +189,7 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.vertical.analytics', 'Analytics'), icon: BarChart2, href: '/restaurant/analytics' },
         { name: t('nav.vertical.shifts', 'Shifts'), icon: Calendar, href: '/restaurant/shifts' },
+        { name: t('nav.vertical.cashDrawer', 'Cash Drawer'), icon: Landmark, href: '/restaurant/cash' },
         { name: t('nav.vertical.tips', 'Tips'), icon: DollarSign, href: '/restaurant/tips' },
         { name: t('nav.vertical.eod', 'EOD Report'), icon: FileText, href: '/restaurant/eod' },
       ],

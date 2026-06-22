@@ -27,7 +27,7 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Component, lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react';
+import { Component, lazy, Suspense, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -71,6 +71,26 @@ class WebGLErrorBoundary extends Component<{ children: ReactNode; fallback: Reac
   }
 }
 
+// ── Sparkline (5 tiny bars) ───────────────────────────────────────────────────
+
+function Sparkline({ history, color }: { history: number[]; color: string }) {
+  const max = Math.max(...history, 1);
+  return (
+    <div className="flex items-end gap-[2px] h-5">
+      {history.map((v, i) => (
+        <div
+          key={i}
+          className="w-1.5 rounded-sm transition-all duration-300"
+          style={{
+            height: `${Math.max(4, Math.round((v / max) * 20))}px`,
+            background: i === history.length - 1 ? color : color + '55',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ── KPI card ─────────────────────────────────────────────────────────────────
 
 interface KpiCardProps {
@@ -81,9 +101,10 @@ interface KpiCardProps {
   decimals?: number;
   icon: React.ReactNode;
   color: string;
+  history?: number[];
 }
 
-function KpiCard({ label, value, prefix = '', suffix = '', decimals = 0, icon, color }: KpiCardProps) {
+function KpiCard({ label, value, prefix = '', suffix = '', decimals = 0, icon, color, history }: KpiCardProps) {
   const animated = useCountUp(value);
   const display = decimals > 0
     ? animated.toFixed(decimals)
@@ -110,6 +131,9 @@ function KpiCard({ label, value, prefix = '', suffix = '', decimals = 0, icon, c
       <p className="text-2xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>
         {prefix}{display}{suffix}
       </p>
+      {history && history.length > 0 && (
+        <Sparkline history={history} color={color} />
+      )}
     </motion.div>
   );
 }
@@ -200,6 +224,15 @@ export default function RestaurantHub() {
   const [orderItems, setOrderItems] = useState<RestaurantOrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTableId, setSelectedTableId] = useState<string | undefined>();
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+
+  // Rolling history for sparklines — last 5 snapshots per KPI
+  const [kpiHistory, setKpiHistory] = useState<{
+    openTables: number[];
+    covers: number[];
+    revenue: number[];
+    avgCheck: number[];
+  }>({ openTables: [], covers: [], revenue: [], avgCheck: [] });
 
   // Stable ref to avoid stale closures in real-time callbacks
   const tablesRef = useRef(tables);
@@ -219,6 +252,7 @@ export default function RestaurantHub() {
       if (tablesRes.data) setTables(tablesRes.data as RestaurantTable[]);
       if (ordersRes.data) setOrders(ordersRes.data as TableOrder[]);
       if (itemsRes.data) setOrderItems(itemsRes.data as RestaurantOrderItem[]);
+      setLastRefreshed(new Date());
     } catch (err) {
       console.error('[RestaurantHub] loadData error:', err);
     } finally {
@@ -263,6 +297,36 @@ export default function RestaurantHub() {
 
   // Average check per occupied table
   const avgCheck = openTables > 0 ? revenue / openTables : 0;
+
+  // Rolling sparkline history — append new snapshot when KPIs change
+  useEffect(() => {
+    if (isLoading) return;
+    setKpiHistory((prev) => ({
+      openTables: [...prev.openTables, openTables].slice(-5),
+      covers: [...prev.covers, covers].slice(-5),
+      revenue: [...prev.revenue, revenue].slice(-5),
+      avgCheck: [...prev.avgCheck, avgCheck].slice(-5),
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastRefreshed]);
+
+  // Human-readable "last refreshed" string
+  const lastRefreshedLabel = useMemo(() => {
+    if (!lastRefreshed) return null;
+    const now = new Date();
+    const diffMs = now.getTime() - lastRefreshed.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 10) return 'just now';
+    if (diffSec < 60) return `${diffSec}s ago`;
+    return `${Math.floor(diffSec / 60)}m ago`;
+  }, [lastRefreshed]);
+
+  // Re-compute label every 10 seconds without triggering a data reload
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 10_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Build OrderInfo array for FloorPlan3D
   const orderInfos: OrderInfo[] = orders
@@ -432,7 +496,7 @@ export default function RestaurantHub() {
             {viewMode === 'floor' ? (
               <motion.div
                 key="floor"
-                className="h-full"
+                className="h-full flex flex-col"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -476,6 +540,33 @@ export default function RestaurantHub() {
                     />
                   </Suspense>
                 </WebGLErrorBoundary>
+
+                {/* Compact status legend beneath the 3D canvas */}
+                <div
+                  className="flex items-center justify-center gap-5 py-2 px-4 border-t"
+                  style={{ borderColor: RESTAURANT_COLORS.border }}
+                >
+                  {(
+                    [
+                      { key: 'available', label: 'Available' },
+                      { key: 'occupied', label: 'Occupied' },
+                      { key: 'reserved', label: 'Reserved' },
+                      { key: 'cleaning', label: 'Cleaning' },
+                      { key: 'alert', label: '>15 min' },
+                    ] as const
+                  ).map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-1.5">
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        // eslint-disable-next-line security/detect-object-injection
+                        style={{ background: RESTAURANT_COLORS[key].fill }}
+                      />
+                      <span className="text-[10px]" style={{ color: RESTAURANT_COLORS.textMuted }}>
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             ) : (
               <motion.div
@@ -502,24 +593,33 @@ export default function RestaurantHub() {
         >
           {/* KPI grid */}
           <section>
-            <h2
-              className="mb-3 text-xs font-semibold uppercase tracking-widest"
-              style={{ color: RESTAURANT_COLORS.textMuted }}
-            >
-              Live Metrics
-            </h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: RESTAURANT_COLORS.textMuted }}
+              >
+                Live Metrics
+              </h2>
+              {lastRefreshedLabel && (
+                <span className="text-[10px]" style={{ color: RESTAURANT_COLORS.textMuted }}>
+                  {lastRefreshedLabel}
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <KpiCard
                 label="Open Tables"
                 value={openTables}
                 icon={<LayoutGrid className="h-4 w-4" />}
                 color="#6366f1"
+                history={kpiHistory.openTables}
               />
               <KpiCard
                 label="Covers"
                 value={covers}
                 icon={<Users className="h-4 w-4" />}
                 color="#0ea5e9"
+                history={kpiHistory.covers}
               />
               <KpiCard
                 label="Revenue"
@@ -528,6 +628,7 @@ export default function RestaurantHub() {
                 decimals={2}
                 icon={<DollarSign className="h-4 w-4" />}
                 color="#10b981"
+                history={kpiHistory.revenue}
               />
               <KpiCard
                 label="Avg Check"
@@ -536,6 +637,7 @@ export default function RestaurantHub() {
                 decimals={2}
                 icon={<Clock className="h-4 w-4" />}
                 color="#f59e0b"
+                history={kpiHistory.avgCheck}
               />
             </div>
           </section>

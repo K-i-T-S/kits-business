@@ -60,6 +60,8 @@ const ForecastingPage = lazy(() => import('./pages/Forecasting'));
 const Finance = lazy(() => import('./pages/Finance'));
 
 // Restaurant Vertical Components
+const RestaurantHub = lazy(() => import('./pages/restaurant/RestaurantHub'));
+const AnalyticsCommandCenter = lazy(() => import('./pages/restaurant/AnalyticsCommandCenter'));
 const RestaurantTableManagement = lazy(() => import('./pages/restaurant/TableManagement'));
 const RestaurantKDS = lazy(() => import('./pages/restaurant/KitchenDisplay'));
 const RestaurantReservations = lazy(() => import('./pages/restaurant/Reservations'));
@@ -401,6 +403,14 @@ export default function App() {
 
                                 {/* ── Restaurant Vertical routes ── */}
                                 <Route path="/menu/:tenantSlug/:tableId" element={<QRMenuPage />} />
+                                <Route
+                                  path="/restaurant"
+                                  element={isAuthenticated ? <RestaurantHub /> : <Navigate to="/login" replace />}
+                                />
+                                <Route
+                                  path="/restaurant/analytics"
+                                  element={isAuthenticated ? <AnalyticsCommandCenter /> : <Navigate to="/login" replace />}
+                                />
                                 <Route
                                   path="/restaurant/tables"
                                   element={isAuthenticated ? <RestaurantTableManagement /> : <Navigate to="/login" replace />}

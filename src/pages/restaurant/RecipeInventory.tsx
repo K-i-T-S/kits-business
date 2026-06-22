@@ -41,6 +41,81 @@ import { supabase } from '@/utils/supabaseClient';
 // ── Tab types ─────────────────────────────────────────────────
 type Tab = 'ingredients' | 'recipes' | 'food-cost' | 'suppliers' | 'waste';
 
+// ── Auto-86 helper ────────────────────────────────────────────
+/**
+ * When an ingredient's stock crosses zero, mark all menu items that use it
+ * (via recipe chain: ingredient → recipe_ingredients → menu_item_recipes → menu_items)
+ * as is_eighty_sixd = true. Reverses when stock goes positive again.
+ *
+ * Returns the count of affected menu items for toast messaging.
+ */
+async function applyAutoEightySix(
+  tenantId: string,
+  ingredientId: string,
+  newQty: number,
+  ingredientName: string,
+): Promise<void> {
+  const markAs = newQty <= 0;
+
+  // Step 1: find recipes that use this ingredient (with tenant_id, fallback without)
+  let recipeIngredients: Array<{ recipe_id: string }> = [];
+  const { data: riWithTenant } = await supabase
+    .from('restaurant_recipe_ingredients')
+    .select('recipe_id')
+    .eq('ingredient_id', ingredientId)
+    .eq('tenant_id', tenantId);
+
+  if (riWithTenant && riWithTenant.length > 0) {
+    recipeIngredients = riWithTenant;
+  } else {
+    // Fallback: restaurant_recipe_ingredients may not have tenant_id on older rows
+    const { data: riWithoutTenant } = await supabase
+      .from('restaurant_recipe_ingredients')
+      .select('recipe_id')
+      .eq('ingredient_id', ingredientId);
+    recipeIngredients = (riWithoutTenant ?? []) as Array<{ recipe_id: string }>;
+  }
+
+  if (recipeIngredients.length === 0) return;
+
+  const recipeIds = recipeIngredients.map((r) => r.recipe_id);
+
+  // Step 2: find menu items linked to those recipes
+  const { data: menuItemRecipesData } = await supabase
+    .from('restaurant_menu_item_recipes')
+    .select('menu_item_id')
+    .in('recipe_id', recipeIds)
+    .eq('tenant_id', tenantId);
+
+  const menuItemIds = (menuItemRecipesData ?? [])
+    .map((r) => (r as { menu_item_id: string }).menu_item_id);
+
+  if (menuItemIds.length === 0) return;
+
+  // Step 3: update is_eighty_sixd on restaurant_menu_items
+  const { error } = await supabase
+    .from('restaurant_menu_items')
+    .update({ is_eighty_sixd: markAs })
+    .in('id', menuItemIds)
+    .eq('tenant_id', tenantId);
+
+  if (error) {
+    console.warn('[AutoEightySix] update error:', error.message);
+    return;
+  }
+
+  const count = menuItemIds.length;
+  if (markAs) {
+    toast.warning(
+      `Auto-86: ${count} item${count !== 1 ? 's' : ''} marked unavailable — ${ingredientName} out of stock`,
+    );
+  } else {
+    toast.success(
+      `Stock restored: ${count} item${count !== 1 ? 's' : ''} back on menu`,
+    );
+  }
+}
+
 // ── Small helpers ─────────────────────────────────────────────
 function fmt(n: number, decimals = 2) {
   return n.toFixed(decimals);
@@ -405,6 +480,9 @@ export default function RecipeInventory() {
     });
     if (mvError) console.warn('[RecipeInventory] movement log error:', mvError.message);
 
+    // Auto-86 check: receiving stock may un-86 items if ingredient was at 0
+    await applyAutoEightySix(tenantId, ing.id, newStock, ing.name);
+
     toast.success(`Stock received: +${qty} ${ing.unit} of ${ing.name}`);
     setReceiveStockOpen(false);
     setReceiveForm({ ingredient_id: '', qty: '', unit_cost: '', notes: '' });
@@ -420,8 +498,9 @@ export default function RecipeInventory() {
     const ing = ingredientMap.get(adjustForm.ingredient_id);
     if (!ing) return;
 
+    const adjustedQty = Math.max(0, ing.current_stock + delta);
     const { error } = await supabase.from('restaurant_ingredients').update({
-      current_stock: Math.max(0, ing.current_stock + delta),
+      current_stock: adjustedQty,
     }).eq('id', ing.id);
     if (error) { toast.error(error.message); return; }
 
@@ -432,6 +511,9 @@ export default function RecipeInventory() {
       quantity: Math.abs(delta),
       notes: adjustForm.notes || null,
     });
+
+    // Auto-86 check: adjustment may zero out or restore stock
+    await applyAutoEightySix(tenantId, ing.id, adjustedQty, ing.name);
 
     toast.success(`Stock adjusted for ${ing.name}`);
     setAdjustStockOpen(false);
@@ -536,8 +618,9 @@ export default function RecipeInventory() {
     if (wlError) { toast.error(wlError.message); return; }
 
     // Deduct from stock
+    const wasteNewQty = Math.max(0, ing.current_stock - qty);
     await supabase.from('restaurant_ingredients').update({
-      current_stock: Math.max(0, ing.current_stock - qty),
+      current_stock: wasteNewQty,
     }).eq('id', ing.id);
 
     await supabase.from('restaurant_ingredient_movements').insert({
@@ -547,6 +630,9 @@ export default function RecipeInventory() {
       quantity: qty,
       notes: wasteForm.reason || null,
     });
+
+    // Auto-86 check: waste may bring ingredient to zero
+    await applyAutoEightySix(tenantId, ing.id, wasteNewQty, ing.name);
 
     toast.success(`Waste logged: ${qty} ${ing.unit} of ${ing.name}`);
     setLogWasteOpen(false);
@@ -575,6 +661,28 @@ export default function RecipeInventory() {
   ];
 
   const criticalCount = ingredients.filter((i) => i.is_active && getIngredientStockStatus(i) === 'critical').length;
+
+  // Ingredients that are at or below zero stock (eighty-six threshold)
+  const eightySixdIngredients = ingredients.filter((i) => i.is_active && i.current_stock <= 0);
+  const eightySixdIngredientCount = eightySixdIngredients.length;
+
+  // Count of auto-86'd menu items: menu items linked (via recipe chain) to zero-stock ingredients
+  const eightySixdMenuItemCount = useMemo(() => {
+    const zeroIngIds = new Set(ingredients.filter((i) => i.current_stock <= 0).map((i) => i.id));
+    if (zeroIngIds.size === 0) return 0;
+    // Recipe IDs that use any zero-stock ingredient
+    const affectedRecipeIds = new Set(
+      recipeLines.filter((l) => zeroIngIds.has(l.ingredient_id)).map((l) => l.recipe_id),
+    );
+    if (affectedRecipeIds.size === 0) return 0;
+    // Menu item IDs linked to those recipes (via menuItemRecipes map)
+    const affectedMenuItemIds = new Set(
+      Object.entries(menuItemRecipes)
+        .filter(([recipeId]) => affectedRecipeIds.has(recipeId))
+        .map(([, menuItemId]) => menuItemId),
+    );
+    return affectedMenuItemIds.size;
+  }, [ingredients, recipeLines, menuItemRecipes]);
 
   return (
     <Layout>
@@ -689,6 +797,19 @@ export default function RecipeInventory() {
               ))}
             </div>
 
+            {/* Auto-86 summary banner */}
+            {eightySixdIngredientCount > 0 && (
+              <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0 text-red-400" />
+                <span className="text-red-300">
+                  <span className="font-semibold">{eightySixdIngredientCount} ingredient{eightySixdIngredientCount !== 1 ? 's' : ''} out of stock</span>
+                  {eightySixdMenuItemCount > 0 && (
+                    <span className="text-red-400/80"> · {eightySixdMenuItemCount} menu item{eightySixdMenuItemCount !== 1 ? 's' : ''} auto-86'd</span>
+                  )}
+                </span>
+              </div>
+            )}
+
             {/* Ingredient table */}
             <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
               <table className="w-full text-sm">
@@ -712,7 +833,12 @@ export default function RecipeInventory() {
                   ) : filteredIngredients.map((ing) => (
                     <tr key={ing.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
                       <td className="px-4 py-3">
-                        <div className="font-medium text-white">{ing.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-white">{ing.name}</span>
+                          {ing.current_stock <= 0 && (
+                            <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">86'd</span>
+                          )}
+                        </div>
                         {ing.name_ar && <div className="text-xs text-white/40 mt-0.5">{ing.name_ar}</div>}
                         {ing.storage_location && <div className="text-xs text-white/30">{ing.storage_location}</div>}
                       </td>

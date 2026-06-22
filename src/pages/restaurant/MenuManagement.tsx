@@ -30,6 +30,21 @@ import type {
 } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
 
+// ── Storage helpers ────────────────────────────────────────────────────────────
+
+// Requires: Supabase Storage bucket 'menu-images' must be public.
+// Create in Dashboard → Storage → New bucket → name: menu-images → Public: ON
+async function uploadMenuPhoto(file: File, tenantId: string, itemId: string): Promise<string | null> {
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const path = `${tenantId}/${itemId}.${ext}`;
+  const { error } = await supabase.storage
+    .from('menu-images')
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) { console.error('[uploadMenuPhoto]', error); return null; }
+  const { data } = supabase.storage.from('menu-images').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const ALLERGENS = ['gluten', 'dairy', 'nuts', 'shellfish', 'eggs', 'veg', 'vegan', 'halal'] as const;
@@ -249,40 +264,28 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
     if (!file || !currentTenant?.id) return;
 
     // Validate file type
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Only JPEG, PNG, and WebP images are supported');
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image files are supported');
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
       return;
     }
 
     setUploading(true);
     try {
-      // Generate unique filename
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(2, 8);
-      const ext = file.name.split('.').pop() || 'jpg';
-      const filename = `${currentTenant.id}/${item?.id || 'new'}_${timestamp}_${randomStr}.${ext}`;
+      // Use item id if editing; fall back to a temp key for new items
+      const itemId = item?.id ?? `new-${Date.now()}`;
+      const publicUrl = await uploadMenuPhoto(file, currentTenant.id, itemId);
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('menu-images')
-        .upload(filename, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data } = supabase.storage
-        .from('menu-images')
-        .getPublicUrl(filename);
-
-      if (data?.publicUrl) {
-        setForm(f => ({ ...f, photo_url: data.publicUrl }));
+      if (publicUrl) {
+        setForm(f => ({ ...f, photo_url: publicUrl }));
         toast.success('Photo uploaded successfully');
+      } else {
+        toast.error('Failed to upload photo — check bucket permissions');
       }
     } catch (err) {
       console.error('Upload error:', err);
@@ -367,7 +370,7 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
                 ) : (
                   <>
                     <Image className="h-4 w-4" />
-                    Click to upload or drag photo
+                    <span>Click or drag to upload<br /><span className="text-xs font-normal text-white/40">Max 2MB · JPG, PNG, WebP</span></span>
                   </>
                 )}
               </button>

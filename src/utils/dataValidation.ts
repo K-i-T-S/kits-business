@@ -17,8 +17,14 @@ export class DataValidator {
 
     if (!product.barcode?.trim()) {
       errors.push('Barcode is required');
-    } else if (!/^[0-9A-Za-z]{8,18}$/.test(product.barcode)) {
-      warnings.push('Barcode format may be invalid');
+    } else {
+      // Validate barcode: safe character check + length check
+      const barcode = product.barcode.trim();
+      const hasValidChars = /^[0-9A-Za-z]+$/.test(barcode);
+      const hasValidLength = barcode.length >= 8 && barcode.length <= 18;
+      if (!hasValidChars || !hasValidLength) {
+        warnings.push('Barcode format may be invalid');
+      }
     }
 
     if (!product.sku?.trim()) {
@@ -113,8 +119,14 @@ export class DataValidator {
 
     if (!customer.phone?.trim()) {
       errors.push('Phone number is required');
-    } else if (!/^\+?[\d\s\-\(\)]{10,}$/.test(customer.phone)) {
-      warnings.push('Phone number format may be invalid');
+    } else {
+      // Validate phone: safe character check + minimum length (max 20 chars)
+      const phone = customer.phone.trim();
+      const hasValidChars = /^[\d\s\-\+\(\)]{1,20}$/.test(phone);
+      const hasValidLength = phone.replace(/\D/g, '').length >= 10;
+      if (!hasValidChars || !hasValidLength) {
+        warnings.push('Phone number format may be invalid');
+      }
     }
 
     return {
@@ -134,8 +146,22 @@ export class DataValidator {
 
     if (!employee.email?.trim()) {
       errors.push('Email is required');
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employee.email)) {
-      errors.push('Invalid email format');
+    } else {
+      // Validate email: safe character check + max length
+      const email = employee.email.trim();
+      // Simple, non-backtracking email validation (basic format only)
+      const emailParts = email.split('@');
+      const hasValidFormat = emailParts.length === 2 &&
+        emailParts[0] !== undefined &&
+        emailParts[0].length > 0 &&
+        emailParts[0].length <= 64 &&
+        emailParts[1] !== undefined &&
+        emailParts[1].includes('.') &&
+        emailParts[1].length > 0 &&
+        email.length <= 255;
+      if (!hasValidFormat) {
+        errors.push('Invalid email format');
+      }
     }
 
     if (!employee.role) {

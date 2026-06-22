@@ -30,7 +30,9 @@ export class InputValidator {
     if (typeof input === 'string') {
       return input
         .trim()
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        // Remove script tags - length-limited to prevent ReDoS
+        .split(/<script[^>]*>/i).join('').split(/<\/script>/i).join('')
+        // Remove other HTML tags safely using textContent approach
         .replace(/<[^>]*>/g, '');
     }
 

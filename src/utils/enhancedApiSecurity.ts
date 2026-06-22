@@ -25,7 +25,7 @@ export class ApiSecurityWrapper {
       userId: session?.user?.id,
       tenantId: session?.tenant?.id,
       userRole: session?.tenant?.userRole,
-      ipAddress: await this.getClientIP(),
+      ipAddress: this.getClientIP(),
       userAgent: navigator.userAgent,
     };
 

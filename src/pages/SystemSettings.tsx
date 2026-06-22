@@ -172,7 +172,7 @@ export default function SystemSettings() {
     setFinancialForm(prev => ({
       ...prev,
       taxRate:
-        currentTenant.tax_rate != null
+        currentTenant.tax_rate !== null
           ? String(+(currentTenant.tax_rate * 100).toFixed(4))
           : (settings['tax_rate'] as string | undefined) ?? prev.taxRate,
       defaultCurrency: (settings['currency'] as string | undefined) ?? prev.defaultCurrency,
@@ -180,7 +180,7 @@ export default function SystemSettings() {
       tin: currentTenant.tin ?? prev.tin,
       secondaryCurrency: currentTenant.secondary_currency ?? prev.secondaryCurrency,
       exchangeRate:
-        currentTenant.exchange_rate != null
+        currentTenant.exchange_rate !== null
           ? String(currentTenant.exchange_rate)
           : prev.exchangeRate,
       showDualCurrency: currentTenant.show_dual_currency ?? prev.showDualCurrency,
@@ -191,11 +191,11 @@ export default function SystemSettings() {
       ...prev,
       loyaltyEnabled: currentTenant.loyalty_enabled ?? prev.loyaltyEnabled,
       loyaltyPointsPerDollar:
-        currentTenant.loyalty_points_per_dollar != null
+        currentTenant.loyalty_points_per_dollar !== null
           ? String(currentTenant.loyalty_points_per_dollar)
           : prev.loyaltyPointsPerDollar,
       loyaltyPointsRedeemRate:
-        currentTenant.loyalty_points_redeem_rate != null
+        currentTenant.loyalty_points_redeem_rate !== null
           ? String(currentTenant.loyalty_points_redeem_rate)
           : prev.loyaltyPointsRedeemRate,
     }));

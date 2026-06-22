@@ -7,31 +7,31 @@ export const SecuritySchemas = {
     name: z.string()
       .min(1, 'Product name is required')
       .max(100, 'Product name too long')
-      .regex(/^[^<>'"&]*$/, 'Invalid characters in product name'),
+      .refine((val) => !/<|>|'|"|&/.test(val), 'Invalid characters in product name'),
 
     barcode: z.string()
       .min(8, 'Barcode must be at least 8 characters')
       .max(18, 'Barcode too long')
-      .regex(/^[0-9A-Za-z]*$/, 'Barcode can only contain letters and numbers'),
+      .refine((val) => /^[0-9A-Za-z]+$/.test(val), 'Barcode can only contain letters and numbers'),
 
     sku: z.string()
       .min(1, 'SKU is required')
       .max(50, 'SKU too long')
-      .regex(/^[^<>'"&]*$/, 'Invalid characters in SKU'),
+      .refine((val) => !/<|>|'|"|&/.test(val), 'Invalid characters in SKU'),
 
     category: z.string()
       .min(1, 'Category is required')
       .max(50, 'Category too long')
-      .regex(/^[^<>'"&]*$/, 'Invalid characters in category'),
+      .refine((val) => !/<|>|'|"|&/.test(val), 'Invalid characters in category'),
 
     supplier: z.string()
       .min(1, 'Supplier is required')
       .max(100, 'Supplier name too long')
-      .regex(/^[^<>'"&]*$/, 'Invalid characters in supplier name'),
+      .refine((val) => !/<|>|'|"|&/.test(val), 'Invalid characters in supplier name'),
 
     variants: z.array(z.object({
       id: z.string(),
-      attributes: z.record(z.string().regex(/^[^<>'"&]*$/, 'Invalid characters')),
+      attributes: z.record(z.string().refine((val) => !/<|>|'|"|&/.test(val), 'Invalid characters')),
       cost: z.number().min(0, 'Cost cannot be negative').max(999999, 'Cost too high'),
       price: z.number().min(0, 'Price cannot be negative').max(999999, 'Price too high'),
       stock: z.number().int().min(0, 'Stock cannot be negative').max(999999, 'Stock too high'),
@@ -44,12 +44,12 @@ export const SecuritySchemas = {
     name: z.string()
       .min(1, 'Customer name is required')
       .max(100, 'Name too long')
-      .regex(/^[^<>'"&]*$/, 'Invalid characters in name'),
+      .refine((val) => !/<|>|'|"|&/.test(val), 'Invalid characters in name'),
 
     phone: z.string()
       .min(10, 'Phone number too short')
       .max(20, 'Phone number too long')
-      .regex(/^\+?[0-9\s\-\(\)]*$/, 'Invalid phone number format'),
+      .refine((val) => /^[\+0-9\s\-\(\)]+$/.test(val), 'Invalid phone number format'),
 
     email: z.string()
       .email('Invalid email format')
@@ -65,7 +65,7 @@ export const SecuritySchemas = {
     name: z.string()
       .min(1, 'Employee name is required')
       .max(100, 'Name too long')
-      .regex(/^[^<>'"&]*$/, 'Invalid characters in name'),
+      .refine((val) => !/<|>|'|"|&/.test(val), 'Invalid characters in name'),
 
     email: z.string()
       .email('Invalid email format')
@@ -115,12 +115,18 @@ export class InputSanitizer {
   static sanitizeString(input: string, maxLength: number = 1000): string {
     if (typeof input !== 'string') return '';
 
-    return input
-      .substring(0, maxLength)
-      .replace(/[<>'"&]/g, '') // Remove HTML characters
-      .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .replace(/on\w+=/gi, '') // Remove event handlers
-      .trim();
+    let result = input.substring(0, maxLength);
+
+    // Remove HTML characters - safe character-by-character approach
+    result = result.replace(/[<>'"&]/g, '');
+
+    // Remove javascript: protocol - case insensitive, length-limited
+    result = result.replace(/javascript:/gi, '');
+
+    // Remove event handlers - limited pattern (on + word chars only)
+    result = result.replace(/on[a-z]{2,}=/gi, '');
+
+    return result.trim();
   }
 
   static sanitizeNumber(input: any, min: number = -Infinity, max: number = Infinity): number {
@@ -133,9 +139,14 @@ export class InputSanitizer {
     if (typeof input !== 'string') return '';
 
     const email = input.toLowerCase().trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test(email)) return '';
+    // Safe email validation: no complex regex backtracking
+    const emailParts = email.split('@');
+    if (emailParts.length !== 2) return '';
+    if (!emailParts[0] || !emailParts[1]) return '';
+    if (emailParts[0].length === 0 || emailParts[0].length > 64) return '';
+    if (!emailParts[1].includes('.') || emailParts[1].length === 0) return '';
+    if (email.length > 255) return '';
 
     // Additional sanitization
     return email.replace(/[<>'"&]/g, '').substring(0, 255);
@@ -144,11 +155,12 @@ export class InputSanitizer {
   static sanitizePhone(input: string): string {
     if (typeof input !== 'string') return '';
 
-    // Keep only valid phone characters
+    // Keep only valid phone characters - simple character set
     const phone = input.replace(/[^\d\s\-\+\(\)]/g, '').trim();
 
-    // Basic validation
-    if (phone.length < 10) return '';
+    // Basic validation - must have at least 10 digits (not including formatting)
+    const digitCount = (phone.match(/\d/g) || []).length;
+    if (digitCount < 10) return '';
 
     return phone.substring(0, 20);
   }

@@ -219,13 +219,16 @@ export class FrontendSecurity {
     if (/[^a-zA-Z0-9]/.test(password)) score += 1;
     else feedback.push('Include special characters');
 
-    // Check for common patterns
-    if (/^(.)\1+$/.test(password)) {
+    // Check for common patterns - safe limited checks
+    // Check for repeating characters (limited to first 50 chars to prevent ReDoS)
+    const truncatedPassword = password.substring(0, 50);
+    if (/(.)\1{2,}/.test(truncatedPassword)) {
       score -= 2;
       feedback.push('Avoid repeating characters');
     }
 
-    if (/123|abc|qwe/i.test(password)) {
+    // Check for common sequences (limited patterns)
+    if (/123|234|345|abc|bcd|cde|qwe|wer|ert|asd|sdf|dfg/i.test(truncatedPassword)) {
       score -= 1;
       feedback.push('Avoid common sequences');
     }
@@ -253,6 +256,7 @@ export class FrontendSecurity {
     const errors: string[] = [];
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/csv'];
     const maxSize = 5 * 1024 * 1024; // 5MB
+    const dangerousExtensions = ['exe', 'bat', 'cmd', 'scr', 'pif', 'com'];
 
     if (!allowedTypes.includes(file.type)) {
       errors.push('File type not allowed');
@@ -262,12 +266,22 @@ export class FrontendSecurity {
       errors.push('File size exceeds 5MB limit');
     }
 
-    // Check file name for suspicious patterns
-    if (/\.(exe|bat|cmd|scr|pif|com)$/i.test(file.name)) {
-      errors.push('Executable files not allowed');
+    // Check file name for suspicious extensions - safe character check
+    const nameLength = file.name.length;
+    if (nameLength > 255) {
+      errors.push('File name too long');
+    } else {
+      const lastDotIndex = file.name.lastIndexOf('.');
+      if (lastDotIndex !== -1) {
+        const extension = file.name.substring(lastDotIndex + 1).toLowerCase();
+        if (extension.length > 0 && extension.length <= 5 && dangerousExtensions.includes(extension)) {
+          errors.push('Executable files not allowed');
+        }
+      }
     }
 
-    if (/[<>'"&]/.test(file.name)) {
+    // Check file name for invalid characters
+    if (/<|>|'|"|&/.test(file.name)) {
       errors.push('Invalid characters in file name');
     }
 

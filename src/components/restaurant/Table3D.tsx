@@ -47,6 +47,7 @@ export function Table3D({ table, orderInfo, onSelect, isSelected }: Table3DProps
     isAlert ? 'alert' : table.status;
 
   // Narrowed colour values (only status keys have fill / emissive / glow)
+  // eslint-disable-next-line security/detect-object-injection
   const colorEntry = RESTAURANT_COLORS[colorKey] as { fill: string; emissive: string; glow: string };
   const fillColor = colorEntry.fill;
   const emissiveColor = colorEntry.emissive;

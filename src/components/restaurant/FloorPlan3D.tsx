@@ -15,6 +15,7 @@
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera } from '@react-three/drei';
+import { PCFShadowMap } from 'three';
 
 import type { RestaurantTable } from '@/types/restaurant';
 import { Table3D } from './Table3D';
@@ -70,7 +71,7 @@ export function FloorPlan3D({
 
   return (
     <div className="h-screen w-full" style={{ background: '#0a0f1e' }}>
-      <Canvas shadows>
+      <Canvas shadows={{ type: PCFShadowMap }}>
         {/* Isometric orthographic camera — top-down angled view */}
         <OrthographicCamera
           makeDefault

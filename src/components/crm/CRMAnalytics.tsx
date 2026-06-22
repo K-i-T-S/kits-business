@@ -100,7 +100,7 @@ export default function CRMAnalytics({ customers, segments, dateRange, onDateRan
   }: {
     title: string;
     value: string | number;
-    icon: React.ElementType;
+    icon: React.ComponentType<{ className?: string }>;
     sub?: string;
   }) => (
     <div className="rounded-2xl border border-white/15 bg-white/5 p-5">

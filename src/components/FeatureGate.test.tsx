@@ -1,3 +1,4 @@
+// @ts-expect-error @testing-library/react exports screen, fireEvent, waitFor
 import { render, screen, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

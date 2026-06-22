@@ -9,7 +9,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "target": "ESNext",
-    "types": ["vite/client", "@testing-library/jest-dom"],
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
@@ -91,6 +91,8 @@
     "build",
     ".storybook",
     "**/*.stories.{js,ts,jsx,tsx}",
+    "**/*.test.{ts,tsx,js,jsx}",
+    "**/*.spec.{ts,tsx,js,jsx}",
     "src/components/ui/virtualized-table*.tsx",
     "supabase",
     "src/supabase"

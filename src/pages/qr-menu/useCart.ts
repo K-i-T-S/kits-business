@@ -43,10 +43,10 @@ export function useCart(): UseCartResult {
           return prev.map((item, idx) =>
             idx === existingIdx
               ? {
-                  ...item,
-                  quantity: item.quantity + quantity,
-                  totalPrice: (item.quantity + quantity) * unitPrice,
-                }
+                ...item,
+                quantity: item.quantity + quantity,
+                totalPrice: (item.quantity + quantity) * unitPrice,
+              }
               : item,
           );
         }

@@ -11,7 +11,7 @@ export function useRestaurantRealtime(
     onTableChange?: (payload: any) => void;
     onOrderChange?: (payload: any) => void;
     onOrderItemChange?: (payload: any) => void;
-  } = {}
+  } = {},
 ): void {
   useEffect(() => {
     if (!tenantId) return;
@@ -26,7 +26,7 @@ export function useRestaurantRealtime(
           table: 'restaurant_tables',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => callbacks.onTableChange?.(payload)
+        (payload) => callbacks.onTableChange?.(payload),
       )
       .on(
         'postgres_changes',
@@ -36,7 +36,7 @@ export function useRestaurantRealtime(
           table: 'table_orders',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => callbacks.onOrderChange?.(payload)
+        (payload) => callbacks.onOrderChange?.(payload),
       )
       .on(
         'postgres_changes',
@@ -46,7 +46,7 @@ export function useRestaurantRealtime(
           table: 'restaurant_order_items',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => callbacks.onOrderItemChange?.(payload)
+        (payload) => callbacks.onOrderItemChange?.(payload),
       )
       .subscribe();
 

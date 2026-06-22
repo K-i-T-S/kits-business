@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMenuEngineering, type MenuEngineeringItem } from '@/hooks/useMenuEngineering';
+import { useMenuEngineering, type MenuEngineeringItem as _MenuEngineeringItem } from '@/hooks/useMenuEngineering';
 import { Lightbulb, TrendingUp, Target, AlertTriangle } from 'lucide-react';
 
 interface MenuEngineeringMatrixProps {

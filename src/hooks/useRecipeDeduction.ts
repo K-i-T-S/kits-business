@@ -39,7 +39,7 @@ export function useRecipeDeduction() {
         console.warn('[useRecipeDeduction] unexpected error:', err);
       }
     },
-    [tenantId]
+    [tenantId],
   );
 
   return { deductForMenuItem };

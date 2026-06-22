@@ -1,3 +1,4 @@
+// @ts-expect-error @testing-library/react exports screen, fireEvent, waitFor
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { LoadingSpinner } from './LoadingSpinner';

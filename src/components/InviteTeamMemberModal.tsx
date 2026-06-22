@@ -47,7 +47,7 @@ interface InviteTeamMemberModalProps {
 
 const STANDARD_ROLES: Array<{
   value: StandardInviteRole;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
 }> = [
   { value: 'admin', icon: ShieldCheck, color: 'text-purple-300' },

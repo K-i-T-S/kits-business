@@ -1,0 +1,33 @@
+name: Restaurant Nightly AI Jobs
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2am UTC
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run demand forecast
+        run: |
+          curl -X POST \
+            https://pytndxjeznhhyycjasep.supabase.co/functions/v1/restaurant-demand-forecast \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+
+  upsells:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run upsell compute
+        run: |
+          curl -X POST \
+            https://pytndxjeznhhyycjasep.supabase.co/functions/v1/restaurant-upsell-compute \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+
+  menu_engineering:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run menu engineering
+        run: |
+          curl -X POST \
+            https://pytndxjeznhhyycjasep.supabase.co/functions/v1/restaurant-menu-engineering \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"

@@ -78,7 +78,7 @@ const DEFAULT_WORKFLOWS: Omit<AutomatedWorkflow, 'id' | 'tenant_id'>[] = [
 
 const WORKFLOW_META: Record<
   string,
-  { icon: React.ElementType; category: string; description: string }
+  { icon: React.ComponentType<{ className?: string }>; category: string; description: string }
 > = {
   daily_summary: {
     icon: FileText,

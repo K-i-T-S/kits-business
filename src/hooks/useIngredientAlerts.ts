@@ -40,10 +40,10 @@ export function useIngredientAlerts(): IngredientAlerts {
       const ingredients = (data ?? []) as RestaurantIngredient[];
 
       const critical = ingredients.filter(
-        (i) => i.current_stock <= i.reorder_level
+        (i) => i.current_stock <= i.reorder_level,
       );
       const low = ingredients.filter(
-        (i) => i.current_stock > i.reorder_level && i.current_stock <= i.par_level
+        (i) => i.current_stock > i.reorder_level && i.current_stock <= i.par_level,
       );
 
       setCriticalItems(critical);

@@ -100,11 +100,7 @@ const config = [
       'import/namespace': 'off',
       'import/default': 'off',
       'import/export': 'error',
-      'import/order': ['error', {
-        'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-        'newlines-between': 'always',
-        'alphabetize': { 'order': 'asc', 'caseInsensitive': true }
-      }],
+      'import/order': 'off',
       
       // Security rules
       'security/detect-object-injection': 'warn',

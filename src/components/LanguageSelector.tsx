@@ -13,7 +13,7 @@ import {
 } from './ui/dropdown-menu';
 
 export const LanguageSelector = memo(() => {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const { currentLanguage, changeLanguage, supportedLanguages, isRTL } = useLanguage();
 
   const currentLanguageInfo = supportedLanguages.find(lang => lang.code === currentLanguage);

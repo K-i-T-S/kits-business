@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { BRAND } from '@/constants/branding';
 
 interface Feature {
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   titleKey: string;
   titleFallback: string;
   descKey: string;

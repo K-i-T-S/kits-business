@@ -47,7 +47,7 @@ export function useMenuEngineering(tenantId: string | undefined, categoryFilter?
           recommended_action,
           potential_revenue_impact,
           restaurant_menu_items(name)
-        `
+        `,
         )
         .eq('tenant_id', tenantId)
         .limit(100);

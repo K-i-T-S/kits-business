@@ -757,7 +757,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   const tenantId = currentTenant?.id;
 
   const {
-    order: hookOrder,
+    order: _hookOrder,
     items,
     pendingOrders,
     totals,
@@ -786,7 +786,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   const [tipInput, setTipInput] = useState(String(order ? ((order as TableOrderExtended).tip_amount_usd ?? 0) : 0));
   const [discountInput, setDiscountInput] = useState(String(order ? ((order as TableOrderExtended).discount_pct ?? 0) : 0));
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank_transfer'>('cash');
-  const [closingBill, setClosingBill] = useState(false);
+  const [_closingBill, setClosingBill] = useState(false);
   const [showCloseBillModal, setShowCloseBillModal] = useState(false);
 
   // Split state
@@ -829,7 +829,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
     return splitByItem(byItemAssignments);
   })();
 
-  const handleCloseBill = async () => {
+  const _handleCloseBill = async () => {
     setClosingBill(true);
     try {
       await saveBillSplit(splitType, splits);

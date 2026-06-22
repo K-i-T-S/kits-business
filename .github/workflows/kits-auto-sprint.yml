@@ -87,8 +87,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           VITE_USE_LOCAL_MODE: 'true'
         run: |
-          bash scripts/auto-sprint.sh "${{ inputs.sprint_id }}" 2>&1 | tee sprint_run.log
-          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          set -o pipefail
+          bash scripts/auto-sprint.sh "${{ inputs.sprint_id }}" 2>&1 | tee sprint_run.log; exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          exit $exit_code
 
       - name: Retry sprint (Attempt 2)
         id: run2
@@ -103,8 +105,10 @@ jobs:
         run: |
           echo "::warning::Attempt 1 failed. Retrying in 60s..."
           sleep 60
-          bash scripts/auto-sprint.sh "${{ inputs.sprint_id }}" 2>&1 | tee -a sprint_run.log
-          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          set -o pipefail
+          bash scripts/auto-sprint.sh "${{ inputs.sprint_id }}" 2>&1 | tee -a sprint_run.log; exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          exit $exit_code
 
       - name: Determine success
         id: result
@@ -128,12 +132,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "auto: ${{ steps.check.outputs.sprint_name }} [skip ci]
-
-Autonomous sprint execution by KiTS Auto Agent.
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-            git pull --rebase origin main
-            git push origin main
+            git commit -m "auto: ${{ steps.check.outputs.sprint_name }} [skip ci]"
           fi
 
       - name: Open failure issue

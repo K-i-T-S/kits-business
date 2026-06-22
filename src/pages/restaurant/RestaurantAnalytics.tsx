@@ -581,247 +581,247 @@ export default function RestaurantAnalytics() {
         {tab === 'overview' && (
           <>
 
-        {/* Live ops strip */}
-        <section>
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">
-            {t('restaurant.analytics.live', 'Live Operations')}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {[
-              { label: 'Tables', value: `${live.tablesOccupied}/${live.totalTables}`, icon: Users, color: 'from-sky-500/20 to-sky-500/5', iconColor: 'text-sky-400' },
-              { label: 'Active Orders', value: live.activeOrders, icon: Clock, color: 'from-amber-500/20 to-yellow-500/5', iconColor: 'text-amber-400' },
-              { label: 'Slow Alerts', value: live.slowAlerts, icon: AlertCircle, color: live.slowAlerts > 0 ? 'from-red-500/20 to-red-500/5' : 'from-white/8 to-white/3', iconColor: live.slowAlerts > 0 ? 'text-red-400' : 'text-white/30' },
-              { label: 'Argile Active', value: live.argileSessions, icon: Flame, color: 'from-orange-500/20 to-orange-500/5', iconColor: 'text-orange-400' },
-              { label: '7d Forecast', value: `$${Math.round(forecastWeekTotal)}`, icon: TrendingUp, color: 'from-emerald-500/20 to-emerald-500/5', iconColor: 'text-emerald-400' },
-            ].map(({ label, value, icon: Icon, color, iconColor }) => (
-              <div key={label} className={`backdrop-blur-md bg-gradient-to-br ${color} border border-white/10 rounded-2xl shadow-2xl p-4`}>
-                <div className={`inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br mb-2 ${color}`}>
-                  <Icon className={`h-4 w-4 ${iconColor}`} />
-                </div>
-                <p className="text-xl font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">{value}</p>
-                <p className="text-[10px] text-white/50 mt-0.5">{label}</p>
+            {/* Live ops strip */}
+            <section>
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">
+                {t('restaurant.analytics.live', 'Live Operations')}
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {[
+                  { label: 'Tables', value: `${live.tablesOccupied}/${live.totalTables}`, icon: Users, color: 'from-sky-500/20 to-sky-500/5', iconColor: 'text-sky-400' },
+                  { label: 'Active Orders', value: live.activeOrders, icon: Clock, color: 'from-amber-500/20 to-yellow-500/5', iconColor: 'text-amber-400' },
+                  { label: 'Slow Alerts', value: live.slowAlerts, icon: AlertCircle, color: live.slowAlerts > 0 ? 'from-red-500/20 to-red-500/5' : 'from-white/8 to-white/3', iconColor: live.slowAlerts > 0 ? 'text-red-400' : 'text-white/30' },
+                  { label: 'Argile Active', value: live.argileSessions, icon: Flame, color: 'from-orange-500/20 to-orange-500/5', iconColor: 'text-orange-400' },
+                  { label: '7d Forecast', value: `$${Math.round(forecastWeekTotal)}`, icon: TrendingUp, color: 'from-emerald-500/20 to-emerald-500/5', iconColor: 'text-emerald-400' },
+                ].map(({ label, value, icon: Icon, color, iconColor }) => (
+                  <div key={label} className={`backdrop-blur-md bg-gradient-to-br ${color} border border-white/10 rounded-2xl shadow-2xl p-4`}>
+                    <div className={`inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br mb-2 ${color}`}>
+                      <Icon className={`h-4 w-4 ${iconColor}`} />
+                    </div>
+                    <p className="text-xl font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">{value}</p>
+                    <p className="text-[10px] text-white/50 mt-0.5">{label}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
 
-        {/* Today KPIs */}
-        <section>
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Today</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: 'Revenue', value: `$${today.revenue.toFixed(2)}` },
-              { label: 'Covers', value: today.covers },
-              { label: 'Avg Check', value: `$${today.avgCheck.toFixed(2)}` },
-              { label: 'Argile Revenue', value: `$${today.argileRevenue.toFixed(2)}` },
-            ].map(({ label, value }) => (
-              <div key={label} className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-xl p-4">
-                <p className="text-xs text-white/40 mb-1">{label}</p>
-                <p className="text-2xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">{value}</p>
+            {/* Today KPIs */}
+            <section>
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Today</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Revenue', value: `$${today.revenue.toFixed(2)}` },
+                  { label: 'Covers', value: today.covers },
+                  { label: 'Avg Check', value: `$${today.avgCheck.toFixed(2)}` },
+                  { label: 'Argile Revenue', value: `$${today.argileRevenue.toFixed(2)}` },
+                ].map(({ label, value }) => (
+                  <div key={label} className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-xl p-4">
+                    <p className="text-xs text-white/40 mb-1">{label}</p>
+                    <p className="text-2xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">{value}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {today.topDish !== '—' && (
-            <p className="mt-2 text-xs text-white/40">
+              {today.topDish !== '—' && (
+                <p className="mt-2 text-xs text-white/40">
               🏆 Top dish today: <span className="text-white/70 font-medium">{today.topDish}</span>
-              {today.avgRating > 0 && (
-                <span className="ml-3">⭐ {today.avgRating.toFixed(1)} avg rating</span>
+                  {today.avgRating > 0 && (
+                    <span className="ml-3">⭐ {today.avgRating.toFixed(1)} avg rating</span>
+                  )}
+                </p>
               )}
-            </p>
-          )}
-        </section>
+            </section>
 
-        {/* Revenue trend + 7-day forecast */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
+            {/* Revenue trend + 7-day forecast */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
               Revenue Trend + Forecast
-            </h2>
-            <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5">
+                </h2>
+                <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5">
               Holt double-smoothing · 80% CI
-            </span>
-          </div>
-          <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4 h-64">
-            {trendData.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-white/30 text-sm">
+                </span>
+              </div>
+              <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4 h-64">
+                {trendData.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-white/30 text-sm">
                 No historical data yet — revenue will appear here after your first closed orders.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={trendData}>
-                  <defs>
-                    <linearGradient id="fcGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} />
-                  <YAxis tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} />
-                  <Tooltip content={<AmberTooltip />} />
-                  {/* Confidence band */}
-                  <Area dataKey="upper" stroke="none" fill="url(#fcGrad)" legendType="none" name="Upper CI" />
-                  <Area dataKey="lower" stroke="none" fill="#0f172a" legendType="none" name="Lower CI" />
-                  {/* Actual */}
-                  <Line dataKey="actual" stroke="#f59e0b" strokeWidth={2} dot={false} name="Actual" connectNulls={false} />
-                  {/* Forecast */}
-                  <Line dataKey="predicted" stroke="#a78bfa" strokeWidth={2} strokeDasharray="6 3" dot={false} name="Forecast" connectNulls={false} />
-                  {/* Today marker */}
-                  <ReferenceLine x={new Date().toISOString().slice(5, 10)} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 2" label={{ value: 'Today', fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-          <div className="mt-2 flex items-center gap-4 text-[10px] text-white/40">
-            <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-amber-400 inline-block" /> Actual revenue</span>
-            <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-violet-400 inline-block" style={{ borderTop: '2px dashed' }} /> 7-day forecast</span>
-            <span className="flex items-center gap-1.5"><span className="h-3 w-4 bg-amber-500/10 inline-block rounded-sm" /> 80% confidence band</span>
-          </div>
-        </section>
-
-        {/* Weekly DOW pattern */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">Weekly Pattern</h2>
-            <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5">Thu/Fri peaks · Lebanese DOW</span>
-          </div>
-          <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4 h-48">
-            {dowData.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-white/30 text-sm">Insufficient history for pattern analysis.</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dowData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="day" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} />
-                  <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} />
-                  <Tooltip content={<AmberTooltip />} />
-                  <ReferenceLine y={dowData.reduce((s, d) => s + d.revenue, 0) / (dowData.filter((d) => d.revenue > 0).length || 1)} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 2" />
-                  <Bar dataKey="revenue" name="Avg Revenue" radius={[6, 6, 0, 0]}
-                    fill="#f59e0b"
-                    className="cursor-default"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </section>
-
-        {/* ML Insights */}
-        {insights.length > 0 && (
-          <section>
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3 flex items-center gap-1.5">
-              <Zap className="h-3 w-3" /> AI Insights
-            </h2>
-            <div className="grid gap-3 md:grid-cols-2">
-              {insights.map((insight, i) => (
-                <InsightCard key={i} insight={insight} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Menu velocity */}
-        <section>
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Menu Velocity</h2>
-          {velocities.length === 0 ? (
-            <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-xl p-8 text-center text-white/30 text-sm">
-              No item data yet for the selected period.
-            </div>
-          ) : (
-            <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-white/8">
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Item</th>
-                      <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Last 7d</th>
-                      <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Prev 7d</th>
-                      <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Trend</th>
-                      <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Signal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {velocities.slice(0, 10).map((item, i) => (
-                      <tr key={i} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                        <td className="px-4 py-3 font-medium text-white/80 max-w-[180px] truncate">{item.name}</td>
-                        <td className="px-4 py-3 text-right text-white/60">{item.last7DayQty}</td>
-                        <td className="px-4 py-3 text-right text-white/40">{item.prev7DayQty}</td>
-                        <td className="px-4 py-3 text-right">
-                          <span className={item.trend > 0 ? 'text-emerald-400' : item.trend < 0 ? 'text-red-400' : 'text-white/40'}>
-                            {item.trend > 0 ? '+' : ''}{Math.round(item.trend * 100)}%
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className={`rounded-lg px-2 py-0.5 text-[10px] font-semibold ${
-                            item.alert === 'rising' ? 'bg-emerald-500/20 text-emerald-400'
-                              : item.alert === 'falling' ? 'bg-red-500/20 text-red-400'
-                                : 'bg-white/5 text-white/30'
-                          }`}>
-                            {item.alert === 'rising' ? '↑ Rising' : item.alert === 'falling' ? '↓ Falling' : 'Stable'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Waiter leaderboard */}
-        {ranked.length > 0 && (
-          <section>
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Staff Leaderboard</h2>
-            <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/8">
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">#</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Staff</th>
-                    <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Tables</th>
-                    <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Revenue</th>
-                    <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Avg Ticket</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranked.slice(0, 5).map((w, i) => (
-                    <tr key={w.employee_id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                      <td className="px-4 py-3 text-white/40">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}</td>
-                      <td className="px-4 py-3 font-medium text-white/80">{w.employee_name}</td>
-                      <td className="px-4 py-3 text-right text-white/60">{w.tables_served}</td>
-                      <td className="px-4 py-3 text-right font-bold text-amber-400">${w.total_revenue.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right text-white/50">${w.avg_ticket.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* Recent feedback */}
-        {feedback.length > 0 && (
-          <section>
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Today's Guest Feedback</h2>
-            <div className="space-y-2">
-              {feedback.slice(0, 5).map((f: TableFeedback, i: number) => (
-                <div key={i} className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-xl shadow-xl px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-white/70">Table {(f as { table_number?: number }).table_number ?? '?'}</p>
-                    {(f as { comment?: string }).comment && (
-                      <p className="text-xs text-white/40 mt-0.5 italic">"{(f as { comment?: string }).comment}"</p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Star className="h-3.5 w-3.5 fill-amber-400" />
-                    <span className="text-sm font-bold">{(f as { overall_rating?: number }).overall_rating?.toFixed(1) ?? '—'}</span>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={trendData}>
+                      <defs>
+                        <linearGradient id="fcGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} />
+                      <YAxis tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} />
+                      <Tooltip content={<AmberTooltip />} />
+                      {/* Confidence band */}
+                      <Area dataKey="upper" stroke="none" fill="url(#fcGrad)" legendType="none" name="Upper CI" />
+                      <Area dataKey="lower" stroke="none" fill="#0f172a" legendType="none" name="Lower CI" />
+                      {/* Actual */}
+                      <Line dataKey="actual" stroke="#f59e0b" strokeWidth={2} dot={false} name="Actual" connectNulls={false} />
+                      {/* Forecast */}
+                      <Line dataKey="predicted" stroke="#a78bfa" strokeWidth={2} strokeDasharray="6 3" dot={false} name="Forecast" connectNulls={false} />
+                      {/* Today marker */}
+                      <ReferenceLine x={new Date().toISOString().slice(5, 10)} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 2" label={{ value: 'Today', fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+              <div className="mt-2 flex items-center gap-4 text-[10px] text-white/40">
+                <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-amber-400 inline-block" /> Actual revenue</span>
+                <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-violet-400 inline-block" style={{ borderTop: '2px dashed' }} /> 7-day forecast</span>
+                <span className="flex items-center gap-1.5"><span className="h-3 w-4 bg-amber-500/10 inline-block rounded-sm" /> 80% confidence band</span>
+              </div>
+            </section>
+
+            {/* Weekly DOW pattern */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">Weekly Pattern</h2>
+                <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5">Thu/Fri peaks · Lebanese DOW</span>
+              </div>
+              <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4 h-48">
+                {dowData.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-white/30 text-sm">Insufficient history for pattern analysis.</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={dowData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="day" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} />
+                      <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} />
+                      <Tooltip content={<AmberTooltip />} />
+                      <ReferenceLine y={dowData.reduce((s, d) => s + d.revenue, 0) / (dowData.filter((d) => d.revenue > 0).length || 1)} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 2" />
+                      <Bar dataKey="revenue" name="Avg Revenue" radius={[6, 6, 0, 0]}
+                        fill="#f59e0b"
+                        className="cursor-default"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </section>
+
+            {/* ML Insights */}
+            {insights.length > 0 && (
+              <section>
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3 flex items-center gap-1.5">
+                  <Zap className="h-3 w-3" /> AI Insights
+                </h2>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {insights.map((insight, i) => (
+                    <InsightCard key={i} insight={insight} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Menu velocity */}
+            <section>
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Menu Velocity</h2>
+              {velocities.length === 0 ? (
+                <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-xl p-8 text-center text-white/30 text-sm">
+              No item data yet for the selected period.
+                </div>
+              ) : (
+                <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-white/8">
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Item</th>
+                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Last 7d</th>
+                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Prev 7d</th>
+                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Trend</th>
+                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Signal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {velocities.slice(0, 10).map((item, i) => (
+                          <tr key={i} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+                            <td className="px-4 py-3 font-medium text-white/80 max-w-[180px] truncate">{item.name}</td>
+                            <td className="px-4 py-3 text-right text-white/60">{item.last7DayQty}</td>
+                            <td className="px-4 py-3 text-right text-white/40">{item.prev7DayQty}</td>
+                            <td className="px-4 py-3 text-right">
+                              <span className={item.trend > 0 ? 'text-emerald-400' : item.trend < 0 ? 'text-red-400' : 'text-white/40'}>
+                                {item.trend > 0 ? '+' : ''}{Math.round(item.trend * 100)}%
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className={`rounded-lg px-2 py-0.5 text-[10px] font-semibold ${
+                                item.alert === 'rising' ? 'bg-emerald-500/20 text-emerald-400'
+                                  : item.alert === 'falling' ? 'bg-red-500/20 text-red-400'
+                                    : 'bg-white/5 text-white/30'
+                              }`}>
+                                {item.alert === 'rising' ? '↑ Rising' : item.alert === 'falling' ? '↓ Falling' : 'Stable'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+              )}
+            </section>
+
+            {/* Waiter leaderboard */}
+            {ranked.length > 0 && (
+              <section>
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Staff Leaderboard</h2>
+                <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-white/8">
+                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">#</th>
+                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Staff</th>
+                        <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Tables</th>
+                        <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Revenue</th>
+                        <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Avg Ticket</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ranked.slice(0, 5).map((w, i) => (
+                        <tr key={w.employee_id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+                          <td className="px-4 py-3 text-white/40">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}</td>
+                          <td className="px-4 py-3 font-medium text-white/80">{w.employee_name}</td>
+                          <td className="px-4 py-3 text-right text-white/60">{w.tables_served}</td>
+                          <td className="px-4 py-3 text-right font-bold text-amber-400">${w.total_revenue.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right text-white/50">${w.avg_ticket.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+
+            {/* Recent feedback */}
+            {feedback.length > 0 && (
+              <section>
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Today's Guest Feedback</h2>
+                <div className="space-y-2">
+                  {feedback.slice(0, 5).map((f: TableFeedback, i: number) => (
+                    <div key={i} className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-xl shadow-xl px-4 py-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-white/70">Table {(f as { table_number?: number }).table_number ?? '?'}</p>
+                        {(f as { comment?: string }).comment && (
+                          <p className="text-xs text-white/40 mt-0.5 italic">"{(f as { comment?: string }).comment}"</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-amber-400">
+                        <Star className="h-3.5 w-3.5 fill-amber-400" />
+                        <span className="text-sm font-bold">{(f as { overall_rating?: number }).overall_rating?.toFixed(1) ?? '—'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         )}
 

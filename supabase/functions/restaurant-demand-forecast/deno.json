@@ -1,8 +1,6 @@
 {
-  "name": "restaurant-demand-forecast",
-  "version": "1.0.0",
   "imports": {
-    "supabase": "https://esm.sh/@supabase/supabase-js@2.38.4",
-    "date-fns-tz": "https://esm.sh/date-fns-tz@2.0.0"
+    "supabase": "npm:@supabase/supabase-js@2.38.4",
+    "date-fns-tz": "npm:date-fns-tz@2.0.0"
   }
 }

@@ -489,8 +489,8 @@ export default function DepartmentManager() {
                         rule.rule_type === 'qty_break'
                           ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
                           : rule.rule_type === 'bogo'
-                          ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20'
-                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20'
+                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       }`}>
                         {BULK_TYPE_LABELS[rule.rule_type]}
                       </div>
@@ -498,9 +498,9 @@ export default function DepartmentManager() {
                         <div className="text-white text-sm font-medium">{productName(rule.product_id)}</div>
                         <div className="text-white/50 text-xs">
                           {t('supermarket.minQty', 'Min: {{n}} units', { n: rule.min_quantity })}
-                          {rule.discount_percent != null && ` · ${rule.discount_percent}% off`}
-                          {rule.fixed_price_usd != null && ` · $${rule.fixed_price_usd.toFixed(2)} fixed`}
-                          {rule.free_qty != null && ` · +${rule.free_qty} free`}
+                          {rule.discount_percent !== null && ` · ${rule.discount_percent}% off`}
+                          {rule.fixed_price_usd !== null && ` · $${rule.fixed_price_usd.toFixed(2)} fixed`}
+                          {rule.free_qty !== null && ` · +${rule.free_qty} free`}
                         </div>
                       </div>
                     </div>

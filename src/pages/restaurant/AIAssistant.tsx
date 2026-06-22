@@ -279,14 +279,14 @@ export default function AIAssistant() {
         setMessages((prev) => [...prev, assistantMessage]);
       }
     },
-    [tenantId, sendMessage, language]
+    [tenantId, sendMessage, language],
   );
 
   const handleSuggestedPrompt = useCallback(
     (prompt: string) => {
       void handleSendMessage(prompt);
     },
-    [handleSendMessage]
+    [handleSendMessage],
   );
 
   const handleClearHistory = useCallback(() => {
@@ -303,7 +303,7 @@ export default function AIAssistant() {
     (newLanguage: 'en' | 'ar') => {
       changeLanguage(newLanguage);
     },
-    [changeLanguage]
+    [changeLanguage],
   );
 
   if (!tenantId) {

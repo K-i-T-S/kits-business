@@ -1,1 +1,0 @@
-mobile view still using the old navigation model needs full redesign.

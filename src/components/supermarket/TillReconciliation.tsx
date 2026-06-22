@@ -20,7 +20,7 @@ const DENOMINATIONS: Array<{ label: string; value: number; currency: string }> =
 export default function TillReconciliation() {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<TillEntry[]>(
-    DENOMINATIONS.map(d => ({ denomination: d.label, count: 0, value: d.value }))
+    DENOMINATIONS.map(d => ({ denomination: d.label, count: 0, value: d.value })),
   );
   const [expectedCash, setExpectedCash] = useState('');
   const [reconciled, setReconciled] = useState(false);

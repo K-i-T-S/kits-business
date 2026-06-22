@@ -2,7 +2,7 @@ import type { WaiterPerformanceStats } from '@/types/restaurant';
 
 export function calculateWaiterScore(
   stats: WaiterPerformanceStats,
-  allStats: WaiterPerformanceStats[]
+  allStats: WaiterPerformanceStats[],
 ): number {
   if (allStats.length === 0) return 0;
   const maxRevenue = Math.max(...allStats.map(s => s.total_revenue), 1);
@@ -22,7 +22,7 @@ export function calculateWaiterScore(
 }
 
 export function rankWaiters(
-  allStats: WaiterPerformanceStats[]
+  allStats: WaiterPerformanceStats[],
 ): Array<WaiterPerformanceStats & { score: number; rank: number }> {
   return allStats
     .map(s => ({ ...s, score: calculateWaiterScore(s, allStats) }))
@@ -31,7 +31,7 @@ export function rankWaiters(
 }
 
 export function getEmployeeOfMonth(
-  allStats: WaiterPerformanceStats[]
+  allStats: WaiterPerformanceStats[],
 ): (WaiterPerformanceStats & { score: number; rank: number }) | null {
   const ranked = rankWaiters(allStats);
   return ranked[0] ?? null;

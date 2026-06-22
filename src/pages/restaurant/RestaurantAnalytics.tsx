@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ComposedChart, Line, Area, ReferenceLine,
+  ComposedChart, Line, Area, ReferenceLine, LineChart,
 } from 'recharts';
 
 import Layout from '@/components/Layout';
@@ -29,10 +29,12 @@ import type {
 } from '@/utils/restaurantML';
 import { rankWaiters } from '@/utils/restaurantScoring';
 import { supabase } from '@/utils/supabaseClient';
+import { useDemandForecast } from '@/hooks/useDemandForecast';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Range = '7d' | '30d' | '90d';
+type AnalyticsTab = 'overview' | 'forecast' | 'matrix';
 
 interface LiveOps {
   tablesOccupied: number;
@@ -97,6 +99,187 @@ function InsightCard({ insight }: { insight: MLInsight }) {
   );
 }
 
+// ── Forecast tab ──────────────────────────────────────────────────────────────
+
+interface ForecastTabProps {
+  tenantId?: string;
+}
+
+function ForecastTab({ tenantId }: ForecastTabProps) {
+  const { forecasts, loading: forecastLoading } = useDemandForecast(tenantId);
+
+  if (forecastLoading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!forecasts || forecasts.length === 0) {
+    return (
+      <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-xl p-8 text-center text-white/40 text-sm">
+        No forecast data yet. Check back after the nightly AI forecast job runs.
+      </div>
+    );
+  }
+
+  // Tomorrow's prediction card (first item)
+  const tomorrow = forecasts[0]!;
+  const confidenceColor = tomorrow.confidence >= 0.8
+    ? 'text-emerald-400'
+    : tomorrow.confidence >= 0.65
+      ? 'text-amber-400'
+      : 'text-red-400';
+
+  // 7-day chart data
+  const chartData = forecasts.map((f) => ({
+    date: new Date(f.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    covers: f.predicted_covers,
+    revenue: Math.round(f.predicted_revenue * 100) / 100,
+    confidence: Math.round(f.confidence * 100),
+  }));
+
+  return (
+    <div className="space-y-6">
+      {/* Tomorrow's prediction card */}
+      <section>
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">
+          Tomorrow's Prediction
+        </h3>
+        <div className="backdrop-blur-md bg-gradient-to-br from-indigo-500/15 to-sky-500/10 border border-indigo-500/30 rounded-2xl shadow-2xl p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Covers */}
+            <div className="space-y-1.5">
+              <p className="text-xs text-white/40">Predicted Covers</p>
+              <p className="text-3xl font-black bg-gradient-to-r from-indigo-400 to-sky-400 bg-clip-text text-transparent">
+                {tomorrow.predicted_covers}
+              </p>
+            </div>
+            {/* Revenue */}
+            <div className="space-y-1.5">
+              <p className="text-xs text-white/40">Predicted Revenue</p>
+              <p className="text-3xl font-black text-emerald-400">
+                ${tomorrow.predicted_revenue.toFixed(2)}
+              </p>
+            </div>
+            {/* Confidence */}
+            <div className="space-y-1.5">
+              <p className="text-xs text-white/40">Confidence Level</p>
+              <p className={`text-3xl font-black ${confidenceColor}`}>
+                {Math.round(tomorrow.confidence * 100)}%
+              </p>
+              <p className="text-[9px] text-white/30 mt-1">
+                {tomorrow.confidence >= 0.8
+                  ? '✓ High confidence'
+                  : tomorrow.confidence >= 0.65
+                    ? '◐ Moderate confidence'
+                    : '⚠ Low confidence'}
+              </p>
+            </div>
+          </div>
+
+          {/* Staffing Recommendation */}
+          {tomorrow.staff_recommendation && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <p className="text-xs font-bold text-white/70 mb-2">Staffing Recommendation</p>
+              <div className="bg-white/5 rounded-lg px-3 py-2">
+                <p className="text-xs text-white/60">
+                  {typeof tomorrow.staff_recommendation === 'object'
+                    ? JSON.stringify(tomorrow.staff_recommendation).slice(0, 100) + '...'
+                    : String(tomorrow.staff_recommendation)}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 7-day forecast chart */}
+      <section>
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">
+          7-Day Demand Forecast
+        </h3>
+        <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4 h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <defs>
+                <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} />
+              <YAxis tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="rounded-xl border border-indigo-500/20 bg-slate-950/95 backdrop-blur-xl p-3 shadow-2xl text-xs">
+                      <p className="mb-1.5 font-semibold text-white/70">{label}</p>
+                      {payload.map((p, i) => (
+                        <p key={i} className="flex items-center justify-between gap-4">
+                          <span style={{ color: p.color }}>{p.name}</span>
+                          <span className="font-bold text-white">
+                            {p.name === 'Predicted Covers' ? p.value : `$${p.value}`}
+                          </span>
+                        </p>
+                      ))}
+                    </div>
+                  );
+                }}
+              />
+              <Line dataKey="covers" stroke="#818cf8" strokeWidth={2} dot={false} name="Predicted Covers" connectNulls />
+              <Line
+                dataKey="revenue"
+                stroke="#10b981"
+                strokeWidth={2}
+                dot={false}
+                name="Predicted Revenue ($)"
+                connectNulls
+                yAxisId="right"
+              />
+              <YAxis yAxisId="right" orientation="right" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* Forecast factors and prep */}
+      {forecasts.map((f) => (
+        (f.factors || f.prep_recommendations) ? (
+          <section key={f.id}>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">
+              {new Date(f.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} Insights
+            </h3>
+            <div className="grid gap-3 md:grid-cols-2">
+              {f.factors && (
+                <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-xl shadow-xl p-4">
+                  <p className="text-xs font-bold text-white/70 mb-2">Demand Factors</p>
+                  <p className="text-xs text-white/50">
+                    {typeof f.factors === 'object' ? JSON.stringify(f.factors).slice(0, 120) + '...' : String(f.factors)}
+                  </p>
+                </div>
+              )}
+              {f.prep_recommendations && (
+                <div className="backdrop-blur-md bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30 rounded-xl shadow-xl p-4">
+                  <p className="text-xs font-bold text-emerald-300 mb-2">Prep Recommendations</p>
+                  <p className="text-xs text-white/60">
+                    {typeof f.prep_recommendations === 'object'
+                      ? JSON.stringify(f.prep_recommendations).slice(0, 120) + '...'
+                      : String(f.prep_recommendations)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        ) : null
+      ))}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function RestaurantAnalytics() {
@@ -105,6 +288,7 @@ export default function RestaurantAnalytics() {
   const tenantId = currentTenant?.id;
 
   const [range, setRange] = useState<Range>('30d');
+  const [tab, setTab] = useState<AnalyticsTab>('overview');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -370,6 +554,34 @@ export default function RestaurantAnalytics() {
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex gap-2 border-b border-white/10">
+          {[
+            { id: 'overview', label: 'Overview', icon: '📊' },
+            { id: 'forecast', label: 'Forecast', icon: '📈' },
+            { id: 'matrix', label: 'Menu Matrix', icon: '🧮' },
+          ].map((tabItem) => (
+            <button
+              key={tabItem.id}
+              onClick={() => setTab(tabItem.id as AnalyticsTab)}
+              className={`px-4 py-2.5 text-xs font-semibold transition-all relative flex items-center gap-1.5 ${
+                tab === tabItem.id
+                  ? 'text-amber-400'
+                  : 'text-white/50 hover:text-white/70'
+              }`}
+            >
+              {tabItem.icon} {tabItem.label}
+              {tab === tabItem.id && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-yellow-400" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* OVERVIEW TAB CONTENT */}
+        {tab === 'overview' && (
+          <>
+
         {/* Live ops strip */}
         <section>
           <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">
@@ -610,6 +822,13 @@ export default function RestaurantAnalytics() {
               ))}
             </div>
           </section>
+        )}
+          </>
+        )}
+
+        {/* FORECAST TAB */}
+        {tab === 'forecast' && (
+          <ForecastTab tenantId={tenantId} />
         )}
 
       </div>

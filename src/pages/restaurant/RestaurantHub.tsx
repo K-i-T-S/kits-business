@@ -14,6 +14,7 @@
  */
 
 import {
+  ArrowLeft,
   BarChart2,
   ChefHat,
   Clock,
@@ -390,8 +391,15 @@ export default function RestaurantHub() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Left: name + status */}
+        {/* Left: back button + name + status */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => { void navigate('/dashboard'); }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+            aria-label="Back to Dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <UtensilsCrossed className="h-5 w-5" style={{ color: '#6366f1' }} />
           <div>
             <h1 className="text-base font-semibold leading-tight" style={{ color: RESTAURANT_COLORS.textPrimary }}>

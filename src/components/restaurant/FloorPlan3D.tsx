@@ -13,7 +13,7 @@
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera, OrbitControls } from '@react-three/drei';
-import { PCFShadowMap } from 'three';
+import { PCFShadowMap, MOUSE, TOUCH } from 'three';
 import { useNavigate } from 'react-router-dom';
 
 import type { RestaurantTable } from '@/types/restaurant';
@@ -109,8 +109,11 @@ function Scene({ tables, orders, selectedTableId, onTableSelect }: SceneProps) {
         makeDefault
         enableRotate={false}
         enablePan={true}
+        screenSpacePanning={true}
         minZoom={15}
         maxZoom={60}
+        mouseButtons={{ LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }}
+        touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }}
       />
 
       {/* Atmosphere: hemisphere light — indigo sky, navy ground */}

@@ -1330,6 +1330,12 @@ export default function WaiterInterface() {
   // Thumb-zone bottom navigation tab
   const [activeTab, setActiveTab] = useState<MainTab>('tables');
 
+  // Tab-specific state
+  const [queueItems, setQueueItems] = useState<RestaurantOrderItem[]>([]);
+  const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
+  const [selectedPendingOrder, setSelectedPendingOrder] = useState<PendingOrder | null>(null);
+  const [queueRefreshing, setQueueRefreshing] = useState(false);
+
   // ── Data loading ───────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     if (!tenantId) return;
@@ -1376,6 +1382,130 @@ export default function WaiterInterface() {
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadData();
+  };
+
+  // Load queue items when queue tab is active
+  useEffect(() => {
+    if (activeTab !== 'queue') return;
+    if (!tenantId) return;
+    const fetch = async () => {
+      try {
+        const { data } = await supabase
+          .from('restaurant_order_items')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'in_progress')
+          .order('sent_at', { ascending: true });
+        if (data) setQueueItems(data as RestaurantOrderItem[]);
+      } catch (err) {
+        console.error('[WaiterInterface] queue fetch error:', err);
+      }
+    };
+    void fetch();
+  }, [activeTab, tenantId]);
+
+  const handleQueueRefresh = async () => {
+    if (!tenantId) return;
+    setQueueRefreshing(true);
+    try {
+      const { data } = await supabase
+        .from('restaurant_order_items')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'in_progress')
+        .order('sent_at', { ascending: true });
+      if (data) setQueueItems(data as RestaurantOrderItem[]);
+    } catch (err) {
+      console.error('[WaiterInterface] queue refresh error:', err);
+    } finally {
+      setQueueRefreshing(false);
+    }
+  };
+
+  // Load full pending orders when pending tab is active
+  useEffect(() => {
+    if (activeTab !== 'pending') return;
+    if (!tenantId) return;
+    const fetch = async () => {
+      try {
+        const { data } = await supabase
+          .from('restaurant_pending_orders')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: true });
+        if (data) setPendingOrders(data as PendingOrder[]);
+      } catch (err) {
+        console.error('[WaiterInterface] pending fetch error:', err);
+      }
+    };
+    void fetch();
+  }, [activeTab, tenantId]);
+
+  const handleConfirmPendingOrder = async (order: PendingOrder, editedItems: PendingOrderItem[]) => {
+    if (!tenantId) return;
+    try {
+      const tableOrder = orders.find((o) => o.table_id === order.table_id);
+      if (!tableOrder) {
+        toast.error(t('restaurant.pending.noOpenOrder', 'No open order for this table'));
+        return;
+      }
+      const now = new Date().toISOString();
+      const itemRows = editedItems.map((item) => ({
+        tenant_id: tenantId,
+        order_id: tableOrder.id,
+        table_id: order.table_id,
+        product_name: item.name,
+        menu_item_id: item.menu_item_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        course: item.course,
+        notes: item.notes || null,
+        modifiers: item.modifiers,
+        status: 'pending' as const,
+        sent_at: null,
+      }));
+      const { error: insErr } = await supabase.from('restaurant_order_items').insert(itemRows);
+      if (insErr) throw insErr;
+      const { error: updErr } = await supabase
+        .from('restaurant_pending_orders')
+        .update({ status: 'confirmed', confirmed_at: now })
+        .eq('id', order.id)
+        .eq('tenant_id', tenantId);
+      if (updErr) throw updErr;
+      setPendingOrders((prev) => prev.filter((p) => p.id !== order.id));
+      setPendingOrderCounts((prev) => {
+        const next = { ...prev };
+        next[order.table_id] = Math.max(0, (next[order.table_id] ?? 1) - 1);
+        return next;
+      });
+      toast.success(t('restaurant.pending.confirmed', 'Order confirmed'));
+    } catch (err) {
+      console.error('[WaiterInterface] confirm pending error:', err);
+      toast.error(t('common.error', 'Failed to confirm order'));
+    }
+  };
+
+  const handleRejectPendingOrder = async (order: PendingOrder) => {
+    if (!tenantId) return;
+    try {
+      const { error } = await supabase
+        .from('restaurant_pending_orders')
+        .update({ status: 'rejected' })
+        .eq('id', order.id)
+        .eq('tenant_id', tenantId);
+      if (error) throw error;
+      setPendingOrders((prev) => prev.filter((p) => p.id !== order.id));
+      setPendingOrderCounts((prev) => {
+        const next = { ...prev };
+        next[order.table_id] = Math.max(0, (next[order.table_id] ?? 1) - 1);
+        return next;
+      });
+      toast.success(t('restaurant.pending.rejected', 'Order rejected'));
+    } catch (err) {
+      console.error('[WaiterInterface] reject pending error:', err);
+      toast.error(t('common.error', 'Failed to reject order'));
+    }
   };
 
   // ── Derived data ───────────────────────────────────────────────────────────
@@ -1473,7 +1603,14 @@ export default function WaiterInterface() {
           </motion.div>
         );
 
-      case 'orders':
+      case 'orders': {
+        const openOrders = orders.map((order) => {
+          const table = tables.find((tbl) => tbl.id === order.table_id);
+          const items = allItems.filter((i) => i.order_id === order.id);
+          const subtotal = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+          const mins = minutesSince(order.opened_at);
+          return { order, table, items, subtotal, mins };
+        });
         return (
           <motion.div
             key="orders"
@@ -1481,15 +1618,88 @@ export default function WaiterInterface() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="flex flex-1 flex-col items-center justify-center py-20"
+            className="flex flex-col"
           >
-            <ShoppingCart className="mb-3 h-10 w-10 text-white/20" />
-            <p className="text-sm font-semibold text-white/40">{t('restaurant.ordersView.comingSoon', 'Orders view')}</p>
-            <p className="mt-1 text-xs text-white/25">{t('common.comingSoon', 'Coming soon')}</p>
+            <div className="flex-none border-b border-white/10 bg-slate-900 px-4 py-3">
+              <p className="text-xs text-white/40">
+                {openOrders.length} {t('restaurant.orders.openTables', 'open tables')}
+              </p>
+            </div>
+            <div className="p-4 space-y-3">
+              {openOrders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <ShoppingCart className="mb-3 h-10 w-10 text-white/20" />
+                  <p className="text-sm text-white/40">{t('restaurant.orders.none', 'No open orders')}</p>
+                </div>
+              ) : (
+                openOrders.map(({ order, table, items, subtotal, mins }) => {
+                  const isRecent = mins < 10;
+                  return (
+                    <button
+                      key={order.id}
+                      onClick={() => {
+                        if (table) setSelectedTableId(table.id);
+                        setActiveTab('tables');
+                      }}
+                      className={`w-full rounded-2xl border p-4 text-start transition-all active:scale-[0.98] ${
+                        isRecent
+                          ? 'border-indigo-500/30 bg-indigo-500/10'
+                          : 'border-amber-500/30 bg-amber-500/10'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-white">
+                            {table?.number ?? '—'}
+                          </span>
+                          {table?.name && (
+                            <span className="text-xs text-white/40">{table.name}</span>
+                          )}
+                          {table?.section && (
+                            <span className="rounded-lg bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50 capitalize">
+                              {table.section}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-end">
+                          <p className="text-base font-black text-white">${subtotal.toFixed(2)}</p>
+                          <p className="text-[10px] text-white/40">
+                            {items.length} {t('restaurant.orders.items', 'items')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="flex items-center gap-1 text-xs text-white/50">
+                          <Clock className="h-3 w-3" />
+                          {mins}m
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${
+                            order.status === 'open'
+                              ? 'bg-emerald-500/20 text-emerald-400'
+                              : 'bg-white/10 text-white/50'
+                          }`}
+                        >
+                          {order.status}
+                        </span>
+                        <ChevronRight className="ml-auto h-4 w-4 text-white/30" />
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
           </motion.div>
         );
+      }
 
-      case 'queue':
+      case 'queue': {
+        const grouped = queueItems.reduce<Record<string, RestaurantOrderItem[]>>((acc, item) => {
+          const key = item.order_id;
+          if (!acc[key]) acc[key] = [];
+          acc[key]!.push(item);
+          return acc;
+        }, {});
         return (
           <motion.div
             key="queue"
@@ -1497,15 +1707,88 @@ export default function WaiterInterface() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="flex flex-1 flex-col items-center justify-center py-20"
+            className="flex flex-col"
           >
-            <ListOrdered className="mb-3 h-10 w-10 text-white/20" />
-            <p className="text-sm font-semibold text-white/40">{t('restaurant.queueView.comingSoon', 'Kitchen queue')}</p>
-            <p className="mt-1 text-xs text-white/25">{t('common.comingSoon', 'Coming soon')}</p>
+            <div className="flex-none border-b border-white/10 bg-slate-900 px-4 py-3 flex items-center justify-between">
+              <p className="text-xs text-white/40">
+                {queueItems.length} {t('restaurant.queue.itemsInProgress', 'items in progress')}
+              </p>
+              <button
+                onClick={() => { void handleQueueRefresh(); }}
+                disabled={queueRefreshing}
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/60 hover:bg-white/10 transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${queueRefreshing ? 'animate-spin' : ''}`} />
+                {t('common.refresh', 'Refresh')}
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {queueItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <ListOrdered className="mb-3 h-10 w-10 text-white/20" />
+                  <p className="text-sm text-white/40">{t('restaurant.queue.empty', 'No items in progress')}</p>
+                </div>
+              ) : (
+                Object.entries(grouped).map(([orderId, items]) => {
+                  const order = orders.find((o) => o.id === orderId);
+                  const table = order ? tables.find((tbl) => tbl.id === order.table_id) : null;
+                  return (
+                    <div key={orderId} className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+                      <div className="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-2.5">
+                        <span className="text-sm font-black text-white">
+                          {t('restaurant.tableNum', 'Table')} {table?.number ?? '—'}
+                        </span>
+                        {table?.section && (
+                          <span className="rounded-lg bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50 capitalize">
+                            {table.section}
+                          </span>
+                        )}
+                        <span className="ml-auto text-xs text-white/40">
+                          {items.length} {t('restaurant.queue.items', 'items')}
+                        </span>
+                      </div>
+                      <div className="divide-y divide-white/5">
+                        {items.map((item) => {
+                          const sentMins = item.sent_at ? minutesSince(item.sent_at) : 0;
+                          const timeColor =
+                            sentMins < 8
+                              ? 'text-emerald-400'
+                              : sentMins < 15
+                              ? 'text-amber-400'
+                              : 'text-red-400';
+                          return (
+                            <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white">
+                                  {item.quantity}× {item.product_name}
+                                </p>
+                                {item.notes && (
+                                  <p className="mt-0.5 text-xs text-amber-400">{item.notes}</p>
+                                )}
+                                {item.modifiers && item.modifiers.length > 0 && (
+                                  <p className="mt-0.5 text-xs text-white/40">
+                                    {(item.modifiers as Array<{ name: string }>).map((m) => m.name).join(', ')}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Clock className={`h-3.5 w-3.5 ${timeColor}`} />
+                                <span className={`text-xs font-bold ${timeColor}`}>{sentMins}m</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </motion.div>
         );
+      }
 
-      case 'pending':
+      case 'pending': {
         return (
           <motion.div
             key="pending"
@@ -1513,13 +1796,91 @@ export default function WaiterInterface() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="flex flex-1 flex-col items-center justify-center py-20"
+            className="flex flex-col"
           >
-            <Bell className="mb-3 h-10 w-10 text-white/20" />
-            <p className="text-sm font-semibold text-white/40">{t('restaurant.pendingView.comingSoon', 'Pending QR orders')}</p>
-            <p className="mt-1 text-xs text-white/25">{t('common.comingSoon', 'Coming soon')}</p>
+            <div className="flex-none border-b border-white/10 bg-slate-900 px-4 py-3">
+              <p className="text-xs text-white/40">
+                {pendingOrders.length} {t('restaurant.pending.waiting', 'orders waiting')}
+              </p>
+            </div>
+            <div className="p-4 space-y-3">
+              {pendingOrders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Bell className="mb-3 h-10 w-10 text-white/20" />
+                  <p className="text-sm text-white/40">{t('restaurant.pending.none', 'No pending QR orders')}</p>
+                </div>
+              ) : (
+                pendingOrders.map((po) => {
+                  const table = tables.find((tbl) => tbl.id === po.table_id);
+                  const mins = minutesSince(po.created_at);
+                  const subtotal = po.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+                  return (
+                    <div
+                      key={po.id}
+                      className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-bold text-white">
+                            {table
+                              ? `${t('restaurant.tableNum', 'Table')} ${table.number}`
+                              : t('restaurant.walkIn', 'Walk-in')}
+                          </p>
+                          <p className="mt-0.5 flex items-center gap-1 text-xs text-white/50">
+                            <Clock className="h-3 w-3" />
+                            {mins}m {t('common.ago', 'ago')}
+                          </p>
+                        </div>
+                        <div className="text-end">
+                          <p className="text-sm font-black text-white">${subtotal.toFixed(2)}</p>
+                          <p className="text-[10px] text-white/40">
+                            {po.items.length} {t('restaurant.orders.items', 'items')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        {po.items.map((item, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs">
+                            <span className="font-semibold text-white/80">
+                              {item.quantity}×
+                            </span>
+                            <span className="flex-1 text-white/70">{item.name}</span>
+                            <span className="text-white/40">${(item.unit_price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => { void handleRejectPendingOrder(po); }}
+                          className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-all active:scale-95"
+                        >
+                          <X className="mr-1 inline h-3.5 w-3.5" />
+                          {t('restaurant.pendingOrder.reject', 'Reject')}
+                        </button>
+                        <button
+                          onClick={() => setSelectedPendingOrder(po)}
+                          className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-2 text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                        >
+                          <Check className="mr-1 inline h-3.5 w-3.5" />
+                          {t('restaurant.pendingOrder.confirmAll', 'Confirm')}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            {selectedPendingOrder && (
+              <PendingOrderModal
+                pendingOrder={selectedPendingOrder}
+                onConfirm={(editedItems) => handleConfirmPendingOrder(selectedPendingOrder, editedItems)}
+                onReject={() => handleRejectPendingOrder(selectedPendingOrder)}
+                onClose={() => setSelectedPendingOrder(null)}
+              />
+            )}
           </motion.div>
         );
+      }
     }
   };
 

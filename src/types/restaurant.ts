@@ -570,3 +570,43 @@ export interface BranchMetrics {
   delivery_revenue_usd: number;
   customer_rating_avg: number | null;
 }
+
+// ── Phase 2: AI & ML Features (Placeholders) ──────────────────────────────────
+
+export interface DemandForecast {
+  date: string; // ISO date
+  dayOfWeek: string;
+  predictedCovers: number;
+  predictedRevenue: number;
+  confidence: number; // 0-1
+  factors: string[]; // ['public_holiday', 'ramadan_iftar', 'summer_peak']
+  prepRecommendations: Array<{
+    itemId: string;
+    itemName: string;
+    quantity: number;
+    timeSlot: string; // 'lunch', 'dinner', 'late_night'
+  }>;
+  staffingRecommendation: {
+    waiters: number;
+    kitchen: number;
+    argileStaff: number;
+  };
+}
+
+export interface MenuItemEngineering {
+  itemId: string;
+  itemName: string;
+  popularityScore: number; // Relative to menu avg (0-1)
+  marginScore: number; // Relative to menu avg (0-1)
+  category: 'star' | 'plowhorse' | 'puzzle' | 'dog';
+  recommendedAction: string; // AI-generated recommendation
+  potentialRevenueImpact: number; // USD/month if action taken
+}
+
+export interface UpsellSuggestion {
+  triggerItemId: string;
+  suggestedItemId: string;
+  suggestedItemName: string;
+  confidence: number; // 0-1
+  supportingText: string; // "73% of guests who ordered X also ordered Y"
+}

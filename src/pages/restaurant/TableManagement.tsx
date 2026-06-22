@@ -1,6 +1,6 @@
 import {
   Plus, X, Receipt, Send, Users, ChevronRight, Trash2, Utensils, SplitSquareVertical, Calculator,
-  Settings2, Check,
+  Settings2, Check, Sparkles, CalendarClock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
@@ -427,355 +427,382 @@ export default function TableManagement() {
           )}
 
           <>
-              {/* ── Section filter tabs ── */}
-              <motion.div
-                className="mb-4 flex flex-wrap gap-2"
-                variants={containerVariants}
-                initial="initial"
-                animate="animate"
+            {/* ── Section filter tabs ── */}
+            <motion.div
+              className="mb-4 flex flex-wrap gap-2"
+              variants={containerVariants}
+              initial="initial"
+              animate="animate"
+            >
+              <motion.button
+                variants={itemVariants}
+                onClick={() => setSectionFilter('all')}
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  sectionFilter === 'all'
+                    ? 'border border-amber-500/30 bg-amber-500/15 text-amber-200 shadow-amber-500/10 shadow-lg'
+                    : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:border-white/20'
+                }`}
               >
-                <motion.button
-                  variants={itemVariants}
-                  onClick={() => setSectionFilter('all')}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                    sectionFilter === 'all'
-                      ? 'border border-amber-500/30 bg-amber-500/15 text-amber-200 shadow-amber-500/10 shadow-lg'
-                      : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:border-white/20'
-                  }`}
-                >
                   All
-                  <span className="ml-1.5 text-[10px] opacity-60">{tables.length}</span>
-                </motion.button>
-                {sections.map((sec) => {
-                  const count = tableCountBySection[sec.id] ?? 0;
-                  return (
-                    <motion.button
-                      key={sec.id}
-                      variants={itemVariants}
-                      onClick={() => setSectionFilter(sec.id)}
-                      className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                        sectionFilter === sec.id
-                          ? 'text-white'
-                          : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10'
-                      }`}
-                      style={sectionFilter === sec.id ? { background: sec.color, border: `1px solid ${sec.color}` } : {}}
-                    >
-                      <span>{sec.emoji}</span>
-                      <span>{sec.name}</span>
-                      <span className="opacity-60">{count}</span>
-                    </motion.button>
-                  );
-                })}
-              </motion.div>
+                <span className="ml-1.5 text-[10px] opacity-60">{tables.length}</span>
+              </motion.button>
+              {sections.map((sec) => {
+                const count = tableCountBySection[sec.id] ?? 0;
+                return (
+                  <motion.button
+                    key={sec.id}
+                    variants={itemVariants}
+                    onClick={() => setSectionFilter(sec.id)}
+                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                      sectionFilter === sec.id
+                        ? 'text-white'
+                        : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10'
+                    }`}
+                    style={sectionFilter === sec.id ? { background: sec.color, border: `1px solid ${sec.color}` } : {}}
+                  >
+                    <span>{sec.emoji}</span>
+                    <span>{sec.name}</span>
+                    <span className="opacity-60">{count}</span>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
 
-              <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-                {/* Left: Floor Plan */}
-                <div className="rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-4">
-                  {loading ? (
-                    <div className="flex h-64 items-center justify-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-indigo-500" />
-                    </div>
-                  ) : (
-                    <FloorPlan
-                      tables={filteredTables}
-                      selectedTableId={selectedTableId}
-                      onSelectTable={setSelectedTableId}
-                      onMoveTable={(id, x, y) => { void handleMoveTable(id, x, y); }}
-                      onAddTable={() => setAddTableOpen(true)}
-                      activeOrdersByTable={activeOrdersByTable}
-                    />
-                  )}
-                </div>
+            <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+              {/* Left: Floor Plan */}
+              <div className="rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-4">
+                {loading ? (
+                  <div className="flex h-64 items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-indigo-500" />
+                  </div>
+                ) : (
+                  <FloorPlan
+                    tables={filteredTables}
+                    selectedTableId={selectedTableId}
+                    onSelectTable={setSelectedTableId}
+                    onMoveTable={(id, x, y) => { void handleMoveTable(id, x, y); }}
+                    onAddTable={() => setAddTableOpen(true)}
+                    activeOrdersByTable={activeOrdersByTable}
+                  />
+                )}
+              </div>
 
-                {/* Right: Order Panel */}
-                <div className="flex flex-col gap-4">
-                  {!selectedTable ? (
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-8 text-center">
-                      <Utensils className="mb-3 h-8 w-8 text-white/20" />
-                      <p className="text-sm text-white/40">{t('restaurant.selectTable', 'Select a table on the floor plan')}</p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Table info card */}
-                      <div className={`rounded-2xl border-2 p-4 ${STATUS_COLORS[selectedTable.status].bg} ${STATUS_COLORS[selectedTable.status].border}`}>
-                        <div className="mb-3 flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h2 className="text-lg font-bold text-white">
-                                {t('restaurant.tableNum', 'Table')} {selectedTable.number}
-                                {selectedTable.name && <span className="ml-2 text-sm font-normal text-white/50">{selectedTable.name}</span>}
-                              </h2>
-                              {/* Section badge */}
-                              {selectedSection && (
-                                <span
-                                  className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                                  style={{ background: selectedSection.color + '40', border: `1px solid ${selectedSection.color}60` }}
-                                >
-                                  {selectedSection.emoji} {selectedSection.name}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-white/50">
-                              {selectedTable.seats} {t('restaurant.seats', 'seats')}
-                            </p>
-                          </div>
-                          <button onClick={() => setSelectedTableId(null)} className="rounded-lg p-1.5 text-white/40 hover:bg-white/10">
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                        {/* Status buttons */}
-                        <div className="flex flex-wrap gap-1.5">
-                          {(['available', 'occupied', 'reserved', 'cleaning'] as TableStatus[]).map((s) => (
-                            <button
-                              key={s}
-                              onClick={() => { void handleStatusChange(selectedTable.id, s); }}
-                              className={`rounded-lg px-2.5 py-1 text-xs font-semibold capitalize transition-all ${
-                                selectedTable.status === s
-                                  ? `${STATUS_COLORS[s].bg} ${STATUS_COLORS[s].border} ${STATUS_COLORS[s].text} border`
-                                  : 'bg-white/5 text-white/30 hover:bg-white/10'
-                              }`}
-                            >
-                              {t(`restaurant.status.${s}`, s)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Order section */}
-                      {!selectedOrder ? (
-                        <button
-                          onClick={() => { void handleOpenOrder(); }}
-                          className="flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 py-4 text-sm font-semibold text-indigo-400 transition-all hover:bg-indigo-500/20"
-                        >
-                          <Plus className="h-4 w-4" />
-                          {t('restaurant.openOrder', 'Open New Order')}
-                        </button>
-                      ) : (
-                        <div className="rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl overflow-hidden">
-                          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                            <h3 className="text-sm font-semibold text-white">{t('restaurant.activeOrder', 'Active Order')}</h3>
-                            <div className="flex gap-1.5">
-                              <button
-                                onClick={() => { void handleSendToKDS(); }}
-                                className="flex items-center gap-1.5 rounded-lg bg-indigo-500/20 px-2.5 py-1.5 text-xs font-semibold text-indigo-400 hover:bg-indigo-500/30 transition-all"
+              {/* Right: Order Panel */}
+              <div className="flex flex-col gap-4">
+                {!selectedTable ? (
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-8 text-center">
+                    <Utensils className="mb-3 h-8 w-8 text-white/20" />
+                    <p className="text-sm text-white/40">{t('restaurant.selectTable', 'Select a table on the floor plan')}</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Table info card */}
+                    <div className={`rounded-2xl border-2 p-4 ${STATUS_COLORS[selectedTable.status].bg} ${STATUS_COLORS[selectedTable.status].border}`}>
+                      <div className="mb-3 flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-white">
+                              {t('restaurant.tableNum', 'Table')} {selectedTable.number}
+                              {selectedTable.name && <span className="ml-2 text-sm font-normal text-white/50">{selectedTable.name}</span>}
+                            </h2>
+                            {/* Section badge */}
+                            {selectedSection && (
+                              <span
+                                className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                                style={{ background: selectedSection.color + '40', border: `1px solid ${selectedSection.color}60` }}
                               >
-                                <Send className="h-3 w-3" />
-                                {t('restaurant.sendKDS', 'Send KDS')}
-                              </button>
-                              <button
-                                onClick={() => setShowBill(!showBill)}
-                                className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 px-2.5 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-all"
-                              >
-                                <Receipt className="h-3 w-3" />
-                                {t('restaurant.bill', 'Bill')}
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Items list */}
-                          <motion.div
-                            className="max-h-64 overflow-y-auto p-3 space-y-1.5"
-                            variants={containerVariants}
-                            initial="initial"
-                            animate="animate"
-                          >
-                            {selectedOrderItems.length === 0 && (
-                              <p className="py-4 text-center text-xs text-white/30">{t('restaurant.noItems', 'No items yet')}</p>
+                                {selectedSection.emoji} {selectedSection.name}
+                              </span>
                             )}
-                            {(['appetizers', 'mains', 'desserts'] as CourseType[]).map((course) => {
-                              const courseItems = selectedOrderItems.filter((i) => i.course === course);
-                              if (courseItems.length === 0) return null;
-                              return (
-                                <div key={course}>
-                                  <div className="mb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
-                                    {COURSE_LABELS[course]}
-                                  </div>
-                                  {courseItems.map((item) => (
-                                    <motion.div key={item.id} variants={itemVariants} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
-                                      <span className="flex-1 text-xs text-white">
-                                        {item.quantity}× {item.product_name}
-                                      </span>
-                                      <span className="text-xs text-white/50">${(item.unit_price * item.quantity).toFixed(2)}</span>
-                                      <span className={`rounded px-1.5 text-[9px] font-semibold uppercase ${
-                                        item.status === 'pending' ? 'bg-white/10 text-white/40'
-                                          : item.status === 'in_progress' ? 'bg-amber-500/20 text-amber-400'
-                                            : item.status === 'ready' ? 'bg-emerald-500/20 text-emerald-400'
-                                              : 'bg-slate-500/20 text-slate-400'
-                                      }`}>{item.status}</span>
-                                      <button
-                                        onClick={() => { void handleDeleteItem(item.id); }}
-                                        className="rounded p-0.5 text-white/20 hover:text-red-400 transition-colors"
-                                        aria-label={`Remove ${item.product_name}`}
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </button>
-                                    </motion.div>
-                                  ))}
-                                </div>
-                              );
-                            })}
-                          </motion.div>
+                          </div>
+                          <p className="text-sm text-white/50">
+                            {selectedTable.seats} {t('restaurant.seats', 'seats')}
+                          </p>
+                        </div>
+                        <button onClick={() => setSelectedTableId(null)} className="rounded-lg p-1.5 text-white/40 hover:bg-white/10">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {/* Status controls — opinionated per-status */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {/* Current status chip — always shown */}
+                        <span className={`rounded-lg px-2.5 py-1 text-xs font-semibold capitalize border ${STATUS_COLORS[selectedTable.status].bg} ${STATUS_COLORS[selectedTable.status].border} ${STATUS_COLORS[selectedTable.status].text}`}>
+                          {t(`restaurant.status.${selectedTable.status}`, selectedTable.status)}
+                        </span>
 
-                          {/* Add item form */}
-                          {addingItem ? (
-                            <div className="border-t border-white/10 p-3 space-y-2">
-                              <input
-                                type="text"
-                                placeholder={t('restaurant.itemName', 'Item name')}
-                                value={itemForm.product_name}
-                                onChange={(e) => setItemForm((p) => ({ ...p, product_name: e.target.value }))}
-                                className="w-full rounded-xl bg-slate-800 border border-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50"
-                              />
-                              <div className="flex gap-2">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={itemForm.quantity}
-                                  onChange={(e) => setItemForm((p) => ({ ...p, quantity: Math.max(1, parseInt(e.target.value) || 1) }))}
-                                  className="w-20 rounded-xl bg-slate-800 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
-                                  placeholder="Qty"
-                                  aria-label="Quantity"
-                                />
-                                <input
-                                  type="number"
-                                  min={0}
-                                  step={0.5}
-                                  value={itemForm.unit_price}
-                                  onChange={(e) => setItemForm((p) => ({ ...p, unit_price: parseFloat(e.target.value) || 0 }))}
-                                  className="flex-1 rounded-xl bg-slate-800 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
-                                  placeholder="Price $"
-                                  aria-label="Unit price"
-                                />
-                                <select
-                                  value={itemForm.course}
-                                  onChange={(e) => setItemForm((p) => ({ ...p, course: e.target.value as CourseType }))}
-                                  className="rounded-xl bg-slate-800 border border-white/10 px-2 py-2 text-xs text-white focus:outline-none"
-                                  aria-label="Course"
-                                >
-                                  {(['appetizers', 'mains', 'desserts'] as CourseType[]).map((c) => (
-                                    <option key={c} value={c}>{COURSE_LABELS[c]}</option>
-                                  ))}
-                                </select>
+                        {/* Cleaning → Mark Available */}
+                        {selectedTable.status === 'cleaning' && (
+                          <button
+                            onClick={() => { void handleStatusChange(selectedTable.id, 'available'); }}
+                            className="flex items-center gap-1 rounded-lg bg-emerald-600/80 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-600 active:scale-95 transition-all"
+                            aria-label="Mark table as available"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            {t('restaurant.markAvailable', 'Mark Available')}
+                          </button>
+                        )}
+
+                        {/* Available → Set Reserved (manual hold) */}
+                        {selectedTable.status === 'available' && (
+                          <button
+                            onClick={() => { void handleStatusChange(selectedTable.id, 'reserved'); }}
+                            className="flex items-center gap-1 rounded-lg bg-amber-600/70 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-600 active:scale-95 transition-all"
+                            aria-label="Set table as reserved"
+                          >
+                            <CalendarClock className="h-3 w-3" />
+                            {t('restaurant.setReserved', 'Hold / Reserve')}
+                          </button>
+                        )}
+
+                        {/* Reserved → Release back to available */}
+                        {selectedTable.status === 'reserved' && (
+                          <button
+                            onClick={() => { void handleStatusChange(selectedTable.id, 'available'); }}
+                            className="flex items-center gap-1 rounded-lg bg-slate-600/70 px-2.5 py-1 text-xs font-semibold text-white hover:bg-slate-600 active:scale-95 transition-all"
+                            aria-label="Release reservation"
+                          >
+                            <Check className="h-3 w-3" />
+                            {t('restaurant.releaseTable', 'Release')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Order section */}
+                    {!selectedOrder ? (
+                      <button
+                        onClick={() => { void handleOpenOrder(); }}
+                        className="flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 py-4 text-sm font-semibold text-indigo-400 transition-all hover:bg-indigo-500/20"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {t('restaurant.openOrder', 'Open New Order')}
+                      </button>
+                    ) : (
+                      <div className="rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl overflow-hidden">
+                        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                          <h3 className="text-sm font-semibold text-white">{t('restaurant.activeOrder', 'Active Order')}</h3>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => { void handleSendToKDS(); }}
+                              className="flex items-center gap-1.5 rounded-lg bg-indigo-500/20 px-2.5 py-1.5 text-xs font-semibold text-indigo-400 hover:bg-indigo-500/30 transition-all"
+                            >
+                              <Send className="h-3 w-3" />
+                              {t('restaurant.sendKDS', 'Send KDS')}
+                            </button>
+                            <button
+                              onClick={() => setShowBill(!showBill)}
+                              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 px-2.5 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-all"
+                            >
+                              <Receipt className="h-3 w-3" />
+                              {t('restaurant.bill', 'Bill')}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Items list */}
+                        <motion.div
+                          className="max-h-64 overflow-y-auto p-3 space-y-1.5"
+                          variants={containerVariants}
+                          initial="initial"
+                          animate="animate"
+                        >
+                          {selectedOrderItems.length === 0 && (
+                            <p className="py-4 text-center text-xs text-white/30">{t('restaurant.noItems', 'No items yet')}</p>
+                          )}
+                          {(['appetizers', 'mains', 'desserts'] as CourseType[]).map((course) => {
+                            const courseItems = selectedOrderItems.filter((i) => i.course === course);
+                            if (courseItems.length === 0) return null;
+                            return (
+                              <div key={course}>
+                                <div className="mb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
+                                  {COURSE_LABELS[course]}
+                                </div>
+                                {courseItems.map((item) => (
+                                  <motion.div key={item.id} variants={itemVariants} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
+                                    <span className="flex-1 text-xs text-white">
+                                      {item.quantity}× {item.product_name}
+                                    </span>
+                                    <span className="text-xs text-white/50">${(item.unit_price * item.quantity).toFixed(2)}</span>
+                                    <span className={`rounded px-1.5 text-[9px] font-semibold uppercase ${
+                                      item.status === 'pending' ? 'bg-white/10 text-white/40'
+                                        : item.status === 'in_progress' ? 'bg-amber-500/20 text-amber-400'
+                                          : item.status === 'ready' ? 'bg-emerald-500/20 text-emerald-400'
+                                            : 'bg-slate-500/20 text-slate-400'
+                                    }`}>{item.status}</span>
+                                    <button
+                                      onClick={() => { void handleDeleteItem(item.id); }}
+                                      className="rounded p-0.5 text-white/20 hover:text-red-400 transition-colors"
+                                      aria-label={`Remove ${item.product_name}`}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </motion.div>
+                                ))}
                               </div>
+                            );
+                          })}
+                        </motion.div>
+
+                        {/* Add item form */}
+                        {addingItem ? (
+                          <div className="border-t border-white/10 p-3 space-y-2">
+                            <input
+                              type="text"
+                              placeholder={t('restaurant.itemName', 'Item name')}
+                              value={itemForm.product_name}
+                              onChange={(e) => setItemForm((p) => ({ ...p, product_name: e.target.value }))}
+                              className="w-full rounded-xl bg-slate-800 border border-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50"
+                            />
+                            <div className="flex gap-2">
                               <input
-                                type="text"
-                                placeholder={t('restaurant.notes', 'Special notes (optional)')}
-                                value={itemForm.notes}
-                                onChange={(e) => setItemForm((p) => ({ ...p, notes: e.target.value }))}
-                                className="w-full rounded-xl bg-slate-800 border border-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50"
+                                type="number"
+                                min={1}
+                                value={itemForm.quantity}
+                                onChange={(e) => setItemForm((p) => ({ ...p, quantity: Math.max(1, parseInt(e.target.value) || 1) }))}
+                                className="w-20 rounded-xl bg-slate-800 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                                placeholder="Qty"
+                                aria-label="Quantity"
                               />
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => { void handleAddItem(); }}
-                                  className="flex-1 rounded-xl bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition-all"
-                                >
-                                  {t('restaurant.addItem', 'Add Item')}
-                                </button>
-                                <button
-                                  onClick={() => { setAddingItem(false); setItemForm(DEFAULT_FORM); }}
-                                  className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/40 hover:bg-white/5 transition-all"
-                                >
-                                  {t('common.cancel', 'Cancel')}
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="border-t border-white/10 p-3">
-                              <button
-                                onClick={() => setAddingItem(true)}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-2 text-xs text-white/40 hover:border-indigo-500/30 hover:text-indigo-400 transition-all"
+                              <input
+                                type="number"
+                                min={0}
+                                step={0.5}
+                                value={itemForm.unit_price}
+                                onChange={(e) => setItemForm((p) => ({ ...p, unit_price: parseFloat(e.target.value) || 0 }))}
+                                className="flex-1 rounded-xl bg-slate-800 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                                placeholder="Price $"
+                                aria-label="Unit price"
+                              />
+                              <select
+                                value={itemForm.course}
+                                onChange={(e) => setItemForm((p) => ({ ...p, course: e.target.value as CourseType }))}
+                                className="rounded-xl bg-slate-800 border border-white/10 px-2 py-2 text-xs text-white focus:outline-none"
+                                aria-label="Course"
                               >
-                                <Plus className="h-3.5 w-3.5" />
+                                {(['appetizers', 'mains', 'desserts'] as CourseType[]).map((c) => (
+                                  <option key={c} value={c}>{COURSE_LABELS[c]}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <input
+                              type="text"
+                              placeholder={t('restaurant.notes', 'Special notes (optional)')}
+                              value={itemForm.notes}
+                              onChange={(e) => setItemForm((p) => ({ ...p, notes: e.target.value }))}
+                              className="w-full rounded-xl bg-slate-800 border border-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => { void handleAddItem(); }}
+                                className="flex-1 rounded-xl bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition-all"
+                              >
                                 {t('restaurant.addItem', 'Add Item')}
                               </button>
+                              <button
+                                onClick={() => { setAddingItem(false); setItemForm(DEFAULT_FORM); }}
+                                className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/40 hover:bg-white/5 transition-all"
+                              >
+                                {t('common.cancel', 'Cancel')}
+                              </button>
                             </div>
-                          )}
+                          </div>
+                        ) : (
+                          <div className="border-t border-white/10 p-3">
+                            <button
+                              onClick={() => setAddingItem(true)}
+                              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-2 text-xs text-white/40 hover:border-indigo-500/30 hover:text-indigo-400 transition-all"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              {t('restaurant.addItem', 'Add Item')}
+                            </button>
+                          </div>
+                        )}
 
-                          {/* Bill section */}
-                          {showBill && (
-                            <div className="border-t border-white/10 bg-black/20 backdrop-blur-sm p-4 space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-white/60">{t('restaurant.total', 'Total')}</span>
-                                <span className="text-lg font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">${orderTotal.toFixed(2)}</span>
-                              </div>
-
-                              {/* Split mode */}
-                              <div className="flex gap-1.5">
-                                {([
-                                  { key: 'equal', label: t('restaurant.split.equal', 'Equal'), icon: Users },
-                                  { key: 'by_seat', label: t('restaurant.split.bySeat', 'By Seat'), icon: SplitSquareVertical },
-                                  { key: 'percentage', label: t('restaurant.split.percent', '%'), icon: Calculator },
-                                ] as const).map((mode) => {
-                                  const ModeIcon = mode.icon;
-                                  return (
-                                    <button
-                                      key={mode.key}
-                                      onClick={() => setSplitMode(mode.key as SplitMode)}
-                                      className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
-                                        splitMode === mode.key ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/40 hover:bg-white/10'
-                                      }`}
-                                    >
-                                      <ModeIcon className="h-3 w-3" />
-                                      {mode.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              {splitMode === 'equal' && (
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-white/50">{t('restaurant.split.ways', 'Ways')}</span>
-                                    <input
-                                      type="number"
-                                      min={2}
-                                      max={20}
-                                      value={splitCount}
-                                      onChange={(e) => setSplitCount(Math.max(2, parseInt(e.target.value) || 2))}
-                                      className="w-16 rounded-lg bg-slate-800 border border-white/10 px-2 py-1 text-sm text-white text-center"
-                                      aria-label="Split count"
-                                    />
-                                  </div>
-                                  <div className="rounded-xl bg-white/5 px-3 py-2.5 text-center">
-                                    <span className="text-lg font-bold text-white">${splitAmount.toFixed(2)}</span>
-                                    <span className="ml-2 text-sm text-white/40">{t('restaurant.split.perPerson', 'per person')}</span>
-                                  </div>
-                                </div>
-                              )}
-
-                              {splitMode === 'by_seat' && (
-                                <div className="rounded-xl bg-white/5 p-3 space-y-1.5">
-                                  {Array.from({ length: selectedTable.seats }).map((_, i) => (
-                                    <div key={i} className="flex items-center justify-between">
-                                      <span className="text-xs text-white/50">{t('restaurant.seat', 'Seat')} {i + 1}</span>
-                                      <span className="text-sm font-semibold text-white">${(orderTotal / selectedTable.seats).toFixed(2)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {splitMode === 'percentage' && (
-                                <p className="text-xs text-white/30 text-center">{t('restaurant.split.percentDesc', 'Enter custom percentages per guest at checkout')}</p>
-                              )}
-
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => { void handleCloseOrder(); }}
-                                  className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90"
-                                >
-                                  <ChevronRight className="inline h-4 w-4" />
-                                  {t('restaurant.markPaid', 'Mark Paid')}
-                                </button>
-                              </div>
+                        {/* Bill section */}
+                        {showBill && (
+                          <div className="border-t border-white/10 bg-black/20 backdrop-blur-sm p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-white/60">{t('restaurant.total', 'Total')}</span>
+                              <span className="text-lg font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">${orderTotal.toFixed(2)}</span>
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+
+                            {/* Split mode */}
+                            <div className="flex gap-1.5">
+                              {([
+                                { key: 'equal', label: t('restaurant.split.equal', 'Equal'), icon: Users },
+                                { key: 'by_seat', label: t('restaurant.split.bySeat', 'By Seat'), icon: SplitSquareVertical },
+                                { key: 'percentage', label: t('restaurant.split.percent', '%'), icon: Calculator },
+                              ] as const).map((mode) => {
+                                const ModeIcon = mode.icon;
+                                return (
+                                  <button
+                                    key={mode.key}
+                                    onClick={() => setSplitMode(mode.key as SplitMode)}
+                                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
+                                      splitMode === mode.key ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/40 hover:bg-white/10'
+                                    }`}
+                                  >
+                                    <ModeIcon className="h-3 w-3" />
+                                    {mode.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {splitMode === 'equal' && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-white/50">{t('restaurant.split.ways', 'Ways')}</span>
+                                  <input
+                                    type="number"
+                                    min={2}
+                                    max={20}
+                                    value={splitCount}
+                                    onChange={(e) => setSplitCount(Math.max(2, parseInt(e.target.value) || 2))}
+                                    className="w-16 rounded-lg bg-slate-800 border border-white/10 px-2 py-1 text-sm text-white text-center"
+                                    aria-label="Split count"
+                                  />
+                                </div>
+                                <div className="rounded-xl bg-white/5 px-3 py-2.5 text-center">
+                                  <span className="text-lg font-bold text-white">${splitAmount.toFixed(2)}</span>
+                                  <span className="ml-2 text-sm text-white/40">{t('restaurant.split.perPerson', 'per person')}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {splitMode === 'by_seat' && (
+                              <div className="rounded-xl bg-white/5 p-3 space-y-1.5">
+                                {Array.from({ length: selectedTable.seats }).map((_, i) => (
+                                  <div key={i} className="flex items-center justify-between">
+                                    <span className="text-xs text-white/50">{t('restaurant.seat', 'Seat')} {i + 1}</span>
+                                    <span className="text-sm font-semibold text-white">${(orderTotal / selectedTable.seats).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {splitMode === 'percentage' && (
+                              <p className="text-xs text-white/30 text-center">{t('restaurant.split.percentDesc', 'Enter custom percentages per guest at checkout')}</p>
+                            )}
+
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => { void handleCloseOrder(); }}
+                                className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90"
+                              >
+                                <ChevronRight className="inline h-4 w-4" />
+                                {t('restaurant.markPaid', 'Mark Paid')}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            </>
+            </div>
+          </>
         </div>
       </div>
 

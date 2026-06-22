@@ -2,6 +2,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
@@ -15,7 +16,59 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [react(), tailwindcss(), securityHeaders()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    securityHeaders(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'KiTS Restaurant OS',
+        short_name: 'KiTS',
+        description: 'Restaurant Management Platform',
+        theme_color: '#0a0f1e',
+        background_color: '#0a0f1e',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        icons: [
+          {
+            src: '/favicon.ico',
+            sizes: '64x64 100x100',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/your-supabase-url\.supabase\.co\/rest\/v1\/restaurant_menu/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'menu-api',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 24 * 60 * 60,
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/your-supabase-url\.supabase\.co\/storage\/v1\/object\/public\/menu-images/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'menu-images',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+            },
+          },
+        ],
+      },
+    }),
+  ],
   test: {
     environment: 'jsdom',
     globals: true,

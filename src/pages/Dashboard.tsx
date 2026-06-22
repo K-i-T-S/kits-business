@@ -92,7 +92,7 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-8 pb-20 lg:pb-8">
+      <div className="space-y-8 pb-4 lg:pb-6">
         {/* Hero Header */}
         <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-600/20 via-slate-800/80 to-slate-900 p-6 sm:p-8">
           <div

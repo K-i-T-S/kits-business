@@ -232,7 +232,7 @@ export default function Layout({ children }: LayoutProps) {
   }, [products, sales, customers, addNotification]);
 
   return (
-    <div className="relative h-dvh overflow-hidden bg-slate-900 text-slate-100 md:flex">
+    <div className="relative min-h-dvh md:h-dvh md:overflow-hidden bg-slate-900 text-slate-100 md:flex">
       {/* Skip Links - Completely hidden until focused */}
       <a
         href="#main-content"
@@ -622,7 +622,7 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="md:flex-1 md:h-full md:overflow-y-auto">
+      <div className="flex-1 min-h-0 md:h-full md:overflow-y-auto overflow-y-auto">
         <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
           <div
             aria-hidden="true"

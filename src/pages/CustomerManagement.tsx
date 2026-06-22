@@ -69,7 +69,7 @@ export default function CustomerManagement() {
   if (showCustomerDetails && selectedCustomerData) {
     return (
       <Layout>
-        <div className="space-y-6 pb-20 lg:pb-0">
+        <div className="space-y-6 pb-4 lg:pb-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setShowCustomerDetails(false)}
@@ -132,7 +132,7 @@ export default function CustomerManagement() {
 
   return (
     <Layout>
-      <div className="space-y-6 pb-20 lg:pb-0">
+      <div className="space-y-6 pb-4 lg:pb-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

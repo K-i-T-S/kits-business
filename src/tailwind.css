@@ -53,8 +53,19 @@ html {
 
 @media (min-width: 1024px) {
   .app-shell {
-    padding-left: 2.5rem;
-    padding-right: 2.5rem;
+    padding: 1.5rem 2.5rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .app-shell {
+    padding: 2rem 3.5rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .app-shell {
+    padding: 2.5rem 5rem;
   }
 }
 

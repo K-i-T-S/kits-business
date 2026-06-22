@@ -110,7 +110,7 @@ export default function RolesAndPermissionsManager() {
 
   return (
     <Layout>
-      <div className="space-y-10 pb-20 lg:pb-0">
+      <div className="space-y-10 pb-4 lg:pb-6">
         <section className="hero-gradient glass-panel relative overflow-hidden p-6 sm:p-8 text-white">
           <Sparkles className="pointer-events-none absolute right-8 top-6 h-16 w-16 text-white/20" />
           <div className="relative">

@@ -48,7 +48,7 @@ export default function POSTestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-20 lg:pb-0">
+    <div className="min-h-screen bg-slate-950 text-white pb-4 lg:pb-6">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">POS System Test Page</h1>

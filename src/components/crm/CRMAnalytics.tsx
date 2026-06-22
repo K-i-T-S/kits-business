@@ -118,7 +118,7 @@ export default function CRMAnalytics({ customers, segments, dateRange, onDateRan
   );
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6 pb-4 lg:pb-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

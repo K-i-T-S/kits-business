@@ -359,7 +359,7 @@ export default function ProfileSettings() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-20 lg:pb-0">
+    <div className="min-h-screen bg-slate-950 text-white pb-4 lg:pb-6">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
 
         {/* Header */}

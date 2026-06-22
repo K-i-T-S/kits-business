@@ -32,6 +32,7 @@ import {
   Bell,
   LayoutGrid,
   Lightbulb,
+  Sparkles,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -102,16 +103,19 @@ interface TableTileProps {
   data: TableWithOrder;
   slowThreshold: number;
   onSelect: () => void;
+  onMarkAvailable?: (tableId: string) => Promise<void>;
 }
 
-function TableTile({ data, slowThreshold, onSelect }: TableTileProps) {
+function TableTile({ data, slowThreshold, onSelect, onMarkAvailable }: TableTileProps) {
   const { t } = useTranslation();
   const { table, order, items, pendingCount, unsentItemCount } = data;
   const minutes = order ? minutesSince(order.opened_at) : 0;
   const isSlowService = order && minutes > slowThreshold;
   const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const isCleaning = table.status === 'cleaning';
 
   const tileStyle = (() => {
+    if (isCleaning) return 'border-slate-500/30 bg-slate-500/10';
     if (!order) return 'border-white/10 bg-white/3';
     if (pendingCount > 0) return 'border-amber-500/50 bg-amber-500/10 animate-pulse-subtle';
     if (isSlowService) return 'border-orange-500/40 bg-orange-500/8';
@@ -119,6 +123,7 @@ function TableTile({ data, slowThreshold, onSelect }: TableTileProps) {
   })();
 
   const dotColor = (() => {
+    if (isCleaning) return 'bg-slate-500';
     if (!order) return 'bg-slate-600';
     if (pendingCount > 0) return 'bg-amber-400 animate-pulse';
     if (isSlowService) return 'bg-orange-400 animate-pulse';
@@ -126,14 +131,42 @@ function TableTile({ data, slowThreshold, onSelect }: TableTileProps) {
   })();
 
   return (
-    <button
-      onClick={onSelect}
-      className={`relative flex flex-col rounded-2xl border-2 p-4 text-start transition-all active:scale-95 touch-manipulation ${tileStyle}`}
+    <div
+      className={`relative flex flex-col rounded-2xl border-2 p-4 transition-all ${tileStyle}`}
       style={{ minHeight: 120 }}
-      aria-label={`Table ${table.number} — ${order ? 'occupied' : 'available'}`}
     >
       {/* Status dot */}
       <div className={`absolute right-3 top-3 h-3 w-3 rounded-full ${dotColor}`} aria-hidden="true" />
+
+      {/* Cleaning overlay */}
+      {isCleaning && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-slate-900/60 backdrop-blur-[2px]">
+          <Sparkles className="mb-1.5 h-5 w-5 text-slate-400" aria-hidden="true" />
+          <span className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            {t('restaurant.status.cleaning', 'Cleaning')}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              void onMarkAvailable?.(table.id);
+            }}
+            className="rounded-lg bg-emerald-600/80 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-600 active:scale-95 transition-all touch-manipulation"
+            aria-label={`Mark Table ${table.number} as available`}
+          >
+            <Check className="mr-1 inline h-3 w-3" />
+            {t('restaurant.markReady', 'Ready')}
+          </button>
+        </div>
+      )}
+
+      {/* Clickable area for non-cleaning tables */}
+      <button
+        onClick={onSelect}
+        disabled={isCleaning}
+        className="absolute inset-0 rounded-2xl touch-manipulation"
+        aria-label={`Table ${table.number} — ${table.status}`}
+        tabIndex={isCleaning ? -1 : 0}
+      />
 
       {/* Table number */}
       <div className="mb-1 flex items-baseline gap-1.5">
@@ -170,9 +203,11 @@ function TableTile({ data, slowThreshold, onSelect }: TableTileProps) {
           )}
         </div>
       ) : (
-        <div className="mt-auto text-xs text-white/30">{t('restaurant.available', 'Available')}</div>
+        !isCleaning && (
+          <div className="mt-auto text-xs text-white/30">{t('restaurant.available', 'Available')}</div>
+        )
       )}
-    </button>
+    </div>
   );
 }
 
@@ -1444,6 +1479,19 @@ export default function WaiterInterface() {
     await loadData();
   };
 
+  const markTableAvailable = useCallback(async (tableId: string) => {
+    if (!tenantId) return;
+    const { error } = await supabase
+      .from('restaurant_tables')
+      .update({ status: 'available' })
+      .eq('id', tableId)
+      .eq('tenant_id', tenantId);
+    if (error) { toast.error(error.message); return; }
+    // Optimistic local update
+    setTables((prev) => prev.map((tbl) => tbl.id === tableId ? { ...tbl, status: 'available' } : tbl));
+    toast.success(t('restaurant.tableReady', 'Table marked as available'));
+  }, [tenantId, t]);
+
   // Load queue items when queue tab is active
   useEffect(() => {
     if (activeTab !== 'queue') return;
@@ -1657,6 +1705,7 @@ export default function WaiterInterface() {
                       data={data}
                       slowThreshold={slowThreshold}
                       onSelect={() => setSelectedTableId(data.table.id)}
+                      onMarkAvailable={markTableAvailable}
                     />
                   ))}
                 </div>

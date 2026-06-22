@@ -1,11 +1,20 @@
 /**
  * FloorPlan3D — Canvas wrapper for the 3D isometric restaurant floor plan.
+ *
+ * Renders an OrthographicCamera scene with:
+ *   - Ambient light (dim, sets the scene base brightness)
+ *   - Two point lights (indigo + sky-blue) for the luxury brand feel
+ *   - A dark navy floor plane
+ *   - One Table3D mesh per RestaurantTable
+ *
+ * Falls back to a loading spinner while data is loading.
+ * Passes `null` if tables array is empty (parent decides whether to show
+ * an empty-state UI).
  */
 
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-// 1. Import OrbitControls alongside OrthographicCamera
-import { OrthographicCamera, OrbitControls } from '@react-three/drei';
+import { OrthographicCamera } from '@react-three/drei';
 import { PCFShadowMap } from 'three';
 
 import type { RestaurantTable } from '@/types/restaurant';
@@ -40,7 +49,7 @@ function LoadingOverlay() {
 // ── Scene fallback (inside Canvas Suspense boundary) ──────────────────────────
 
 function SceneLoader() {
-  return null; 
+  return null; // Canvas handles its own loading via Suspense
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -54,15 +63,14 @@ export function FloorPlan3D({
 }: FloorPlan3DProps) {
   if (isLoading) {
     return (
-      <div className="h-full w-full min-h-[500px]">
+      <div className="h-screen w-full">
         <LoadingOverlay />
       </div>
     );
   }
 
   return (
-    // 2. Swapped 'h-screen' to 'h-full flex-1 min-h-[500px]' to prevent flexbox collapsing
-    <div className="relative h-full w-full flex-1" style={{ background: '#0a0f1e', minHeight: '500px' }}>
+    <div className="h-screen w-full" style={{ background: '#0a0f1e' }}>
       <Canvas shadows={{ type: PCFShadowMap }}>
         {/* Isometric orthographic camera — top-down angled view */}
         <OrthographicCamera
@@ -72,9 +80,6 @@ export function FloorPlan3D({
           near={0.1}
           far={1000}
         />
-        
-        {/* 3. ADD ORBIT CONTROLS: This forces the camera to look at the tables at [0,0,0] */}
-        <OrbitControls target={[0, 0, 0]} makeDefault />
 
         {/* Lighting */}
         <ambientLight intensity={0.3} />

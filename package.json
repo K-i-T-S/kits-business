@@ -129,7 +129,7 @@
     "playwright": "^1.57.0",
     "react-countup": "^6.5.3",
     "react-intersection-observer": "^10.0.3",
-    "react-konva": "^18.2.10",
+    "react-konva": "^19.2.5",
     "storybook": "^10.1.10",
     "supabase": "^2.70.5",
     "tailwindcss": "^4.1.18",

@@ -61,11 +61,11 @@ async function addArgileChargeToOrder(
 
 function useElapsedMinutes(since: string): number {
   const [mins, setMins] = useState(() =>
-    Math.floor((Date.now() - new Date(since).getTime()) / 60_000),
+    Math.max(0, Math.floor((Date.now() - new Date(since).getTime()) / 60_000)),
   );
   useEffect(() => {
     const id = setInterval(() => {
-      setMins(Math.floor((Date.now() - new Date(since).getTime()) / 60_000));
+      setMins(Math.max(0, Math.floor((Date.now() - new Date(since).getTime()) / 60_000)));
     }, 30_000);
     return () => clearInterval(id);
   }, [since]);

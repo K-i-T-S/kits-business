@@ -56,7 +56,7 @@ export default function TipsManagement() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentTenant, employees } = useApp();
-  const tenantId = currentTenant?.id ?? 'default';
+  const tenantId = currentTenant?.id;
 
   const storageKey = `tips_config_${tenantId}`;
   const recordsKey = `tips_records_${tenantId}`;
@@ -89,6 +89,7 @@ export default function TipsManagement() {
   const roleSplitTotal = Object.values(config.roleSplit).reduce((s, v) => s + v, 0);
 
   const loadTodayTips = useCallback(async () => {
+    if (!tenantId) return;
     setLoadingTips(true);
     try {
       const todayISO = new Date().toISOString().split('T')[0] ?? '';
@@ -104,7 +105,7 @@ export default function TipsManagement() {
     } finally {
       setLoadingTips(false);
     }
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => { void loadTodayTips(); }, [loadTodayTips]);
 

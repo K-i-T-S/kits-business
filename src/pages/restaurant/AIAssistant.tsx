@@ -214,8 +214,9 @@ function SuggestedPrompts({ language, onSelect, loading }: SuggestedPromptsProps
 
 export default function AIAssistant() {
   const { currentTenant } = useApp();
-  const { language, setLanguage } = useLanguage();
+  const { currentLanguage, changeLanguage } = useLanguage();
   const tenantId = currentTenant?.id;
+  const language = (currentLanguage as 'en' | 'ar') || 'en';
 
   const { data: chatHistory, isLoading: historyLoading } = useChatHistory(tenantId || '');
   const sendMessage = useSendAIMessage();
@@ -300,9 +301,9 @@ export default function AIAssistant() {
 
   const handleLanguageChange = useCallback(
     (newLanguage: 'en' | 'ar') => {
-      setLanguage(newLanguage);
+      changeLanguage(newLanguage);
     },
-    [setLanguage]
+    [changeLanguage]
   );
 
   if (!tenantId) {
@@ -312,7 +313,7 @@ export default function AIAssistant() {
   const isLoading = historyLoading || sendMessage.isPending || clearHistory.isPending;
 
   return (
-    <Layout variant="fullscreen">
+    <Layout>
       <div
         className="flex h-full flex-col"
         style={{ background: RESTAURANT_COLORS.base }}

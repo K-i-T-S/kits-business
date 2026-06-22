@@ -172,7 +172,7 @@ export default function SystemSettings() {
     setFinancialForm(prev => ({
       ...prev,
       taxRate:
-        currentTenant.tax_rate !== null
+        currentTenant.tax_rate != null
           ? String(+(currentTenant.tax_rate * 100).toFixed(4))
           : (settings['tax_rate'] as string | undefined) ?? prev.taxRate,
       defaultCurrency: (settings['currency'] as string | undefined) ?? prev.defaultCurrency,

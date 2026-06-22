@@ -1,17 +1,18 @@
 import {
   BarChart2, Users, Clock, TrendingUp, AlertCircle, Flame,
-  Brain, Zap, ChevronDown, RefreshCw, Star,
+  Brain, Zap, ChevronDown, RefreshCw, Star, Trophy,
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ComposedChart, Line, Area, ReferenceLine, LineChart,
+  Cell,
 } from 'recharts';
 
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
-import type { WaiterPerformanceStats, TableFeedback } from '@/types/restaurant';
+import type { TableFeedback } from '@/types/restaurant';
 import {
   generateForecast,
   analyzeWeeklyPattern,
@@ -27,7 +28,6 @@ import type {
   ItemVelocity,
   MLInsight,
 } from '@/utils/restaurantML';
-import { rankWaiters } from '@/utils/restaurantScoring';
 import { supabase } from '@/utils/supabaseClient';
 import { useDemandForecast } from '@/hooks/useDemandForecast';
 
@@ -280,6 +280,296 @@ function ForecastTab({ tenantId }: ForecastTabProps) {
   );
 }
 
+// ── Demand Forecast Panel ─────────────────────────────────────────────────────
+
+interface ItemVelocityRow {
+  item_name: string;
+  day_date: string;
+  qty_sold: number;
+}
+
+interface ForecastBar {
+  item_name: string;
+  predicted_qty: number;
+}
+
+interface DemandForecastPanelProps {
+  tenantId?: string;
+}
+
+function DemandForecastPanel({ tenantId }: DemandForecastPanelProps) {
+  const [chartData, setChartData] = useState<ForecastBar[]>([]);
+  const [panelLoading, setPanelLoading] = useState(true);
+
+  useEffect(() => {
+    if (!tenantId) {
+      setPanelLoading(false);
+      return;
+    }
+
+    const fetchVelocity = async () => {
+      setPanelLoading(true);
+      try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgoISO = sevenDaysAgo.toISOString().split('T')[0]!;
+
+        const { data, error } = await supabase
+          .from('restaurant_item_velocity')
+          .select('item_name, day_date, qty_sold')
+          .eq('tenant_id', tenantId)
+          .gte('day_date', sevenDaysAgoISO)
+          .order('day_date', { ascending: true });
+
+        if (error) throw new Error(error.message);
+
+        const rows = (data as ItemVelocityRow[]) ?? [];
+
+        // Group by item_name → collect qty_sold per day
+        const itemDayMap = new Map<string, number[]>();
+        for (const row of rows) {
+          const existing = itemDayMap.get(row.item_name) ?? [];
+          existing.push(row.qty_sold);
+          itemDayMap.set(row.item_name, existing);
+        }
+
+        // Compute 7-day moving average (= mean of all daily quantities) as predicted demand
+        const forecast: ForecastBar[] = [];
+        for (const [item_name, qtys] of itemDayMap.entries()) {
+          const avg = qtys.reduce((s, q) => s + q, 0) / qtys.length;
+          forecast.push({ item_name, predicted_qty: Math.round(avg * 10) / 10 });
+        }
+
+        // Sort descending by predicted_qty, take top 8
+        forecast.sort((a, b) => b.predicted_qty - a.predicted_qty);
+        setChartData(forecast.slice(0, 8));
+      } catch (err) {
+        console.error('[DemandForecastPanel] fetch error:', err);
+        setChartData([]);
+      } finally {
+        setPanelLoading(false);
+      }
+    };
+
+    void fetchVelocity();
+  }, [tenantId]);
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
+          Forecasted Demand — Tomorrow
+        </h2>
+        <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5">
+          7-day moving avg · item velocity
+        </span>
+      </div>
+      <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-4 h-64">
+        {panelLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-white/30 text-sm text-center px-4">
+            No velocity data yet — orders will populate this
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 40, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <XAxis
+                dataKey="item_name"
+                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+                interval={0}
+                angle={-35}
+                textAnchor="end"
+              />
+              <YAxis
+                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+                allowDecimals={false}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const item = payload[0];
+                  if (!item) return null;
+                  const bar = item.payload as ForecastBar;
+                  return (
+                    <div className="rounded-xl border border-indigo-500/20 bg-slate-950/95 backdrop-blur-xl p-3 shadow-2xl text-xs">
+                      <p className="mb-1.5 font-semibold text-white/70">{bar.item_name}</p>
+                      <p className="text-indigo-300 font-bold">
+                        Predicted: <span className="text-white">{item.value} units</span>
+                      </p>
+                    </div>
+                  );
+                }}
+              />
+              <Bar dataKey="predicted_qty" name="Predicted Qty" radius={[6, 6, 0, 0]}>
+                {chartData.map((_, index) => (
+                  <Cell key={index} fill="#6366f1" />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Waiter Leaderboard ────────────────────────────────────────────────────────
+
+interface WaiterOrderRow {
+  waiter_id: string | null;
+  tip_amount_usd: number | null;
+  paid_at: string | null;
+  opened_at: string;
+  covers: number | null;
+}
+
+interface WaiterAgg {
+  waiterId: string;
+  name: string;
+  ordersServed: number;
+  totalTips: number;
+  avgTurnaroundMin: number;
+}
+
+interface WaiterLeaderboardProps {
+  tenantId?: string;
+  rangeStart: string;
+}
+
+function WaiterLeaderboard({ tenantId, rangeStart }: WaiterLeaderboardProps) {
+  const { employees } = useApp();
+  const [rows, setRows] = useState<WaiterAgg[]>([]);
+  const [lbLoading, setLbLoading] = useState(true);
+
+  useEffect(() => {
+    if (!tenantId) {
+      setLbLoading(false);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      setLbLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('table_orders')
+          .select('waiter_id, tip_amount_usd, paid_at, opened_at, covers')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'paid')
+          .gte('paid_at', rangeStart)
+          .order('paid_at', { ascending: false });
+
+        if (error) throw new Error(error.message);
+
+        const orders = (data as WaiterOrderRow[]) ?? [];
+
+        // Aggregate per waiter
+        const map = new Map<string, { tips: number; count: number; turnaroundMins: number[] }>();
+        for (const o of orders) {
+          if (!o.waiter_id) continue;
+          const openedMs = new Date(o.opened_at).getTime();
+          const paidMs = o.paid_at ? new Date(o.paid_at).getTime() : null;
+          const minutesDiff = paidMs !== null ? (paidMs - openedMs) / 60000 : null;
+
+          const existing = map.get(o.waiter_id) ?? { tips: 0, count: 0, turnaroundMins: [] };
+          existing.tips += o.tip_amount_usd ?? 0;
+          existing.count += 1;
+          if (minutesDiff !== null && minutesDiff > 0) {
+            existing.turnaroundMins.push(minutesDiff);
+          }
+          map.set(o.waiter_id, existing);
+        }
+
+        // Build display rows with employee names
+        const agg: WaiterAgg[] = [];
+        for (const [waiterId, stats] of map.entries()) {
+          const emp = employees.find((e) => e.id === waiterId);
+          const name = emp?.name ?? `Staff …${waiterId.slice(-6)}`;
+          const avgMins = stats.turnaroundMins.length > 0
+            ? stats.turnaroundMins.reduce((s, v) => s + v, 0) / stats.turnaroundMins.length
+            : 0;
+          agg.push({
+            waiterId,
+            name,
+            ordersServed: stats.count,
+            totalTips: stats.tips,
+            avgTurnaroundMin: Math.round(avgMins),
+          });
+        }
+
+        // Sort by orders served desc
+        agg.sort((a, b) => b.ordersServed - a.ordersServed);
+        setRows(agg);
+      } catch (err) {
+        console.error('[WaiterLeaderboard] fetch error:', err);
+        setRows([]);
+      } finally {
+        setLbLoading(false);
+      }
+    };
+
+    void fetchOrders();
+  }, [tenantId, rangeStart, employees]);
+
+  return (
+    <section>
+      <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3 flex items-center gap-1.5">
+        <Trophy className="h-3 w-3 text-yellow-400" /> Waiter Performance
+      </h2>
+      <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        {lbLoading ? (
+          <div className="flex items-center justify-center h-24">
+            <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="px-4 py-8 text-center text-white/30 text-sm">
+            No completed orders in this period
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/8">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">#</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Name</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Orders</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Tips (USD)</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Avg Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((w, i) => (
+                  <tr
+                    key={w.waiterId}
+                    className={`border-b border-white/5 hover:bg-white/3 transition-colors ${i === 0 ? 'border-l-2 border-l-yellow-500/30' : ''}`}
+                  >
+                    <td className="px-4 py-3 text-white/40">
+                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
+                    </td>
+                    <td className={`px-4 py-3 font-medium ${i === 0 ? 'text-yellow-300' : 'text-white/80'}`}>
+                      {w.name}
+                    </td>
+                    <td className="px-4 py-3 text-right text-white/60">{w.ordersServed}</td>
+                    <td className="px-4 py-3 text-right font-bold text-emerald-400">
+                      ${w.totalTips.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-white/50">
+                      {w.avgTurnaroundMin > 0 ? `${w.avgTurnaroundMin}m` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function RestaurantAnalytics() {
@@ -302,8 +592,7 @@ export default function RestaurantAnalytics() {
   const [weeklyPattern, setWeeklyPattern] = useState<WeeklyPattern[]>([]);
   const [velocities, setVelocities] = useState<ItemVelocity[]>([]);
   const [insights, setInsights] = useState<MLInsight[]>([]);
-  // Waiter leaderboard + feedback
-  const [waiters, setWaiters] = useState<WaiterPerformanceStats[]>([]);
+  // Feedback
   const [feedback, setFeedback] = useState<TableFeedback[]>([]);
 
   const load = useCallback(async (showRefresh = false) => {
@@ -427,32 +716,6 @@ export default function RestaurantAnalytics() {
       });
       setInsights(generatedInsights);
 
-      // Waiter leaderboard
-      const waiterMap = new Map<string, WaiterPerformanceStats>();
-      for (const order of paidOrdFull) {
-        if (!order.waiter_id) continue;
-        const items = orderItems.filter((i) => i.order_id === order.id);
-        const rev = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-        const existing = waiterMap.get(order.waiter_id);
-        if (existing) {
-          existing.tables_served += 1;
-          existing.total_revenue += rev;
-          existing.avg_ticket = existing.total_revenue / existing.tables_served;
-        } else {
-          waiterMap.set(order.waiter_id, {
-            employee_id: order.waiter_id as string,
-            employee_name: `Staff ${(order.waiter_id as string).slice(0, 6)}`,
-            tables_served: 1,
-            total_revenue: rev,
-            avg_ticket: rev,
-            avg_rating: 0,
-            avg_service_minutes: 20,
-            period_score: 0,
-          });
-        }
-      }
-      setWaiters([...waiterMap.values()]);
-
     } catch (err) {
       console.error('[RestaurantAnalytics] load error:', err);
     } finally {
@@ -489,8 +752,14 @@ export default function RestaurantAnalytics() {
     index: Math.round(p.indexVsWeekAvg * 100),
   }));
 
-  const ranked = rankWaiters(waiters);
   const todayIsRamadan = isRamadan(new Date());
+
+  // rangeStart ISO string for the WaiterLeaderboard query
+  const rangeStartISO = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - (range === '7d' ? 7 : range === '30d' ? 30 : 90));
+    return d.toISOString();
+  })();
 
   // Next 7-day forecast summary from Holt
   const revSeries = history.map((d) => d.totalUsd);
@@ -720,6 +989,9 @@ export default function RestaurantAnalytics() {
               </section>
             )}
 
+            {/* Demand Forecast Panel (Task K) */}
+            <DemandForecastPanel tenantId={tenantId} />
+
             {/* Menu velocity */}
             <section>
               <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Menu Velocity</h2>
@@ -769,36 +1041,8 @@ export default function RestaurantAnalytics() {
               )}
             </section>
 
-            {/* Waiter leaderboard */}
-            {ranked.length > 0 && (
-              <section>
-                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">Staff Leaderboard</h2>
-                <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-white/8">
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">#</th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Staff</th>
-                        <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Tables</th>
-                        <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Revenue</th>
-                        <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Avg Ticket</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ranked.slice(0, 5).map((w, i) => (
-                        <tr key={w.employee_id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                          <td className="px-4 py-3 text-white/40">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}</td>
-                          <td className="px-4 py-3 font-medium text-white/80">{w.employee_name}</td>
-                          <td className="px-4 py-3 text-right text-white/60">{w.tables_served}</td>
-                          <td className="px-4 py-3 text-right font-bold text-amber-400">${w.total_revenue.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right text-white/50">${w.avg_ticket.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            )}
+            {/* Waiter Performance Leaderboard (Task N) */}
+            <WaiterLeaderboard tenantId={tenantId} rangeStart={rangeStartISO} />
 
             {/* Recent feedback */}
             {feedback.length > 0 && (

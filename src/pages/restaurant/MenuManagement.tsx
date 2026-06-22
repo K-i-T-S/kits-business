@@ -4,6 +4,7 @@ import {
   Copy,
   Edit2,
   GripVertical,
+  Image,
   Loader2,
   Plus,
   QrCode,
@@ -63,6 +64,7 @@ interface ItemFormState {
   category_id: string;
   base_price_usd: string;
   cost_price_usd: string;
+  photo_url: string;
   allergens: Allergen[];
   is_active: boolean;
   is_featured: boolean;
@@ -78,6 +80,7 @@ const EMPTY_ITEM_FORM: ItemFormState = {
   category_id: '',
   base_price_usd: '',
   cost_price_usd: '',
+  photo_url: '',
   allergens: [],
   is_active: true,
   is_featured: false,
@@ -201,6 +204,7 @@ interface ItemFormModalProps {
 
 function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps) {
   const { currentTenant } = useApp();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<ItemFormState>(() => {
     if (!item) return EMPTY_ITEM_FORM;
     return {
@@ -210,6 +214,7 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
       category_id: item.category_id ?? '',
       base_price_usd: String(item.base_price_usd),
       cost_price_usd: item.cost_price_usd !== null && item.cost_price_usd !== undefined ? String(item.cost_price_usd) : '',
+      photo_url: item.photo_url ?? '',
       allergens: (item.allergens ?? []) as Allergen[],
       is_active: item.is_active,
       is_featured: item.is_featured,
@@ -219,12 +224,63 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
     };
   });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const toggleAllergen = (a: Allergen) => {
     setForm(f => ({
       ...f,
       allergens: f.allergens.includes(a) ? f.allergens.filter(x => x !== a) : [...f.allergens, a],
     }));
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentTenant?.id) return;
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Only JPEG, PNG, and WebP images are supported');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Generate unique filename
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(2, 8);
+      const ext = file.name.split('.').pop() || 'jpg';
+      const filename = `${currentTenant.id}/${item?.id || 'new'}_${timestamp}_${randomStr}.${ext}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('menu-images')
+        .upload(filename, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data } = supabase.storage
+        .from('menu-images')
+        .getPublicUrl(filename);
+
+      if (data?.publicUrl) {
+        setForm(f => ({ ...f, photo_url: data.publicUrl }));
+        toast.success('Photo uploaded successfully');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to upload photo');
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async () => {
@@ -240,6 +296,7 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
         name: form.name.trim(),
         name_ar: form.name_ar.trim() || null,
         description: form.description.trim() || null,
+        photo_url: form.photo_url.trim() || null,
         category_id: form.category_id || null,
         base_price_usd: parseFloat(form.base_price_usd) || 0,
         cost_price_usd: form.cost_price_usd ? parseFloat(form.cost_price_usd) : null,
@@ -281,6 +338,51 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
 
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
+          {/* Photo Upload */}
+          <div>
+            <label className="mb-2 block text-xs font-medium text-white/60">Photo</label>
+            <div className="space-y-3">
+              {/* Upload area */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/20 bg-white/5 py-6 text-sm font-medium text-white/60 hover:border-indigo-500/50 hover:bg-indigo-500/5 hover:text-white transition-all disabled:opacity-50"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Image className="h-4 w-4" />
+                    Click to upload or drag photo
+                  </>
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => { void handlePhotoUpload(e); }}
+                className="hidden"
+                aria-label="Upload photo"
+              />
+              {form.photo_url && (
+                <div className="relative rounded-xl overflow-hidden border border-white/10">
+                  <img src={form.photo_url} alt="Preview" className="w-full h-40 object-cover" />
+                  <button
+                    onClick={() => setForm(f => ({ ...f, photo_url: '' }))}
+                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500/90 text-white hover:bg-red-600 transition-colors"
+                    aria-label="Remove photo"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Names */}
           <div className="grid grid-cols-2 gap-3">
             <div>

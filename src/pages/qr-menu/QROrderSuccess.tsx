@@ -52,10 +52,10 @@ export default function QROrderSuccess({ orderNumber, onDone }: QROrderSuccessPr
           className="text-3xl font-bold"
           style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}
         >
-          Order Placed!
+          Order Submitted! 🎉
         </h2>
         <p style={{ color: 'var(--qr-text-muted)' }} className="text-sm">
-          Your order is on its way 🍽️
+          Your waiter will confirm shortly
         </p>
         <div
           className="mt-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold"

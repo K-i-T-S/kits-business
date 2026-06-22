@@ -2,7 +2,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import type { RestaurantMenuItem } from '@/types/restaurant';
 import '@/styles/qr-menu-themes.css';
 
 import QRCart from './QRCart';
@@ -12,6 +11,8 @@ import QROrderSuccess from './QROrderSuccess';
 import QRSplash from './QRSplash';
 import { useCart, getModifierKey } from './useCart';
 import { useQRMenu } from './useQRMenu';
+
+import type { RestaurantMenuItem } from '@/types/restaurant';
 
 type MenuView = 'splash' | 'menu' | 'item-detail' | 'cart' | 'success';
 

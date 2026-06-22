@@ -1,20 +1,10 @@
-/**
- * Table3D — Individual restaurant table rendered as a 3D mesh.
- *
- * Uses react-three-fiber + drei. Pulsing animation is driven by useFrame
- * (avoids the @react-spring/three peer-dep which is not installed; behaviour
- * is identical — sinusoidal emissive intensity loop at 800 ms period).
- */
-
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text, Float } from '@react-three/drei';
+import { Html, Float } from '@react-three/drei';
 import type { MeshStandardMaterial } from 'three';
 
 import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import type { RestaurantTable } from '@/types/restaurant';
-
-// ── Types ────────────────────────────────────────────────────────────────────
 
 export interface OrderInfo {
   table_id: string;
@@ -30,53 +20,34 @@ interface Table3DProps {
   isSelected: boolean;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-/** Period of the alert pulse in seconds. */
 const PULSE_PERIOD = 0.8;
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export function Table3D({ table, orderInfo, onSelect, isSelected }: Table3DProps) {
   const matRef = useRef<MeshStandardMaterial>(null);
 
-  // Determine effective status. A table with a very slow order (>15 min) gets
-  // the 'alert' colour even if the DB status is still 'occupied'.
   const isAlert = orderInfo !== undefined && orderInfo.minutesSince > 15;
-  const colorKey: keyof typeof RESTAURANT_COLORS =
-    isAlert ? 'alert' : table.status;
+  const colorKey: keyof typeof RESTAURANT_COLORS = isAlert ? 'alert' : table.status;
 
-  // Narrowed colour values (only status keys have fill / emissive / glow)
   // eslint-disable-next-line security/detect-object-injection
   const colorEntry = RESTAURANT_COLORS[colorKey] as { fill: string; emissive: string; glow: string };
   const fillColor = colorEntry.fill;
   const emissiveColor = colorEntry.emissive;
 
-  // Pulsing emissive animation — sine wave between 0.2 and 0.8 for alerts,
-  // static 0.3 for all other statuses. Runs entirely on the render loop without
-  // a spring library.
   useFrame(({ clock }) => {
     if (!matRef.current) return;
     if (isAlert) {
       const t = clock.getElapsedTime();
-      // sin oscillates -1 → 1; map to 0.2 → 0.8
-      matRef.current.emissiveIntensity =
-        0.5 + 0.3 * Math.sin((2 * Math.PI * t) / PULSE_PERIOD);
+      matRef.current.emissiveIntensity = 0.5 + 0.3 * Math.sin((2 * Math.PI * t) / PULSE_PERIOD);
     } else {
       matRef.current.emissiveIntensity = isSelected ? 0.5 : 0.3;
     }
   });
 
-  // Map table position (0–100 percentage space) to Three.js world coordinates
-  // centred on origin, spanning ±10 units.
   const posX = (table.x / 100) * 20 - 10;
   const posZ = (table.y / 100) * 20 - 10;
 
   return (
-    <group
-      position={[posX, 0, posZ]}
-      onClick={() => onSelect(table.id)}
-    >
+    <group position={[posX, 0, posZ]} onClick={() => onSelect(table.id)}>
       {/* Table surface */}
       <mesh castShadow>
         <boxGeometry args={[2.5, 0.15, 1.8]} />
@@ -90,7 +61,7 @@ export function Table3D({ table, orderInfo, onSelect, isSelected }: Table3DProps
         />
       </mesh>
 
-      {/* Selection ring — slightly larger plane below the table surface */}
+      {/* Selection ring */}
       {isSelected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.09, 0]}>
           <planeGeometry args={[3, 2.4]} />
@@ -98,37 +69,52 @@ export function Table3D({ table, orderInfo, onSelect, isSelected }: Table3DProps
         </mesh>
       )}
 
-      {/* Table number label */}
-      <Text
-        position={[0, 0.2, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.4}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
+      {/* Table number — HTML overlay, no font worker needed */}
+      <Html
+        position={[0, 0.25, 0]}
+        center
+        distanceFactor={8}
+        style={{ pointerEvents: 'none' }}
       >
-        {table.number.toString()}
-      </Text>
+        <div style={{
+          color: 'white',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '14px',
+          fontWeight: 700,
+          textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+          userSelect: 'none',
+          whiteSpace: 'nowrap',
+        }}>
+          T{table.number}
+        </div>
+      </Html>
 
-      {/* Order badge — floats above the table when an active order exists */}
+      {/* Order badge */}
       {orderInfo && (
         <Float speed={1.5} rotationIntensity={0} floatIntensity={0.3}>
           <group position={[0, 1.5, 0]}>
-            {/* Badge backing plane */}
             <mesh>
               <planeGeometry args={[2.4, 0.7]} />
               <meshBasicMaterial color="#111827" opacity={0.9} transparent />
             </mesh>
-            {/* Badge text: $total · covers · minutes */}
-            <Text
+            <Html
               position={[0, 0, 0.02]}
-              fontSize={0.22}
-              color="#f59e0b"
-              anchorX="center"
-              anchorY="middle"
+              center
+              distanceFactor={8}
+              style={{ pointerEvents: 'none' }}
             >
-              {`$${orderInfo.total.toFixed(0)} · ${orderInfo.covers}pp · ${orderInfo.minutesSince}min`}
-            </Text>
+              <div style={{
+                color: '#f59e0b',
+                fontFamily: 'system-ui, sans-serif',
+                fontSize: '11px',
+                fontWeight: 600,
+                textShadow: '0 1px 2px rgba(0,0,0,0.9)',
+                userSelect: 'none',
+                whiteSpace: 'nowrap',
+              }}>
+                ${orderInfo.total.toFixed(0)} · {orderInfo.covers}pp · {orderInfo.minutesSince}min
+              </div>
+            </Html>
           </group>
         </Float>
       )}

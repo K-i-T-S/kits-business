@@ -356,6 +356,9 @@ Run these in order in Supabase Dashboard → SQL Editor. All are `IF NOT EXISTS`
 | 39 | `20260621_000039_restaurant_multi_branch.sql` | Branches, branch metrics, delivery integrations |
 | 40 | `20260621_000040_restaurant_bridge.sql` | FK bridges to products/sales, fn_close_restaurant_bill() |
 | 41 | `20260621_000041_restaurant_views.sql` | Daily revenue view, item velocity view |
+| 42 | `20260622_000042_restaurant_ai.sql` | AI queries table, demand forecasts, upsell rules |
+
+> **Migrations 43–50** are planned for Phase 4+ features: cash management, delivery hub, loyalty integrations, events/reservations, hotel PMS bridge, and subscription billing. Files do not exist yet.
 
 ---
 

@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Trash2,
   UtensilsCrossed,
+  Wand2,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import Layout from '@/components/Layout';
+import { AIContentGeneratorModal } from '@/components/restaurant/AIContentGeneratorModal';
 import { useApp } from '@/context/AppContext';
 import type {
   RestaurantMenuCategory,
@@ -225,12 +227,21 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   const toggleAllergen = (a: Allergen) => {
     setForm(f => ({
       ...f,
       allergens: f.allergens.includes(a) ? f.allergens.filter(x => x !== a) : [...f.allergens, a],
     }));
+  };
+
+  const handleAIGenerate = (descriptions: { en: string; ar: string }) => {
+    setForm(f => ({
+      ...f,
+      description: descriptions.en,
+    }));
+    toast.success('Description updated! Arabic version: ' + descriptions.ar);
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -449,7 +460,19 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
 
           {/* Description */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-white/60">Description</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="block text-xs font-medium text-white/60">Description</label>
+              <button
+                type="button"
+                onClick={() => setShowAIModal(true)}
+                disabled={!form.name.trim()}
+                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Generate description with AI"
+              >
+                <Wand2 className="h-3.5 w-3.5" />
+                Generate with AI
+              </button>
+            </div>
             <textarea
               rows={2}
               value={form.description}
@@ -552,6 +575,15 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
           </button>
         </div>
       </div>
+
+      {/* AI Content Generator Modal */}
+      {showAIModal && (
+        <AIContentGeneratorModal
+          itemName={form.name}
+          onGenerate={handleAIGenerate}
+          onClose={() => setShowAIModal(false)}
+        />
+      )}
     </div>
   );
 }

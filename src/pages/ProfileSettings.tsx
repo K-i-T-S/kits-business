@@ -104,26 +104,32 @@ export default function ProfileSettings() {
 
   // Load auth user on mount
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const meta = data.user?.user_metadata ?? {};
-      setDisplayName((meta['full_name'] as string | undefined) ?? currentEmployee?.name ?? '');
-      setAvatarUrl((meta['avatar_url'] as string | undefined) ?? '');
-    }).catch(() => {
-      // ignore — user may not be authenticated yet
-    });
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const meta = data.user?.user_metadata ?? {};
+        setDisplayName((meta['full_name'] as string | undefined) ?? currentEmployee?.name ?? '');
+        setAvatarUrl((meta['avatar_url'] as string | undefined) ?? '');
+      } catch {
+        // ignore — user may not be authenticated yet
+      }
+    })();
   }, [currentEmployee?.name]);
 
   // Check existing MFA enrollment on mount
   useEffect(() => {
-    supabase.auth.mfa.listFactors().then(({ data }) => {
-      if (!data) return;
-      const enrolled = data.totp[0];
-      if (enrolled) {
-        setMfaState({ phase: 'enrolled', factorId: enrolled.id });
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.mfa.listFactors();
+        if (!data) return;
+        const enrolled = data.totp[0];
+        if (enrolled) {
+          setMfaState({ phase: 'enrolled', factorId: enrolled.id });
+        }
+      } catch {
+        // ignore — best effort
       }
-    }).catch(() => {
-      // ignore — best effort
-    });
+    })();
   }, []);
 
   // Sync language from context

@@ -279,7 +279,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     // This is a placeholder for future integration with translation APIs
     // For now, return the key as a fallback
     log.debug(`Auto-translation not implemented yet. Key: ${key}, Target: ${targetLanguage}`);
-    return key;
+    return Promise.resolve(key);
   }, []);
 
   const value: TranslationContextType = {

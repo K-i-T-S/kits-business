@@ -497,7 +497,7 @@ export default function Inventory() {
                 <X className="h-5 w-5 text-white/60" />
               </button>
             </div>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
+            <form onSubmit={(e) => void handleEditSubmit(e)} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-white/70 mb-1">Name *</label>
                 <input

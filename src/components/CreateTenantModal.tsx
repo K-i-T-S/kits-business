@@ -88,7 +88,7 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
           <p className="text-white/60">Set up your business to start managing inventory and sales</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-white/80 mb-2">
               Business Name *

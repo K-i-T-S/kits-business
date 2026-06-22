@@ -225,7 +225,7 @@ export default function ActivityLog() {
             {/* Actions */}
             <div className="flex items-center gap-2">
               <button
-                onClick={fetchLogs}
+                onClick={() => void fetchLogs()}
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
               >

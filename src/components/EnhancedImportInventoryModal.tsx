@@ -275,7 +275,7 @@ export default function EnhancedImportInventoryModal({ onClose }: ImportInventor
           </button>
         </div>
 
-        <form onSubmit={handleImport} className="space-y-6">
+        <form onSubmit={(e) => void handleImport(e)} className="space-y-6">
           {/* Import Settings */}
           <div>
             <h3 className="text-white mb-3">Import Settings</h3>

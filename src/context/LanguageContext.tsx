@@ -5,7 +5,7 @@ import { isRTL, getCurrentLanguage, supportedLanguages } from '../i18n';
 
 interface LanguageContextType {
   currentLanguage: string;
-  changeLanguage: (language: string) => void;
+  changeLanguage: (language: string) => Promise<void>;
   isRTL: boolean;
   supportedLanguages: typeof supportedLanguages;
 }

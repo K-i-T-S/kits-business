@@ -41,7 +41,6 @@ import { toast } from 'sonner';
 import BillSplitter from '@/components/restaurant/BillSplitter';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
-import { useRestaurantRealtime } from '@/hooks/useRestaurantRealtime';
 import { useUpsellRules } from '@/hooks/useUpsellRules';
 import { supabase } from '@/utils/supabaseClient';
 import type {

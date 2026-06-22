@@ -110,26 +110,28 @@ export const CountBadges: Story = {
   ),
 };
 
-export const Interactive: Story = {
-  render: () => {
-    const [selected, setSelected] = React.useState('option1');
+function InteractiveContent() {
+  const [selected, setSelected] = React.useState('option1');
 
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Selected: {selected}</p>
-        <div className="flex gap-2">
-          {['option1', 'option2', 'option3'].map((option) => (
-            <Badge
-              key={option}
-              variant={selected === option ? 'default' : 'outline'}
-              className="cursor-pointer"
-              onClick={() => setSelected(option)}
-            >
-              {option}
-            </Badge>
-          ))}
-        </div>
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Selected: {selected}</p>
+      <div className="flex gap-2">
+        {['option1', 'option2', 'option3'].map((option) => (
+          <Badge
+            key={option}
+            variant={selected === option ? 'default' : 'outline'}
+            className="cursor-pointer"
+            onClick={() => setSelected(option)}
+          >
+            {option}
+          </Badge>
+        ))}
       </div>
-    );
-  },
+    </div>
+  );
+}
+
+export const Interactive: Story = {
+  render: () => <InteractiveContent />,
 };

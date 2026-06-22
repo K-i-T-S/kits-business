@@ -164,7 +164,7 @@ export default function BatchTracking() {
               <AlertTriangle className="mx-auto h-12 w-12 text-red-400" />
               <h3 className="mt-2 text-sm font-semibold text-white">Failed to load products</h3>
               <p className="mt-1 text-sm text-white/60">{error}</p>
-              <button onClick={loadProducts} className="mt-4 text-indigo-400 hover:text-indigo-300 text-sm">Retry</button>
+              <button onClick={() => void loadProducts()} className="mt-4 text-indigo-400 hover:text-indigo-300 text-sm">Retry</button>
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-12">

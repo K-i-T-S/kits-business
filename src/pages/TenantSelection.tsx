@@ -230,7 +230,7 @@ export default function TenantSelection() {
               <span className="font-medium">Create New Business</span>
             </button>
           ) : (
-            <form onSubmit={handleCreateTenant} className="space-y-6">
+            <form onSubmit={(e) => void handleCreateTenant(e)} className="space-y-6">
               <h3 className="text-lg font-semibold text-white">Create New Business</h3>
 
               {error && (
@@ -289,7 +289,12 @@ export default function TenantSelection() {
 
         <div className="text-center mt-8">
           <button
-            onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}
+            onClick={() => {
+              void (async () => {
+                await supabase.auth.signOut();
+                navigate('/login');
+              })();
+            }}
             className="text-white/40 hover:text-white/70 transition-colors text-sm"
           >
             Sign out

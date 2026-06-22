@@ -130,7 +130,7 @@ export function PWAInstallPrompt() {
           {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
-              onClick={handleInstall}
+              onClick={() => void handleInstall()}
               size="sm"
               className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium shadow-lg transition-all duration-200 active:scale-95"
             >
@@ -139,7 +139,7 @@ export function PWAInstallPrompt() {
             </Button>
             {!notificationsEnabled && (
               <Button
-                onClick={handleEnableNotifications}
+                onClick={() => void handleEnableNotifications()}
                 variant="outline"
                 size="sm"
                 className="border-white/20 text-white/70 hover:bg-white/10 hover:border-white/30 transition-all duration-200 active:scale-95"

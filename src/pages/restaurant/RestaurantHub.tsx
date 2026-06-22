@@ -27,10 +27,11 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { Component, lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import FloorPlan3D from '@/components/restaurant/FloorPlan3D';
+const FloorPlan3D = lazy(() => import('@/components/restaurant/FloorPlan3D'));
 import type { OrderInfo } from '@/components/restaurant/FloorPlan3D';
 import { useApp } from '@/context/AppContext';
 import { useCountUp } from '@/hooks/useCountUp';
@@ -49,6 +50,26 @@ import { supabase } from '@/utils/supabaseClient';
 // ── View mode ─────────────────────────────────────────────────────────────────
 
 type ViewMode = 'floor' | 'analytics';
+
+// ── WebGL error boundary — catches Three.js/r3f init failures ────────────────
+
+interface WebGLBoundaryState { hasError: boolean; }
+
+class WebGLErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, WebGLBoundaryState> {
+  state: WebGLBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): WebGLBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn('[FloorPlan3D] WebGL render failed, using 2D fallback:', error.message, info.componentStack);
+  }
+
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
 
 // ── KPI card ─────────────────────────────────────────────────────────────────
 
@@ -267,7 +288,7 @@ export default function RestaurantHub() {
   const handleTableSelect = useCallback(
     (tableId: string) => {
       setSelectedTableId(tableId);
-      navigate(`/restaurant/waiter?table=${tableId}`);
+      void navigate(`/restaurant/waiter?table=${tableId}`);
     },
     [navigate],
   );
@@ -275,19 +296,19 @@ export default function RestaurantHub() {
   // ── Quick actions ─────────────────────────────────────────────────────────
 
   const handleNewOrder = () => {
-    navigate('/restaurant/waiter');
+    void navigate('/restaurant/waiter');
   };
 
   const handleScanQR = () => {
-    navigate('/restaurant/table-management');
+    void navigate('/restaurant/tables');
   };
 
   const handleViewKDS = () => {
-    navigate('/restaurant/kitchen');
+    void navigate('/restaurant/kds');
   };
 
   const handleSlowAlerts = () => {
-    navigate('/restaurant/analytics');
+    void navigate('/restaurant/analytics');
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -418,13 +439,43 @@ export default function RestaurantHub() {
                 transition={{ duration: 0.25 }}
                 style={{ minHeight: 400 }}
               >
-                <FloorPlan3D
-                  tables={tables}
-                  orders={orderInfos}
-                  selectedTableId={selectedTableId}
-                  onTableSelect={handleTableSelect}
-                  isLoading={isLoading}
-                />
+                <WebGLErrorBoundary
+                  fallback={
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[#0a0f1e] p-6">
+                      <div className="grid grid-cols-3 gap-3">
+                        {tables.slice(0, 9).map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => handleTableSelect(t.id)}
+                            className={`rounded-xl border p-3 text-left transition-all ${
+                              t.status === 'occupied' ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' :
+                                t.status === 'reserved' ? 'border-violet-500/40 bg-violet-500/10 text-violet-300' :
+                                  'border-white/10 bg-white/5 text-white/60 hover:bg-white/10'
+                            }`}
+                          >
+                            <div className="text-xs font-bold">T{t.number}</div>
+                            <div className="text-[10px] capitalize opacity-70">{t.status}</div>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-white/30">2D fallback — 3D floor plan unavailable</p>
+                    </div>
+                  }
+                >
+                  <Suspense fallback={
+                    <div className="flex h-full w-full items-center justify-center bg-[#0a0f1e]">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-amber-400" />
+                    </div>
+                  }>
+                    <FloorPlan3D
+                      tables={tables}
+                      orders={orderInfos}
+                      selectedTableId={selectedTableId}
+                      onTableSelect={handleTableSelect}
+                      isLoading={isLoading}
+                    />
+                  </Suspense>
+                </WebGLErrorBoundary>
               </motion.div>
             ) : (
               <motion.div
@@ -546,6 +597,7 @@ export default function RestaurantHub() {
                 <div key={key} className="flex items-center gap-2">
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
+                    // eslint-disable-next-line security/detect-object-injection
                     style={{ background: RESTAURANT_COLORS[key].fill }}
                   />
                   <span className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>

@@ -672,7 +672,7 @@ function TransferTab({ locations }: TransferTabProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleTransfer} className="space-y-4">
+          <form onSubmit={(e) => void handleTransfer(e)} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs text-white/60">From Location</label>

@@ -25,7 +25,7 @@ export class SecurityTestSuite {
 
     // Test 2: Input Validation
     try {
-      await this.testInputValidation();
+      this.testInputValidation();
       results.push({ test: 'Input Validation', status: 'PASSED' });
       passed++;
     } catch (error) {
@@ -95,7 +95,7 @@ export class SecurityTestSuite {
     }
   }
 
-  private static async testInputValidation(): Promise<void> {
+  private static testInputValidation(): void {
     // Test email validation
     const emailResult = enhancedSecurityMiddleware.validateInput('test@example.com', 'email');
     if (!emailResult.isValid || emailResult.sanitized !== 'test@example.com') {
@@ -262,11 +262,11 @@ export class SecurityTestSuite {
   }
 
   // Security vulnerability scan
-  static async vulnerabilityScan(): Promise<Array<{
+  static vulnerabilityScan(): Array<{
     vulnerability: string;
     severity: 'low' | 'medium' | 'high';
     description: string;
-  }>> {
+  }> {
     const vulnerabilities: Array<{
       vulnerability: string;
       severity: 'low' | 'medium' | 'high';

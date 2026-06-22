@@ -806,25 +806,27 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
   const notesRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   useEffect(() => {
-    supabase
-      .from('restaurant_tables')
-      .select('*')
-      .order('number')
-      .then(({ data }) => setTables((data ?? []) as RestaurantTable[]));
+    void (async () => {
+      const { data } = await supabase
+        .from('restaurant_tables')
+        .select('*')
+        .order('number');
+      setTables((data ?? []) as RestaurantTable[]);
+    })();
   }, []);
 
   // When table selected, check for existing open order
   useEffect(() => {
     if (!selectedTableId) { setExistingOrderId(null); return; }
-    supabase
-      .from('table_orders')
-      .select('id')
-      .eq('table_id', selectedTableId)
-      .eq('status', 'open')
-      .limit(1)
-      .then(({ data }) => {
-        setExistingOrderId((data ?? [])[0]?.id ?? null);
-      });
+    void (async () => {
+      const { data } = await supabase
+        .from('table_orders')
+        .select('id')
+        .eq('table_id', selectedTableId)
+        .eq('status', 'open')
+        .limit(1);
+      setExistingOrderId((data ?? [])[0]?.id ?? null);
+    })();
   }, [selectedTableId]);
 
   const displayedItems = items.filter(i => {

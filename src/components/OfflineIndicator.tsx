@@ -156,7 +156,7 @@ export function OfflineIndicator() {
                   )}
                 </div>
                 <Button
-                  onClick={handleSync}
+                  onClick={() => void handleSync()}
                   disabled={syncStatus.isSyncing}
                   size="sm"
                   className="transition-all duration-200 active:scale-95"

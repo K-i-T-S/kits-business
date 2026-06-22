@@ -91,7 +91,7 @@ export default function EnterpriseDashboard() {
             </div>
             <Button
               variant="outline"
-              onClick={loadDashboardData}
+              onClick={() => void loadDashboardData()}
               className="border-white/20 bg-white/10 text-white hover:bg-white/20 self-start"
             >
               <RefreshCw className="h-4 w-4 me-2" />

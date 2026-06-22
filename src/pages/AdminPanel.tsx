@@ -100,16 +100,19 @@ export default function AdminPanel() {
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email !== 'kits.tech.co@gmail.com') {
-        void navigate('/dashboard');
-        return;
+    void (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email !== 'kits.tech.co@gmail.com') {
+          void navigate('/dashboard');
+          return;
+        }
+        // Email confirmed — show the PIN form (never auto-unlock)
+        setGateChecking(false);
+      } catch {
+        void navigate('/login');
       }
-      // Email confirmed — show the PIN form (never auto-unlock)
-      setGateChecking(false);
-    }).catch(() => {
-      void navigate('/login');
-    });
+    })();
   }, [navigate]);
 
   useEffect(() => {
@@ -298,7 +301,7 @@ export default function AdminPanel() {
               <p className="text-xs text-white/40 text-center">This area is restricted to KiTS staff only.</p>
             </div>
 
-            <form onSubmit={handleGateSubmit} className="space-y-4">
+            <form onSubmit={(e) => void handleGateSubmit(e)} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-white/60 mb-1.5">Password</label>
                 <input

@@ -23,7 +23,7 @@ export function AIContentGeneratorModal({ itemName, onGenerate, onClose }: AICon
 
   const { mutate: generate, isPending } = useAIContentGenerator();
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (!ingredients.trim()) {
       toast.error('Please enter at least one ingredient');
       return;

@@ -46,7 +46,7 @@ export default function TenantSwitcher() {
     setLoading(true);
     try {
       // Update frontend context
-      await switchTenantContext(tenant.id);
+      switchTenantContext(tenant.id);
 
       toast.success(`Switched to ${tenant.name}`);
       setIsOpen(false);

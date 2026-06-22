@@ -23,14 +23,14 @@ export class ApiSecurityWrapper {
     return {
       userId: user?.id,
       sessionId: session?.access_token,
-      ipAddress: await this.getClientIP(),
+      ipAddress: this.getClientIP(),
       userAgent: navigator.userAgent,
       tenantId: session?.user?.user_metadata?.tenant_id,
       userRole: session?.user?.user_metadata?.role,
     };
   }
 
-  private async getClientIP(): Promise<string | null> {
+  private getClientIP(): string | null {
     try {
       // In a real implementation, you'd get this from your backend
       // For now, we'll use a placeholder

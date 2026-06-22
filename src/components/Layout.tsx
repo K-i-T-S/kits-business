@@ -467,6 +467,25 @@ export default function Layout({ children }: LayoutProps) {
                   <UtensilsCrossed className="h-3 w-3 text-amber-400/80" />
                   <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-amber-400/80">Restaurant Pro</span>
                 </div>
+                {/* Hub — 3D floor plan landing page */}
+                <div className="mb-2.5">
+                  <Link
+                    to="/restaurant"
+                    aria-current={isActive('/restaurant') ? 'page' : undefined}
+                    className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
+                      isActive('/restaurant')
+                        ? 'bg-amber-500/15 border border-amber-500/25 text-amber-200'
+                        : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                    }`}
+                  >
+                    <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg ${
+                      isActive('/restaurant') ? 'bg-amber-500/25 text-amber-300' : 'bg-white/5 text-white/35'
+                    }`}>
+                      <LayoutDashboard className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-xs font-medium">Hub</span>
+                  </Link>
+                </div>
                 {RESTAURANT_NAV_GROUPS.map((group) => (
                   <div key={group.label} className="mb-2.5">
                     <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-wider text-white/20">{group.label}</p>

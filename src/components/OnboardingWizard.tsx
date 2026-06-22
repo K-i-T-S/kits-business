@@ -235,7 +235,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
 
             {error && <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl px-4 py-3 text-sm">{error}</div>}
 
-            <button onClick={handleStep1} disabled={loading} className={primaryBtn}>
+            <button onClick={() => void handleStep1()} disabled={loading} className={primaryBtn}>
               {loading ? 'Saving…' : 'Continue →'}
             </button>
           </div>
@@ -285,7 +285,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
 
             {error && <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl px-4 py-3 text-sm">{error}</div>}
 
-            <button onClick={handleStep2} disabled={loading} className={primaryBtn}>
+            <button onClick={() => void handleStep2()} disabled={loading} className={primaryBtn}>
               {loading ? 'Adding…' : 'Add Product & Continue →'}
             </button>
             <button type="button" onClick={() => { setStep(3); setError(''); }} className="block text-center w-full mt-1 text-sm text-white/40 hover:text-white/70 cursor-pointer underline transition-colors">
@@ -326,7 +326,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
 
             {error && <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl px-4 py-3 text-sm">{error}</div>}
 
-            <button onClick={handleStep3} disabled={loading} className={primaryBtn}>
+            <button onClick={() => void handleStep3()} disabled={loading} className={primaryBtn}>
               {loading ? 'Inviting…' : 'Invite & Continue →'}
             </button>
             <button type="button" onClick={() => { setStep(4); setError(''); }} className="block text-center w-full mt-1 text-sm text-white/40 hover:text-white/70 cursor-pointer underline transition-colors">
@@ -371,7 +371,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
               </div>
             </div>
 
-            <button onClick={handleFinish} disabled={loading} className={primaryBtn}>
+            <button onClick={() => void handleFinish()} disabled={loading} className={primaryBtn}>
               {loading ? 'Setting up…' : 'Go to Dashboard →'}
             </button>
           </div>

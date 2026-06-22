@@ -180,22 +180,24 @@ export const WithIcons: Story = {
   ),
 };
 
-export const Interactive: Story = {
-  render: () => {
-    const [count, setCount] = React.useState(0);
+function InteractiveContent() {
+  const [count, setCount] = React.useState(0);
 
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Click count: {count}</p>
-        <div className="flex gap-2">
-          <Button onClick={() => setCount(count + 1)}>
-            Increment
-          </Button>
-          <Button variant="outline" onClick={() => setCount(0)}>
-            Reset
-          </Button>
-        </div>
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Click count: {count}</p>
+      <div className="flex gap-2">
+        <Button onClick={() => setCount(count + 1)}>
+          Increment
+        </Button>
+        <Button variant="outline" onClick={() => setCount(0)}>
+          Reset
+        </Button>
       </div>
-    );
-  },
+    </div>
+  );
+}
+
+export const Interactive: Story = {
+  render: () => <InteractiveContent />,
 };

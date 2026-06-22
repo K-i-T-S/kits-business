@@ -101,11 +101,11 @@ export class OperationQueue {
 export class StockUpdateLock {
   private static locks = new Map<string, { timestamp: number; operationId: string }>();
 
-  static async acquireLock(
+  static acquireLock(
     productId: string,
     variantId: string,
     timeout: number = 10000,
-  ): Promise<string | null> {
+  ): string | null {
     const key = `${productId}-${variantId}`;
     const existing = this.locks.get(key);
 

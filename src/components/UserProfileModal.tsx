@@ -239,7 +239,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 Cancel
               </button>
               <button
-                onClick={handleSave}
+                onClick={() => void handleSave()}
                 className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
                 disabled={loading}
               >

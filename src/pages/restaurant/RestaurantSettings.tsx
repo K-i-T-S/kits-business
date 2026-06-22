@@ -1,4 +1,4 @@
-import { Settings2, Save, ToggleLeft, ToggleRight, AlertCircle } from 'lucide-react';
+import { Settings2, Save, ToggleLeft, ToggleRight, AlertCircle, QrCode, Copy, Check, ExternalLink } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -8,6 +8,19 @@ import RoleGate from '@/components/RoleGate';
 import { useApp } from '@/context/AppContext';
 import type { RestaurantSettings, OrderFlow, PaymentMode } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
+
+const QR_PALETTES = [
+  { key: 'dark-luxury', label: 'Dark Luxury', bg: '#0a0f1e', accent: '#c8a96e' },
+  { key: 'beirut-night', label: 'Beirut Night', bg: '#0d0d0d', accent: '#e63946' },
+  { key: 'mediterranean', label: 'Mediterranean', bg: '#1a2942', accent: '#00b4d8' },
+  { key: 'lebanese-garden', label: 'Lebanese Garden', bg: '#0f2010', accent: '#4caf50' },
+  { key: 'classic-bistro', label: 'Classic Bistro', bg: '#1c1410', accent: '#d4a853' },
+  { key: 'modern-minimal', label: 'Modern Minimal', bg: '#111111', accent: '#ffffff' },
+] as const;
+
+function slugify(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
 
 const DEFAULT_SETTINGS: Omit<RestaurantSettings, 'id' | 'tenant_id'> = {
   default_order_flow: 'waiter_confirm',
@@ -59,10 +72,18 @@ export default function RestaurantSettings() {
   const [saving, setSaving] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
 
+  // QR / digital menu settings (stored on tenants table)
+  const [qrSlug, setQrSlug] = useState('');
+  const [qrPalette, setQrPalette] = useState('dark-luxury');
+  const [qrBanner, setQrBanner] = useState('');
+  const [slugError, setSlugError] = useState('');
+  const [copied, setCopied] = useState(false);
+
   const loadSettings = useCallback(async () => {
     if (!tenantId) return;
     setLoading(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const { data } = await supabase
         .from('restaurant_settings')
         .select('*')
@@ -80,34 +101,67 @@ export default function RestaurantSettings() {
     }
   }, [tenantId]);
 
+  // Initialise QR fields from AppContext (already loaded via get_current_user_tenant)
+  useEffect(() => {
+    if (!currentTenant) return;
+    setQrSlug(currentTenant.tenant_slug ?? slugify(currentTenant.name ?? ''));
+    setQrPalette(currentTenant.qr_menu_palette ?? 'dark-luxury');
+    setQrBanner(currentTenant.qr_menu_promotional_banner ?? '');
+  }, [currentTenant]);
+
   useEffect(() => { void loadSettings(); }, [loadSettings]);
 
   const handleSave = async () => {
     if (!tenantId) return;
+
+    // Validate slug
+    if (!/^[a-z0-9-]+$/.test(qrSlug)) {
+      setSlugError('Only lowercase letters, numbers, and hyphens allowed');
+      return;
+    }
+    setSlugError('');
+
     setSaving(true);
     try {
+      // Save restaurant_settings
       const payload = { ...settings, tenant_id: tenantId, updated_at: new Date().toISOString() };
       let error: { message: string } | null = null;
       if (settingsId) {
-        const res = await supabase
-          .from('restaurant_settings')
-          .update(payload)
-          .eq('id', settingsId);
+        const res = await supabase.from('restaurant_settings').update(payload).eq('id', settingsId);
         error = res.error;
       } else {
-        const res = await supabase
-          .from('restaurant_settings')
-          .insert(payload)
-          .select()
-          .single();
+        const res = await supabase.from('restaurant_settings').insert(payload).select().single();
         error = res.error;
         if (res.data) setSettingsId((res.data as RestaurantSettings).id);
       }
       if (error) { toast.error(error.message); return; }
+
+      // Save QR / digital menu fields to tenants table
+      const { error: tenantError } = await supabase
+        .from('tenants')
+        .update({
+          tenant_slug: qrSlug || null,
+          qr_menu_palette: qrPalette,
+          qr_menu_promotional_banner: qrBanner || null,
+        })
+        .eq('id', tenantId);
+      if (tenantError) { toast.error(tenantError.message); return; }
+
       toast.success(t('restaurant.settings.saved', 'Settings saved'));
     } finally {
       setSaving(false);
     }
+  };
+
+  const qrBaseUrl = qrSlug
+    ? `${window.location.origin}/menu/${qrSlug}`
+    : '';
+
+  const handleCopyUrl = async () => {
+    if (!qrBaseUrl) return;
+    await navigator.clipboard.writeText(`${qrBaseUrl}/1`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const update = <K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
@@ -318,6 +372,115 @@ export default function RestaurantSettings() {
                   <div className="flex justify-between text-[10px] text-white/30 mt-1">
                     <span>5m</span><span>30m</span><span>60m</span>
                   </div>
+                </div>
+              </section>
+
+              {/* Digital Menu (QR) */}
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-5">
+                <div className="flex items-center gap-2">
+                  <QrCode className="h-4 w-4 text-amber-400 flex-none" />
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
+                    Digital Menu (QR Code)
+                  </h2>
+                </div>
+
+                {/* Slug */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-white/70">
+                    Menu URL Identifier
+                    <span className="ms-1.5 text-white/30 font-normal">(your unique slug)</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="flex-none text-xs text-white/30">{window.location.origin}/menu/</span>
+                    <input
+                      type="text"
+                      value={qrSlug}
+                      onChange={(e) => {
+                        setQrSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+                        setSlugError('');
+                      }}
+                      placeholder={slugify(currentTenant?.name ?? 'my-restaurant')}
+                      className="flex-1 min-w-0 rounded-xl border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white placeholder-white/25 focus:border-amber-500/50 focus:outline-none"
+                    />
+                  </div>
+                  {slugError && (
+                    <p className="mt-1 text-xs text-red-400">{slugError}</p>
+                  )}
+                </div>
+
+                {/* QR URL preview + copy */}
+                {qrBaseUrl && (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30">Share this link with tables</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 min-w-0 truncate text-xs text-amber-300">
+                        {qrBaseUrl}/<span className="text-white/40">{'{tableId}'}</span>
+                      </code>
+                      <button
+                        onClick={() => { void handleCopyUrl(); }}
+                        className="flex-none flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/8 px-2.5 py-1.5 text-xs text-white/60 hover:bg-white/15 hover:text-white transition-colors"
+                      >
+                        {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                        {copied ? 'Copied' : 'Copy'}
+                      </button>
+                      <a
+                        href={`${qrBaseUrl}/1`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-none flex items-center gap-1 rounded-lg border border-white/15 bg-white/8 px-2.5 py-1.5 text-xs text-white/60 hover:bg-white/15 hover:text-white transition-colors"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Preview
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Theme palette */}
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-white/70">Menu Theme</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {QR_PALETTES.map(({ key, label, bg, accent }) => (
+                      <button
+                        key={key}
+                        onClick={() => setQrPalette(key)}
+                        className={`relative rounded-xl border-2 p-3 text-left transition-all ${
+                          qrPalette === key
+                            ? 'border-amber-500/60 shadow-lg shadow-amber-500/10'
+                            : 'border-white/10 hover:border-white/25'
+                        }`}
+                        style={{ background: bg }}
+                      >
+                        <div className="mb-1.5 flex gap-1">
+                          <div className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
+                          <div className="h-1.5 w-4 rounded-full opacity-30" style={{ background: accent }} />
+                        </div>
+                        <p className="text-[10px] font-medium" style={{ color: accent }}>{label}</p>
+                        {qrPalette === key && (
+                          <div className="absolute top-1.5 right-1.5 h-3 w-3 rounded-full bg-amber-400 flex items-center justify-center">
+                            <Check className="h-2 w-2 text-slate-900" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Promotional banner */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-white/70">
+                    Promotional Banner
+                    <span className="ms-1.5 text-white/30 font-normal">(shown between categories)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={qrBanner}
+                    onChange={(e) => setQrBanner(e.target.value)}
+                    placeholder="e.g. Try our freshly made desserts today 🍮"
+                    className="w-full rounded-xl border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white placeholder-white/25 focus:border-amber-500/50 focus:outline-none"
+                    maxLength={120}
+                  />
+                  <p className="mt-1 text-right text-[10px] text-white/25">{qrBanner.length}/120</p>
                 </div>
               </section>
 

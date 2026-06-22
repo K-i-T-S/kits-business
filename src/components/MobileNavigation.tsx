@@ -507,7 +507,7 @@ export function MobileNavigation() {
 
             {/* Logout Button */}
             <button
-              onClick={handleLogout}
+              onClick={() => void handleLogout()}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 hover:shadow-lg hover:shadow-red-500/20"
             >
               <LogOut className="h-4 w-4" />

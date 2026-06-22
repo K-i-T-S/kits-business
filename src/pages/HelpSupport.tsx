@@ -442,7 +442,7 @@ export default function HelpSupport() {
                     <p className="text-white/60">We'll get back to you within 24-48 hours.</p>
                   </div>
                 ) : (
-                  <form onSubmit={handleTicketSubmit} className="space-y-6">
+                  <form onSubmit={(e) => void handleTicketSubmit(e)} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-white/80 mb-2">Subject</label>

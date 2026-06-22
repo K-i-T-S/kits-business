@@ -18,20 +18,22 @@ function logActivity(params: {
   entityId?: string;
   metadata?: Record<string, unknown>;
 }): void {
-  supabase.auth.getUser().then(({ data }) => {
-    supabase.from('activity_log').insert({
-      tenant_id: params.tenantId,
-      user_id: data.user?.id ?? null,
-      action: params.action,
-      entity_type: params.entityType ?? null,
-      entity_id: params.entityId ?? null,
-      metadata: params.metadata ?? null,
-    }).then(({ error }) => {
+  void (async () => {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const { error } = await supabase.from('activity_log').insert({
+        tenant_id: params.tenantId,
+        user_id: data.user?.id ?? null,
+        action: params.action,
+        entity_type: params.entityType ?? null,
+        entity_id: params.entityId ?? null,
+        metadata: params.metadata ?? null,
+      });
       if (error) console.warn('[ActivityLog] Insert failed:', error.message);
-    });
-  }).catch(err => {
-    console.warn('[ActivityLog] getUser failed:', err);
-  });
+    } catch (err) {
+      console.warn('[ActivityLog] getUser failed:', err);
+    }
+  })();
 }
 
 export interface Product {
@@ -426,38 +428,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setHasSession(!!session);
       if (session) {
-        getCurrentUserTenant().then(tenantData => {
-          if (tenantData) {
-            const tenant: Tenant = {
-              id: tenantData.tenant_id,
-              name: tenantData.tenant_name,
-              slug: tenantData.tenant_slug,
-              userRole: tenantData.user_role,
-              settings: tenantData.settings || {},
-              brand_logo_url: tenantData.brand_logo_url ?? null,
-              brand_primary: tenantData.brand_primary ?? '#6366f1',
-              brand_secondary: tenantData.brand_secondary ?? '#0ea5e9',
-              brand_tagline: tenantData.brand_tagline ?? null,
-              tax_rate: tenantData.tax_rate !== null ? Number(tenantData.tax_rate) : undefined,
-              secondary_currency: tenantData.secondary_currency ?? 'LBP',
-              exchange_rate: tenantData.exchange_rate !== null ? Number(tenantData.exchange_rate) : undefined,
-              show_dual_currency: tenantData.show_dual_currency ?? false,
-              tin: tenantData.tin ?? null,
-              loyalty_enabled: tenantData.loyalty_enabled ?? false,
-              loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
-              loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
-              industry: tenantData.industry ?? null,
-              qr_menu_palette: tenantData.qr_menu_palette ?? null,
-              qr_menu_promotional_banner: tenantData.qr_menu_promotional_banner ?? null,
-            };
-            setCurrentTenant(tenant);
-            applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
-            applyFavicon(tenant.brand_logo_url);
+        void (async () => {
+          try {
+            const tenantData = await getCurrentUserTenant();
+            if (tenantData) {
+              const tenant: Tenant = {
+                id: tenantData.tenant_id,
+                name: tenantData.tenant_name,
+                slug: tenantData.tenant_slug,
+                userRole: tenantData.user_role,
+                settings: tenantData.settings || {},
+                brand_logo_url: tenantData.brand_logo_url ?? null,
+                brand_primary: tenantData.brand_primary ?? '#6366f1',
+                brand_secondary: tenantData.brand_secondary ?? '#0ea5e9',
+                brand_tagline: tenantData.brand_tagline ?? null,
+                tax_rate: tenantData.tax_rate !== null ? Number(tenantData.tax_rate) : undefined,
+                secondary_currency: tenantData.secondary_currency ?? 'LBP',
+                exchange_rate: tenantData.exchange_rate !== null ? Number(tenantData.exchange_rate) : undefined,
+                show_dual_currency: tenantData.show_dual_currency ?? false,
+                tin: tenantData.tin ?? null,
+                loyalty_enabled: tenantData.loyalty_enabled ?? false,
+                loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
+                loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
+                industry: tenantData.industry ?? null,
+                qr_menu_palette: tenantData.qr_menu_palette ?? null,
+                qr_menu_promotional_banner: tenantData.qr_menu_promotional_banner ?? null,
+              };
+              setCurrentTenant(tenant);
+              applyBrandColors(tenant.brand_primary, tenant.brand_secondary);
+              applyFavicon(tenant.brand_logo_url);
+            }
+            void loadData();
+          } catch (error) {
+            const errorObj = error instanceof Error ? error : new Error(String(error));
+            log.error('Failed to load tenant on auth change', errorObj);
           }
-        }).catch(error => {
-          const errorObj = error instanceof Error ? error : new Error(String(error));
-          log.error('Failed to load tenant on auth change', errorObj);
-        }).finally(() => { void loadData(); });
+        })();
       } else {
         setProducts([]);
         setSales([]);
@@ -889,7 +895,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
-    const operationId = await StockUpdateLock.acquireLock(productId, variantId);
+    const operationId = StockUpdateLock.acquireLock(productId, variantId);
     if (!operationId) {
       toast.error('Stock update in progress', {
         description: 'Another operation is updating this stock. Please try again.',

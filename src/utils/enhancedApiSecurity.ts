@@ -90,7 +90,7 @@ export class ApiSecurityWrapper {
     }
   }
 
-  private async getClientIP(): Promise<string> {
+  private getClientIP(): string {
     try {
       // In a real implementation, this would get the client IP from the request
       // For now, we'll use a placeholder

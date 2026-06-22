@@ -233,7 +233,7 @@ export default function StockTransferManagement() {
         {showCreateForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
             <form
-              onSubmit={handleCreateTransfer}
+              onSubmit={(e) => void handleCreateTransfer(e)}
               className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
             >
               <div className="mb-5 flex items-center justify-between">

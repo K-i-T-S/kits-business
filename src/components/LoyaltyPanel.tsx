@@ -384,7 +384,7 @@ function AdjustPointsModal({ customerId, customerName, currentBalance, tenantId,
           <p className="text-sm text-white/60 mt-1">{customerName} — current balance: {currentBalance.toLocaleString()} pts</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-white mb-1.5">
               Points change <span className="text-white/40">(negative to subtract)</span>

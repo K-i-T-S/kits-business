@@ -2,11 +2,14 @@ import {
   ArrowLeft,
   ChefHat,
   Copy,
+  Download,
   Edit2,
   GripVertical,
   Image,
+  Link,
   Loader2,
   Plus,
+  Printer,
   QrCode,
   Search,
   Send,
@@ -16,6 +19,7 @@ import {
   Wand2,
   X,
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -1075,6 +1079,205 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
   );
 }
 
+// ── Table QR Codes Section ─────────────────────────────────────────────────────
+
+interface TableQRSectionProps {
+  tenantId: string;
+  tenantSlug: string;
+}
+
+function TableQRSection({ tenantId, tenantSlug }: TableQRSectionProps) {
+  const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [loadingTables, setLoadingTables] = useState(true);
+  const canvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
+
+  const loadTables = useCallback(async () => {
+    if (!tenantId) return;
+    setLoadingTables(true);
+    const { data, error } = await supabase
+      .from('restaurant_tables')
+      .select('id, number, section, status, name, tenant_id, seats, x, y')
+      .eq('tenant_id', tenantId)
+      .order('number');
+    if (error) { toast.error(error.message); }
+    setTables((data ?? []) as RestaurantTable[]);
+    setLoadingTables(false);
+  }, [tenantId]);
+
+  useEffect(() => { void loadTables(); }, [loadTables]);
+
+  // Render QR codes into canvases after tables load
+  useEffect(() => {
+    if (loadingTables || tables.length === 0) return;
+    // Give DOM a tick to mount canvases
+    const id = setTimeout(() => {
+      tables.forEach(table => {
+        const canvas = canvasRefs.current.get(table.id);
+        if (!canvas) return;
+        const url = `${window.location.origin}/menu/${tenantSlug}/${table.id}`;
+        void QRCode.toCanvas(canvas, url, {
+          width: 160,
+          margin: 1,
+          color: { dark: '#ffffff', light: '#1e293b' },
+        });
+      });
+    }, 50);
+    return () => clearTimeout(id);
+  }, [tables, loadingTables, tenantSlug]);
+
+  const downloadQR = (tableId: string, tableNumber: number) => {
+    const canvas = canvasRefs.current.get(tableId);
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `table-${tableNumber}-qr.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  const copyTableUrl = async (tableId: string) => {
+    const url = `${window.location.origin}/menu/${tenantSlug}/${tableId}`;
+    await navigator.clipboard.writeText(url);
+    toast.success('URL copied to clipboard');
+  };
+
+  const handlePrintAll = () => {
+    const win = window.open('', '_blank');
+    if (!win) { toast.error('Could not open print window — check popup blocker'); return; }
+
+    const cards = tables.map(table => {
+      const canvas = canvasRefs.current.get(table.id);
+      const dataUrl = canvas ? canvas.toDataURL() : '';
+      const label = table.section !== 'indoor'
+        ? `Table ${table.number} · ${table.section.charAt(0).toUpperCase() + table.section.slice(1)}`
+        : `Table ${table.number}`;
+      return `
+        <div class="card">
+          ${dataUrl ? `<img src="${dataUrl}" alt="QR Table ${table.number}" />` : '<div class="qr-placeholder">QR</div>'}
+          <p>${label}</p>
+        </div>`;
+    }).join('');
+
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Table QR Codes</title>
+  <style>
+    @page { size: A4; margin: 15mm; }
+    body { font-family: sans-serif; margin: 0; padding: 0; background: #fff; }
+    h1 { font-size: 14px; color: #333; margin: 0 0 12px; text-align: center; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .card { display: flex; flex-direction: column; align-items: center; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; page-break-inside: avoid; }
+    .card img { width: 120px; height: 120px; }
+    .qr-placeholder { width: 120px; height: 120px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; }
+    .card p { margin: 8px 0 0; font-size: 11px; font-weight: 600; color: #1e293b; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Table QR Codes</h1>
+  <div class="grid">${cards}</div>
+</body>
+</html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 300);
+  };
+
+  const getTableLabel = (table: RestaurantTable) =>
+    table.section !== 'indoor'
+      ? `Table ${table.number} · ${table.section.charAt(0).toUpperCase() + table.section.slice(1)}`
+      : `Table ${table.number}`;
+
+  if (loadingTables) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Section header */}
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-white">Table QR Codes</h3>
+          <p className="mt-0.5 text-xs text-white/40">
+            Print individual QR codes for each table — guests scan to order directly from their seat
+          </p>
+        </div>
+        {tables.length > 0 && (
+          <button
+            onClick={handlePrintAll}
+            className="flex shrink-0 items-center gap-2 rounded-xl border border-white/20 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Print All
+          </button>
+        )}
+      </div>
+
+      {tables.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 py-12 text-center">
+          <QrCode className="mb-3 h-8 w-8 text-white/20" />
+          <p className="text-sm text-white/40">No tables found</p>
+          <p className="mt-1 text-xs text-white/25">
+            Add tables in{' '}
+            <a href="/restaurant/tables" className="text-indigo-400 hover:underline">
+              Table Management
+            </a>{' '}
+            first
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {tables.map(table => (
+            <div
+              key={table.id}
+              className="flex flex-col items-center rounded-xl border border-white/10 bg-slate-800/50 p-4 text-center"
+            >
+              {/* QR canvas */}
+              <div className="mb-3 overflow-hidden rounded-lg bg-slate-700/60 p-1">
+                <canvas
+                  ref={el => {
+                    if (el) canvasRefs.current.set(table.id, el);
+                    else canvasRefs.current.delete(table.id);
+                  }}
+                  width={160}
+                  height={160}
+                />
+              </div>
+
+              {/* Table label */}
+              <p className="mb-3 text-sm font-semibold text-white">{getTableLabel(table)}</p>
+
+              {/* Actions */}
+              <div className="flex w-full gap-2">
+                <button
+                  onClick={() => downloadQR(table.id, table.number)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 py-2 text-xs font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+                  aria-label={`Download QR for Table ${table.number}`}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download
+                </button>
+                <button
+                  onClick={() => { void copyTableUrl(table.id); }}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 py-2 text-xs font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+                  aria-label={`Copy URL for Table ${table.number}`}
+                >
+                  <Link className="h-3.5 w-3.5" />
+                  Copy URL
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Tab 3: QR Menu Settings ────────────────────────────────────────────────────
 
 interface QRMenuSettingsProps {
@@ -1085,6 +1288,7 @@ interface QRMenuSettingsProps {
 function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
   const { currentTenant } = useApp();
   const tenantSlug = currentTenant?.slug ?? '';
+  const tenantId = currentTenant?.id ?? '';
   const qrBase = `${window.location.origin}/menu/${tenantSlug}`;
 
   const handleCopyUrl = async (tableNum?: number) => {
@@ -1105,7 +1309,7 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
   const currentPalette = currentTenant?.qr_menu_palette ?? 'dark-luxury';
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-5xl">
       {/* Palette preview */}
       <div>
         <h3 className="mb-3 text-sm font-semibold text-white/70">Current QR Menu Theme</h3>
@@ -1187,6 +1391,11 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Table QR Codes */}
+      <div className="rounded-xl border border-white/10 bg-slate-800/30 p-5">
+        <TableQRSection tenantId={tenantId} tenantSlug={tenantSlug} />
       </div>
     </div>
   );

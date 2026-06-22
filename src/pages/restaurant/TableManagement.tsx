@@ -2,6 +2,7 @@ import {
   Plus, X, Receipt, Send, Users, ChevronRight, Trash2, Utensils, SplitSquareVertical, Calculator,
   Settings2, Check,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -11,6 +12,7 @@ import FloorPlan from '@/components/restaurant/FloorPlan';
 import MenuEditor from '@/components/restaurant/MenuEditor';
 import RoleGate from '@/components/RoleGate';
 import { useApp } from '@/context/AppContext';
+import { containerVariants, itemVariants } from '@/utils/animationVariants';
 import type {
   RestaurantTable,
   TableOrder,
@@ -443,8 +445,14 @@ export default function TableManagement() {
           ) : (
             <>
               {/* ── Section filter tabs ── */}
-              <div className="mb-4 flex flex-wrap gap-2">
-                <button
+              <motion.div
+                className="mb-4 flex flex-wrap gap-2"
+                variants={containerVariants}
+                initial="initial"
+                animate="animate"
+              >
+                <motion.button
+                  variants={itemVariants}
                   onClick={() => setSectionFilter('all')}
                   className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                     sectionFilter === 'all'
@@ -454,12 +462,13 @@ export default function TableManagement() {
                 >
                   All
                   <span className="ml-1.5 text-[10px] opacity-60">{tables.length}</span>
-                </button>
+                </motion.button>
                 {sections.map((sec) => {
                   const count = tableCountBySection[sec.id] ?? 0;
                   return (
-                    <button
+                    <motion.button
                       key={sec.id}
+                      variants={itemVariants}
                       onClick={() => setSectionFilter(sec.id)}
                       className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                         sectionFilter === sec.id
@@ -471,10 +480,10 @@ export default function TableManagement() {
                       <span>{sec.emoji}</span>
                       <span>{sec.name}</span>
                       <span className="opacity-60">{count}</span>
-                    </button>
+                    </motion.button>
                   );
                 })}
-              </div>
+              </motion.div>
 
               <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
                 {/* Left: Floor Plan */}
@@ -581,7 +590,12 @@ export default function TableManagement() {
                           </div>
 
                           {/* Items list */}
-                          <div className="max-h-64 overflow-y-auto p-3 space-y-1.5">
+                          <motion.div
+                            className="max-h-64 overflow-y-auto p-3 space-y-1.5"
+                            variants={containerVariants}
+                            initial="initial"
+                            animate="animate"
+                          >
                             {selectedOrderItems.length === 0 && (
                               <p className="py-4 text-center text-xs text-white/30">{t('restaurant.noItems', 'No items yet')}</p>
                             )}
@@ -594,7 +608,7 @@ export default function TableManagement() {
                                     {COURSE_LABELS[course]}
                                   </div>
                                   {courseItems.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
+                                    <motion.div key={item.id} variants={itemVariants} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
                                       <span className="flex-1 text-xs text-white">
                                         {item.quantity}× {item.product_name}
                                       </span>
@@ -612,12 +626,12 @@ export default function TableManagement() {
                                       >
                                         <Trash2 className="h-3 w-3" />
                                       </button>
-                                    </div>
+                                    </motion.div>
                                   ))}
                                 </div>
                               );
                             })}
-                          </div>
+                          </motion.div>
 
                           {/* Add item form */}
                           {addingItem ? (

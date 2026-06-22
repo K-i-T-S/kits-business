@@ -39,6 +39,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import BillSplitter from '@/components/restaurant/BillSplitter';
+import { BillSplitModal } from '@/components/restaurant/BillSplitModal';
 import CloseBillModal from '@/components/restaurant/CloseBillModal';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
@@ -820,6 +821,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank_transfer'>('cash');
   const [_closingBill, setClosingBill] = useState(false);
   const [showCloseBillModal, setShowCloseBillModal] = useState(false);
+  const [splitBillOpen, setSplitBillOpen] = useState(false);
 
   // Split state
   const [splitType, setSplitType] = useState<SplitType>('equal');
@@ -1229,14 +1231,23 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
               />
             </div>
 
-            {/* Phase 0 Feature 3: Close bill button opens modal */}
-            <button
-              onClick={() => setShowCloseBillModal(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-4 text-base font-black text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-            >
-              <Receipt className="h-5 w-5" />
-              {t('restaurant.bill.closePrint', 'Close & Print Bill')}
-            </button>
+            {/* Split Bill + Close Bill actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSplitBillOpen(true)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-violet-600 py-4 text-sm font-black text-white transition-all hover:bg-violet-500 active:scale-95"
+              >
+                <Users className="h-4 w-4" />
+                {t('restaurant.bill.split', 'Split Bill')}
+              </button>
+              <button
+                onClick={() => setShowCloseBillModal(true)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-4 text-sm font-black text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+              >
+                <Receipt className="h-4 w-4" />
+                {t('restaurant.bill.closePrint', 'Close & Print')}
+              </button>
+            </div>
           </div>
         )}
 
@@ -1291,6 +1302,20 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
           onClose={() => setShowCloseBillModal(false)}
         />
       )}
+
+      {/* Split Bill Modal */}
+      <BillSplitModal
+        isOpen={splitBillOpen}
+        onClose={() => setSplitBillOpen(false)}
+        tableNumber={table.number}
+        items={items}
+        totals={totals}
+        splitEqual={splitEqual}
+        splitBySeat={splitBySeat}
+        splitByItem={splitByItem}
+        saveBillSplit={saveBillSplit}
+        onConfirm={() => setSplitBillOpen(false)}
+      />
 
       {/* Menu browser */}
       {showMenuBrowser && (

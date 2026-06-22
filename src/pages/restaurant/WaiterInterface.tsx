@@ -430,7 +430,7 @@ function QuickAddModal({
 
   // Compute selected modifier objects and price delta
   const allSelectedModifiers: RestaurantModifier[] = modifierGroups.flatMap((g) =>
-    (selectedModifiers[g.id] ?? []).map((id) => g.modifiers_list.find((m) => m.id === id)).filter((m): m is RestaurantModifier => m !== undefined)
+    (selectedModifiers[g.id] ?? []).map((id) => g.modifiers_list.find((m) => m.id === id)).filter((m): m is RestaurantModifier => m !== undefined),
   );
   const modifierPriceDelta = allSelectedModifiers.reduce((sum, m) => sum + m.price_delta, 0);
   const unitPrice = item.base_price_usd + modifierPriceDelta;
@@ -1699,14 +1699,14 @@ export default function WaiterInterface() {
                     mins < 30
                       ? 'border-indigo-500/30 bg-indigo-500/10'
                       : mins < 60
-                      ? 'border-amber-500/30 bg-amber-500/10'
-                      : 'border-red-500/30 bg-red-500/10';
+                        ? 'border-amber-500/30 bg-amber-500/10'
+                        : 'border-red-500/30 bg-red-500/10';
                   const timeBg =
                     mins < 30
                       ? 'bg-emerald-500/15 text-emerald-400'
                       : mins < 60
-                      ? 'bg-amber-500/15 text-amber-400'
-                      : 'bg-red-500/15 text-red-400';
+                        ? 'bg-amber-500/15 text-amber-400'
+                        : 'bg-red-500/15 text-red-400';
                   return (
                     <button
                       key={order.id}
@@ -1823,8 +1823,8 @@ export default function WaiterInterface() {
                             sentMins < 8
                               ? 'text-emerald-400'
                               : sentMins < 15
-                              ? 'text-amber-400'
-                              : 'text-red-400';
+                                ? 'text-amber-400'
+                                : 'text-red-400';
                           return (
                             <div key={item.id} className="flex items-center gap-3 px-4 py-3">
                               <div className="flex-1 min-w-0">

@@ -14,12 +14,15 @@
  *    (tip/discount are read from the order row via updateTip/updateDiscount first)
  *  - Payment method mapping: cash_usd|cash_lbp → 'cash', card → 'card', split → 'other'
  */
-import { X, Receipt, Check } from 'lucide-react';
+import { X, Receipt, Check, Send } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
+import { useApp } from '@/context/AppContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import type { RestaurantOrderItem, TableOrderExtended } from '@/types/restaurant';
+import { supabase } from '@/utils/supabaseClient';
 
 export type CloseBillPaymentMethod = 'cash_usd' | 'cash_lbp' | 'card' | 'split';
 
@@ -49,10 +52,85 @@ interface ReceiptData {
   grandTotal: number;
   paymentMethod: CloseBillPaymentMethod;
   paidAt: string;
+  businessName: string;
 }
 
-function ReceiptView({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
+/**
+ * Formats a Lebanese phone number to E.164.
+ * Strips non-digits, then:
+ *   0XXXXXXX  → +961XXXXXXX
+ *   961XXXXXXX → +961XXXXXXX
+ *   +961…     → unchanged (already E.164)
+ */
+function formatLebanesePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('961')) return `+${digits}`;
+  if (digits.startsWith('0')) return `+961${digits.slice(1)}`;
+  if (digits.length > 0) return `+961${digits}`;
+  return raw;
+}
+
+/** Returns a display hint like "+961 7 012 3456" */
+function phoneHint(raw: string): string {
+  const e164 = formatLebanesePhone(raw);
+  // +961XXXXXXXXX → +961 X XXX XXXX (variable digit groupings for LB)
+  const match = /^\+961(\d)(\d{3})(\d{4})$/.exec(e164);
+  if (match) return `+961 ${match[1]} ${match[2]} ${match[3]}`;
+  if (e164.startsWith('+')) return e164;
+  return raw;
+}
+
+interface ReceiptViewProps {
+  receipt: ReceiptData;
+  onClose: () => void;
+  canSendWhatsApp: boolean;
+}
+
+function ReceiptView({ receipt, onClose, canSendWhatsApp }: ReceiptViewProps) {
   const { t } = useTranslation();
+  const [phone, setPhone] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSendWhatsApp = async () => {
+    const trimmed = phone.trim();
+    if (!trimmed) return;
+    const e164 = formatLebanesePhone(trimmed);
+    setSending(true);
+    try {
+      const invokeResult = await supabase.functions.invoke('whatsapp-receipt', {
+        body: {
+          to: e164,
+          customerName: 'Valued Guest',
+          saleId: receipt.paidAt, // use timestamp as fallback ID
+          items: receipt.items.map(i => ({
+            name: i.product_name,
+            qty: i.quantity,
+            price: i.unit_price,
+          })),
+          subtotal: receipt.subtotal,
+          tax: receipt.vat,
+          service_charge: receipt.serviceCharge,
+          tip: receipt.tip,
+          total: receipt.grandTotal,
+          paymentMethod: mapPaymentMethod(receipt.paymentMethod),
+          businessName: receipt.businessName,
+          currency: 'USD',
+          lbp_total: receipt.paymentMethod === 'cash_lbp'
+            ? Math.round(receipt.grandTotal * LBP_RATE)
+            : undefined,
+        },
+      });
+      if (invokeResult.error) {
+        console.error('[WhatsApp receipt]', invokeResult.error);
+        toast.error(t('restaurant.bill.whatsappFailed', 'Failed to send receipt'));
+      } else {
+        toast.success(t('restaurant.bill.whatsappSent', 'Receipt sent via WhatsApp'));
+        setPhone('');
+      }
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -136,6 +214,42 @@ function ReceiptView({ receipt, onClose }: { receipt: ReceiptData; onClose: () =
           {t('common.done', 'Done')}
         </button>
       </div>
+
+      {/* WhatsApp receipt — Business plan only */}
+      {canSendWhatsApp && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+          <p className="text-xs font-semibold text-white/60 flex items-center gap-1.5">
+            <Send className="h-3.5 w-3.5" />
+            {t('restaurant.bill.sendReceipt', 'Send receipt to customer')}
+          </p>
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+961 X XXX XXX"
+                className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:outline-none"
+              />
+              {phone.trim().length > 0 && (
+                <p className="text-xs text-white/40 px-1">
+                  {phoneHint(phone)}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => { void handleSendWhatsApp(); }}
+              disabled={sending || phone.trim().length === 0}
+              className="flex-none flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40"
+            >
+              <Send className="h-4 w-4" />
+              {sending
+                ? t('restaurant.bill.sending', 'Sending…')
+                : t('restaurant.bill.send', 'Send')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -170,8 +284,10 @@ export default function CloseBillModal({
   onClose,
 }: CloseBillModalProps) {
   const { t } = useTranslation();
-  const { canPerform } = useSubscription();
+  const { canPerform, plan } = useSubscription();
+  const { currentTenant } = useApp();
   const canDiscount = canPerform('manage_settings');
+  const canSendWhatsApp = plan === 'business';
 
   const [paymentMethod, setPaymentMethod] = useState<CloseBillPaymentMethod>('cash_usd');
   const [tipAmount, setTipAmount] = useState<number>(order.tip_amount_usd ?? 0);
@@ -230,6 +346,7 @@ export default function CloseBillModal({
         grandTotal,
         paymentMethod,
         paidAt: new Date().toISOString(),
+        businessName: currentTenant?.name ?? 'Restaurant',
       });
     } finally {
       setConfirming(false);
@@ -276,7 +393,7 @@ export default function CloseBillModal({
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {receipt ? (
-            <ReceiptView receipt={receipt} onClose={onClose} />
+            <ReceiptView receipt={receipt} onClose={onClose} canSendWhatsApp={canSendWhatsApp} />
           ) : (
             <>
               {/* Item line-items */}

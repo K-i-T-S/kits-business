@@ -11,6 +11,9 @@ interface ReceiptPayload {
   paymentMethod: string;
   businessName: string;
   currency?: string; // default USD
+  service_charge?: number; // optional, e.g. 10% of subtotal
+  tip?: number; // optional, guest tip in USD
+  lbp_total?: number; // optional, LBP equivalent of total (for dual-currency receipt)
 }
 
 serve(async (req) => {
@@ -37,7 +40,7 @@ serve(async (req) => {
     .map(i => `  ${i.qty}x ${i.name} — ${symbol}${(i.price * i.qty).toFixed(2)}`)
     .join('\n');
 
-  const body = [
+  const bodyLines: (string | null)[] = [
     `🧾 *Receipt from ${payload.businessName}*`,
     `Order #${payload.saleId.slice(-8).toUpperCase()}`,
     '',
@@ -45,12 +48,23 @@ serve(async (req) => {
     '',
     `Subtotal: ${symbol}${payload.subtotal.toFixed(2)}`,
     payload.tax > 0 ? `TVA 11%: ${symbol}${payload.tax.toFixed(2)}` : null,
+    (payload.service_charge !== undefined && payload.service_charge > 0)
+      ? `Service Charge (10%): ${symbol}${payload.service_charge.toFixed(2)}`
+      : null,
+    (payload.tip !== undefined && payload.tip > 0)
+      ? `Tip: ${symbol}${payload.tip.toFixed(2)}`
+      : null,
     `*Total: ${symbol}${payload.total.toFixed(2)}*`,
+    (payload.lbp_total !== undefined && payload.lbp_total > 0)
+      ? `Total (L.L.): L.L. ${payload.lbp_total.toLocaleString('en-US')}`
+      : null,
     `Payment: ${payload.paymentMethod}`,
     '',
     `Thank you, ${payload.customerName}! 🙏`,
     'Powered by KiTS Business',
-  ].filter(Boolean).join('\n');
+  ];
+
+  const body = bodyLines.filter(Boolean).join('\n');
 
   const response = await fetch(
     `https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_ID}/messages`,

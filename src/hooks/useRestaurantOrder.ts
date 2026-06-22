@@ -46,6 +46,7 @@ interface UseRestaurantOrderReturn {
   addItem: (params: AddItemParams) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   fireCourse: (course: CourseType) => Promise<void>;
+  sendToKitchen: () => Promise<void>;
   updateTip: (tipUsd: number) => Promise<void>;
   updateDiscount: (pct: number) => Promise<void>;
   closeBill: (paymentMethod: string) => Promise<void>;
@@ -228,6 +229,21 @@ export function useRestaurantOrder(
     toast.success(`Fired ${course} to kitchen — ${pendingIds.length} item${pendingIds.length > 1 ? 's' : ''}`);
   }, [orderId, tenantId, items]);
 
+  // ── Send all pending+unsent items to kitchen ────────────────────────────
+  // Updates all items with status='pending' and sent_at IS NULL to in_progress
+  const sendToKitchen = useCallback(async () => {
+    if (!orderId || !tenantId) return;
+    const { error } = await supabase
+      .from('restaurant_order_items')
+      .update({ status: 'in_progress', sent_at: new Date().toISOString() })
+      .eq('order_id', orderId)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'pending')
+      .is('sent_at', null);
+    if (error) console.error('[sendToKitchen]', error);
+    void loadOrder();
+  }, [orderId, tenantId, loadOrder]);
+
   // ── Update tip ───────────────────────────────────────────────────────────
   const updateTip = useCallback(async (tipUsd: number) => {
     if (!orderId || !tenantId) return;
@@ -367,6 +383,7 @@ export function useRestaurantOrder(
     addItem,
     removeItem,
     fireCourse,
+    sendToKitchen,
     updateTip,
     updateDiscount,
     closeBill,

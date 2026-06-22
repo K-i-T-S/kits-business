@@ -763,6 +763,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
     addItem,
     removeItem,
     fireCourse,
+    sendToKitchen,
     updateTip,
     updateDiscount,
     closeBill,
@@ -798,22 +799,19 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   const [savingNotes, setSavingNotes] = useState(false);
 
   // Phase 0 Feature 1: Send to Kitchen
-  const pendingItems = items.filter((i) => i.status === 'pending');
+  // Only count items that are truly unsent (pending AND sent_at is null)
+  const unsentItems = items.filter((i) => i.status === 'pending' && i.sent_at === null);
   const [sendingKitchen, setSendingKitchen] = useState(false);
+  const [sentOk, setSentOk] = useState(false);
 
   const handleSendToKitchen = async () => {
-    if (pendingItems.length === 0 || !tenantId || !order?.id) return;
+    if (unsentItems.length === 0) return;
     setSendingKitchen(true);
     try {
-      const now = new Date().toISOString();
-      const { error } = await supabase
-        .from('restaurant_order_items')
-        .update({ status: 'in_progress', sent_at: now })
-        .eq('tenant_id', tenantId)
-        .eq('order_id', order.id)
-        .is('sent_at', null);
-      if (error) throw error;
-      toast.success(t('restaurant.sentToKitchen', `Sent ${pendingItems.length} items to kitchen`));
+      await sendToKitchen();
+      toast.success(t('restaurant.sentToKitchen', `Sent ${unsentItems.length} item${unsentItems.length > 1 ? 's' : ''} to kitchen`));
+      setSentOk(true);
+      setTimeout(() => setSentOk(false), 1500);
     } catch (err) {
       console.error('[Send to Kitchen] error:', err);
       toast.error(t('common.error', 'Error sending to kitchen'));
@@ -1073,17 +1071,36 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
                   {t('restaurant.addFromMenu', 'Add from Menu')}
                 </button>
 
-                {/* Phase 0 Feature 1: Send to Kitchen FAB */}
-                {pendingItems.length > 0 && (
+                {/* Phase 0 Feature 1: Send to Kitchen — primary action after adding items */}
+                {unsentItems.length > 0 && (
                   <button
                     onClick={() => { void handleSendToKitchen(); }}
-                    disabled={sendingKitchen}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-4 text-base font-black text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                    disabled={sendingKitchen || sentOk}
+                    className={`flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-black text-white transition-all active:scale-95 disabled:opacity-60 ${
+                      sentOk
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                        : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90'
+                    }`}
                   >
-                    <Flame className="h-5 w-5" />
-                    {sendingKitchen
-                      ? t('restaurant.sendingKitchen', 'Sending...')
-                      : t('restaurant.sendKitchen', `Send ${pendingItems.length} Items to Kitchen`)}
+                    {sentOk ? (
+                      <>
+                        <Check className="h-5 w-5" />
+                        {t('restaurant.sentKitchen', 'Sent ✓')}
+                      </>
+                    ) : sendingKitchen ? (
+                      <>
+                        <Flame className="h-5 w-5 animate-pulse" />
+                        {t('restaurant.sendingKitchen', 'Sending...')}
+                      </>
+                    ) : (
+                      <>
+                        <Flame className="h-5 w-5" />
+                        {t('restaurant.sendKitchen', 'Send to Kitchen')}
+                        <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-sm font-bold">
+                          {unsentItems.length}
+                        </span>
+                      </>
+                    )}
                   </button>
                 )}
               </>

@@ -611,23 +611,35 @@ export default function KitchenDisplay() {
   useEffect(() => {
     void loadStations();
     refreshTickets();
-    const interval = setInterval(refreshTickets, 15_000);
+    // Fallback polling at 30s — Realtime is the primary update path
+    const interval = setInterval(refreshTickets, 30_000);
     return () => clearInterval(interval);
   }, [loadStations, refreshTickets]);
 
   // ── Realtime ──────────────────────────────────────────────────
+  // Tenant-scoped filter ensures we only react to our own order changes
   useEffect(() => {
     if (!tenantId) return;
     const channel = supabase
-      .channel('kds-realtime')
+      .channel('kds-order-items')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'restaurant_order_items' },
+        {
+          event: '*',
+          schema: 'public',
+          table: 'restaurant_order_items',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
         refreshTickets,
       )
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'table_orders' },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'table_orders',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
         refreshTickets,
       )
       .subscribe();

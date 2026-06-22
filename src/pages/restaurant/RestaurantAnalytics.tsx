@@ -34,7 +34,7 @@ import { useDemandForecast } from '@/hooks/useDemandForecast';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Range = '7d' | '30d' | '90d';
-type AnalyticsTab = 'overview' | 'forecast' | 'matrix';
+type AnalyticsTab = 'overview' | 'forecast';
 
 interface LiveOps {
   tablesOccupied: number;
@@ -559,7 +559,6 @@ export default function RestaurantAnalytics() {
           {[
             { id: 'overview', label: 'Overview', icon: '📊' },
             { id: 'forecast', label: 'Forecast', icon: '📈' },
-            { id: 'matrix', label: 'Menu Matrix', icon: '🧮' },
           ].map((tabItem) => (
             <button
               key={tabItem.id}

@@ -571,9 +571,21 @@ export interface BranchMetrics {
   customer_rating_avg: number | null;
 }
 
-// ── Phase 2: AI & ML Features (Placeholders) ──────────────────────────────────
+// ─── AI & Intelligence ──────────────────────────────────────────────
+
+export interface AIQuery {
+  id: string;
+  tenantId: string;
+  question: string;
+  language: 'en' | 'ar';
+  response: string;
+  tokensUsed?: number;
+  createdAt: string;
+}
 
 export interface DemandForecast {
+  id: string;
+  tenantId: string;
   date: string; // ISO date
   dayOfWeek: string;
   predictedCovers: number;
@@ -584,29 +596,34 @@ export interface DemandForecast {
     itemId: string;
     itemName: string;
     quantity: number;
-    timeSlot: string; // 'lunch', 'dinner', 'late_night'
+    timeSlot: 'lunch' | 'dinner' | 'late_night';
   }>;
-  staffingRecommendation: {
+  staffRecommendation: {
     waiters: number;
     kitchen: number;
     argileStaff: number;
   };
+  createdAt: string;
+}
+
+export interface UpsellRule {
+  id: string;
+  tenantId: string;
+  triggerItemId: string;
+  suggestedItemId: string;
+  confidence: number; // 0-1
+  supportCount: number;
+  createdAt: string;
 }
 
 export interface MenuItemEngineering {
-  itemId: string;
-  itemName: string;
-  popularityScore: number; // Relative to menu avg (0-1)
-  marginScore: number; // Relative to menu avg (0-1)
+  id: string;
+  tenantId: string;
+  menuItemId: string;
+  popularityScore: number; // 0-1
+  marginScore: number; // 0-1
   category: 'star' | 'plowhorse' | 'puzzle' | 'dog';
-  recommendedAction: string; // AI-generated recommendation
-  potentialRevenueImpact: number; // USD/month if action taken
-}
-
-export interface UpsellSuggestion {
-  triggerItemId: string;
-  suggestedItemId: string;
-  suggestedItemName: string;
-  confidence: number; // 0-1
-  supportingText: string; // "73% of guests who ordered X also ordered Y"
+  recommendedAction: string;
+  potentialRevenueImpact: number;
+  createdAt: string;
 }

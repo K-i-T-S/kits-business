@@ -39,6 +39,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import BillSplitter from '@/components/restaurant/BillSplitter';
+import CloseBillModal from '@/components/restaurant/CloseBillModal';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
 import { useUpsellRules } from '@/hooks/useUpsellRules';
@@ -186,168 +187,6 @@ function ItemBadge({ status }: { status: RestaurantOrderItem['status'] }) {
     <span className={`rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${styles[status]}`}>
       {labels[status]}
     </span>
-  );
-}
-
-// ── Close Bill Modal (Phase 0 Feature 3) ─────────────────────────────────────
-
-interface CloseBillModalProps {
-  order: TableOrderExtended;
-  items: RestaurantOrderItem[];
-  onClose: () => void;
-  onConfirm: (paymentMethod: string, tipAmount: number, discountPct: number, cashReceived?: number) => Promise<void>;
-}
-
-function CloseBillModal({ order, items, onClose, onConfirm }: CloseBillModalProps) {
-  const { t } = useTranslation();
-  const [paymentMethod, setPaymentMethod] = useState<'cash_usd' | 'cash_lbp' | 'card' | 'split'>('cash_usd');
-  const [tipAmountUsd, setTipAmountUsd] = useState(0);
-  const [discountPct, setDiscountPct] = useState(order.discount_pct ?? 0);
-  const [cashReceivedUsd, setCashReceivedUsd] = useState(0);
-  const [confirming, setConfirming] = useState(false);
-
-  const foodItems = items.filter((i) => i.status !== 'served').reduce((s, i) => s + i.unit_price * i.quantity, 0);
-  const subtotal = foodItems;
-  const discountAmount = (subtotal * discountPct) / 100;
-  const afterDiscount = subtotal - discountAmount;
-  const serviceCharge = (afterDiscount * (order.service_charge_pct ?? 10)) / 100;
-  const vat = (afterDiscount * (order.vat_pct ?? 11)) / 100;
-  const totalUsd = afterDiscount + serviceCharge + vat + tipAmountUsd;
-  const totalLbp = Math.round(totalUsd * LBP_RATE);
-  const changeUsd = Math.max(0, cashReceivedUsd - totalUsd);
-
-  const handleConfirm = async () => {
-    setConfirming(true);
-    try {
-      await onConfirm(paymentMethod, tipAmountUsd, discountPct, paymentMethod.startsWith('cash') ? cashReceivedUsd : undefined);
-    } finally {
-      setConfirming(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center">
-      <div className="w-full max-w-md rounded-t-3xl border-t border-white/10 bg-slate-900 p-5 pb-safe sm:rounded-2xl sm:border">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">{t('restaurant.closeBill.title', 'Close Bill')}</h2>
-          <button onClick={onClose} className="rounded-lg p-2 text-white/40 hover:bg-white/10 transition-all">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Bill summary */}
-        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-white/60">{t('restaurant.bill.subtotal', 'Subtotal')}</span>
-            <span className="text-white">${subtotal.toFixed(2)}</span>
-          </div>
-          {discountPct > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-emerald-400">{t('restaurant.bill.discount', 'Discount')} ({discountPct.toFixed(1)}%)</span>
-              <span className="text-emerald-400">−${discountAmount.toFixed(2)}</span>
-            </div>
-          )}
-          <div className="flex justify-between text-sm">
-            <span className="text-white/60">{t('restaurant.bill.serviceCharge', 'Service Charge')} ({order.service_charge_pct ?? 10}%)</span>
-            <span className="text-white">${serviceCharge.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-white/60">{t('restaurant.bill.vat', 'VAT')} ({order.vat_pct ?? 11}%)</span>
-            <span className="text-white">${vat.toFixed(2)}</span>
-          </div>
-          <div className="border-t border-white/10 pt-2">
-            <div className="flex justify-between">
-              <span className="font-bold text-white">{t('restaurant.bill.total', 'Total')}</span>
-              <div className="text-end">
-                <p className="text-base font-black text-white">${totalUsd.toFixed(2)}</p>
-                <p className="text-xs text-white/40">{totalLbp.toLocaleString()} L.L.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tip input */}
-        <div className="mb-3">
-          <label className="mb-1.5 block text-xs text-white/50">{t('restaurant.bill.tipUsd', 'Tip (USD)')}</label>
-          <input
-            type="number"
-            min={0}
-            step={0.5}
-            value={tipAmountUsd}
-            onChange={(e) => setTipAmountUsd(parseFloat(e.target.value) || 0)}
-            className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
-            placeholder="0.00"
-          />
-        </div>
-
-        {/* Discount input (manager-only via RoleGate) */}
-        <div className="mb-3">
-          <label className="mb-1.5 block text-xs text-white/50">{t('restaurant.bill.discount', 'Discount (%)')}</label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={discountPct}
-            onChange={(e) => setDiscountPct(parseFloat(e.target.value) || 0)}
-            className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
-            placeholder="0"
-          />
-        </div>
-
-        {/* Payment method */}
-        <div className="mb-3">
-          <label className="mb-1.5 block text-xs text-white/50">{t('restaurant.bill.paymentMethod', 'Payment Method')}</label>
-          <div className="grid grid-cols-2 gap-2">
-            {(['cash_usd', 'cash_lbp', 'card', 'split'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setPaymentMethod(m)}
-                className={`rounded-xl py-2.5 text-xs font-semibold capitalize transition-all ${
-                  paymentMethod === m
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white/5 text-white/50 hover:bg-white/10'
-                }`}
-              >
-                {m === 'cash_usd' ? 'Cash USD' : m === 'cash_lbp' ? 'Cash L.L.' : m === 'card' ? 'Card' : 'Split'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Cash received input (only for cash payments) */}
-        {paymentMethod.startsWith('cash') && (
-          <div className="mb-3">
-            <label className="mb-1.5 block text-xs text-white/50">
-              {paymentMethod === 'cash_usd' ? t('restaurant.bill.cashReceivedUsd', 'Cash Received (USD)') : t('restaurant.bill.cashReceivedLbp', 'Cash Received (L.L.)')}
-            </label>
-            <input
-              type="number"
-              min={0}
-              step={paymentMethod === 'cash_usd' ? 0.5 : 1000}
-              value={cashReceivedUsd}
-              onChange={(e) => setCashReceivedUsd(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
-              placeholder="0"
-            />
-            {changeUsd > 0 && (
-              <p className="mt-1.5 text-xs text-emerald-400">
-                {t('restaurant.bill.change', 'Change')}: ${changeUsd.toFixed(2)}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Confirm button */}
-        <button
-          onClick={() => { void handleConfirm(); }}
-          disabled={confirming}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-4 text-base font-black text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-        >
-          <Receipt className="h-5 w-5" />
-          {confirming ? t('restaurant.bill.confirming', 'Confirming...') : t('restaurant.bill.confirm', 'Confirm Payment')}
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -838,34 +677,16 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
     }
   };
 
-  const handleCloseBillModalConfirm = async (
-    method: string,
-    tipUsd: number,
-    discountPct: number,
-    cashReceived?: number,
-  ) => {
-    try {
-      // Call fn_close_restaurant_bill RPC or manual update
-      if (!tenantId || !order?.id) return;
-
-      const { error } = await supabase.rpc('fn_close_restaurant_bill', {
-        p_order_id: order.id,
-        p_payment_method: method,
-        p_tip_amount_usd: tipUsd,
-        p_discount_pct: discountPct,
-        p_cash_received_usd: cashReceived ?? 0,
-        p_exchange_rate: LBP_RATE,
-      });
-
-      if (error) throw error;
-      toast.success(t('restaurant.billClosed', 'Bill closed successfully'));
-      setShowCloseBillModal(false);
-      onOrderClosed();
-      onClose();
-    } catch (err) {
-      console.error('[Close Bill] error:', err);
-      toast.error(t('common.error', 'Error closing bill'));
-    }
+  // Called by CloseBillModal after tip & discount have already been persisted.
+  // Receives the already-mapped payment method string (cash/card/other).
+  const handleCloseBillConfirm = async (mappedPaymentMethod: string) => {
+    if (!order?.id) return;
+    // closeBill calls fn_close_restaurant_bill(p_order_id, p_payment_method)
+    // which reads tip/discount from the order row — already updated by the modal
+    await closeBill(mappedPaymentMethod);
+    setShowCloseBillModal(false);
+    onOrderClosed();
+    onClose();
   };
 
   const handleSaveNotes = async () => {
@@ -1265,13 +1086,16 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
         />
       )}
 
-      {/* Phase 0 Feature 3: Close Bill Modal */}
+      {/* Close Bill Modal */}
       {showCloseBillModal && order && (
         <CloseBillModal
+          tableNumber={table.number}
           order={order as TableOrderExtended}
           items={items}
+          onUpdateTip={updateTip}
+          onUpdateDiscount={updateDiscount}
+          onConfirm={handleCloseBillConfirm}
           onClose={() => setShowCloseBillModal(false)}
-          onConfirm={handleCloseBillModalConfirm}
         />
       )}
 

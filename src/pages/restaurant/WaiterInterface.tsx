@@ -51,6 +51,8 @@ import type {
   RestaurantSettings,
   RestaurantMenuCategory,
   RestaurantMenuItem,
+  RestaurantModifierGroup,
+  RestaurantModifier,
   CourseType,
   SplitType,
   BillSplitPart,
@@ -90,6 +92,7 @@ interface TableWithOrder {
   order: TableOrder | null;
   items: RestaurantOrderItem[];
   pendingCount: number;
+  unsentItemCount: number;
 }
 
 // ── Table Tile ────────────────────────────────────────────────────────────────
@@ -102,7 +105,7 @@ interface TableTileProps {
 
 function TableTile({ data, slowThreshold, onSelect }: TableTileProps) {
   const { t } = useTranslation();
-  const { table, order, items, pendingCount } = data;
+  const { table, order, items, pendingCount, unsentItemCount } = data;
   const minutes = order ? minutesSince(order.opened_at) : 0;
   const isSlowService = order && minutes > slowThreshold;
   const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
@@ -156,7 +159,12 @@ function TableTile({ data, slowThreshold, onSelect }: TableTileProps) {
           <div className="text-sm font-bold text-white">${total.toFixed(2)}</div>
           {pendingCount > 0 && (
             <div className="rounded-lg bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
-              {pendingCount} waiting
+              {pendingCount} {t('restaurant.tile.qrWaiting', 'QR waiting')}
+            </div>
+          )}
+          {unsentItemCount > 0 && (
+            <div className="rounded-lg bg-orange-500/20 px-2 py-0.5 text-[10px] font-semibold text-orange-400">
+              {unsentItemCount} {t('restaurant.tile.unsentItems', 'unsent')}
             </div>
           )}
         </div>
@@ -292,13 +300,17 @@ function PendingOrderModal({ pendingOrder, onConfirm, onReject, onClose }: Pendi
 
 // ── Quick Add Modal ───────────────────────────────────────────────────────────
 
+interface ModifierGroupWithModifiers extends RestaurantModifierGroup {
+  modifiers_list: RestaurantModifier[];
+}
+
 interface QuickAddModalProps {
   item: RestaurantMenuItem;
   currentOrderItemIds: string[];
   allMenuItems: RestaurantMenuItem[];
   tenantId: string | null | undefined;
   onClose: () => void;
-  onConfirm: (qty: number, notes: string) => void;
+  onConfirm: (qty: number, notes: string, unitPrice: number, modifiers: Array<{ name: string; price_delta: number }>) => void;
   onUpsellAdd?: (item: RestaurantMenuItem, qty: number) => void;
 }
 
@@ -314,17 +326,134 @@ function QuickAddModal({
   const { t } = useTranslation();
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState('');
+  const [modifierGroups, setModifierGroups] = useState<ModifierGroupWithModifiers[]>([]);
+  // selectedModifiers: groupId → array of modifier ids
+  const [selectedModifiers, setSelectedModifiers] = useState<Record<string, string[]>>({});
+  const [loadingModifiers, setLoadingModifiers] = useState(false);
   const { suggestion } = useUpsellRules(tenantId, currentOrderItemIds, allMenuItems);
+
+  // Fetch modifier groups for this menu item
+  useEffect(() => {
+    if (!tenantId || !item.id) return;
+    const fetch = async () => {
+      setLoadingModifiers(true);
+      try {
+        // Step 1: get modifier group ids linked to this menu item
+        const { data: links } = await supabase
+          .from('restaurant_menu_item_modifier_groups')
+          .select('modifier_group_id')
+          .eq('menu_item_id', item.id)
+          .eq('tenant_id', tenantId);
+
+        if (!links || links.length === 0) {
+          setModifierGroups([]);
+          return;
+        }
+
+        const groupIds = (links as Array<{ modifier_group_id: string }>).map((l) => l.modifier_group_id);
+
+        // Step 2: fetch the groups
+        const { data: groups } = await supabase
+          .from('restaurant_modifier_groups')
+          .select('*')
+          .in('id', groupIds)
+          .eq('tenant_id', tenantId)
+          .order('name');
+
+        if (!groups || groups.length === 0) {
+          setModifierGroups([]);
+          return;
+        }
+
+        // Step 3: fetch all modifiers for those groups
+        const { data: modifiers } = await supabase
+          .from('restaurant_modifiers')
+          .select('*')
+          .in('group_id', groupIds)
+          .eq('tenant_id', tenantId)
+          .order('sort_order');
+
+        const modifiersByGroup: Record<string, RestaurantModifier[]> = {};
+        if (modifiers) {
+          (modifiers as RestaurantModifier[]).forEach((m) => {
+            if (!modifiersByGroup[m.group_id]) modifiersByGroup[m.group_id] = [];
+            modifiersByGroup[m.group_id]!.push(m);
+          });
+        }
+
+        const combined: ModifierGroupWithModifiers[] = (groups as RestaurantModifierGroup[]).map((g) => ({
+          ...g,
+          modifiers_list: modifiersByGroup[g.id] ?? [],
+        }));
+
+        setModifierGroups(combined);
+
+        // Auto-select defaults for single-option required groups
+        const defaults: Record<string, string[]> = {};
+        combined.forEach((g) => {
+          if (g.is_required && g.max_selections === 1 && g.modifiers_list.length === 1) {
+            const firstId = g.modifiers_list[0]?.id;
+            if (firstId) defaults[g.id] = [firstId];
+          }
+        });
+        if (Object.keys(defaults).length > 0) setSelectedModifiers(defaults);
+      } catch (err) {
+        console.error('[QuickAddModal] modifier fetch error:', err);
+      } finally {
+        setLoadingModifiers(false);
+      }
+    };
+    void fetch();
+  }, [item.id, tenantId]);
+
+  const toggleModifier = (group: ModifierGroupWithModifiers, modifierId: string) => {
+    setSelectedModifiers((prev) => {
+      const current = prev[group.id] ?? [];
+      if (group.max_selections === 1) {
+        // Radio — toggle off if same, otherwise replace
+        return { ...prev, [group.id]: current[0] === modifierId ? [] : [modifierId] };
+      }
+      // Checkbox — add/remove, respecting max
+      if (current.includes(modifierId)) {
+        return { ...prev, [group.id]: current.filter((id) => id !== modifierId) };
+      }
+      if (current.length >= group.max_selections) return prev; // at max
+      return { ...prev, [group.id]: [...current, modifierId] };
+    });
+  };
+
+  // Compute whether all required groups have selections
+  const requiredGroupsMet = modifierGroups
+    .filter((g) => g.is_required || g.min_selections > 0)
+    .every((g) => (selectedModifiers[g.id] ?? []).length >= Math.max(1, g.min_selections));
+
+  // Compute selected modifier objects and price delta
+  const allSelectedModifiers: RestaurantModifier[] = modifierGroups.flatMap((g) =>
+    (selectedModifiers[g.id] ?? []).map((id) => g.modifiers_list.find((m) => m.id === id)).filter((m): m is RestaurantModifier => m !== undefined)
+  );
+  const modifierPriceDelta = allSelectedModifiers.reduce((sum, m) => sum + m.price_delta, 0);
+  const unitPrice = item.base_price_usd + modifierPriceDelta;
+
+  const handleConfirm = () => {
+    const notesWithModifiers = [
+      allSelectedModifiers.map((m) => m.name).join(', '),
+      notes,
+    ].filter(Boolean).join(' · ');
+
+    const modifierPayload = allSelectedModifiers.map((m) => ({ name: m.name, price_delta: m.price_delta }));
+    onConfirm(qty, notesWithModifiers, unitPrice, modifierPayload);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-t-3xl border-t border-white/10 bg-slate-900 p-5 pb-safe">
+      <div className="w-full max-w-md rounded-t-3xl border-t border-white/10 bg-slate-900 p-5 pb-safe max-h-[90dvh] overflow-y-auto">
         {/* Item header */}
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-white">{item.name}</h3>
             {item.name_ar && <p className="text-sm text-white/40" dir="rtl">{item.name_ar}</p>}
-            <p className="mt-0.5 text-lg font-black text-emerald-400">${item.base_price_usd.toFixed(2)}</p>
+            <p className="mt-0.5 text-lg font-black text-emerald-400">${unitPrice.toFixed(2)}</p>
           </div>
           <button
             onClick={onClose}
@@ -343,6 +472,64 @@ function QuickAddModal({
                 {a}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Modifier groups */}
+        {loadingModifiers ? (
+          <div className="mb-4 flex items-center justify-center py-4">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/10 border-t-indigo-400" />
+          </div>
+        ) : modifierGroups.length > 0 && (
+          <div className="mb-4 space-y-4">
+            {modifierGroups.map((group) => {
+              const selected = selectedModifiers[group.id] ?? [];
+              const isRequired = group.is_required || group.min_selections > 0;
+              const isSatisfied = !isRequired || selected.length >= Math.max(1, group.min_selections);
+              return (
+                <div key={group.id}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/60">
+                      {group.name}
+                    </span>
+                    {isRequired && (
+                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${isSatisfied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                        {t('restaurant.modifier.required', 'required')}
+                      </span>
+                    )}
+                    {group.max_selections > 1 && (
+                      <span className="ml-auto text-[9px] text-white/30">
+                        {t('restaurant.modifier.selectUpTo', 'up to {{n}}', { n: group.max_selections })}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {group.modifiers_list.map((mod) => {
+                      const isSelected = selected.includes(mod.id);
+                      return (
+                        <button
+                          key={mod.id}
+                          onClick={() => toggleModifier(group, mod.id)}
+                          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                            isSelected
+                              ? 'border-indigo-500/70 bg-indigo-600/30 text-white'
+                              : 'border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:bg-white/10'
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3 w-3 flex-none" />}
+                          <span>{mod.name}</span>
+                          {mod.price_delta > 0 && (
+                            <span className={`${isSelected ? 'text-emerald-300' : 'text-emerald-400/70'}`}>
+                              +${mod.price_delta.toFixed(2)}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -367,7 +554,7 @@ function QuickAddModal({
             >
               <Plus className="h-5 w-5" />
             </button>
-            <span className="ml-2 text-sm text-white/40">= ${(item.base_price_usd * qty).toFixed(2)}</span>
+            <span className="ml-2 text-sm text-white/40">= ${(unitPrice * qty).toFixed(2)}</span>
           </div>
         </div>
 
@@ -420,12 +607,18 @@ function QuickAddModal({
 
         {/* Confirm */}
         <button
-          onClick={() => { onConfirm(qty, notes); onClose(); }}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-4 text-sm font-bold text-white active:scale-[0.98] transition-all"
+          onClick={handleConfirm}
+          disabled={!requiredGroupsMet}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-4 text-sm font-bold text-white active:scale-[0.98] transition-all disabled:opacity-40"
         >
           <Plus className="h-5 w-5" />
-          {t('restaurant.addToOrder', 'Add to Order')} · ${(item.base_price_usd * qty).toFixed(2)}
+          {t('restaurant.addToOrder', 'Add to Order')} · ${(unitPrice * qty).toFixed(2)}
         </button>
+        {!requiredGroupsMet && (
+          <p className="mt-2 text-center text-xs text-red-400">
+            {t('restaurant.modifier.pleaseSelect', 'Please complete all required selections')}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -1120,14 +1313,15 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
           allMenuItems={menuItems}
           tenantId={tenantId}
           onClose={() => setSelectedMenuItem(null)}
-          onConfirm={(qty, notes) => {
+          onConfirm={(qty, notes, unitPrice, modifiers) => {
             void addItem({
               product_name: selectedMenuItem.name,
               quantity: qty,
-              unit_price: selectedMenuItem.base_price_usd,
+              unit_price: unitPrice,
               course: 'mains',
               notes: notes || undefined,
               menu_item_id: selectedMenuItem.id,
+              modifiers,
             });
           }}
           onUpsellAdd={(upsellItem) => {
@@ -1355,11 +1549,13 @@ export default function WaiterInterface() {
     .map((table) => {
       const order = orders.find((o) => o.table_id === table.id) ?? null;
       const items = order ? allItems.filter((i) => i.order_id === order.id) : [];
+      const unsentItemCount = items.filter((i) => i.sent_at === null && i.status === 'pending').length;
       return {
         table,
         order,
         items,
         pendingCount: pendingOrderCounts[table.id] ?? 0,
+        unsentItemCount,
       };
     });
 
@@ -1474,7 +1670,18 @@ export default function WaiterInterface() {
                 </div>
               ) : (
                 openOrders.map(({ order, table, items, subtotal, mins }) => {
-                  const isRecent = mins < 10;
+                  const cardStyle =
+                    mins < 30
+                      ? 'border-indigo-500/30 bg-indigo-500/10'
+                      : mins < 60
+                      ? 'border-amber-500/30 bg-amber-500/10'
+                      : 'border-red-500/30 bg-red-500/10';
+                  const timeBg =
+                    mins < 30
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : mins < 60
+                      ? 'bg-amber-500/15 text-amber-400'
+                      : 'bg-red-500/15 text-red-400';
                   return (
                     <button
                       key={order.id}
@@ -1482,11 +1689,7 @@ export default function WaiterInterface() {
                         if (table) setSelectedTableId(table.id);
                         setActiveTab('tables');
                       }}
-                      className={`w-full rounded-2xl border p-4 text-start transition-all active:scale-[0.98] ${
-                        isRecent
-                          ? 'border-indigo-500/30 bg-indigo-500/10'
-                          : 'border-amber-500/30 bg-amber-500/10'
-                      }`}
+                      className={`w-full rounded-2xl border p-4 text-start transition-all active:scale-[0.98] ${cardStyle}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-baseline gap-2">
@@ -1510,7 +1713,7 @@ export default function WaiterInterface() {
                         </div>
                       </div>
                       <div className="mt-2 flex items-center gap-3">
-                        <span className="flex items-center gap-1 text-xs text-white/50">
+                        <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${timeBg}`}>
                           <Clock className="h-3 w-3" />
                           {mins}m
                         </span>
@@ -1570,7 +1773,7 @@ export default function WaiterInterface() {
                   <p className="text-sm text-white/40">{t('restaurant.queue.empty', 'No items in progress')}</p>
                 </div>
               ) : (
-                Object.entries(grouped).map(([orderId, items]) => {
+                Object.entries(grouped).map(([orderId, groupedItems]) => {
                   const order = orders.find((o) => o.id === orderId);
                   const table = order ? tables.find((tbl) => tbl.id === order.table_id) : null;
                   return (
@@ -1585,11 +1788,11 @@ export default function WaiterInterface() {
                           </span>
                         )}
                         <span className="ml-auto text-xs text-white/40">
-                          {items.length} {t('restaurant.queue.items', 'items')}
+                          {groupedItems.length} {t('restaurant.queue.items', 'items')}
                         </span>
                       </div>
                       <div className="divide-y divide-white/5">
-                        {items.map((item) => {
+                        {groupedItems.map((item) => {
                           const sentMins = item.sent_at ? minutesSince(item.sent_at) : 0;
                           const timeColor =
                             sentMins < 8
@@ -1682,9 +1885,7 @@ export default function WaiterInterface() {
                       <div className="space-y-1.5">
                         {po.items.map((item, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-xs">
-                            <span className="font-semibold text-white/80">
-                              {item.quantity}×
-                            </span>
+                            <span className="font-semibold text-white/80">{item.quantity}×</span>
                             <span className="flex-1 text-white/70">{item.name}</span>
                             <span className="text-white/40">${(item.unit_price * item.quantity).toFixed(2)}</span>
                           </div>

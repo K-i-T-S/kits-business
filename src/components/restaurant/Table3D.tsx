@@ -69,17 +69,17 @@ export function Table3D({ table, orderInfo, onSelect, isSelected }: Table3DProps
         </mesh>
       )}
 
-      {/* Table number — HTML overlay, no font worker needed */}
+ {/* Table number — HTML overlay, no font worker needed */}
       <Html
-        position={[0, 0.25, 0]}
+        position={[0, 0.15, 0]}
         center
-        distanceFactor={8}
+
         style={{ pointerEvents: 'none' }}
       >
         <div style={{
           color: 'white',
           fontFamily: 'system-ui, sans-serif',
-          fontSize: '14px',
+          fontSize: '12px',
           fontWeight: 700,
           textShadow: '0 1px 3px rgba(0,0,0,0.8)',
           userSelect: 'none',
@@ -92,21 +92,21 @@ export function Table3D({ table, orderInfo, onSelect, isSelected }: Table3DProps
       {/* Order badge */}
       {orderInfo && (
         <Float speed={1.5} rotationIntensity={0} floatIntensity={0.3}>
-          <group position={[0, 1.5, 0]}>
+          <group position={[0, 0.9, 0]}>
             <mesh>
-              <planeGeometry args={[2.4, 0.7]} />
+              <planeGeometry args={[1.2, 0.35]} />
               <meshBasicMaterial color="#111827" opacity={0.9} transparent />
             </mesh>
             <Html
-              position={[0, 0, 0.02]}
+              position={[0, 0, 0.01]}
               center
-              distanceFactor={8}
+
               style={{ pointerEvents: 'none' }}
             >
               <div style={{
                 color: '#f59e0b',
                 fontFamily: 'system-ui, sans-serif',
-                fontSize: '11px',
+                fontSize: '10px',
                 fontWeight: 600,
                 textShadow: '0 1px 2px rgba(0,0,0,0.9)',
                 userSelect: 'none',

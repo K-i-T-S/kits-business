@@ -14,7 +14,8 @@
 
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrthographicCamera } from '@react-three/drei';
+// 1. Import OrbitControls alongside OrthographicCamera
+import { OrthographicCamera, OrbitControls } from '@react-three/drei';
 import { PCFShadowMap } from 'three';
 
 import type { RestaurantTable } from '@/types/restaurant';
@@ -49,7 +50,7 @@ function LoadingOverlay() {
 // ── Scene fallback (inside Canvas Suspense boundary) ──────────────────────────
 
 function SceneLoader() {
-  return null; // Canvas handles its own loading via Suspense
+  return null; 
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -63,14 +64,15 @@ export function FloorPlan3D({
 }: FloorPlan3DProps) {
   if (isLoading) {
     return (
-      <div className="h-screen w-full">
+      <div className="h-full w-full min-h-[500px]">
         <LoadingOverlay />
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-full" style={{ background: '#0a0f1e' }}>
+    // 2. Swapped 'h-screen' to 'h-full flex-1 min-h-[500px]' to prevent flexbox collapsing
+    <div className="relative h-full w-full flex-1" style={{ background: '#0a0f1e', minHeight: '500px' }}>
       <Canvas shadows={{ type: PCFShadowMap }}>
         {/* Isometric orthographic camera — top-down angled view */}
         <OrthographicCamera
@@ -80,6 +82,9 @@ export function FloorPlan3D({
           near={0.1}
           far={1000}
         />
+        
+        {/* 3. ADD ORBIT CONTROLS: This forces the camera to look at the tables at [0,0,0] */}
+        <OrbitControls target={[0, 0, 0]} makeDefault />
 
         {/* Lighting */}
         <ambientLight intensity={0.3} />

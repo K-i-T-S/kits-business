@@ -14,14 +14,17 @@
  */
 
 import {
+  AlertTriangle,
   ArrowLeft,
   BarChart2,
   ChefHat,
   Clock,
   DollarSign,
   LayoutGrid,
+  MessageSquare,
   QrCode,
   RefreshCw,
+  Star,
   Users,
   UtensilsCrossed,
   Wifi,
@@ -184,22 +187,329 @@ function OfflineBanner() {
   );
 }
 
-// ── Analytics placeholder ─────────────────────────────────────────────────────
+// ── Analytics panel types ─────────────────────────────────────────────────────
 
-function AnalyticsPlaceholder() {
+interface SlowAlertRow {
+  table_id: string;
+  created_at: string;
+  alert_type: string;
+}
+
+interface FeedbackRow {
+  id: string;
+  overall_rating: number | null;
+  comment: string | null;
+  submitted_at: string;
+}
+
+interface AnalyticsData {
+  todayRevenue: number | null;
+  slowAlerts: SlowAlertRow[];
+  qrPendingCount: number;
+  recentFeedback: FeedbackRow[];
+}
+
+// ── Analytics Command Center ─────────────────────────────────────────────────
+
+interface AnalyticsCommandCenterProps {
+  tenantId: string;
+  tables: RestaurantTable[];
+}
+
+function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProps) {
+  const [data, setData] = useState<AnalyticsData>({
+    todayRevenue: null,
+    slowAlerts: [],
+    qrPendingCount: 0,
+    recentFeedback: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  const loadAnalytics = useCallback(async () => {
+    if (!tenantId) return;
+    setLoading(true);
+    try {
+      // Today's midnight in Beirut (UTC+3 / UTC+2 DST — use UTC+3 as Lebanon time)
+      const now = new Date();
+      const beirutOffset = 3 * 60; // minutes
+      const localMidnight = new Date(
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate(),
+        ) - beirutOffset * 60 * 1000,
+      );
+      const todayISO = localMidnight.toISOString();
+
+      const [revenueRes, slowRes, qrRes, feedbackRes] = await Promise.all([
+        supabase
+          .from('table_orders')
+          .select('total_amount')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'paid')
+          .gte('paid_at', todayISO),
+        supabase
+          .from('restaurant_slow_alerts')
+          .select('table_id, created_at, alert_type')
+          .eq('tenant_id', tenantId)
+          .is('resolved_at', null)
+          .order('created_at'),
+        supabase
+          .from('restaurant_pending_orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId)
+          .eq('status', 'pending'),
+        supabase
+          .from('restaurant_table_feedback')
+          .select('id, overall_rating, comment, submitted_at')
+          .eq('tenant_id', tenantId)
+          .order('submitted_at', { ascending: false })
+          .limit(5),
+      ]);
+
+      // Revenue: sum total_amount if column exists, otherwise null
+      let todayRevenue: number | null = null;
+      if (revenueRes.data && revenueRes.data.length > 0) {
+        const rows = revenueRes.data as Array<Record<string, unknown>>;
+        const amounts = rows.map((r) => {
+          const v = r['total_amount'];
+          return typeof v === 'number' ? v : 0;
+        });
+        todayRevenue = amounts.reduce((a, b) => a + b, 0);
+      } else if (revenueRes.data) {
+        todayRevenue = 0;
+      }
+
+      setData({
+        todayRevenue,
+        slowAlerts: (slowRes.data ?? []) as SlowAlertRow[],
+        qrPendingCount: qrRes.count ?? 0,
+        recentFeedback: (feedbackRes.data ?? []) as FeedbackRow[],
+      });
+    } catch (err) {
+      console.error('[AnalyticsCommandCenter] load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [tenantId]);
+
+  useEffect(() => {
+    void loadAnalytics();
+  }, [loadAnalytics]);
+
+  // Table status counts
+  const available = tables.filter((t) => t.status === 'available').length;
+  const occupied = tables.filter((t) => t.status === 'occupied').length;
+  const cleaning = tables.filter((t) => t.status === 'cleaning').length;
+
+  // Average feedback rating
+  const ratingsWithValues = data.recentFeedback.filter((f) => f.overall_rating !== null);
+  const avgRating =
+    ratingsWithValues.length > 0
+      ? ratingsWithValues.reduce((s, f) => s + (f.overall_rating ?? 0), 0) / ratingsWithValues.length
+      : null;
+
+  function minutesSinceISO(iso: string): number {
+    return Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  }
+
   return (
     <div
-      className="flex h-full flex-col items-center justify-center gap-4 rounded-2xl border"
+      className="flex h-full flex-col gap-0 overflow-y-auto rounded-2xl border"
       style={{
         background: RESTAURANT_COLORS.surface,
         borderColor: RESTAURANT_COLORS.border,
         minHeight: 400,
       }}
     >
-      <BarChart2 className="h-12 w-12 opacity-20" style={{ color: RESTAURANT_COLORS.textMuted }} />
-      <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>
-        Analytics Command Center — coming in Task 7
-      </p>
+      {/* Header */}
+      <div
+        className="flex items-center justify-between border-b px-5 py-4"
+        style={{ borderColor: RESTAURANT_COLORS.border }}
+      >
+        <div className="flex items-center gap-2">
+          <BarChart2 className="h-4 w-4" style={{ color: '#6366f1' }} />
+          <span className="text-sm font-semibold" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+            Analytics Command Center
+          </span>
+        </div>
+        {loading && (
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-indigo-400" />
+        )}
+      </div>
+
+      {/* 1. Today's Revenue */}
+      <div
+        className="border-b px-5 py-4"
+        style={{ borderColor: RESTAURANT_COLORS.border }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <DollarSign className="h-3.5 w-3.5" style={{ color: '#10b981' }} />
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+            Today's Revenue
+          </span>
+        </div>
+        <p className="text-2xl font-black" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+          {data.todayRevenue === null ? '—' : `$${data.todayRevenue.toFixed(2)}`}
+        </p>
+        <p className="text-[10px] mt-0.5" style={{ color: RESTAURANT_COLORS.textMuted }}>
+          Paid orders since midnight Beirut
+        </p>
+      </div>
+
+      {/* 2. Table Status Summary */}
+      <div
+        className="border-b px-5 py-4"
+        style={{ borderColor: RESTAURANT_COLORS.border }}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <LayoutGrid className="h-3.5 w-3.5" style={{ color: '#6366f1' }} />
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+            Tables Status
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-400">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            {available} available
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-semibold text-amber-400">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            {occupied} occupied
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full bg-slate-500/15 border border-slate-500/20 px-3 py-1 text-xs font-semibold text-slate-400">
+            <span className="h-2 w-2 rounded-full bg-slate-500" />
+            {cleaning} cleaning
+          </span>
+        </div>
+      </div>
+
+      {/* 3. Slow Table Alerts */}
+      <div
+        className="border-b px-5 py-4"
+        style={{ borderColor: RESTAURANT_COLORS.border }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
+            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+              Slow Alerts
+            </span>
+          </div>
+          {data.slowAlerts.length > 0 && (
+            <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white">
+              {data.slowAlerts.length}
+            </span>
+          )}
+        </div>
+        {data.slowAlerts.length === 0 ? (
+          <p className="text-xs" style={{ color: RESTAURANT_COLORS.textMuted }}>No active alerts</p>
+        ) : (
+          <div className="space-y-2">
+            {data.slowAlerts.map((alert, idx) => {
+              const table = tables.find((t) => t.id === alert.table_id);
+              const mins = minutesSinceISO(alert.created_at);
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2"
+                >
+                  <div>
+                    <span className="text-sm font-bold text-red-300">
+                      Table {table?.number ?? '?'}
+                    </span>
+                    <p className="text-[10px] text-red-400/70 capitalize">
+                      {alert.alert_type.replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1 text-xs font-semibold text-red-400">
+                    <Clock className="h-3 w-3" />
+                    {mins}m
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 4. QR Pending Count */}
+      <div
+        className="border-b px-5 py-4"
+        style={{ borderColor: RESTAURANT_COLORS.border }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <QrCode className="h-3.5 w-3.5" style={{ color: '#0ea5e9' }} />
+            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+              QR Pending
+            </span>
+          </div>
+          {data.qrPendingCount > 0 && (
+            <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-white">
+              {data.qrPendingCount}
+            </span>
+          )}
+        </div>
+        <p className="mt-2 text-sm" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+          {data.qrPendingCount === 0
+            ? 'No QR orders waiting'
+            : `${data.qrPendingCount} guest${data.qrPendingCount > 1 ? 's' : ''} waiting for order confirmation`}
+        </p>
+      </div>
+
+      {/* 5. Recent Feedback */}
+      <div className="px-5 py-4 flex-1">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-3.5 w-3.5" style={{ color: '#f59e0b' }} />
+            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+              Recent Feedback
+            </span>
+          </div>
+          {avgRating !== null && (
+            <span className="flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 text-xs font-bold text-amber-400">
+              <Star className="h-3 w-3 fill-amber-400" />
+              {avgRating.toFixed(1)}
+            </span>
+          )}
+        </div>
+        {data.recentFeedback.length === 0 ? (
+          <p className="text-xs" style={{ color: RESTAURANT_COLORS.textMuted }}>No recent feedback</p>
+        ) : (
+          <div className="space-y-2">
+            {data.recentFeedback.map((fb) => (
+              <div
+                key={fb.id}
+                className="rounded-xl border border-white/5 bg-white/3 px-3 py-2"
+              >
+                {fb.overall_rating !== null && (
+                  <div className="flex items-center gap-0.5 mb-1">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <Star
+                        key={i}
+                        className="h-3 w-3"
+                        style={{
+                          color: i < (fb.overall_rating ?? 0) ? '#f59e0b' : 'rgba(255,255,255,0.15)',
+                          fill: i < (fb.overall_rating ?? 0) ? '#f59e0b' : 'transparent',
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                {fb.comment && (
+                  <p className="text-xs leading-relaxed" style={{ color: RESTAURANT_COLORS.textTertiary }}>
+                    &ldquo;{fb.comment}&rdquo;
+                  </p>
+                )}
+                <p className="text-[10px] mt-1" style={{ color: RESTAURANT_COLORS.textMuted }}>
+                  {new Date(fb.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -584,7 +894,7 @@ export default function RestaurantHub() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
               >
-                <AnalyticsPlaceholder />
+                <AnalyticsCommandCenter tenantId={tenantId} tables={tables} />
               </motion.div>
             )}
           </AnimatePresence>

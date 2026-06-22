@@ -111,13 +111,16 @@ export default function QRMenuPage() {
         <div className="qr-glass rounded-3xl p-10 max-w-sm w-full" style={{ border: '1px solid var(--qr-border)' }}>
           <p className="mb-4 text-5xl">🍽️</p>
           <h1 className="mb-2 text-xl font-black" style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}>
-            Menu Not Found
+            Menu not available
           </h1>
-          <p className="text-sm mb-6" style={{ color: 'var(--qr-text-muted)' }}>
-            {error === 'Menu not found'
-              ? 'This restaurant hasn\'t activated their digital menu yet.'
-              : (error ?? 'This restaurant has not configured their digital menu yet.')}
+          <p className="text-sm mb-2" style={{ color: 'var(--qr-text-muted)' }}>
+            Please ask your server for assistance.
           </p>
+          {error && error !== 'Menu not found' && (
+            <p className="text-xs mb-4" style={{ color: 'var(--qr-text-muted)', opacity: 0.6 }}>
+              {error}
+            </p>
+          )}
           <div className="qr-kits-fingerprint" style={{ justifyContent: 'center' }}>
             <span>Digital menu by</span>
             <span style={{ fontWeight: 700, letterSpacing: '0.1em' }}>KiTS</span>
@@ -235,6 +238,7 @@ export default function QRMenuPage() {
               key="cart"
               items={items}
               tableId={tableId}
+              tenantId={data?.tenant.id ?? ''}
               totalPrice={totalPrice}
               onUpdateQuantity={(menuItemId, modKey, qty) => updateQuantity(menuItemId, modKey, qty)}
               onRemoveItem={(menuItemId, modKey) => removeItem(menuItemId, modKey)}

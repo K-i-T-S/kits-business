@@ -143,9 +143,14 @@ function ItemCard({
               </p>
             )}
           </div>
-          <p className="flex-shrink-0 text-sm font-bold" style={{ color: 'var(--qr-accent)' }}>
-            ${item.base_price_usd.toFixed(2)}
-          </p>
+          <div className="flex-shrink-0 text-right">
+            <p className="text-sm font-bold" style={{ color: 'var(--qr-accent)' }}>
+              ${item.base_price_usd.toFixed(2)}
+            </p>
+            <p className="text-[10px]" style={{ color: 'var(--qr-text-muted)' }}>
+              L.L. {(item.base_price_usd * 89500).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </p>
+          </div>
         </div>
         {item.calories && (
           <p className="mt-1 text-[10px]" style={{ color: 'var(--qr-text-muted)' }}>

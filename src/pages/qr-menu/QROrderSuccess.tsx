@@ -52,10 +52,10 @@ export default function QROrderSuccess({ orderNumber, onDone }: QROrderSuccessPr
           className="text-3xl font-bold"
           style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}
         >
-          Order Submitted! 🎉
+          Your order has been received!
         </h2>
         <p style={{ color: 'var(--qr-text-muted)' }} className="text-sm">
-          Your waiter will confirm shortly
+          Our team is on it — sit back and relax 🎉
         </p>
         <div
           className="mt-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold"
@@ -70,11 +70,18 @@ export default function QROrderSuccess({ orderNumber, onDone }: QROrderSuccessPr
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="space-y-2 text-center"
+        className="space-y-3 text-center"
       >
         <p className="text-xs" style={{ color: 'var(--qr-text-muted)' }}>
           Our team has received your order and is preparing it with care.
         </p>
+        <div
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm"
+          style={{ background: 'var(--qr-surface)', border: '1px solid var(--qr-border)', color: 'var(--qr-text-muted)' }}
+        >
+          <span className="text-base">⏱️</span>
+          <span>Estimated time: <strong style={{ color: 'var(--qr-text)' }}>15–20 minutes</strong></span>
+        </div>
       </motion.div>
 
       <motion.button

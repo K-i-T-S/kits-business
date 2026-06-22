@@ -8,6 +8,7 @@ import { supabase } from '@/utils/supabaseClient';
 interface QRCartProps {
   items: QRCartItem[];
   tableId: string;
+  tenantId: string;
   totalPrice: number;
   onUpdateQuantity: (menuItemId: string, modifierKey: string, quantity: number) => void;
   onRemoveItem: (menuItemId: string, modifierKey: string) => void;
@@ -23,7 +24,7 @@ function getModifierKey(item: QRCartItem): string {
   return `${item.menuItemId}__${modStr}`;
 }
 
-export default function QRCart({ items, tableId, totalPrice, onUpdateQuantity, onRemoveItem, onClose, onSuccess }: QRCartProps) {
+export default function QRCart({ items, tableId, tenantId, totalPrice, onUpdateQuantity, onRemoveItem, onClose, onSuccess }: QRCartProps) {
   const [placing, setPlacing] = useState(false);
 
   const handlePlaceOrder = async () => {
@@ -46,6 +47,7 @@ export default function QRCart({ items, tableId, totalPrice, onUpdateQuantity, o
         const { data: newOrder, error: orderError } = await supabase
           .from('table_orders')
           .insert({
+            tenant_id: tenantId,
             table_id: tableId,
             status: 'open',
             current_course: 'appetizers',
@@ -59,6 +61,7 @@ export default function QRCart({ items, tableId, totalPrice, onUpdateQuantity, o
 
       // Insert all order items
       const orderItems = items.map((item) => ({
+        tenant_id: tenantId,
         order_id: orderId,
         product_name: item.menuItem.name,
         quantity: item.quantity,
@@ -201,9 +204,14 @@ export default function QRCart({ items, tableId, totalPrice, onUpdateQuantity, o
           <span className="text-sm" style={{ color: 'var(--qr-text-muted)' }}>
             Total ({items.reduce((s, i) => s + i.quantity, 0)} items)
           </span>
-          <span className="text-xl font-bold" style={{ color: 'var(--qr-text)' }}>
-            ${totalPrice.toFixed(2)}
-          </span>
+          <div className="text-right">
+            <span className="text-xl font-bold" style={{ color: 'var(--qr-text)' }}>
+              ${totalPrice.toFixed(2)}
+            </span>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--qr-text-muted)' }}>
+              L.L. {(totalPrice * 89500).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </p>
+          </div>
         </div>
 
         <motion.button

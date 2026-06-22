@@ -1,5 +1,5 @@
 import {
-  Plus, X, Phone, Users, Calendar, Clock, CheckCircle, XCircle, AlertCircle, ChevronDown,
+  Plus, X, Phone, Users, Calendar, Clock, CheckCircle, XCircle, AlertCircle, ChevronDown, Armchair,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -69,6 +69,7 @@ export default function Reservations() {
   const [form, setForm] = useState<ReservationFormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [statusMenuId, setStatusMenuId] = useState<string | null>(null);
+  const [seatingId, setSeatingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!tenantId) return;
@@ -143,6 +144,47 @@ export default function Reservations() {
     setReservations((prev) => prev.filter((r) => r.id !== id));
     toast.success(t('restaurant.reservation.deleted', 'Reservation deleted'));
   };
+
+  const handleSeatNow = useCallback(async (reservation: Reservation) => {
+    if (!tenantId) return;
+    if (!reservation.table_id) {
+      toast.error(t('restaurant.reservation.noTableAssigned', 'No table assigned — assign a table first'));
+      return;
+    }
+    setSeatingId(reservation.id);
+    try {
+      const { error: orderError } = await supabase
+        .from('table_orders')
+        .insert({
+          tenant_id: tenantId,
+          table_id: reservation.table_id,
+          status: 'open',
+          covers: reservation.party_size,
+          opened_at: new Date().toISOString(),
+        });
+      if (orderError) { toast.error(orderError.message); return; }
+
+      const { error: tableError } = await supabase
+        .from('restaurant_tables')
+        .update({ status: 'occupied' })
+        .eq('id', reservation.table_id)
+        .eq('tenant_id', tenantId);
+      if (tableError) { toast.error(tableError.message); return; }
+
+      const { error: resError } = await supabase
+        .from('reservations')
+        .update({ status: 'seated' })
+        .eq('id', reservation.id)
+        .eq('tenant_id', tenantId);
+      if (resError) { toast.error(resError.message); return; }
+
+      setReservations((prev) => prev.map((r) => r.id === reservation.id ? { ...r, status: 'seated' as ReservationStatus } : r));
+      setTables((prev) => prev.map((tb) => tb.id === reservation.table_id ? { ...tb, status: 'occupied' as const } : tb));
+      toast.success(t('restaurant.reservation.seated', 'Guest seated successfully'));
+    } finally {
+      setSeatingId(null);
+    }
+  }, [tenantId, t]);
 
   const nextStatuses: Partial<Record<ReservationStatus, ReservationStatus[]>> = {
     pending: ['confirmed', 'cancelled'],
@@ -251,6 +293,19 @@ export default function Reservations() {
 
                     {/* Actions */}
                     <div className="flex flex-shrink-0 items-center gap-2">
+                      {/* Seat Now — only for confirmed reservations */}
+                      {reservation.status === 'confirmed' && (
+                        <button
+                          onClick={() => { void handleSeatNow(reservation); }}
+                          disabled={seatingId === reservation.id}
+                          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-500 disabled:opacity-50"
+                          title="Seat guest now"
+                        >
+                          <Armchair className="h-3 w-3" />
+                          {seatingId === reservation.id ? '…' : t('restaurant.seatNow', 'Seat Now')}
+                        </button>
+                      )}
+
                       {/* WhatsApp confirm */}
                       <a
                         href={buildWhatsAppLink(reservation.guest_phone, reservation.guest_name, reservation.reserved_at, reservation.party_size)}

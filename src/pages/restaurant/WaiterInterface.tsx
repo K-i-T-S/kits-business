@@ -31,6 +31,7 @@ import {
   ListOrdered,
   Bell,
   LayoutGrid,
+  Lightbulb,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,6 +42,7 @@ import BillSplitter from '@/components/restaurant/BillSplitter';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
 import { useRestaurantRealtime } from '@/hooks/useRestaurantRealtime';
+import { useUpsellRules } from '@/hooks/useUpsellRules';
 import { supabase } from '@/utils/supabaseClient';
 import type {
   RestaurantTable,
@@ -454,14 +456,27 @@ function PendingOrderModal({ pendingOrder, onConfirm, onReject, onClose }: Pendi
 
 interface QuickAddModalProps {
   item: RestaurantMenuItem;
+  currentOrderItemIds: string[];
+  allMenuItems: RestaurantMenuItem[];
+  tenantId: string | null | undefined;
   onClose: () => void;
   onConfirm: (qty: number, notes: string) => void;
+  onUpsellAdd?: (item: RestaurantMenuItem, qty: number) => void;
 }
 
-function QuickAddModal({ item, onClose, onConfirm }: QuickAddModalProps) {
+function QuickAddModal({
+  item,
+  currentOrderItemIds,
+  allMenuItems,
+  tenantId,
+  onClose,
+  onConfirm,
+  onUpsellAdd,
+}: QuickAddModalProps) {
   const { t } = useTranslation();
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState('');
+  const { suggestion } = useUpsellRules(tenantId, currentOrderItemIds, allMenuItems);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 backdrop-blur-sm">
@@ -532,6 +547,38 @@ function QuickAddModal({ item, onClose, onConfirm }: QuickAddModalProps) {
             autoComplete="off"
           />
         </div>
+
+        {/* AI Upsell Banner */}
+        {suggestion && suggestion.suggestedItem && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mb-5 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 to-orange-500/10 p-3"
+          >
+            <div className="flex items-start gap-2">
+              <Lightbulb className="h-4 w-4 flex-none text-amber-400 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-amber-400">
+                  💡 {t('restaurant.upsell.suggestion', 'Guests who order {{item}} also love {{suggestion}}', {
+                    item: item.name,
+                    suggestion: suggestion.suggestedItem.name,
+                  })}
+                </p>
+                <p className="mt-1 text-xs text-amber-300/80">${suggestion.suggestedItem.base_price_usd.toFixed(2)}</p>
+              </div>
+              <button
+                onClick={() => {
+                  onUpsellAdd?.(suggestion.suggestedItem!, 1);
+                  void onClose();
+                }}
+                className="flex-none rounded-lg bg-amber-500/30 px-2.5 py-1.5 text-[10px] font-bold text-amber-300 hover:bg-amber-500/40 transition-all active:scale-95"
+              >
+                {t('restaurant.upsell.addToOrder', 'Add')}
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Confirm */}
         <button
@@ -1229,6 +1276,9 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
       {selectedMenuItem && (
         <QuickAddModal
           item={selectedMenuItem}
+          currentOrderItemIds={items.map((i) => i.menu_item_id).filter((id): id is string => id !== null && id !== selectedMenuItem.id)}
+          allMenuItems={menuItems}
+          tenantId={tenantId}
           onClose={() => setSelectedMenuItem(null)}
           onConfirm={(qty, notes) => {
             void addItem({
@@ -1238,6 +1288,15 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
               course: 'mains',
               notes: notes || undefined,
               menu_item_id: selectedMenuItem.id,
+            });
+          }}
+          onUpsellAdd={(upsellItem) => {
+            void addItem({
+              product_name: upsellItem.name,
+              quantity: 1,
+              unit_price: upsellItem.base_price_usd,
+              course: 'mains',
+              menu_item_id: upsellItem.id,
             });
           }}
         />

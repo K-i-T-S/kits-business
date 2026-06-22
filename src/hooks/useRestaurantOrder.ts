@@ -81,11 +81,13 @@ export function useRestaurantOrder(
           .from('table_orders')
           .select('*')
           .eq('id', orderId)
+          .eq('tenant_id', tenantId)
           .single(),
         supabase
           .from('restaurant_order_items')
           .select('*')
           .eq('order_id', orderId)
+          .eq('tenant_id', tenantId)
           .order('id'),
       ]);
       if (orderRes.data) setOrder(orderRes.data as TableOrderExtended);
@@ -105,6 +107,7 @@ export function useRestaurantOrder(
         .from('restaurant_pending_orders')
         .select('*')
         .eq('table_id', tableId)
+        .eq('tenant_id', tenantId)
         .eq('status', 'pending')
         .order('created_at');
       if (data) setPendingOrders(data as PendingOrder[]);
@@ -187,9 +190,15 @@ export function useRestaurantOrder(
 
   // ── Remove item ──────────────────────────────────────────────────────────
   const removeItem = useCallback(async (itemId: string) => {
-    await supabase.from('restaurant_order_items').delete().eq('id', itemId);
+    if (!tenantId) return;
+    const { error } = await supabase
+      .from('restaurant_order_items')
+      .delete()
+      .eq('id', itemId)
+      .eq('tenant_id', tenantId);
+    if (error) { console.error('[removeItem]', error); return; }
     setItems((prev) => prev.filter((i) => i.id !== itemId));
-  }, []);
+  }, [tenantId]);
 
   // ── Fire course ──────────────────────────────────────────────────────────
   // Moves all pending items in the given course to in_progress (sends to KDS)
@@ -303,7 +312,8 @@ export function useRestaurantOrder(
     await supabase
       .from('restaurant_pending_orders')
       .update({ status: 'confirmed', confirmed_at: now })
-      .eq('id', pendingOrderId);
+      .eq('id', pendingOrderId)
+      .eq('tenant_id', tenantId);
 
     setPendingOrders((prev) => prev.filter((p) => p.id !== pendingOrderId));
     toast.success('Customer order confirmed and added');
@@ -311,13 +321,15 @@ export function useRestaurantOrder(
 
   // ── Reject pending order ─────────────────────────────────────────────────
   const rejectPendingOrder = useCallback(async (pendingOrderId: string) => {
+    if (!tenantId) return;
     await supabase
       .from('restaurant_pending_orders')
       .update({ status: 'rejected' })
-      .eq('id', pendingOrderId);
+      .eq('id', pendingOrderId)
+      .eq('tenant_id', tenantId);
     setPendingOrders((prev) => prev.filter((p) => p.id !== pendingOrderId));
     toast.success('Order rejected');
-  }, []);
+  }, [tenantId]);
 
   // ── Split helpers ────────────────────────────────────────────────────────
   const splitEqual = useCallback((count: number): BillSplitPart[] => {

@@ -377,7 +377,7 @@ function QuickAddModal({
         if (modifiers) {
           (modifiers as RestaurantModifier[]).forEach((m) => {
             if (!modifiersByGroup[m.group_id]) modifiersByGroup[m.group_id] = [];
-            modifiersByGroup[m.group_id]!.push(m);
+            (modifiersByGroup[m.group_id] ??= []).push(m);
           });
         }
 
@@ -815,8 +815,8 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   const [selectedMenuItem, setSelectedMenuItem] = useState<RestaurantMenuItem | null>(null);
 
   // Bill state
-  const [tipInput, setTipInput] = useState(String(order ? ((order as TableOrderExtended).tip_amount_usd ?? 0) : 0));
-  const [discountInput, setDiscountInput] = useState(String(order ? ((order as TableOrderExtended).discount_pct ?? 0) : 0));
+  const [tipInput, setTipInput] = useState('0');
+  const [discountInput, setDiscountInput] = useState('0');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank_transfer'>('cash');
   const [_closingBill, setClosingBill] = useState(false);
   const [showCloseBillModal, setShowCloseBillModal] = useState(false);

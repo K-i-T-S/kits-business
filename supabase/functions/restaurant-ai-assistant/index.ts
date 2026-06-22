@@ -1,11 +1,13 @@
 /**
  * restaurant-ai-assistant — Supabase Edge Function
  *
- * Answers restaurant management questions using Claude Sonnet 4.6 with function calling.
+ * Answers restaurant management questions using Groq (free tier) with LLaMA 3.3 70B
+ * and OpenAI-compatible function calling.
+ *
  * Receives { tenantId, question, language } from AIAssistant.tsx via
  *   supabase.functions.invoke('restaurant-ai-assistant', { body: { ... } })
  *
- * Tools available to Claude:
+ * Tools available to the model:
  *   get_revenue_summary      — revenue for a date range
  *   get_top_items            — top selling items
  *   update_item_price        — update a menu item price (manager action)
@@ -18,7 +20,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
-import Anthropic from 'https://esm.sh/@anthropic-ai/sdk@0.24.0';
+import Groq from 'https://esm.sh/groq-sdk@0.9.1';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,6 +48,13 @@ interface ToolInput {
   days?: number;
 }
 
+// Groq / OpenAI message shapes used in the agentic loop
+type ChatMessage =
+  | { role: 'system'; content: string }
+  | { role: 'user'; content: string }
+  | { role: 'assistant'; content: string | null; tool_calls?: Groq.Chat.Completions.ChatCompletionMessageToolCall[] }
+  | { role: 'tool'; tool_call_id: string; content: string };
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -55,103 +64,127 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = 'claude-sonnet-4-5';
+const MODEL = 'llama-3.3-70b-versatile';
 
 // ---------------------------------------------------------------------------
-// Tool definitions (mirroring src/utils/restaurantAI.ts)
+// Tool definitions — OpenAI/Groq format
 // ---------------------------------------------------------------------------
 
-const TOOLS: Anthropic.Tool[] = [
+const TOOLS: Groq.Chat.Completions.ChatCompletionTool[] = [
   {
-    name: 'get_revenue_summary',
-    description: 'Get revenue summary for a date range. Returns total revenue, transaction count, average check, and top revenue day.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        from: { type: 'string', description: 'Start date in ISO format (YYYY-MM-DD)' },
-        to:   { type: 'string', description: 'End date in ISO format (YYYY-MM-DD)' },
-      },
-      required: ['from', 'to'],
-    },
-  },
-  {
-    name: 'get_top_items',
-    description: 'Get top selling menu items by revenue, quantity sold, or margin.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        period: { type: 'string', description: 'Time period: "today", "week", "month", or ISO date range "YYYY-MM-DD:YYYY-MM-DD"' },
-        metric: { type: 'string', enum: ['revenue', 'quantity', 'margin'], description: 'Sort metric' },
-        limit:  { type: 'number', description: 'Number of items to return (default 5)' },
-      },
-      required: ['period', 'metric'],
-    },
-  },
-  {
-    name: 'update_item_price',
-    description: 'Update the price of a menu item. Requires manager role. Always confirm with the user before calling this.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        itemId:      { type: 'string', description: 'UUID of the menu item' },
-        newPriceUsd: { type: 'number', description: 'New price in USD' },
-      },
-      required: ['itemId', 'newPriceUsd'],
-    },
-  },
-  {
-    name: 'eighty_six_item',
-    description: 'Mark a menu item as 86\'d (unavailable). It will show as sold-out on the QR menu and KDS.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        itemId: { type: 'string', description: 'UUID of the menu item to 86' },
-        reason: { type: 'string', description: 'Optional reason for 86\'ing the item' },
-      },
-      required: ['itemId'],
-    },
-  },
-  {
-    name: 'get_slow_alerts',
-    description: 'Get current slow table alerts — tables where orders have been waiting too long.',
-    input_schema: {
-      type: 'object',
-      properties: {},
-    },
-  },
-  {
-    name: 'get_staff_performance',
-    description: 'Get waiter performance metrics: average check, covers served, tips, upsell rate.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        period:   { type: 'string', description: 'Time period: "today", "week", "month"' },
-        waiterId: { type: 'string', description: 'Optional: filter to a specific waiter UUID' },
+    type: 'function',
+    function: {
+      name: 'get_revenue_summary',
+      description: 'Get revenue summary for a date range. Returns total revenue, transaction count, average check, and top revenue day.',
+      parameters: {
+        type: 'object',
+        properties: {
+          from: { type: 'string', description: 'Start date in ISO format (YYYY-MM-DD)' },
+          to:   { type: 'string', description: 'End date in ISO format (YYYY-MM-DD)' },
+        },
+        required: ['from', 'to'],
       },
     },
   },
   {
-    name: 'generate_menu_description',
-    description: 'Generate an appetizing English + Arabic menu description for a menu item. Returns both languages.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        itemName:    { type: 'string', description: 'Name of the menu item' },
-        ingredients: { type: 'array', items: { type: 'string' }, description: 'List of main ingredients' },
-        cuisine:     { type: 'string', description: 'Cuisine type (e.g., "Lebanese", "Italian", "American")' },
+    type: 'function',
+    function: {
+      name: 'get_top_items',
+      description: 'Get top selling menu items by revenue, quantity sold, or margin.',
+      parameters: {
+        type: 'object',
+        properties: {
+          period: { type: 'string', description: 'Time period: "today", "week", "month", or ISO date range "YYYY-MM-DD:YYYY-MM-DD"' },
+          metric: { type: 'string', enum: ['revenue', 'quantity', 'margin'], description: 'Sort metric' },
+          limit:  { type: 'number', description: 'Number of items to return (default 5)' },
+        },
+        required: ['period', 'metric'],
       },
-      required: ['itemName', 'ingredients'],
     },
   },
   {
-    name: 'get_demand_forecast',
-    description: 'Get AI demand forecast for upcoming days: predicted covers, revenue, staffing recommendation, and prep list.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        days: { type: 'number', description: 'Number of days to forecast ahead (1-7)' },
+    type: 'function',
+    function: {
+      name: 'update_item_price',
+      description: 'Update the price of a menu item. Requires manager role. Always confirm with the user before calling this.',
+      parameters: {
+        type: 'object',
+        properties: {
+          itemId:      { type: 'string', description: 'UUID of the menu item' },
+          newPriceUsd: { type: 'number', description: 'New price in USD' },
+        },
+        required: ['itemId', 'newPriceUsd'],
       },
-      required: ['days'],
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'eighty_six_item',
+      description: "Mark a menu item as 86'd (unavailable). It will show as sold-out on the QR menu and KDS.",
+      parameters: {
+        type: 'object',
+        properties: {
+          itemId: { type: 'string', description: 'UUID of the menu item to 86' },
+          reason: { type: 'string', description: "Optional reason for 86'ing the item" },
+        },
+        required: ['itemId'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_slow_alerts',
+      description: 'Get current slow table alerts — tables where orders have been waiting too long.',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_staff_performance',
+      description: 'Get waiter performance metrics: average check, covers served, tips, upsell rate.',
+      parameters: {
+        type: 'object',
+        properties: {
+          period:   { type: 'string', description: 'Time period: "today", "week", "month"' },
+          waiterId: { type: 'string', description: 'Optional: filter to a specific waiter UUID' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'generate_menu_description',
+      description: 'Generate an appetizing English + Arabic menu description for a menu item. Returns both languages.',
+      parameters: {
+        type: 'object',
+        properties: {
+          itemName:    { type: 'string', description: 'Name of the menu item' },
+          ingredients: { type: 'array', items: { type: 'string' }, description: 'List of main ingredients' },
+          cuisine:     { type: 'string', description: 'Cuisine type (e.g., "Lebanese", "Italian", "American")' },
+        },
+        required: ['itemName', 'ingredients'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_demand_forecast',
+      description: 'Get AI demand forecast for upcoming days: predicted covers, revenue, staffing recommendation, and prep list.',
+      parameters: {
+        type: 'object',
+        properties: {
+          days: { type: 'number', description: 'Number of days to forecast ahead (1-7)' },
+        },
+        required: ['days'],
+      },
     },
   },
 ];
@@ -252,12 +285,12 @@ async function executeTool(
         const { itemId, reason } = input;
         const { error } = await supabase
           .from('restaurant_menu_items')
-          .update({ is_available: false, unavailable_reason: reason ?? '86\'d by manager' })
+          .update({ is_available: false, unavailable_reason: reason ?? "86'd by manager" })
           .eq('id', itemId)
           .eq('tenant_id', tenantId);
 
-        if (error) return `Error 86\'ing item: ${error.message}`;
-        return `Item ${itemId} has been marked as unavailable (86\'d). Reason: ${reason ?? 'Not specified'}.`;
+        if (error) return `Error 86'ing item: ${error.message}`;
+        return `Item ${itemId} has been marked as unavailable (86'd). Reason: ${reason ?? 'Not specified'}.`;
       }
 
       case 'get_slow_alerts': {
@@ -337,8 +370,8 @@ async function executeTool(
       }
 
       case 'generate_menu_description': {
-        // This is a meta-tool: Claude generates descriptions by itself
-        // We return a prompt directive so Claude knows to generate it inline
+        // This is a meta-tool: the model generates descriptions by itself.
+        // We return a prompt directive so it knows to generate inline.
         const { itemName, ingredients = [], cuisine = 'Lebanese' } = input;
         return JSON.stringify({
           directive: 'generate_inline',
@@ -473,10 +506,10 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Initialise clients
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
-    if (!anthropicKey) {
+    const groqKey = Deno.env.get('GROQ_API_KEY');
+    if (!groqKey) {
       return new Response(
-        JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }),
+        JSON.stringify({ error: 'GROQ_API_KEY not configured' }),
         { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
       );
     }
@@ -490,7 +523,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const anthropic = new Anthropic({ apiKey: anthropicKey });
+    const groq = new Groq({ apiKey: groqKey });
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch tenant name for system prompt
@@ -504,7 +537,8 @@ serve(async (req: Request): Promise<Response> => {
     const systemPrompt = buildSystemPrompt(language, tenantName);
 
     // Agentic tool-calling loop
-    const messages: Anthropic.MessageParam[] = [
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: question },
     ];
 
@@ -515,46 +549,49 @@ serve(async (req: Request): Promise<Response> => {
     while (iterations < MAX_ITERATIONS) {
       iterations++;
 
-      const response = await anthropic.messages.create({
+      const response = await groq.chat.completions.create({
         model: MODEL,
         max_tokens: 1024,
-        system: systemPrompt,
-        tools: TOOLS,
         messages,
+        tools: TOOLS,
+        tool_choice: 'auto',
       });
 
-      // If Claude wants to use tools
-      if (response.stop_reason === 'tool_use') {
-        // Add Claude's response (with tool_use blocks) to message history
-        messages.push({ role: 'assistant', content: response.content });
+      const choice = response.choices[0];
+      const assistantMessage = choice?.message;
 
-        // Execute all tool calls in this turn
-        const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      if (!assistantMessage) break;
 
-        for (const block of response.content) {
-          if (block.type === 'tool_use') {
-            const result = await executeTool(
-              block.name,
-              block.input as ToolInput,
-              supabase,
-              tenantId,
-            );
-            toolResults.push({
-              type: 'tool_result',
-              tool_use_id: block.id,
-              content: result,
-            });
-          }
+      // If the model wants to use tools
+      if (choice.finish_reason === 'tool_calls' && assistantMessage.tool_calls?.length) {
+        // Add assistant message (with tool_calls) to history
+        messages.push({
+          role: 'assistant',
+          content: assistantMessage.content ?? null,
+          tool_calls: assistantMessage.tool_calls,
+        });
+
+        // Execute all tool calls in this turn and feed results back
+        for (const toolCall of assistantMessage.tool_calls) {
+          const toolInput = JSON.parse(toolCall.function.arguments) as ToolInput;
+          const result = await executeTool(
+            toolCall.function.name,
+            toolInput,
+            supabase,
+            tenantId,
+          );
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: result,
+          });
         }
 
-        // Feed tool results back to Claude
-        messages.push({ role: 'user', content: toolResults });
         continue;
       }
 
-      // Claude is done (stop_reason === 'end_turn')
-      const textBlock = response.content.find(b => b.type === 'text');
-      finalResponse = textBlock && 'text' in textBlock ? textBlock.text : '';
+      // Model is done
+      finalResponse = assistantMessage.content ?? '';
       break;
     }
 

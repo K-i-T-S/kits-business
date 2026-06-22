@@ -13,7 +13,7 @@ interface GenerateParams {
 }
 
 /**
- * Hook to generate bilingual menu descriptions via Claude AI
+ * Hook to generate bilingual menu descriptions via Groq AI
  * Calls the restaurant-ai-assistant Edge Function
  */
 export function useAIContentGenerator() {
@@ -47,22 +47,6 @@ export function useAIContentGenerator() {
 
       if (typeof result.en === 'string' && typeof result.ar === 'string') {
         return { en: result.en, ar: result.ar };
-      }
-
-      // If the response is wrapped in a content field (Claude API format)
-      if (result.content) {
-        const content = result.content as Array<{ type: string; text?: string }>;
-        const textContent = content.find(c => c.type === 'text');
-        if (textContent && textContent.text) {
-          try {
-            const parsed = JSON.parse(textContent.text) as AIMenuDescription;
-            if (parsed.en && parsed.ar) {
-              return parsed;
-            }
-          } catch {
-            // Fall through to error
-          }
-        }
       }
 
       throw new Error('Unexpected response format from AI service');

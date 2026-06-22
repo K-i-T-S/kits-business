@@ -40,22 +40,23 @@ import { toast } from 'sonner';
 import BillSplitter from '@/components/restaurant/BillSplitter';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
+import { useRestaurantRealtime } from '@/hooks/useRestaurantRealtime';
+import { supabase } from '@/utils/supabaseClient';
 import type {
   RestaurantTable,
   TableOrder,
   RestaurantOrderItem,
-  TableOrderExtended,
-  CourseType,
-  PendingOrder,
-  PendingOrderItem,
-  SplitType,
-  BillSplitPart,
   RestaurantSettings,
   RestaurantMenuCategory,
   RestaurantMenuItem,
+  CourseType,
+  SplitType,
+  BillSplitPart,
+  PendingOrder,
+  PendingOrderItem,
+  TableOrderExtended,
 } from '@/types/restaurant';
 import { COURSE_LABELS } from '@/types/restaurant';
-import { supabase } from '@/utils/supabaseClient';
 
 type DetailTab = 'orders' | 'bill' | 'notes';
 type MainTab = 'tables' | 'orders' | 'queue' | 'pending';
@@ -709,6 +710,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   const tenantId = currentTenant?.id;
 
   const {
+    order: hookOrder,
     items,
     pendingOrders,
     totals,

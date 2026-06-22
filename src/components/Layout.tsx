@@ -42,6 +42,7 @@ import {
   Mail,
   MessageCircle,
   Instagram,
+  Truck,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -195,6 +196,7 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.vertical.recipes', 'Recipes & Cost'), icon: ChefHat, href: '/restaurant/recipes' },
         { name: t('nav.vertical.branches', 'Branches'), icon: Building2, href: '/restaurant/branches' },
+        { name: t('nav.vertical.delivery', 'Delivery'), icon: Truck, href: '/restaurant/delivery' },
         { name: t('nav.vertical.restaurantSettings', 'Settings'), icon: Settings, href: '/restaurant/settings' },
       ],
     },

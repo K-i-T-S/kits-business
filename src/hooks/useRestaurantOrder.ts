@@ -117,6 +117,27 @@ export function useRestaurantOrder(
     void refreshPendingOrders();
   }, [loadOrder, refreshPendingOrders]);
 
+  // ── Realtime: reload order items on any change to this order's items ────────
+  useEffect(() => {
+    if (!orderId || !tenantId) return;
+
+    const channel = supabase
+      .channel(`order-items-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'restaurant_order_items',
+          filter: `order_id=eq.${orderId}`,
+        },
+        () => { void loadOrder(); },
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [orderId, tenantId, loadOrder]);
+
   // ── Computed totals ──────────────────────────────────────────────────────
   const totals: BillTotals = (() => {
     const subtotal = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);

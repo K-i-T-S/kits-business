@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 
 import Layout from '@/components/Layout';
 import FloorPlan from '@/components/restaurant/FloorPlan';
-import MenuEditor from '@/components/restaurant/MenuEditor';
 import RoleGate from '@/components/RoleGate';
 import { useApp } from '@/context/AppContext';
 import { containerVariants, itemVariants } from '@/utils/animationVariants';
@@ -75,7 +74,6 @@ function useSections(tenantId: string | undefined) {
 
 // ── Other types ───────────────────────────────────────────────────────────────
 
-type Tab = 'floor' | 'menu';
 type SplitMode = 'equal' | 'by_seat' | 'percentage';
 
 interface NewItemForm {
@@ -102,7 +100,6 @@ export default function TableManagement() {
   const tenantId = currentTenant?.id;
   const { sections, save: saveSections } = useSections(tenantId);
 
-  const [tab, setTab] = useState<Tab>('floor');
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [orders, setOrders] = useState<TableOrder[]>([]);
   const [orderItems, setOrderItems] = useState<RestaurantOrderItem[]>([]);
@@ -314,18 +311,6 @@ export default function TableManagement() {
                   Sections
                 </button>
               </RoleGate>
-              <button
-                onClick={() => setTab('floor')}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${tab === 'floor' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
-              >
-                {t('restaurant.floorPlan', 'Floor Plan')}
-              </button>
-              <button
-                onClick={() => setTab('menu')}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${tab === 'menu' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
-              >
-                {t('restaurant.menuManagement', 'Menu')}
-              </button>
             </div>
           </div>
 
@@ -441,12 +426,7 @@ export default function TableManagement() {
             </div>
           )}
 
-          {tab === 'menu' ? (
-            <div className="rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl p-6">
-              <MenuEditor />
-            </div>
-          ) : (
-            <>
+          <>
               {/* ── Section filter tabs ── */}
               <motion.div
                 className="mb-4 flex flex-wrap gap-2"
@@ -796,7 +776,6 @@ export default function TableManagement() {
                 </div>
               </div>
             </>
-          )}
         </div>
       </div>
 

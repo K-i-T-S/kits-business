@@ -41,11 +41,12 @@ async function addArgileChargeToOrder(
     .from('table_orders')
     .select('id')
     .eq('table_id', tableId)
+    .eq('tenant_id', tenantId)
     .eq('status', 'open')
     .limit(1);
   const orderId = orders?.[0]?.id as string | undefined;
   if (!orderId) return false;
-  await supabase.from('restaurant_order_items').insert({
+  const { error } = await supabase.from('restaurant_order_items').insert({
     tenant_id: tenantId,
     order_id: orderId,
     product_name: productName,
@@ -56,6 +57,7 @@ async function addArgileChargeToOrder(
     status: 'served',
     sent_at: new Date().toISOString(),
   });
+  if (error) { console.error('[ArgileStation] addArgileChargeToOrder failed:', error); return false; }
   return true;
 }
 

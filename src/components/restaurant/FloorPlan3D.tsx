@@ -175,7 +175,7 @@ export function FloorPlan3D({
 
   if (isLoading) {
     return (
-      <div className="h-full w-full" style={{ minHeight: 500 }}>
+      <div className="h-full w-full"  style={{ minHeight: 0 }}>
         <LoadingOverlay />
       </div>
     );
@@ -184,7 +184,7 @@ export function FloorPlan3D({
   return (
     <div
       className="relative h-full w-full flex-1"
-      style={{ background: '#0a0f1e', minHeight: 500 }}
+      style={{ background: '#0a0f1e', minHeight: 0 }}
     >
       {/* Empty state overlay — shown before Canvas so 3D still renders beneath */}
       {tables.length === 0 && (

@@ -490,12 +490,11 @@ export default function RestaurantHub() {
       </AnimatePresence>
 
       {/* ── Main content ──────────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col md:flex-row overflow-hidden">
+      <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
 
         {/* ── Left: Floor plan or Analytics ──────────────────────────────── */}
         <motion.main
-          className="flex-1 overflow-hidden"
-          style={{ minHeight: 400 }}
+          className="md:flex-1 md:overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.1 }}
@@ -504,12 +503,12 @@ export default function RestaurantHub() {
             {viewMode === 'floor' ? (
               <motion.div
                 key="floor"
-                className="h-full flex flex-col"
+                className="flex flex-col"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                style={{ minHeight: 400 }}
+                style={{ height: 'clamp(360px, 56dvh, 100%)' }}
               >
                 <WebGLErrorBoundary
                   fallback={

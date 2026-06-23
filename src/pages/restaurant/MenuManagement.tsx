@@ -28,6 +28,7 @@ import Layout from '@/components/Layout';
 import { AIContentGeneratorModal } from '@/components/restaurant/AIContentGeneratorModal';
 import { useApp } from '@/context/AppContext';
 import type {
+  BranchMenuOverride,
   RestaurantMenuCategory,
   RestaurantMenuItem,
   RestaurantTable,
@@ -71,15 +72,6 @@ const QR_PALETTES = [
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-
-interface BranchMenuOverride {
-  id: string;
-  tenant_id: string;
-  branch_id: string;
-  menu_item_id: string;
-  is_available: boolean;
-  price_override_usd: number | null;
-}
 
 interface RestaurantBranchMin {
   id: string;

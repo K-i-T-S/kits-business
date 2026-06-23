@@ -1,4 +1,4 @@
-import { Settings2, Save, ToggleLeft, ToggleRight, AlertCircle, QrCode, Copy, Check, ExternalLink } from 'lucide-react';
+import { Settings2, Save, ToggleLeft, ToggleRight, AlertCircle, QrCode, Copy, Check, ExternalLink, Clock, MapPin, DollarSign, Trash2, Plus } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -9,6 +9,10 @@ import { useApp } from '@/context/AppContext';
 import type { RestaurantSettings, OrderFlow, PaymentMode } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
 
+// ---------------------------------------------------------------------------
+// QR palette config
+// ---------------------------------------------------------------------------
+
 const QR_PALETTES = [
   { key: 'dark-luxury', label: 'Dark Luxury', bg: '#0a0f1e', accent: '#c8a96e' },
   { key: 'beirut-night', label: 'Beirut Night', bg: '#0d0d0d', accent: '#e63946' },
@@ -17,6 +21,89 @@ const QR_PALETTES = [
   { key: 'classic-bistro', label: 'Classic Bistro', bg: '#1c1410', accent: '#d4a853' },
   { key: 'modern-minimal', label: 'Modern Minimal', bg: '#111111', accent: '#ffffff' },
 ] as const;
+
+// ---------------------------------------------------------------------------
+// Operating Hours types + defaults
+// ---------------------------------------------------------------------------
+
+type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
+interface DaySchedule {
+  open: boolean;
+  openTime: string;
+  closeTime: string;
+}
+
+type OperatingHours = Record<DayKey, DaySchedule>;
+
+const DAY_KEYS: DayKey[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const DAY_LABELS: Record<DayKey, string> = {
+  monday: 'Monday',
+  tuesday: 'Tuesday',
+  wednesday: 'Wednesday',
+  thursday: 'Thursday',
+  friday: 'Friday',
+  saturday: 'Saturday',
+  sunday: 'Sunday',
+};
+
+const DEFAULT_HOURS: OperatingHours = {
+  monday:    { open: true,  openTime: '11:00', closeTime: '23:00' },
+  tuesday:   { open: true,  openTime: '11:00', closeTime: '23:00' },
+  wednesday: { open: true,  openTime: '11:00', closeTime: '23:00' },
+  thursday:  { open: true,  openTime: '11:00', closeTime: '00:00' },
+  friday:    { open: true,  openTime: '11:00', closeTime: '01:00' },
+  saturday:  { open: true,  openTime: '11:00', closeTime: '01:00' },
+  sunday:    { open: false, openTime: '11:00', closeTime: '23:00' },
+};
+
+function isValidOperatingHours(v: unknown): v is OperatingHours {
+  if (typeof v !== 'object' || v === null) return false;
+  return DAY_KEYS.every((day) => {
+    const entry = (v as Record<string, unknown>)[day];
+    if (typeof entry !== 'object' || entry === null) return false;
+    const e = entry as Record<string, unknown>;
+    return typeof e['open'] === 'boolean'
+      && typeof e['openTime'] === 'string'
+      && typeof e['closeTime'] === 'string';
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Currency preference types + defaults
+// ---------------------------------------------------------------------------
+
+type CurrencyDisplay = 'usd' | 'lbp' | 'both';
+
+interface CurrencyPref {
+  display: CurrencyDisplay;
+  lbpRate: number;
+}
+
+const DEFAULT_CURRENCY_PREF: CurrencyPref = { display: 'both', lbpRate: 89500 };
+
+function isValidCurrencyPref(v: unknown): v is CurrencyPref {
+  if (typeof v !== 'object' || v === null) return false;
+  const o = v as Record<string, unknown>;
+  return (o['display'] === 'usd' || o['display'] === 'lbp' || o['display'] === 'both')
+    && typeof o['lbpRate'] === 'number'
+    && o['lbpRate'] > 0;
+}
+
+// ---------------------------------------------------------------------------
+// Floor sections helpers
+// ---------------------------------------------------------------------------
+
+const DEFAULT_SECTIONS: string[] = ['Main Hall', 'Terrace', 'Private Room', 'Bar'];
+
+function isValidSections(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((s) => typeof s === 'string');
+}
+
+// ---------------------------------------------------------------------------
+// Misc helpers
+// ---------------------------------------------------------------------------
 
 function slugify(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -32,6 +119,10 @@ const DEFAULT_SETTINGS: Omit<RestaurantSettings, 'id' | 'tenant_id'> = {
   tip_pool_enabled: false,
   slow_service_threshold_minutes: 15,
 };
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
 
 interface ToggleRowProps {
   label: string;
@@ -62,6 +153,10 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 export default function RestaurantSettings() {
   const { t } = useTranslation();
   const { currentTenant } = useApp();
@@ -79,6 +174,120 @@ export default function RestaurantSettings() {
   const [slugError, setSlugError] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // ---- localStorage-backed state ----
+  const [operatingHours, setOperatingHours] = useState<OperatingHours>(DEFAULT_HOURS);
+  const [sections, setSections] = useState<string[]>(DEFAULT_SECTIONS);
+  const [currencyPref, setCurrencyPref] = useState<CurrencyPref>(DEFAULT_CURRENCY_PREF);
+  // Tracks which section name is being edited inline
+  const [editingSection, setEditingSection] = useState<number | null>(null);
+  const [editingSectionValue, setEditingSectionValue] = useState('');
+
+  // ---- Load localStorage data ----
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const rawHours = localStorage.getItem(`kits-operating-hours-${tenantId}`);
+    if (rawHours) {
+      try {
+        const parsed: unknown = JSON.parse(rawHours);
+        if (isValidOperatingHours(parsed)) setOperatingHours(parsed);
+      } catch {
+        // ignore malformed JSON, keep default
+      }
+    }
+
+    const rawSections = localStorage.getItem(`kits-sections-${tenantId}`);
+    if (rawSections) {
+      try {
+        const parsed: unknown = JSON.parse(rawSections);
+        if (isValidSections(parsed) && parsed.length > 0) setSections(parsed);
+      } catch {
+        // ignore malformed JSON, keep default
+      }
+    }
+
+    const rawCurrency = localStorage.getItem(`kits-currency-pref-${tenantId}`);
+    if (rawCurrency) {
+      try {
+        const parsed: unknown = JSON.parse(rawCurrency);
+        if (isValidCurrencyPref(parsed)) setCurrencyPref(parsed);
+      } catch {
+        // ignore malformed JSON, keep default
+      }
+    }
+  }, [tenantId]);
+
+  // ---- Auto-save helpers ----
+  const saveHours = useCallback((hours: OperatingHours) => {
+    if (!tenantId) return;
+    localStorage.setItem(`kits-operating-hours-${tenantId}`, JSON.stringify(hours));
+  }, [tenantId]);
+
+  const saveSections = useCallback((secs: string[]) => {
+    if (!tenantId) return;
+    localStorage.setItem(`kits-sections-${tenantId}`, JSON.stringify(secs));
+  }, [tenantId]);
+
+  const saveCurrencyPref = useCallback((pref: CurrencyPref) => {
+    if (!tenantId) return;
+    localStorage.setItem(`kits-currency-pref-${tenantId}`, JSON.stringify(pref));
+  }, [tenantId]);
+
+  // ---- Operating Hours handlers ----
+  const updateDaySchedule = (day: DayKey, patch: Partial<DaySchedule>) => {
+    setOperatingHours((prev) => {
+      const next = { ...prev, [day]: { ...prev[day], ...patch } };
+      return next;
+    });
+  };
+
+  const handleSaveHours = () => {
+    saveHours(operatingHours);
+    toast.success('Operating hours saved');
+  };
+
+  // ---- Sections handlers ----
+  const handleAddSection = () => {
+    const next = [...sections, `Section ${sections.length + 1}`];
+    setSections(next);
+    saveSections(next);
+  };
+
+  const handleDeleteSection = (idx: number) => {
+    if (sections.length <= 1) return;
+    const next = sections.filter((_, i) => i !== idx);
+    setSections(next);
+    saveSections(next);
+  };
+
+  const handleStartEditSection = (idx: number) => {
+    setEditingSection(idx);
+    setEditingSectionValue(sections[idx] ?? '');
+  };
+
+  const handleCommitSectionEdit = () => {
+    if (editingSection === null) return;
+    const trimmed = editingSectionValue.trim();
+    if (!trimmed) {
+      setEditingSection(null);
+      return;
+    }
+    const next = sections.map((s, i) => (i === editingSection ? trimmed : s));
+    setSections(next);
+    saveSections(next);
+    setEditingSection(null);
+  };
+
+  // ---- Currency pref handlers ----
+  const updateCurrencyPref = (patch: Partial<CurrencyPref>) => {
+    setCurrencyPref((prev) => {
+      const next = { ...prev, ...patch };
+      saveCurrencyPref(next);
+      return next;
+    });
+  };
+
+  // ---- Supabase load ----
   const loadSettings = useCallback(async () => {
     if (!tenantId) return;
     setLoading(true);
@@ -373,6 +582,219 @@ export default function RestaurantSettings() {
                     <span>5m</span><span>30m</span><span>60m</span>
                   </div>
                 </div>
+              </section>
+
+              {/* ----------------------------------------------------------------
+                  Operating Hours
+              ---------------------------------------------------------------- */}
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-400 flex-none" />
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
+                    Operating Hours
+                  </h2>
+                </div>
+
+                <div className="space-y-2">
+                  {DAY_KEYS.map((day) => {
+                    const schedule = operatingHours[day];
+                    return (
+                      <div
+                        key={day}
+                        className={`flex items-center gap-3 rounded-xl p-3 transition-colors ${
+                          schedule.open ? 'bg-white/5' : 'bg-white/[0.02] opacity-60'
+                        }`}
+                      >
+                        {/* Open/closed checkbox */}
+                        <input
+                          type="checkbox"
+                          id={`day-open-${day}`}
+                          checked={schedule.open}
+                          onChange={(e) => updateDaySchedule(day, { open: e.target.checked })}
+                          className="h-4 w-4 flex-none accent-amber-500 cursor-pointer"
+                          aria-label={`${DAY_LABELS[day]} open`}
+                        />
+
+                        {/* Day name */}
+                        <label
+                          htmlFor={`day-open-${day}`}
+                          className="w-24 flex-none text-sm font-semibold text-white cursor-pointer select-none"
+                        >
+                          {DAY_LABELS[day]}
+                        </label>
+
+                        {schedule.open ? (
+                          <div className="flex flex-1 items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-white/40 uppercase tracking-wide">Opens</span>
+                              <input
+                                type="time"
+                                value={schedule.openTime}
+                                onChange={(e) => updateDaySchedule(day, { openTime: e.target.value })}
+                                className="bg-slate-800 border border-white/20 text-white rounded-lg px-2 py-1 text-sm"
+                                aria-label={`${DAY_LABELS[day]} opening time`}
+                              />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-white/40 uppercase tracking-wide">Closes</span>
+                              <input
+                                type="time"
+                                value={schedule.closeTime}
+                                onChange={(e) => updateDaySchedule(day, { closeTime: e.target.value })}
+                                className="bg-slate-800 border border-white/20 text-white rounded-lg px-2 py-1 text-sm"
+                                aria-label={`${DAY_LABELS[day]} closing time`}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="flex-1 text-xs text-white/30 italic">Closed</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={handleSaveHours}
+                  className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+                >
+                  <Save className="h-4 w-4 text-amber-400" />
+                  Save Hours
+                </button>
+              </section>
+
+              {/* ----------------------------------------------------------------
+                  Floor Sections
+              ---------------------------------------------------------------- */}
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-amber-400 flex-none" />
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
+                    Floor Sections
+                  </h2>
+                </div>
+
+                <div className="space-y-2">
+                  {sections.map((section, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      {editingSection === idx ? (
+                        <input
+                          type="text"
+                          value={editingSectionValue}
+                          autoFocus
+                          onChange={(e) => setEditingSectionValue(e.target.value)}
+                          onBlur={handleCommitSectionEdit}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleCommitSectionEdit();
+                            if (e.key === 'Escape') setEditingSection(null);
+                          }}
+                          className="flex-1 min-w-0 bg-slate-800 border border-amber-500/50 text-white rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-amber-500"
+                          aria-label="Edit section name"
+                        />
+                      ) : (
+                        <button
+                          className="flex-1 min-w-0 text-start text-sm text-white hover:text-amber-300 transition-colors truncate"
+                          onClick={() => handleStartEditSection(idx)}
+                          aria-label={`Edit section: ${section}`}
+                        >
+                          {section}
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleDeleteSection(idx)}
+                        disabled={sections.length <= 1}
+                        className="flex-none text-white/30 hover:text-red-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                        aria-label={`Delete section ${section}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleAddSection}
+                  className="flex items-center gap-2 rounded-xl border border-dashed border-white/20 px-4 py-2 text-sm font-semibold text-white/60 hover:border-amber-500/40 hover:text-amber-300 transition-colors w-full justify-center"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Section
+                </button>
+              </section>
+
+              {/* ----------------------------------------------------------------
+                  Currency Display Preference
+              ---------------------------------------------------------------- */}
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-amber-400 flex-none" />
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
+                    Currency Display
+                  </h2>
+                </div>
+
+                <div className="space-y-2">
+                  {(
+                    [
+                      { value: 'usd',  label: 'USD only',   desc: 'Show prices in US Dollars' },
+                      { value: 'lbp',  label: 'LBP only',   desc: 'Show prices in Lebanese Pounds' },
+                      { value: 'both', label: 'Show both',  desc: 'Display USD and LBP side by side' },
+                    ] satisfies { value: CurrencyDisplay; label: string; desc: string }[]
+                  ).map(({ value, label, desc }) => (
+                    <label
+                      key={value}
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all ${
+                        currencyPref.display === value
+                          ? 'border-amber-500/50 bg-amber-500/10'
+                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="currency-display"
+                        value={value}
+                        checked={currencyPref.display === value}
+                        onChange={() => updateCurrencyPref({ display: value })}
+                        className="accent-amber-500"
+                        aria-label={label}
+                      />
+                      <div className="flex-1">
+                        <p className={`text-sm font-semibold ${currencyPref.display === value ? 'text-amber-300' : 'text-white/70'}`}>
+                          {label}
+                        </p>
+                        <p className="text-xs text-white/40">{desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                {(currencyPref.display === 'lbp' || currencyPref.display === 'both') && (
+                  <div className="ps-4 border-s-2 border-amber-500/30">
+                    <label className="mb-1.5 block text-xs font-semibold text-white/70" htmlFor="lbp-rate">
+                      Exchange rate{' '}
+                      <span className="font-normal text-white/40">(LBP per USD)</span>
+                    </label>
+                    <input
+                      id="lbp-rate"
+                      type="number"
+                      min={1}
+                      step={500}
+                      value={currencyPref.lbpRate}
+                      onChange={(e) => {
+                        const rate = parseInt(e.target.value, 10);
+                        if (!isNaN(rate) && rate > 0) updateCurrencyPref({ lbpRate: rate });
+                      }}
+                      className="w-full rounded-xl border border-white/10 bg-slate-800/80 px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
+                      aria-label="LBP per USD exchange rate"
+                    />
+                    <p className="mt-1 text-[10px] text-white/30">
+                      Current rate: 1 USD = {currencyPref.lbpRate.toLocaleString()} LBP
+                    </p>
+                  </div>
+                )}
               </section>
 
               {/* Digital Menu (QR) */}

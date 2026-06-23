@@ -346,16 +346,20 @@ interface QuickAddModalProps {
   currentOrderItemIds: string[];
   allMenuItems: RestaurantMenuItem[];
   tenantId: string | null | undefined;
+  defaultCourse: CourseType;
   onClose: () => void;
-  onConfirm: (qty: number, notes: string, unitPrice: number, modifiers: Array<{ name: string; price_delta: number }>) => void;
+  onConfirm: (qty: number, notes: string, unitPrice: number, modifiers: Array<{ name: string; price_delta: number }>, course: CourseType) => void;
   onUpsellAdd?: (item: RestaurantMenuItem, qty: number) => void;
 }
+
+const COURSES_LIST = ['appetizers', 'mains', 'desserts'] as const;
 
 function QuickAddModal({
   item,
   currentOrderItemIds,
   allMenuItems,
   tenantId,
+  defaultCourse,
   onClose,
   onConfirm,
   onUpsellAdd,
@@ -363,6 +367,7 @@ function QuickAddModal({
   const { t } = useTranslation();
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState<CourseType>(defaultCourse);
   const [modifierGroups, setModifierGroups] = useState<ModifierGroupWithModifiers[]>([]);
   // selectedModifiers: groupId → array of modifier ids
   const [selectedModifiers, setSelectedModifiers] = useState<Record<string, string[]>>({});
@@ -478,7 +483,7 @@ function QuickAddModal({
     ].filter(Boolean).join(' · ');
 
     const modifierPayload = allSelectedModifiers.map((m) => ({ name: m.name, price_delta: m.price_delta }));
-    onConfirm(qty, notesWithModifiers, unitPrice, modifierPayload);
+    onConfirm(qty, notesWithModifiers, unitPrice, modifierPayload, selectedCourse);
     onClose();
   };
 
@@ -569,6 +574,22 @@ function QuickAddModal({
             })}
           </div>
         )}
+
+        {/* Course selector */}
+        <div className="mb-4">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-white/40">
+            {t('restaurant.course', 'Course')}
+          </label>
+          <select
+            value={selectedCourse}
+            onChange={(e) => setSelectedCourse(e.target.value as CourseType)}
+            className="bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2 w-full text-sm"
+          >
+            {COURSES_LIST.map((c) => (
+              <option key={c} value={c}>{COURSE_LABELS[c]}</option>
+            ))}
+          </select>
+        </div>
 
         {/* Quantity stepper */}
         <div className="mb-4">
@@ -867,7 +888,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   };
 
   const {
-    order: _hookOrder,
+    order: hookOrder,
     items,
     pendingOrders,
     totals,
@@ -885,6 +906,9 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
     splitByItem,
     saveBillSplit,
   } = useRestaurantOrder(table.id, order?.id ?? null);
+
+  // Live current_course from hook (falls back to prop order for initial render)
+  const currentCourse: CourseType = hookOrder?.current_course ?? order?.current_course ?? 'appetizers';
 
   const [activeTab, setActiveTab] = useState<DetailTab>('orders');
   const [selectedPendingOrder, setSelectedPendingOrder] = useState<PendingOrder | null>(null);
@@ -1149,6 +1173,30 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
               </div>
             ) : (
               <>
+                {/* Course Progress Bar */}
+                <div className="flex items-center gap-2 mb-3">
+                  {courses.map((course) => {
+                    const courseIdx = courses.indexOf(course);
+                    const currentIdx = courses.indexOf(currentCourse);
+                    const isPast = courseIdx < currentIdx;
+                    const isCurrent = course === currentCourse;
+                    return (
+                      <span
+                        key={course}
+                        className={`flex-1 px-3 py-1.5 rounded-full text-xs font-semibold text-center capitalize transition-all ${
+                          isCurrent
+                            ? 'bg-indigo-600 text-white'
+                            : isPast
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-white/5 text-white/30'
+                        }`}
+                      >
+                        {isCurrent ? '→ ' : ''}{COURSE_LABELS[course]}
+                      </span>
+                    );
+                  })}
+                </div>
+
                 {/* Course sections */}
                 {courses.map((course) => {
                   const courseItems = items.filter((i) => i.course === course);
@@ -1568,13 +1616,14 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
           currentOrderItemIds={items.map((i) => i.menu_item_id).filter((id): id is string => id !== null && id !== selectedMenuItem.id)}
           allMenuItems={menuItems}
           tenantId={tenantId}
+          defaultCourse={currentCourse}
           onClose={() => setSelectedMenuItem(null)}
-          onConfirm={(qty, notes, unitPrice, modifiers) => {
+          onConfirm={(qty, notes, unitPrice, modifiers, course) => {
             void addItem({
               product_name: selectedMenuItem.name,
               quantity: qty,
               unit_price: unitPrice,
-              course: 'mains',
+              course,
               notes: notes || undefined,
               menu_item_id: selectedMenuItem.id,
               modifiers,
@@ -1585,7 +1634,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
               product_name: upsellItem.name,
               quantity: 1,
               unit_price: upsellItem.base_price_usd,
-              course: 'mains',
+              course: currentCourse,
               menu_item_id: upsellItem.id,
             });
           }}

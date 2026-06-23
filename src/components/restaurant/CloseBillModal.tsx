@@ -257,6 +257,8 @@ function ReceiptView({ receipt, onClose, canSendWhatsApp }: ReceiptViewProps) {
 export interface CloseBillModalProps {
   /** The table number shown in the receipt header */
   tableNumber: number | null;
+  /** The UUID of the restaurant table — used for feedback insert */
+  tableId: string | null;
   /** Full extended order object — used for service_charge_pct, vat_pct, existing tip/discount */
   order: TableOrderExtended;
   /** All items on this order */
@@ -280,8 +282,22 @@ export interface CloseBillModalProps {
   onRedeemPoints?: (discountUsd: number) => void;
 }
 
+// ── Star rating ───────────────────────────────────────────────────────────────
+function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button key={n} onClick={() => onChange(n)} className="text-xl leading-none">
+          <span className={n <= value ? 'text-yellow-400' : 'text-white/20'}>★</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function CloseBillModal({
   tableNumber,
+  tableId,
   order,
   items,
   onUpdateTip,
@@ -305,6 +321,14 @@ export default function CloseBillModal({
   const [confirming, setConfirming] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [redeemingPoints, setRedeemingPoints] = useState(false);
+
+  // Feedback state
+  const [overallRating, setOverallRating] = useState(0);
+  const [foodRating, setFoodRating] = useState(0);
+  const [serviceRating, setServiceRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackDone, setFeedbackDone] = useState(false);
 
   // Keyboard accessibility: focus close button on mount
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -371,6 +395,33 @@ export default function CloseBillModal({
     }
   };
 
+  // ── Feedback handler ─────────────────────────────────────────────────────────
+  const handleSubmitFeedback = async () => {
+    if (!currentTenant?.id) return;
+    setSubmittingFeedback(true);
+    try {
+      const { error } = await supabase.from('restaurant_table_feedback').insert({
+        tenant_id: currentTenant.id,
+        table_id: tableId,
+        table_order_id: order.id,
+        overall_rating: overallRating || null,
+        food_rating: foodRating || null,
+        service_rating: serviceRating || null,
+        comment: feedbackComment.trim() || null,
+        submitted_at: new Date().toISOString(),
+      });
+      if (!error) {
+        toast.success(t('restaurant.feedback.thanks', 'Thank you for your feedback!'));
+        setFeedbackDone(true);
+      } else {
+        console.error('[Feedback submit]', error);
+        toast.error(t('restaurant.feedback.error', 'Failed to save feedback'));
+      }
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
   const paymentMethods: Array<{ key: CloseBillPaymentMethod; label: string }> = [
     { key: 'cash_usd', label: 'Cash USD' },
     { key: 'cash_lbp', label: 'Cash L.L.' },
@@ -411,7 +462,62 @@ export default function CloseBillModal({
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {receipt ? (
-            <ReceiptView receipt={receipt} onClose={onClose} canSendWhatsApp={canSendWhatsApp} />
+            <>
+              {/* Feedback section — shown before Print/Done */}
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-4">
+                <p className="text-sm font-semibold text-white">
+                  {t('restaurant.feedback.title', 'Rate Your Experience')}
+                </p>
+                {feedbackDone ? (
+                  <div className="flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-2 text-sm text-emerald-400">
+                    <span>✓</span>
+                    <span>{t('restaurant.feedback.recorded', 'Feedback recorded')}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-white/60">{t('restaurant.feedback.overall', 'Overall')}</span>
+                        <StarRating value={overallRating} onChange={setOverallRating} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-white/60">{t('restaurant.feedback.food', 'Food')}</span>
+                        <StarRating value={foodRating} onChange={setFoodRating} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-white/60">{t('restaurant.feedback.service', 'Service')}</span>
+                        <StarRating value={serviceRating} onChange={setServiceRating} />
+                      </div>
+                    </div>
+                    <textarea
+                      value={feedbackComment}
+                      onChange={(e) => setFeedbackComment(e.target.value)}
+                      placeholder={t('restaurant.feedback.commentPlaceholder', 'Optional comment…')}
+                      rows={2}
+                      className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:outline-none resize-none"
+                    />
+                    <div className="flex gap-3 items-center">
+                      <button
+                        onClick={() => { void handleSubmitFeedback(); }}
+                        disabled={submittingFeedback}
+                        className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                      >
+                        {submittingFeedback
+                          ? t('restaurant.feedback.submitting', 'Submitting…')
+                          : t('restaurant.feedback.submit', 'Submit Feedback')}
+                      </button>
+                      <button
+                        onClick={() => setFeedbackDone(true)}
+                        className="text-sm text-white/40 hover:text-white/60 transition-colors"
+                      >
+                        {t('restaurant.feedback.skip', 'Skip')}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+              <ReceiptView receipt={receipt} onClose={onClose} canSendWhatsApp={canSendWhatsApp} />
+            </>
           ) : (
             <>
               {/* Item line-items */}

@@ -1,0 +1,20 @@
+@media print {
+  body * { visibility: hidden; }
+  .thermal-receipt, .thermal-receipt * { visibility: visible; }
+  .thermal-receipt {
+    position: absolute;
+    left: 0; top: 0;
+    width: 80mm;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #000;
+  }
+  .thermal-receipt .receipt-header { text-align: center; margin-bottom: 8px; }
+  .thermal-receipt .receipt-divider { border-top: 1px dashed #000; margin: 4px 0; }
+  .thermal-receipt .receipt-row { display: flex; justify-content: space-between; }
+  .thermal-receipt .receipt-total { font-weight: bold; font-size: 14px; }
+  .thermal-receipt .receipt-footer { text-align: center; margin-top: 8px; font-size: 10px; }
+  /* Hide everything except the receipt when printing */
+  .no-print { display: none !important; }
+}

@@ -15,6 +15,8 @@ import {
   MessageCircle,
   Info,
   Save,
+  ShoppingCart,
+  ClipboardList,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +31,8 @@ import type {
   IngredientSupplier,
   WasteLogEntry,
   IngredientMovement,
+  RestaurantPurchaseOrder,
+  RestaurantPOItem,
 } from '@/types/restaurant';
 import {
   getIngredientStockStatus,
@@ -39,7 +43,7 @@ import {
 import { supabase } from '@/utils/supabaseClient';
 
 // ── Tab types ─────────────────────────────────────────────────
-type Tab = 'ingredients' | 'recipes' | 'food-cost' | 'suppliers' | 'waste';
+type Tab = 'ingredients' | 'recipes' | 'food-cost' | 'suppliers' | 'waste' | 'purchase-orders';
 
 // ── Auto-86 helper ────────────────────────────────────────────
 /**
@@ -206,6 +210,7 @@ export default function RecipeInventory() {
   const [suppliers, setSuppliers] = useState<IngredientSupplier[]>([]);
   const [wasteLog, setWasteLog] = useState<WasteLogEntry[]>([]);
   const [movements, setMovements] = useState<IngredientMovement[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<RestaurantPurchaseOrder[]>([]);
   // Maps menu item ids → names for recipe display
   const [menuItems, setMenuItems] = useState<Array<{ id: string; name: string; price: number }>>([]);
   // Maps recipe_id → menu_item_id
@@ -225,6 +230,9 @@ export default function RecipeInventory() {
   const [addSupplierOpen, setAddSupplierOpen] = useState(false);
   const [logWasteOpen, setLogWasteOpen] = useState(false);
   const [editIngredientOpen, setEditIngredientOpen] = useState(false);
+  const [createPOOpen, setCreatePOOpen] = useState(false);
+  const [poSubmitting, setPOSubmitting] = useState(false);
+  const [receivingPOId, setReceivingPOId] = useState<string | null>(null);
 
   const [selectedIngredient, setSelectedIngredient] = useState<RestaurantIngredient | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<RestaurantRecipe | null>(null);
@@ -264,6 +272,14 @@ export default function RecipeInventory() {
     ingredient_id: '', quantity: '', unit: 'g', reason: 'prep_waste', cost_value: '',
   });
 
+  // PO form state
+  const [poForm, setPOForm] = useState({
+    supplier_id: '', notes: '', expected_date: '',
+  });
+  const [poItems, setPOItems] = useState<Array<{
+    ingredient_id: string; quantity: string; unit_cost: string;
+  }>>([]);
+
   // Inline waste log form state (used in the Waste tab — separate from modal)
   const [inlineWasteIngredientId, setInlineWasteIngredientId] = useState('');
   const [inlineWasteQty, setInlineWasteQty] = useState('');
@@ -275,7 +291,7 @@ export default function RecipeInventory() {
     if (!tenantId) return;
     setLoading(true);
     try {
-      const [ingRes, recRes, rlRes, supRes, wlRes, mvRes, menuRes, mirRes] = await Promise.all([
+      const [ingRes, recRes, rlRes, supRes, wlRes, mvRes, menuRes, mirRes, poRes] = await Promise.all([
         supabase.from('restaurant_ingredients').select('*').eq('tenant_id', tenantId).order('name'),
         supabase.from('restaurant_recipes').select('*').eq('tenant_id', tenantId).order('name'),
         supabase.from('restaurant_recipe_ingredients').select('*').eq('tenant_id', tenantId),
@@ -284,6 +300,7 @@ export default function RecipeInventory() {
         supabase.from('restaurant_ingredient_movements').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(500),
         supabase.from('products').select('id, name, price').eq('tenant_id', tenantId).order('name'),
         supabase.from('restaurant_menu_item_recipes').select('*').eq('tenant_id', tenantId),
+        supabase.from('restaurant_purchase_orders').select('*, items:restaurant_purchase_order_items(*)').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(20),
       ]);
 
       if (ingRes.data) setIngredients(ingRes.data as RestaurantIngredient[]);
@@ -300,6 +317,7 @@ export default function RecipeInventory() {
         }
         setMenuItemRecipes(map);
       }
+      if (poRes.data) setPurchaseOrders(poRes.data as RestaurantPurchaseOrder[]);
     } catch (err) {
       console.error('[RecipeInventory] load error:', err);
       toast.error('Failed to load data');
@@ -729,6 +747,184 @@ export default function RecipeInventory() {
     }
   }
 
+  // ── Purchase Order helpers ────────────────────────────────
+
+  function generatePONumber(): string {
+    const now = new Date();
+    return `PO-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getTime()).slice(-4)}`;
+  }
+
+  async function handleCreatePO() {
+    if (!tenantId) return;
+    const validItems = poItems.filter((l) => l.ingredient_id && l.quantity);
+    if (validItems.length === 0) {
+      toast.error('Add at least one item to the purchase order');
+      return;
+    }
+    setPOSubmitting(true);
+    try {
+      const totalEstimated = validItems.reduce((sum, l) => {
+        const q = parseFloat(l.quantity) || 0;
+        const c = parseFloat(l.unit_cost) || 0;
+        return sum + q * c;
+      }, 0);
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { data: poData, error: poError } = await supabase
+        .from('restaurant_purchase_orders')
+        .insert({
+          tenant_id: tenantId,
+          supplier_id: poForm.supplier_id || null,
+          order_number: generatePONumber(),
+          status: 'draft',
+          expected_date: poForm.expected_date || null,
+          notes: poForm.notes || null,
+          total_estimated: totalEstimated,
+        })
+        .select()
+        .single();
+
+      if (poError || !poData) { toast.error(poError?.message ?? 'Failed to create PO'); return; }
+
+      const po = poData as RestaurantPurchaseOrder;
+
+      const itemRows = validItems.map((l) => ({
+        purchase_order_id: po.id,
+        ingredient_id: l.ingredient_id,
+        quantity_ordered: parseFloat(l.quantity) || 0,
+        quantity_received: 0,
+        unit_cost: parseFloat(l.unit_cost) || 0,
+      }));
+
+      const { error: itemError } = await supabase
+        .from('restaurant_purchase_order_items')
+        .insert(itemRows);
+
+      if (itemError) toast.error(`PO created but items failed: ${itemError.message}`);
+
+      toast.success(`Purchase order ${po.order_number} created`);
+      setCreatePOOpen(false);
+      setPOForm({ supplier_id: '', notes: '', expected_date: '' });
+      setPOItems([]);
+      void loadData();
+    } finally {
+      setPOSubmitting(false);
+    }
+  }
+
+  async function handleMarkPOOrdered(poId: string, orderNumber: string) {
+    const { error } = await supabase
+      .from('restaurant_purchase_orders')
+      .update({ status: 'ordered' })
+      .eq('id', poId);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${orderNumber} marked as ordered`);
+    void loadData();
+  }
+
+  async function handleReceivePO(po: RestaurantPurchaseOrder) {
+    if (!tenantId || !po.items || po.items.length === 0) {
+      toast.error('No items on this PO');
+      return;
+    }
+    setReceivingPOId(po.id);
+    try {
+      for (const item of po.items) {
+        if (item.quantity_ordered <= 0) continue;
+        const ing = ingredientMap.get(item.ingredient_id);
+        if (!ing) continue;
+
+        const newStock = ing.current_stock + item.quantity_ordered;
+        const newCost = newStock > 0
+          ? (ing.current_stock * ing.cost_per_unit + item.quantity_ordered * item.unit_cost) / newStock
+          : item.unit_cost;
+
+        const { error: stockErr } = await supabase
+          .from('restaurant_ingredients')
+          .update({
+            current_stock: newStock,
+            cost_per_unit: newCost,
+            last_restocked_at: new Date().toISOString(),
+          })
+          .eq('id', ing.id);
+
+        if (stockErr) { toast.error(`Stock update failed for ${ing.name}: ${stockErr.message}`); continue; }
+
+        await supabase.from('restaurant_ingredient_movements').insert({
+          tenant_id: tenantId,
+          ingredient_id: ing.id,
+          movement_type: 'receive',
+          quantity: item.quantity_ordered,
+          unit_cost: item.unit_cost || null,
+          reference_id: po.id,
+          reference_type: 'purchase_order',
+          notes: `PO ${po.order_number}`,
+        });
+
+        await supabase
+          .from('restaurant_purchase_order_items')
+          .update({ quantity_received: item.quantity_ordered })
+          .eq('id', item.id);
+
+        await applyAutoEightySix(tenantId, ing.id, newStock, ing.name);
+      }
+
+      await supabase
+        .from('restaurant_purchase_orders')
+        .update({ status: 'received', received_at: new Date().toISOString() })
+        .eq('id', po.id);
+
+      toast.success(`PO ${po.order_number} received — stock updated for ${po.items.length} ingredient${po.items.length !== 1 ? 's' : ''}`);
+      void loadData();
+    } finally {
+      setReceivingPOId(null);
+    }
+  }
+
+  async function handleAutoCreatePO(lowStockItems: RestaurantIngredient[]) {
+    if (!tenantId || lowStockItems.length === 0) return;
+    setPOSubmitting(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { data: poData, error: poError } = await supabase
+        .from('restaurant_purchase_orders')
+        .insert({
+          tenant_id: tenantId,
+          supplier_id: null,
+          order_number: generatePONumber(),
+          status: 'draft',
+          notes: 'Auto-generated from low stock alert',
+          total_estimated: 0,
+        })
+        .select()
+        .single();
+
+      if (poError || !poData) { toast.error(poError?.message ?? 'Failed to create PO'); return; }
+
+      const po = poData as RestaurantPurchaseOrder;
+
+      const itemRows = lowStockItems.map((ing) => ({
+        purchase_order_id: po.id,
+        ingredient_id: ing.id,
+        quantity_ordered: Math.max(0, (ing.par_level ?? 0) - ing.current_stock),
+        quantity_received: 0,
+        unit_cost: ing.cost_per_unit,
+      }));
+
+      const { error: itemError } = await supabase
+        .from('restaurant_purchase_order_items')
+        .insert(itemRows);
+
+      if (itemError) toast.error(`PO created but items failed: ${itemError.message}`);
+
+      toast.success(`Auto-PO ${po.order_number} created with ${itemRows.length} items`);
+      setActiveTab('purchase-orders');
+      void loadData();
+    } finally {
+      setPOSubmitting(false);
+    }
+  }
+
   // ── Live recipe cost for builder ──────────────────────────
   const builderCost = recipeLines2.reduce((sum, line) => {
     if (!line.ingredient_id || !line.quantity) return sum;
@@ -740,6 +936,12 @@ export default function RecipeInventory() {
   // ── Max waste bar chart scale ─────────────────────────────
   const maxDailyWaste = Math.max(...dailyWaste.map((d) => d.cost), 0.01);
 
+  // Low stock items (below par level) for PO banner
+  const lowStockIngredients = useMemo(
+    () => ingredients.filter((i) => i.is_active && i.par_level > 0 && i.current_stock < i.par_level),
+    [ingredients],
+  );
+
   // ── Tab config ────────────────────────────────────────────
   const tabs: Array<{ id: Tab; label: string; icon: typeof ChefHat; badge?: number }> = [
     { id: 'ingredients', label: t('recipes.tabs.ingredients', 'Ingredients'), icon: Package },
@@ -747,6 +949,7 @@ export default function RecipeInventory() {
     { id: 'food-cost', label: t('recipes.tabs.foodCost', 'Food Cost'), icon: BarChart3 },
     { id: 'suppliers', label: t('recipes.tabs.suppliers', 'Suppliers'), icon: Truck },
     { id: 'waste', label: t('recipes.tabs.waste', 'Waste Log'), icon: Trash2 },
+    { id: 'purchase-orders', label: 'Purchase Orders', icon: ShoppingCart, badge: lowStockIngredients.length > 0 ? lowStockIngredients.length : undefined },
   ];
 
   const criticalCount = ingredients.filter((i) => i.is_active && getIngredientStockStatus(i) === 'critical').length;
@@ -1435,6 +1638,175 @@ export default function RecipeInventory() {
             </div>
           </div>
         )}
+
+        {/* ── TAB: Purchase Orders ── */}
+        {activeTab === 'purchase-orders' && (
+          <div className="space-y-5">
+
+            {/* Low Stock Alert Banner */}
+            {lowStockIngredients.length > 0 && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-amber-400 flex-shrink-0" />
+                  <span className="text-amber-300 text-sm">
+                    {lowStockIngredients.length} ingredient{lowStockIngredients.length !== 1 ? 's' : ''} below par level
+                  </span>
+                </div>
+                <button
+                  onClick={() => { void handleAutoCreatePO(lowStockIngredients); }}
+                  disabled={poSubmitting}
+                  className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg hover:bg-amber-500/30 disabled:opacity-50 transition-colors flex-shrink-0"
+                >
+                  {poSubmitting ? 'Creating…' : 'Auto-create PO'}
+                </button>
+              </div>
+            )}
+
+            {/* Suppliers compact list */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-sky-400" /> Suppliers
+                </h3>
+                <button
+                  onClick={() => setAddSupplierOpen(true)}
+                  className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add Supplier
+                </button>
+              </div>
+              {suppliers.length === 0 ? (
+                <p className="text-xs text-white/40 italic">No suppliers yet. Add a supplier to attach to purchase orders.</p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {suppliers.map((sup) => (
+                    <div key={sup.id} className="rounded-xl border border-white/5 bg-white/5 px-3 py-2.5 flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-white">{sup.name}</div>
+                        {sup.contact_name && <div className="text-xs text-white/50">{sup.contact_name}</div>}
+                        {sup.phone && <div className="text-xs text-white/40">{sup.phone}</div>}
+                      </div>
+                      {sup.is_active ? (
+                        <span className="text-[10px] rounded-full bg-emerald-500/15 text-emerald-400 px-2 py-0.5">Active</span>
+                      ) : (
+                        <span className="text-[10px] rounded-full bg-white/10 text-white/40 px-2 py-0.5">Inactive</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* PO List header + Create button */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-indigo-400" />
+                Purchase Orders
+                <span className="text-xs text-white/40 font-normal">Last 20</span>
+              </h3>
+              <button
+                onClick={() => setCreatePOOpen(true)}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              >
+                <Plus className="h-4 w-4" /> New PO
+              </button>
+            </div>
+
+            {/* PO cards */}
+            {purchaseOrders.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center">
+                <ShoppingCart className="mx-auto mb-3 h-10 w-10 text-white/20" />
+                <p className="text-white/40">No purchase orders yet. Create your first PO to track ingredient ordering.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {purchaseOrders.map((po) => {
+                  const sup = suppliers.find((s) => s.id === po.supplier_id);
+                  const itemCount = po.items?.length ?? 0;
+                  const statusColors: Record<string, string> = {
+                    draft: 'bg-white/10 text-white/60',
+                    ordered: 'bg-sky-500/15 text-sky-400',
+                    received: 'bg-emerald-500/15 text-emerald-400',
+                    cancelled: 'bg-red-500/15 text-red-400',
+                  };
+                  const isReceiving = receivingPOId === po.id;
+                  return (
+                    <div key={po.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-white">{po.order_number}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColors[po.status] ?? 'bg-white/10 text-white/50'}`}>
+                              {po.status.charAt(0).toUpperCase() + po.status.slice(1)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-white/50 mt-0.5">
+                            {new Date(po.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {sup && <span> · {sup.name}</span>}
+                            {po.expected_date && <span> · Expected {po.expected_date}</span>}
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-sm font-bold text-white">${fmt(po.total_estimated)}</div>
+                          <div className="text-xs text-white/40">{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
+                        </div>
+                      </div>
+
+                      {/* PO items */}
+                      {po.items && po.items.length > 0 && (
+                        <div className="rounded-xl border border-white/5 bg-white/3 divide-y divide-white/5">
+                          {po.items.map((item: RestaurantPOItem) => {
+                            const ing = ingredientMap.get(item.ingredient_id);
+                            return (
+                              <div key={item.id} className="flex items-center gap-3 px-3 py-2 text-xs">
+                                <span className="flex-1 text-white/80">{ing?.name ?? item.ingredient_id}</span>
+                                <span className="text-white/50 font-mono">{fmt(item.quantity_ordered, 2)} {ing?.unit ?? ''}</span>
+                                <span className="text-white/40 font-mono">@ ${fmt(item.unit_cost, 4)}</span>
+                                <span className="text-white/60 font-mono">${fmt(item.quantity_ordered * item.unit_cost)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {po.notes && (
+                        <p className="text-xs text-white/40 italic">{po.notes}</p>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex gap-2 pt-1">
+                        {po.status === 'draft' && (
+                          <button
+                            onClick={() => { void handleMarkPOOrdered(po.id, po.order_number); }}
+                            className="flex items-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-400 hover:bg-sky-500/20 transition-colors"
+                          >
+                            <Truck className="h-3.5 w-3.5" /> Mark as Ordered
+                          </button>
+                        )}
+                        {po.status === 'ordered' && (
+                          <button
+                            onClick={() => { void handleReceivePO(po); }}
+                            disabled={isReceiving}
+                            className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+                          >
+                            <Package className="h-3.5 w-3.5" />
+                            {isReceiving ? 'Receiving…' : 'Mark as Received'}
+                          </button>
+                        )}
+                        {po.status === 'received' && po.received_at && (
+                          <span className="flex items-center gap-1 text-xs text-emerald-400/70">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            Received {new Date(po.received_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Modals ── */}
@@ -1810,6 +2182,125 @@ export default function RecipeInventory() {
             <button onClick={() => setLogWasteOpen(false)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white/70 hover:bg-white/10">Cancel</button>
             <button onClick={() => { void handleLogWaste(); }} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 px-4 py-2.5 text-sm font-medium text-white hover:opacity-90">
               <Trash2 className="h-4 w-4" /> Log Waste
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Create Purchase Order */}
+      {createPOOpen && (
+        <Modal title="New Purchase Order" onClose={() => { setCreatePOOpen(false); setPOItems([]); setPOForm({ supplier_id: '', notes: '', expected_date: '' }); }}>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField label="Supplier">
+                <select className={SELECT_CLASS} value={poForm.supplier_id} onChange={(e) => setPOForm((p) => ({ ...p, supplier_id: e.target.value }))}>
+                  <option value="">No supplier assigned</option>
+                  {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Expected Delivery Date">
+                <input className={INPUT_CLASS} type="date" value={poForm.expected_date} onChange={(e) => setPOForm((p) => ({ ...p, expected_date: e.target.value }))} />
+              </FormField>
+              <div className="sm:col-span-2">
+                <FormField label="Notes">
+                  <input className={INPUT_CLASS} value={poForm.notes} onChange={(e) => setPOForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Delivery notes, reference numbers..." />
+                </FormField>
+              </div>
+            </div>
+
+            {/* PO line items */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-white">Items *</h3>
+                <button
+                  onClick={() => setPOItems((p) => [...p, { ingredient_id: '', quantity: '', unit_cost: '' }])}
+                  className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add Item
+                </button>
+              </div>
+
+              {poItems.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-xs text-white/40">
+                  Click "Add Item" to add ingredients to this PO
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {poItems.map((item, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                      <div className="col-span-5">
+                        {idx === 0 && <div className="text-[10px] text-white/40 mb-1">Ingredient</div>}
+                        <select
+                          className={SELECT_CLASS}
+                          value={item.ingredient_id}
+                          onChange={(e) => {
+                            const ing = ingredientMap.get(e.target.value);
+                            setPOItems((p) => p.map((l, i) => i === idx ? {
+                              ...l,
+                              ingredient_id: e.target.value,
+                              unit_cost: ing ? String(ing.cost_per_unit) : l.unit_cost,
+                            } : l));
+                          }}
+                        >
+                          <option value="">Select ingredient…</option>
+                          {ingredients.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
+                        </select>
+                      </div>
+                      <div className="col-span-3">
+                        {idx === 0 && <div className="text-[10px] text-white/40 mb-1">Qty to Order</div>}
+                        <input
+                          className={INPUT_CLASS}
+                          type="number" step="0.001" min="0"
+                          value={item.quantity}
+                          onChange={(e) => setPOItems((p) => p.map((l, i) => i === idx ? { ...l, quantity: e.target.value } : l))}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        {idx === 0 && <div className="text-[10px] text-white/40 mb-1">Unit Cost (USD)</div>}
+                        <input
+                          className={INPUT_CLASS}
+                          type="number" step="0.0001" min="0"
+                          value={item.unit_cost}
+                          onChange={(e) => setPOItems((p) => p.map((l, i) => i === idx ? { ...l, unit_cost: e.target.value } : l))}
+                          placeholder="0.0000"
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        <button onClick={() => setPOItems((p) => p.filter((_, i) => i !== idx))} className="rounded-lg p-1.5 text-white/30 hover:bg-white/10 hover:text-red-400 transition-colors">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Live total */}
+              {poItems.some((l) => l.quantity && l.unit_cost) && (
+                <div className="mt-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 flex items-center justify-between">
+                  <span className="text-sm text-white/60">Estimated total</span>
+                  <span className="text-lg font-bold text-indigo-300">
+                    ${fmt(poItems.reduce((s, l) => s + (parseFloat(l.quantity) || 0) * (parseFloat(l.unit_cost) || 0), 0))}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={() => { setCreatePOOpen(false); setPOItems([]); setPOForm({ supplier_id: '', notes: '', expected_date: '' }); }}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white/70 hover:bg-white/10"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => { void handleCreatePO(); }}
+              disabled={poSubmitting}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" /> {poSubmitting ? 'Creating…' : 'Create PO'}
             </button>
           </div>
         </Modal>

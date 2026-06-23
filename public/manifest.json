@@ -1,1 +1,44 @@
-{"name": "All-in-One Business Terminal", "short_name": "Business Terminal", "description": "Complete business management solution with POS, CRM, Inventory, and Analytics", "start_url": "/", "display": "standalone", "background_color": "#0a0e1a", "theme_color": "#2c3de3", "orientation": "portrait-primary", "scope": "/", "lang": "en", "categories": ["business", "productivity", "finance"], "icons": [{"src": "/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"}, {"src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}], "shortcuts": [{"name": "POS System", "short_name": "POS", "description": "Point of Sale system", "url": "/pos", "icons": [{"src": "/logo.png", "sizes": "96x96"}]}, {"name": "Inventory", "short_name": "Inventory", "description": "Inventory management", "url": "/inventory", "icons": [{"src": "/logo.png", "sizes": "96x96"}]}, {"name": "CRM", "short_name": "CRM", "description": "Customer relationship management", "url": "/crm", "icons": [{"src": "/logo.png", "sizes": "96x96"}]}], "screenshots": [{"src": "/screenshots/desktop-1.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Main dashboard on desktop"}, {"src": "/screenshots/mobile-1.png", "sizes": "375x667", "type": "image/png", "form_factor": "narrow", "label": "Mobile view of dashboard"}]}
+{
+  "name": "KiTS Restaurant OS",
+  "short_name": "KiTS",
+  "description": "Restaurant Management Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["business", "productivity", "food"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Waiter",
+      "url": "/restaurant/waiter",
+      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Kitchen",
+      "url": "/restaurant/kds",
+      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "POS",
+      "url": "/pos",
+      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
+    }
+  ]
+}

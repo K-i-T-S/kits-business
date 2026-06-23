@@ -43,7 +43,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/your-supabase-url\.supabase\.co\/rest\/v1\/restaurant_menu/,
+            urlPattern: /^https:\/\/pytndxjeznhhyycjasep\.supabase\.co\/rest\/v1\/restaurant_menu/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'menu-api',
@@ -55,7 +55,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^https:\/\/your-supabase-url\.supabase\.co\/storage\/v1\/object\/public\/menu-images/,
+            urlPattern: /^https:\/\/pytndxjeznhhyycjasep\.supabase\.co\/storage\/v1\/object\/public\/menu-images/,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'menu-images',

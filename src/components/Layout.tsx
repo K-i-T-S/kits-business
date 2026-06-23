@@ -72,6 +72,8 @@ import BrandIdentityModal from './BrandIdentityModal';
 import GlobalSearch from './GlobalSearch';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import NotificationCenter from './NotificationCenter';
+import { OfflineIndicator } from './OfflineIndicator';
+import { PWAInstallPrompt } from './PWAInstallPrompt';
 import StoreSwitcher from './StoreSwitcher';
 import TenantInfo from './TenantInfo';
 import TenantSwitcher from './TenantSwitcher';
@@ -881,6 +883,10 @@ export default function Layout({ children }: LayoutProps) {
           open={brandModalOpen}
           onClose={() => setBrandModalOpen(false)}
         />
+
+        {/* PWA: offline status banner + install prompt */}
+        <OfflineIndicator />
+        <PWAInstallPrompt />
       </div>
     </div>
   );

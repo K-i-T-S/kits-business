@@ -248,6 +248,7 @@ interface TicketCardProps {
   onBumpAll: (orderId: string) => void;
   onTogglePriority: (orderId: string) => void;
   onBumpAllReady: (orderId: string) => void;
+  onMarkAllReady: (orderId: string) => void;
 }
 
 function TicketCard({
@@ -256,12 +257,14 @@ function TicketCard({
   onBumpAll,
   onTogglePriority,
   onBumpAllReady,
+  onMarkAllReady,
 }: TicketCardProps) {
   const { t } = useTranslation();
   const { order, table, items, isPriority } = ticket;
   const elapsed = useElapsedSeconds(order.opened_at);
   const level = ageLevel(elapsed);
   const pendingItems = items.filter((i) => i.status === 'pending' || i.status === 'in_progress');
+  const inProgressItems = items.filter((i) => i.status === 'in_progress');
   const readyItems = items.filter((i) => i.status === 'ready');
   const [partial, setPartial] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -286,6 +289,8 @@ function TicketCard({
     acc[key].push(item);
     return acc;
   }, {});
+
+  const courseCount = Object.keys(groupedByCourse).length;
 
   const borderClass = isPriority
     ? 'border-indigo-500/80 shadow-[0_0_24px_rgba(99,102,241,0.4)]'
@@ -327,25 +332,37 @@ function TicketCard({
             order.current_course === 'mains' || order.current_course === 'desserts';
           return (
             <div key={course}>
-              <div className="mb-1.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-white/30">
-                {COURSE_LABELS[course as keyof typeof COURSE_LABELS] ?? course}
-                {isMains && !courseFired && (
-                  <span className="flex items-center gap-1 rounded-full bg-slate-700 px-2 py-0.5 text-[9px] text-amber-400">
-                    <Lock className="h-2.5 w-2.5" />
-                    {t('restaurant.kds.held', 'HELD')}
-                  </span>
-                )}
-                {isMains && courseFired && (
-                  <span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-[9px] text-red-400">
-                    <Flame className="h-2.5 w-2.5" />
-                    {t('restaurant.kds.fire', 'FIRE')}
-                  </span>
-                )}
-              </div>
+              {courseCount > 1 && (
+                <div className="mb-1.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  {COURSE_LABELS[course as keyof typeof COURSE_LABELS] ?? course}
+                  {isMains && !courseFired && (
+                    <span className="flex items-center gap-1 rounded-full bg-slate-700 px-2 py-0.5 text-[9px] text-amber-400">
+                      <Lock className="h-2.5 w-2.5" />
+                      {t('restaurant.kds.held', 'HELD')}
+                    </span>
+                  )}
+                  {isMains && courseFired && (
+                    <span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-[9px] text-red-400">
+                      <Flame className="h-2.5 w-2.5" />
+                      {t('restaurant.kds.fire', 'FIRE')}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="space-y-1.5">
                 {courseItems.map((item) => {
                   const isReady = item.status === 'ready' || item.status === 'served';
                   const isSelected = selected.has(item.id);
+                  const itemElapsed = item.sent_at
+                    ? Math.floor((Date.now() - new Date(item.sent_at).getTime()) / 60000)
+                    : 0;
+                  const itemColor = isReady
+                    ? 'text-emerald-400 line-through'
+                    : itemElapsed > 25
+                      ? 'text-red-400'
+                      : itemElapsed > 15
+                        ? 'text-amber-400'
+                        : 'text-white';
                   return (
                     <div
                       key={item.id}
@@ -366,22 +383,27 @@ function TicketCard({
                         />
                       )}
                       <span className="flex-1 min-w-0">
-                        <span
-                          className={`text-sm font-medium ${
-                            isReady ? 'text-emerald-400 line-through' : 'text-white'
-                          }`}
-                        >
+                        <span className={`text-sm font-medium ${itemColor}`}>
                           {item.quantity}× {item.product_name}
                         </span>
                         {item.modifiers.length > 0 && (
-                          <div className="mt-0.5 text-xs text-white/40">
-                            {item.modifiers.map((m) => m.name).join(' · ')}
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.modifiers.map((mod, i) => (
+                              <span
+                                key={i}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60"
+                              >
+                                + {mod.name}
+                                {mod.price_delta !== 0 &&
+                                  ` ($${mod.price_delta > 0 ? '+' : ''}${mod.price_delta.toFixed(2)})`}
+                              </span>
+                            ))}
                           </div>
                         )}
                         {item.notes && (
-                          <div className="mt-0.5 text-xs italic text-amber-400/80">
-                            {item.notes}
-                          </div>
+                          <p className="text-[11px] italic text-amber-400/80 mt-0.5">
+                            📝 {item.notes}
+                          </p>
                         )}
                       </span>
                       {!partial && (
@@ -430,7 +452,15 @@ function TicketCard({
           </div>
         ) : (
           <div className="flex gap-2">
-            {pendingItems.length > 0 && (
+            {inProgressItems.length > 0 && (
+              <button
+                onClick={() => onMarkAllReady(order.id)}
+                className="min-h-[44px] flex-1 rounded-xl bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg px-3 py-1.5 active:scale-[0.98] transition-all"
+              >
+                ✓ {t('restaurant.kds.allReady', 'All Ready')} ({inProgressItems.length})
+              </button>
+            )}
+            {inProgressItems.length === 0 && pendingItems.length > 0 && (
               <button
                 onClick={() => onBumpAll(order.id)}
                 className="min-h-[44px] flex-1 rounded-xl bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-400 hover:bg-emerald-500/30 active:scale-[0.98] transition-all"
@@ -708,6 +738,37 @@ export default function KitchenDisplay() {
     [tickets, tenantId],
   );
 
+  const handleMarkAllReady = useCallback(
+    async (orderId: string) => {
+      if (!tenantId) return;
+      const { error } = await supabase
+        .from('restaurant_order_items')
+        .update({ status: 'ready', ready_at: new Date().toISOString() })
+        .eq('order_id', orderId)
+        .eq('tenant_id', tenantId)
+        .eq('status', 'in_progress');
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setTickets((prev) =>
+        prev.map((tk) =>
+          tk.order.id === orderId
+            ? {
+              ...tk,
+              items: tk.items.map((i) =>
+                i.status === 'in_progress'
+                  ? { ...i, status: 'ready' as const, ready_at: new Date().toISOString() }
+                  : i,
+              ),
+            }
+            : tk,
+        ),
+      );
+    },
+    [tenantId],
+  );
+
   const handleBumpAllReady = useCallback(
     async (orderId: string) => {
       const ticket = tickets.find((tk) => tk.order.id === orderId);
@@ -955,6 +1016,9 @@ export default function KitchenDisplay() {
                 onTogglePriority={handleTogglePriority}
                 onBumpAllReady={(id) => {
                   void handleBumpAllReady(id);
+                }}
+                onMarkAllReady={(id) => {
+                  void handleMarkAllReady(id);
                 }}
               />
             ))}

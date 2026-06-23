@@ -2,7 +2,7 @@ import {
   BarChart2, Users, Clock, TrendingUp, AlertCircle, Flame,
   Brain, Zap, ChevronDown, RefreshCw, Star, Trophy,
 } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -650,101 +650,19 @@ interface ItemProfit {
 }
 
 interface MenuProfitabilityPanelProps {
-  tenantId?: string;
+  profits: ItemProfit[];
+  profitLoading: boolean;
 }
 
-function MenuProfitabilityPanel({ tenantId }: MenuProfitabilityPanelProps) {
-  const [profits, setProfits] = useState<ItemProfit[]>([]);
-  const [avgCostPct, setAvgCostPct] = useState(0);
-  const [profitLoading, setProfitLoading] = useState(true);
+function MenuProfitabilityPanel({ profits, profitLoading }: MenuProfitabilityPanelProps) {
   const [profitExpanded, setProfitExpanded] = useState(true);
 
-  useEffect(() => {
-    if (!tenantId) {
-      setProfitLoading(false);
-      return;
-    }
-
-    const fetchProfitability = async () => {
-      setProfitLoading(true);
-      try {
-        const [menuItemsRes, itemRecipeLinksRes, recipeIngredientsRes, ingredientsRes] = await Promise.all([
-          supabase
-            .from('restaurant_menu_items')
-            .select('id, name, price_usd')
-            .eq('tenant_id', tenantId)
-            .eq('is_active', true),
-          supabase
-            .from('restaurant_menu_item_recipes')
-            .select('menu_item_id, recipe_id')
-            .eq('tenant_id', tenantId),
-          supabase
-            .from('restaurant_recipe_ingredients')
-            .select('recipe_id, ingredient_id, quantity')
-            .eq('tenant_id', tenantId),
-          supabase
-            .from('restaurant_ingredients')
-            .select('id, cost_per_unit')
-            .eq('tenant_id', tenantId),
-        ]);
-
-        const menuItems = (menuItemsRes.data ?? []) as MenuItemRow[];
-        const itemRecipeLinks = (itemRecipeLinksRes.data ?? []) as ItemRecipeLink[];
-        const recipeIngredients = (recipeIngredientsRes.data ?? []) as RecipeIngredientRow[];
-        const ingredients = (ingredientsRes.data ?? []) as IngredientCostRow[];
-
-        const computed: ItemProfit[] = menuItems.map((item) => {
-          const recipeLink = itemRecipeLinks.find((l) => l.menu_item_id === item.id);
-          if (!recipeLink) {
-            return {
-              id: item.id,
-              name: item.name,
-              price: item.price_usd,
-              cost: 0,
-              margin: item.price_usd,
-              marginPct: 100,
-              costPct: 0,
-              hasRecipe: false,
-            };
-          }
-
-          const lines = recipeIngredients.filter((r) => r.recipe_id === recipeLink.recipe_id);
-          const cost = lines.reduce((sum, line) => {
-            const ing = ingredients.find((i) => i.id === line.ingredient_id);
-            return sum + line.quantity * (ing?.cost_per_unit ?? 0);
-          }, 0);
-
-          const margin = item.price_usd - cost;
-          return {
-            id: item.id,
-            name: item.name,
-            price: item.price_usd,
-            cost,
-            margin,
-            marginPct: item.price_usd > 0 ? (margin / item.price_usd) * 100 : 0,
-            costPct: item.price_usd > 0 ? (cost / item.price_usd) * 100 : 0,
-            hasRecipe: true,
-          };
-        }).sort((a, b) => b.marginPct - a.marginPct);
-
-        const withRecipe = computed.filter((p) => p.hasRecipe);
-        const avg = withRecipe.length
-          ? withRecipe.reduce((s, p) => s + p.costPct, 0) / withRecipe.length
-          : 0;
-
-        setProfits(computed);
-        setAvgCostPct(avg);
-      } catch (err) {
-        console.error('[MenuProfitabilityPanel] fetch error:', err);
-        setProfits([]);
-        setAvgCostPct(0);
-      } finally {
-        setProfitLoading(false);
-      }
-    };
-
-    void fetchProfitability();
-  }, [tenantId]);
+  const avgCostPct = useMemo(() => {
+    const withRecipe = profits.filter((p) => p.hasRecipe);
+    return withRecipe.length
+      ? withRecipe.reduce((s, p) => s + p.costPct, 0) / withRecipe.length
+      : 0;
+  }, [profits]);
 
   const withRecipe = profits.filter((p) => p.hasRecipe);
 
@@ -829,6 +747,191 @@ function MenuProfitabilityPanel({ tenantId }: MenuProfitabilityPanelProps) {
                   </tbody>
                 </table>
               )}
+            </>
+          )
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Menu Engineering Matrix ───────────────────────────────────────────────────
+
+type Quadrant = 'star' | 'plowhorse' | 'puzzle' | 'dog';
+
+interface MenuItemMatrix {
+  id: string;
+  name: string;
+  soldQty: number;
+  marginPct: number;
+  price: number;
+  quadrant: Quadrant;
+}
+
+const QUADRANTS: Record<Quadrant, { label: string; color: string; desc: string; icon: string }> = {
+  star: { label: 'Stars', color: 'amber', desc: 'High popularity, high margin — protect and promote these', icon: '⭐' },
+  puzzle: { label: 'Puzzles', color: 'purple', desc: 'High margin but unpopular — feature prominently on menu', icon: '🧩' },
+  plowhorse: { label: 'Plowhorses', color: 'blue', desc: 'Popular but low margin — reduce cost or raise price slightly', icon: '🐴' },
+  dog: { label: 'Dogs', color: 'red', desc: 'Low popularity and low margin — review for removal', icon: '🐶' },
+};
+
+function medianOf(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0
+    // eslint-disable-next-line security/detect-object-injection -- mid is derived from array.length, not user input
+    ? (sorted[mid] ?? 0)
+    // eslint-disable-next-line security/detect-object-injection -- mid is derived from array.length, not user input
+    : ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
+}
+
+interface MenuEngineeringMatrixProps {
+  profits: ItemProfit[];
+  velocities: ItemVelocity[];
+}
+
+function MenuEngineeringMatrix({ profits, velocities }: MenuEngineeringMatrixProps) {
+  const [expanded, setExpanded] = useState(true);
+
+  const matrixItems = useMemo<MenuItemMatrix[]>(() => {
+    // Build a name→qty map from velocity data
+    const qtyByName = new Map<string, number>();
+    for (const v of velocities) {
+      qtyByName.set(v.name.toLowerCase().trim(), v.last7DayQty);
+    }
+
+    // Only include items that have a recipe (have real margin data)
+    const eligible = profits.filter((p) => p.hasRecipe);
+    if (eligible.length === 0) return [];
+
+    // Compute median thresholds
+    const qtys = eligible.map((p) => qtyByName.get(p.name.toLowerCase().trim()) ?? 0);
+    const margins = eligible.map((p) => p.marginPct);
+    const medQty = medianOf(qtys);
+    const medMargin = medianOf(margins);
+
+    return eligible.map((p) => {
+      const soldQty = qtyByName.get(p.name.toLowerCase().trim()) ?? 0;
+      const highQty = soldQty >= medQty;
+      const highMargin = p.marginPct >= medMargin;
+
+      let quadrant: Quadrant;
+      if (highQty && highMargin) quadrant = 'star';
+      else if (highQty && !highMargin) quadrant = 'plowhorse';
+      else if (!highQty && highMargin) quadrant = 'puzzle';
+      else quadrant = 'dog';
+
+      return {
+        id: p.id,
+        name: p.name,
+        soldQty,
+        marginPct: p.marginPct,
+        price: p.price,
+        quadrant,
+      };
+    });
+  }, [profits, velocities]);
+
+  const hasData = matrixItems.length > 0;
+
+  // Count per quadrant
+  const counts = useMemo(
+    () => ({
+      star: matrixItems.filter((i) => i.quadrant === 'star').length,
+      plowhorse: matrixItems.filter((i) => i.quadrant === 'plowhorse').length,
+      puzzle: matrixItems.filter((i) => i.quadrant === 'puzzle').length,
+      dog: matrixItems.filter((i) => i.quadrant === 'dog').length,
+    }),
+    [matrixItems],
+  );
+
+  return (
+    <section>
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+        {/* Panel header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <BarChart2 size={18} className="text-amber-400" />
+            <h3 className="text-white font-semibold">Menu Engineering Matrix</h3>
+            <span className="text-white/40 text-xs">Stars · Plowhorses · Puzzles · Dogs</span>
+            <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5 ml-1">
+              median split
+            </span>
+          </div>
+          <button
+            onClick={() => setExpanded((prev) => !prev)}
+            className="text-white/40 hover:text-white/60 transition-colors"
+            aria-label={expanded ? 'Collapse menu engineering panel' : 'Expand menu engineering panel'}
+          >
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            />
+          </button>
+        </div>
+
+        {expanded && (
+          !hasData ? (
+            <p className="text-white/30 text-sm text-center py-8 leading-relaxed">
+              Need sales + recipe data for menu engineering.
+              <br />
+              Ensure items have recipes and at least 7 days of sales.
+            </p>
+          ) : (
+            <>
+              {/* 2×2 matrix grid — order: star (top-left), puzzle (top-right), plowhorse (bottom-left), dog (bottom-right) */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {(['star', 'puzzle', 'plowhorse', 'dog'] as const).map((q) => {
+                  const items = matrixItems.filter((i) => i.quadrant === q);
+                  // eslint-disable-next-line security/detect-object-injection -- q is from a typed const tuple, not user input
+                  const { label, color, desc, icon } = QUADRANTS[q];
+                  return (
+                    <div
+                      key={q}
+                      className={`bg-${color}-500/10 border border-${color}-500/20 rounded-xl p-4`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-white text-sm">{icon} {label}</span>
+                        <span className={`text-${color}-400 text-xs bg-${color}-500/20 px-2 py-0.5 rounded-full`}>
+                          {items.length} {items.length === 1 ? 'item' : 'items'}
+                        </span>
+                      </div>
+                      <p className="text-white/40 text-xs mb-3">{desc}</p>
+                      <ul className="space-y-1">
+                        {items.slice(0, 4).map((item) => (
+                          <li key={item.id} className="text-white/70 text-xs flex justify-between gap-2">
+                            <span className="truncate">{item.name}</span>
+                            <span className="text-white/30 shrink-0">{item.soldQty} sold</span>
+                          </li>
+                        ))}
+                        {items.length > 4 && (
+                          <li className="text-white/30 text-xs">+{items.length - 4} more</li>
+                        )}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Summary row */}
+              <div className="grid grid-cols-4 gap-2 border-t border-white/8 pt-4">
+                {(
+                  [
+                    { key: 'star' as const, label: 'Stars', sub: 'protect', textClass: 'text-amber-400' },
+                    { key: 'plowhorse' as const, label: 'Plowhorses', sub: 're-engineer cost', textClass: 'text-blue-400' },
+                    { key: 'puzzle' as const, label: 'Puzzles', sub: 'promote', textClass: 'text-purple-400' },
+                    { key: 'dog' as const, label: 'Dogs', sub: 'review', textClass: 'text-red-400' },
+                  ] as const
+                ).map(({ key, label, sub, textClass }) => (
+                  <div key={key} className="text-center">
+                    {/* eslint-disable-next-line security/detect-object-injection -- key is from a typed const tuple, not user input */}
+                    <p className={`text-lg font-bold ${textClass}`}>{counts[key]}</p>
+                    <p className="text-white/50 text-xs">{label}</p>
+                    <p className="text-white/25 text-[10px]">{sub}</p>
+                  </div>
+                ))}
+              </div>
             </>
           )
         )}
@@ -1019,6 +1122,9 @@ export default function RestaurantAnalytics() {
   const [insights, setInsights] = useState<MLInsight[]>([]);
   // Feedback
   const [feedback, setFeedback] = useState<TableFeedback[]>([]);
+  // Menu profitability (shared between MenuProfitabilityPanel and MenuEngineeringMatrix)
+  const [profits, setProfits] = useState<ItemProfit[]>([]);
+  const [profitLoading, setProfitLoading] = useState(true);
 
   const load = useCallback(async (showRefresh = false) => {
     if (!tenantId) return;
@@ -1150,6 +1256,88 @@ export default function RestaurantAnalytics() {
   }, [tenantId, range]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // ── Profitability fetch (shared by MenuProfitabilityPanel + MenuEngineeringMatrix) ──
+
+  useEffect(() => {
+    if (!tenantId) {
+      setProfitLoading(false);
+      return;
+    }
+
+    const fetchProfitability = async () => {
+      setProfitLoading(true);
+      try {
+        const [menuItemsRes, itemRecipeLinksRes, recipeIngredientsRes, ingredientsRes] = await Promise.all([
+          supabase
+            .from('restaurant_menu_items')
+            .select('id, name, price_usd')
+            .eq('tenant_id', tenantId)
+            .eq('is_active', true),
+          supabase
+            .from('restaurant_menu_item_recipes')
+            .select('menu_item_id, recipe_id')
+            .eq('tenant_id', tenantId),
+          supabase
+            .from('restaurant_recipe_ingredients')
+            .select('recipe_id, ingredient_id, quantity')
+            .eq('tenant_id', tenantId),
+          supabase
+            .from('restaurant_ingredients')
+            .select('id, cost_per_unit')
+            .eq('tenant_id', tenantId),
+        ]);
+
+        const menuItems = (menuItemsRes.data ?? []) as MenuItemRow[];
+        const itemRecipeLinks = (itemRecipeLinksRes.data ?? []) as ItemRecipeLink[];
+        const recipeIngredients = (recipeIngredientsRes.data ?? []) as RecipeIngredientRow[];
+        const ingredients = (ingredientsRes.data ?? []) as IngredientCostRow[];
+
+        const computed: ItemProfit[] = menuItems.map((item) => {
+          const recipeLink = itemRecipeLinks.find((l) => l.menu_item_id === item.id);
+          if (!recipeLink) {
+            return {
+              id: item.id,
+              name: item.name,
+              price: item.price_usd,
+              cost: 0,
+              margin: item.price_usd,
+              marginPct: 100,
+              costPct: 0,
+              hasRecipe: false,
+            };
+          }
+
+          const lines = recipeIngredients.filter((r) => r.recipe_id === recipeLink.recipe_id);
+          const cost = lines.reduce((sum, line) => {
+            const ing = ingredients.find((i) => i.id === line.ingredient_id);
+            return sum + line.quantity * (ing?.cost_per_unit ?? 0);
+          }, 0);
+
+          const margin = item.price_usd - cost;
+          return {
+            id: item.id,
+            name: item.name,
+            price: item.price_usd,
+            cost,
+            margin,
+            marginPct: item.price_usd > 0 ? (margin / item.price_usd) * 100 : 0,
+            costPct: item.price_usd > 0 ? (cost / item.price_usd) * 100 : 0,
+            hasRecipe: true,
+          };
+        }).sort((a, b) => b.marginPct - a.marginPct);
+
+        setProfits(computed);
+      } catch (err) {
+        console.error('[RestaurantAnalytics] profitability fetch error:', err);
+        setProfits([]);
+      } finally {
+        setProfitLoading(false);
+      }
+    };
+
+    void fetchProfitability();
+  }, [tenantId]);
 
   // ── Chart data ─────────────────────────────────────────────────────────────
 
@@ -1421,7 +1609,10 @@ export default function RestaurantAnalytics() {
             <DemandForecastPanel tenantId={tenantId} />
 
             {/* Menu Profitability Panel */}
-            <MenuProfitabilityPanel tenantId={tenantId} />
+            <MenuProfitabilityPanel profits={profits} profitLoading={profitLoading} />
+
+            {/* Menu Engineering Matrix */}
+            <MenuEngineeringMatrix profits={profits} velocities={velocities} />
 
             {/* Menu velocity */}
             <section>

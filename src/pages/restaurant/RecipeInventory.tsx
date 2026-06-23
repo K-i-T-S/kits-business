@@ -264,6 +264,12 @@ export default function RecipeInventory() {
     ingredient_id: '', quantity: '', unit: 'g', reason: 'prep_waste', cost_value: '',
   });
 
+  // Inline waste log form state (used in the Waste tab — separate from modal)
+  const [inlineWasteIngredientId, setInlineWasteIngredientId] = useState('');
+  const [inlineWasteQty, setInlineWasteQty] = useState('');
+  const [inlineWasteReason, setInlineWasteReason] = useState('spoilage');
+  const [inlineWasteSubmitting, setInlineWasteSubmitting] = useState(false);
+
   // ── Load all data ─────────────────────────────────────────
   const loadData = useCallback(async () => {
     if (!tenantId) return;
@@ -380,6 +386,38 @@ export default function RecipeInventory() {
   }, [wasteLog]);
 
   const totalWasteCost30 = wasteLast30.reduce((s, w) => s + (w.cost_value ?? 0), 0);
+
+  // By-reason cost breakdown (last 30d) — keyed by reason string
+  const wasteByReason = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const w of wasteLast30) {
+      const key = w.reason ?? 'other';
+      m.set(key, (m.get(key) ?? 0) + (w.cost_value ?? 0));
+    }
+    return m;
+  }, [wasteLast30]);
+
+  // By-ingredient cost breakdown (last 30d) — keyed by ingredient name
+  const wasteByIngredient = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const w of wasteLast30) {
+      const name = ingredientMap.get(w.ingredient_id)?.name ?? 'Unknown';
+      m.set(name, (m.get(name) ?? 0) + (w.cost_value ?? 0));
+    }
+    return m;
+  }, [wasteLast30, ingredientMap]);
+
+  const mostWastedIngredient = useMemo(() => {
+    const entries = [...wasteByIngredient.entries()];
+    if (entries.length === 0) return null;
+    return entries.reduce((a, b) => (b[1] > a[1] ? b : a));
+  }, [wasteByIngredient]);
+
+  const mostCommonReason = useMemo(() => {
+    const entries = [...wasteByReason.entries()];
+    if (entries.length === 0) return null;
+    return entries.reduce((a, b) => (b[1] > a[1] ? b : a));
+  }, [wasteByReason]);
 
   // Daily waste for the past 7 days
   const dailyWaste = useMemo(() => {
@@ -638,6 +676,57 @@ export default function RecipeInventory() {
     setLogWasteOpen(false);
     setWasteForm({ ingredient_id: '', quantity: '', unit: 'g', reason: 'prep_waste', cost_value: '' });
     void loadData();
+  }
+
+  async function handleInlineLogWaste() {
+    if (!tenantId || !inlineWasteIngredientId || !inlineWasteQty) {
+      toast.error('Select ingredient and enter quantity');
+      return;
+    }
+    const qty = parseFloat(inlineWasteQty);
+    if (isNaN(qty) || qty <= 0) { toast.error('Enter a valid quantity'); return; }
+    const ing = ingredientMap.get(inlineWasteIngredientId);
+    if (!ing) return;
+
+    setInlineWasteSubmitting(true);
+    try {
+      const costValue = qty * ing.cost_per_unit;
+
+      const { error: wlError } = await supabase.from('restaurant_waste_log').insert({
+        tenant_id: tenantId,
+        ingredient_id: ing.id,
+        quantity: qty,
+        unit: ing.unit,
+        reason: inlineWasteReason || null,
+        cost_value: costValue,
+      });
+      if (wlError) { toast.error(wlError.message); return; }
+
+      // Deduct from stock
+      const newQty = Math.max(0, ing.current_stock - qty);
+      await supabase.from('restaurant_ingredients').update({
+        current_stock: newQty,
+      }).eq('id', ing.id).eq('tenant_id', tenantId);
+
+      await supabase.from('restaurant_ingredient_movements').insert({
+        tenant_id: tenantId,
+        ingredient_id: ing.id,
+        movement_type: 'waste',
+        quantity: qty,
+        notes: inlineWasteReason || null,
+      });
+
+      // Auto-86 check
+      await applyAutoEightySix(tenantId, ing.id, newQty, ing.name);
+
+      toast.success(`Waste logged: ${qty} ${ing.unit} of ${ing.name}`);
+      setInlineWasteIngredientId('');
+      setInlineWasteQty('');
+      setInlineWasteReason('spoilage');
+      void loadData();
+    } finally {
+      setInlineWasteSubmitting(false);
+    }
   }
 
   // ── Live recipe cost for builder ──────────────────────────
@@ -1196,14 +1285,86 @@ export default function RecipeInventory() {
         {/* ── TAB: Waste Log ── */}
         {activeTab === 'waste' && (
           <div className="space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-white/50">Track ingredient waste to identify prep inefficiencies and reduce costs.</div>
+
+            {/* Inline Log Waste form */}
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <h4 className="text-white/80 text-sm font-medium mb-3">Log Waste</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={inlineWasteIngredientId}
+                  onChange={(e) => setInlineWasteIngredientId(e.target.value)}
+                  className="col-span-2 bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500/50"
+                >
+                  <option value="">Select ingredient</option>
+                  {ingredients.map((i) => (
+                    <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  placeholder="Quantity"
+                  value={inlineWasteQty}
+                  onChange={(e) => setInlineWasteQty(e.target.value)}
+                  min="0"
+                  step="0.001"
+                  className="bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500/50 placeholder-white/30"
+                />
+                <select
+                  value={inlineWasteReason}
+                  onChange={(e) => setInlineWasteReason(e.target.value)}
+                  className="bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500/50"
+                >
+                  <option value="spoilage">Spoilage</option>
+                  <option value="overproduction">Overproduction</option>
+                  <option value="spill">Spill/Accident</option>
+                  <option value="prep_waste">Trim/Prep waste</option>
+                  <option value="expired">Expired</option>
+                  <option value="quality">Quality rejection</option>
+                  <option value="dropped">Dropped/Accident</option>
+                  <option value="overcooked">Overcooked/Burnt</option>
+                  <option value="customer_return">Customer Return</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              {inlineWasteIngredientId && inlineWasteQty && (
+                <div className="mt-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-300">
+                  Estimated cost: ${fmt((parseFloat(inlineWasteQty) || 0) * (ingredientMap.get(inlineWasteIngredientId)?.cost_per_unit ?? 0))}
+                </div>
+              )}
               <button
-                onClick={() => setLogWasteOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                onClick={() => { void handleInlineLogWaste(); }}
+                disabled={inlineWasteSubmitting}
+                className="mt-3 w-full bg-red-600/30 hover:bg-red-600/50 disabled:opacity-50 text-red-300 border border-red-500/30 rounded-xl px-4 py-2 text-sm transition-colors"
               >
-                <Plus className="h-4 w-4" /> {t('recipes.logWaste', 'Log Waste')}
+                {inlineWasteSubmitting ? 'Logging...' : 'Log Waste'}
               </button>
+            </div>
+
+            {/* 30-day summary stats */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                <div className="text-xs text-white/50 mb-1">Total Waste Cost (30d)</div>
+                <div className="text-2xl font-bold text-red-400">${fmt(totalWasteCost30)}</div>
+                <div className="text-xs text-white/40 mt-1">{wasteLast30.length} events logged</div>
+              </div>
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                <div className="text-xs text-white/50 mb-1">Most Wasted Ingredient</div>
+                <div className="text-lg font-bold text-amber-400 truncate">
+                  {mostWastedIngredient ? mostWastedIngredient[0] : '—'}
+                </div>
+                <div className="text-xs text-white/40 mt-1">
+                  {mostWastedIngredient ? `$${fmt(mostWastedIngredient[1])} wasted` : 'No data yet'}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-white/50 mb-1">Most Common Reason</div>
+                <div className="text-lg font-bold text-white capitalize truncate">
+                  {mostCommonReason ? mostCommonReason[0].replace(/_/g, ' ') : '—'}
+                </div>
+                <div className="text-xs text-white/40 mt-1">
+                  {mostCommonReason ? `$${fmt(mostCommonReason[1])} cost` : 'No data yet'}
+                </div>
+              </div>
             </div>
 
             {/* 7-day waste chart */}
@@ -1239,11 +1400,11 @@ export default function RecipeInventory() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-left">
-                    <th className="px-4 py-3 font-medium text-white/50">Date</th>
+                    <th className="px-4 py-3 font-medium text-white/50">Time</th>
                     <th className="px-4 py-3 font-medium text-white/50">Ingredient</th>
-                    <th className="px-4 py-3 font-medium text-white/50">Quantity</th>
+                    <th className="px-4 py-3 font-medium text-white/50">Qty</th>
                     <th className="px-4 py-3 font-medium text-white/50">Reason</th>
-                    <th className="px-4 py-3 font-medium text-white/50 text-right">Cost Value</th>
+                    <th className="px-4 py-3 font-medium text-white/50 text-right">Cost</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1251,13 +1412,21 @@ export default function RecipeInventory() {
                     <tr><td colSpan={5} className="py-12 text-center text-white/40">No waste logged yet.</td></tr>
                   ) : wasteLog.slice(0, 50).map((entry) => {
                     const ing = ingredientMap.get(entry.ingredient_id);
+                    const isHighCost = (entry.cost_value ?? 0) > 10;
                     return (
-                      <tr key={entry.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                        <td className="px-4 py-3 text-white/50 text-xs">{new Date(entry.logged_at).toLocaleDateString()}</td>
+                      <tr
+                        key={entry.id}
+                        className={`border-b border-white/5 transition-colors ${isHighCost ? 'bg-red-500/10 hover:bg-red-500/15' : 'hover:bg-white/3'}`}
+                      >
+                        <td className="px-4 py-3 text-white/50 text-xs">
+                          {new Date(entry.logged_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </td>
                         <td className="px-4 py-3 text-white">{ing?.name ?? entry.ingredient_id}</td>
                         <td className="px-4 py-3 font-mono text-white/70">{fmt(entry.quantity, 2)} {entry.unit}</td>
                         <td className="px-4 py-3 text-white/60 capitalize">{(entry.reason ?? '—').replace(/_/g, ' ')}</td>
-                        <td className="px-4 py-3 text-right font-mono text-red-400">${fmt(entry.cost_value ?? 0)}</td>
+                        <td className={`px-4 py-3 text-right font-mono font-semibold ${isHighCost ? 'text-red-300' : 'text-red-400'}`}>
+                          ${fmt(entry.cost_value ?? 0)}
+                        </td>
                       </tr>
                     );
                   })}

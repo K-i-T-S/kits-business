@@ -76,7 +76,6 @@ const RestaurantBranches = lazy(() => import('./pages/restaurant/MultiBranchHub'
 const RestaurantSettings = lazy(() => import('./pages/restaurant/RestaurantSettings'));
 const RestaurantAIAssistant = lazy(() => import('./pages/restaurant/AIAssistant'));
 const RestaurantDelivery = lazy(() => import('./pages/restaurant/DeliveryIntegrations'));
-const RestaurantCashManagement = lazy(() => import('./pages/restaurant/CashManagement'));
 const RestaurantCashDrawer = lazy(() => import('./pages/restaurant/CashDrawer'));
 const RestaurantEventsManager = lazy(() => import('./pages/restaurant/EventsManager'));
 const QRMenuPage = lazy(() => import('./pages/qr-menu/QRMenuPage'));

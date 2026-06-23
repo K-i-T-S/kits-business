@@ -1,5 +1,6 @@
-import { Calendar, UserPlus, Clock, CheckCircle, LogIn, LogOut, X, Plus, Trash2, DollarSign, Link } from 'lucide-react';
+import { Calendar, UserPlus, Clock, CheckCircle, LogIn, LogOut, X, Plus, Trash2, DollarSign, Link, FileDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
 import Layout from '@/components/Layout';
@@ -75,6 +76,112 @@ export default function ShiftManager() {
     } catch { return null; }
   });
 
+  // ── Payroll Export ─────────────────────────────────────────────────────────
+  const [showPayrollExport, setShowPayrollExport] = useState(false);
+  const [payPeriodStart, setPayPeriodStart] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split('T')[0] ?? '';
+  });
+  const [payPeriodEnd, setPayPeriodEnd] = useState<string>(() => {
+    const d = new Date();
+    return d.toISOString().split('T')[0] ?? '';
+  });
+
+  interface PayrollPreviewRow {
+    employee_id: string;
+    name: string;
+    hours: number;
+    role: string;
+  }
+
+  const [exportPreview, setExportPreview] = useState<PayrollPreviewRow[]>([]);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  interface ShiftAssignmentRow {
+    employee_id: string;
+    clocked_in_at: string | null;
+    clocked_out_at: string | null;
+    role: string;
+  }
+
+  const calculatePreview = async () => {
+    if (!tenantId) return;
+    setIsCalculating(true);
+    setExportPreview([]);
+    try {
+      const { data: rawAssignments, error } = await supabase
+        .from('restaurant_shift_assignments')
+        .select('employee_id, clocked_in_at, clocked_out_at, role')
+        .eq('tenant_id', tenantId)
+        .gte('clocked_in_at', `${payPeriodStart}T00:00:00`)
+        .lte('clocked_in_at', `${payPeriodEnd}T23:59:59`)
+        .not('clocked_out_at', 'is', null);
+
+      const periodAssignments = (rawAssignments ?? []) as ShiftAssignmentRow[];
+
+      if (error) { toast.error('Failed to fetch shifts: ' + error.message); return; }
+      if (!periodAssignments.length) { toast('No completed shifts in this period'); return; }
+
+      const byEmployee: Record<string, { hours: number; role: string }> = {};
+      for (const a of periodAssignments) {
+        if (!a.clocked_out_at || !a.clocked_in_at) continue;
+        const hours = (new Date(a.clocked_out_at).getTime() - new Date(a.clocked_in_at).getTime()) / 3_600_000;
+        const empId: string = a.employee_id;
+        // eslint-disable-next-line security/detect-object-injection -- empId is a UUID from DB, not user input
+        const existing = byEmployee[empId];
+        if (existing) {
+          existing.hours += hours;
+        } else {
+          // eslint-disable-next-line security/detect-object-injection -- empId is a UUID from DB, not user input
+          byEmployee[empId] = { hours, role: a.role };
+        }
+      }
+
+      const preview: PayrollPreviewRow[] = Object.entries(byEmployee).map(([empId, data]) => {
+        const emp = employees.find(e => e.id === empId);
+        return {
+          employee_id: empId,
+          name: emp?.name ?? `Employee ${empId.slice(0, 8)}`,
+          hours: Math.round(data.hours * 100) / 100,
+          role: data.role,
+        };
+      });
+
+      setExportPreview(preview);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  const exportToPayroll = async () => {
+    if (!tenantId || !exportPreview.length) return;
+    setIsExporting(true);
+    try {
+      const entries = exportPreview.map(row => ({
+        tenant_id: tenantId,
+        employee_id: row.employee_id,
+        employee_name: row.name,
+        period_start: payPeriodStart,
+        period_end: payPeriodEnd,
+        base_salary: 0,
+        base_currency: 'USD',
+        gross_salary: 0,
+        net_salary: 0,
+        total_employer_cost: 0,
+        notes: `Exported from Shift Manager — ${row.hours.toFixed(2)}h worked as ${row.role}`,
+      }));
+
+      const { error } = await supabase.from('payroll_entries').insert(entries);
+      if (error) { toast.error('Export failed: ' + error.message); return; }
+      toast.success(`Exported ${entries.length} payroll ${entries.length === 1 ? 'entry' : 'entries'} to Finance`);
+      setExportPreview([]);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const saveFees = (updated: RecurringFee[]) => {
     setFees(updated);
     localStorage.setItem(feesKey, JSON.stringify(updated));
@@ -128,6 +235,7 @@ export default function ShiftManager() {
   const openShift = async () => {
     if (!tenantId) return;
     const today = new Date().toISOString().split('T')[0] ?? '';
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Supabase PostgREST untyped response
     const { data } = await supabase
       .from('restaurant_shifts')
       .insert({ tenant_id: tenantId, shift_date: today, ...newShift })
@@ -152,6 +260,7 @@ export default function ShiftManager() {
 
   const assignStaff = async () => {
     if (!selectedShiftId || !newAssignment.employee_id || !tenantId) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Supabase PostgREST untyped response
     const { data } = await supabase
       .from('restaurant_shift_assignments')
       .insert({ tenant_id: tenantId, shift_id: selectedShiftId, ...newAssignment })
@@ -466,6 +575,97 @@ export default function ShiftManager() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Payroll Export Section */}
+        <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl">
+          <button
+            onClick={() => setShowPayrollExport(v => !v)}
+            className="flex w-full items-center justify-between px-4 py-3 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-sky-500/10">
+                <FileDown className="h-3.5 w-3.5 text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">Payroll Export</h3>
+                <p className="text-[10px] text-white/30">Export shift hours to Finance payroll</p>
+              </div>
+            </div>
+            {showPayrollExport
+              ? <ChevronUp className="h-4 w-4 text-white/40" />
+              : <ChevronDown className="h-4 w-4 text-white/40" />}
+          </button>
+
+          {showPayrollExport && (
+            <div className="border-t border-white/8 px-4 pb-4 pt-3 space-y-4">
+              {/* Date Range */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">Period Start</label>
+                  <input
+                    type="date"
+                    value={payPeriodStart}
+                    onChange={e => { setPayPeriodStart(e.target.value); setExportPreview([]); }}
+                    className="w-full bg-slate-800 border border-white/20 text-white text-sm rounded-xl px-3 py-2"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">Period End</label>
+                  <input
+                    type="date"
+                    value={payPeriodEnd}
+                    onChange={e => { setPayPeriodEnd(e.target.value); setExportPreview([]); }}
+                    className="w-full bg-slate-800 border border-white/20 text-white text-sm rounded-xl px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => void calculatePreview()}
+                disabled={isCalculating || !payPeriodStart || !payPeriodEnd}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/15 py-2 text-sm text-indigo-300 hover:bg-indigo-500/25 disabled:opacity-50 transition-all"
+              >
+                <Clock className="h-3.5 w-3.5" />
+                {isCalculating ? 'Calculating…' : 'Calculate Hours Preview'}
+              </button>
+
+              {/* Preview Table */}
+              {exportPreview.length > 0 && (
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                  <p className="text-white/60 text-xs">
+                    Preview: <span className="text-white font-semibold">{exportPreview.length}</span> {exportPreview.length === 1 ? 'employee' : 'employees'} ·{' '}
+                    {payPeriodStart} → {payPeriodEnd}
+                  </p>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-white/30 text-xs border-b border-white/10">
+                        <th className="text-left pb-2 font-medium">Employee</th>
+                        <th className="text-right pb-2 font-medium">Hours</th>
+                        <th className="text-right pb-2 font-medium">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {exportPreview.map((row, i) => (
+                        <tr key={i} className="border-b border-white/5 last:border-0">
+                          <td className="py-1.5 text-white/80">{row.name}</td>
+                          <td className="text-right py-1.5 text-white/80 font-mono">{row.hours.toFixed(1)}h</td>
+                          <td className="text-right py-1.5 text-white/40 capitalize">{row.role.replace(/_/g, ' ')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <button
+                    onClick={() => void exportToPayroll()}
+                    disabled={isExporting}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 disabled:opacity-50 transition-all"
+                  >
+                    {isExporting ? 'Exporting…' : `Confirm Export — ${exportPreview.length} ${exportPreview.length === 1 ? 'Entry' : 'Entries'} to Finance Payroll`}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Open Shift Modal */}

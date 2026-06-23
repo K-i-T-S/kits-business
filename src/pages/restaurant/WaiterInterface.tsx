@@ -1178,9 +1178,18 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
                           courseItems.map((item) => (
                             <div key={item.id} className="flex items-center gap-3 rounded-2xl bg-white/5 px-4 py-3">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-sm font-semibold text-white">{item.quantity}×</span>
                                   <span className="truncate text-sm text-white">{item.product_name}</span>
+                                  {item.sent_at !== null ? (
+                                    <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full flex-none">
+                                      {t('restaurant.item.sent', 'Sent')}
+                                    </span>
+                                  ) : (
+                                    <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full flex-none">
+                                      {t('restaurant.item.unsent', 'Unsent')}
+                                    </span>
+                                  )}
                                 </div>
                                 {item.modifiers && item.modifiers.length > 0 && (
                                   <p className="mt-0.5 text-xs text-white/40">

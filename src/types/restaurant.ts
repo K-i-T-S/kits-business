@@ -543,6 +543,17 @@ export interface WaiterPerformanceStats {
 
 // ── Multi-Branch ──────────────────────────────────────────────────────────────
 
+export interface BranchMenuOverride {
+  id: string;
+  tenant_id: string;
+  branch_id: string;
+  menu_item_id: string;
+  is_available: boolean;
+  price_override_usd: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface RestaurantBranch {
   id: string;
   tenant_id: string;

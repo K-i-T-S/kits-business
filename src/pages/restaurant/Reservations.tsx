@@ -130,8 +130,89 @@ export default function Reservations() {
     }
   };
 
+  /**
+   * Core seat-and-open logic shared by both the "Seat Now" button and the
+   * status dropdown when the operator selects "seated".
+   *
+   * Steps:
+   *   1. Guard: table must be assigned.
+   *   2. Check for an existing open order on that table — warn and abort if found.
+   *   3. INSERT table_orders (open, covers = party_size).
+   *   4. UPDATE restaurant_tables → occupied.
+   *   5. UPDATE reservations → seated.
+   *   6. Reflect changes in local state + show success toast.
+   */
+  const seatReservation = useCallback(async (reservation: Reservation): Promise<boolean> => {
+    if (!tenantId) return false;
+
+    if (!reservation.table_id) {
+      toast.error(t('restaurant.reservation.noTableAssigned', 'No table assigned — assign a table first'));
+      return false;
+    }
+
+    // Step 2: duplicate-order guard
+    const { data: existingOrders, error: checkError } = await supabase
+      .from('table_orders')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('table_id', reservation.table_id)
+      .eq('status', 'open')
+      .limit(1);
+
+    if (checkError) { toast.error(checkError.message); return false; }
+    if (existingOrders && existingOrders.length > 0) {
+      toast.warning(t('restaurant.reservation.tableHasOpenOrder', 'Table already has an open order'));
+      return false;
+    }
+
+    // Step 3: create table order
+    const { error: orderError } = await supabase
+      .from('table_orders')
+      .insert({
+        tenant_id: tenantId,
+        table_id: reservation.table_id,
+        status: 'open',
+        covers: reservation.party_size,
+        opened_at: new Date().toISOString(),
+      });
+    if (orderError) { toast.error(orderError.message); return false; }
+
+    // Step 4: mark table occupied
+    const { error: tableError } = await supabase
+      .from('restaurant_tables')
+      .update({ status: 'occupied' })
+      .eq('id', reservation.table_id)
+      .eq('tenant_id', tenantId);
+    if (tableError) { toast.error(tableError.message); return false; }
+
+    // Step 5: mark reservation seated
+    const { error: resError } = await supabase
+      .from('reservations')
+      .update({ status: 'seated' })
+      .eq('id', reservation.id)
+      .eq('tenant_id', tenantId);
+    if (resError) { toast.error(resError.message); return false; }
+
+    // Step 6: local state + toast
+    setReservations((prev) => prev.map((r) => r.id === reservation.id ? { ...r, status: 'seated' as ReservationStatus } : r));
+    setTables((prev) => prev.map((tb) => tb.id === reservation.table_id ? { ...tb, status: 'occupied' as const } : tb));
+    toast.success(`Table opened for ${reservation.guest_name} — ${reservation.party_size} covers`);
+    return true;
+  }, [tenantId, t]);
+
   const handleStatusChange = async (id: string, status: ReservationStatus) => {
     if (!tenantId) return;
+
+    // When transitioning to 'seated', delegate to the full seat flow
+    if (status === 'seated') {
+      const reservation = reservations.find((r) => r.id === id);
+      if (reservation) {
+        setStatusMenuId(null);
+        await seatReservation(reservation);
+      }
+      return;
+    }
+
     const { error } = await supabase.from('reservations').update({ status }).eq('id', id).eq('tenant_id', tenantId);
     if (error) { toast.error(error.message); return; }
     setReservations((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
@@ -146,45 +227,13 @@ export default function Reservations() {
   };
 
   const handleSeatNow = useCallback(async (reservation: Reservation) => {
-    if (!tenantId) return;
-    if (!reservation.table_id) {
-      toast.error(t('restaurant.reservation.noTableAssigned', 'No table assigned — assign a table first'));
-      return;
-    }
     setSeatingId(reservation.id);
     try {
-      const { error: orderError } = await supabase
-        .from('table_orders')
-        .insert({
-          tenant_id: tenantId,
-          table_id: reservation.table_id,
-          status: 'open',
-          covers: reservation.party_size,
-          opened_at: new Date().toISOString(),
-        });
-      if (orderError) { toast.error(orderError.message); return; }
-
-      const { error: tableError } = await supabase
-        .from('restaurant_tables')
-        .update({ status: 'occupied' })
-        .eq('id', reservation.table_id)
-        .eq('tenant_id', tenantId);
-      if (tableError) { toast.error(tableError.message); return; }
-
-      const { error: resError } = await supabase
-        .from('reservations')
-        .update({ status: 'seated' })
-        .eq('id', reservation.id)
-        .eq('tenant_id', tenantId);
-      if (resError) { toast.error(resError.message); return; }
-
-      setReservations((prev) => prev.map((r) => r.id === reservation.id ? { ...r, status: 'seated' as ReservationStatus } : r));
-      setTables((prev) => prev.map((tb) => tb.id === reservation.table_id ? { ...tb, status: 'occupied' as const } : tb));
-      toast.success(t('restaurant.reservation.seated', 'Guest seated successfully'));
+      await seatReservation(reservation);
     } finally {
       setSeatingId(null);
     }
-  }, [tenantId, t]);
+  }, [seatReservation]);
 
   const nextStatuses: Partial<Record<ReservationStatus, ReservationStatus[]>> = {
     pending: ['confirmed', 'cancelled'],

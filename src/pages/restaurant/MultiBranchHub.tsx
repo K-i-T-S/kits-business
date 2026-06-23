@@ -4,11 +4,13 @@ import {
   CheckCircle,
   ChevronRight,
   Edit2,
+  ExternalLink,
   Phone,
   Plus,
   RefreshCw,
   Settings,
   Star,
+  Truck,
   TrendingDown,
   TrendingUp,
   Trophy,
@@ -17,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Bar,
   BarChart,
@@ -33,6 +36,33 @@ import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import type { BranchMetrics, RestaurantBranch } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
+
+// ── Delivery Integration type (matches migration 000039) ─────────────────────
+
+interface DeliveryIntegration {
+  id: string;
+  tenant_id: string;
+  branch_id: string | null;
+  platform: 'toters' | 'zomato' | 'talabat' | 'careem_food';
+  is_active: boolean;
+  webhook_secret: string | null;
+  external_restaurant_id: string | null;
+  auto_accept: boolean;
+  prep_time_minutes: number;
+  created_at: string;
+}
+
+const DELIVERY_PLATFORMS: Array<{
+  id: DeliveryIntegration['platform'];
+  label: string;
+  badgeText: string;
+  badgeBg: string;
+}> = [
+  { id: 'talabat', label: 'Talabat', badgeText: 'T', badgeBg: 'bg-orange-500/20 text-orange-400' },
+  { id: 'toters', label: 'Toters', badgeText: 'TO', badgeBg: 'bg-green-500/20 text-green-400' },
+  { id: 'zomato', label: 'Zomato', badgeText: 'Z', badgeBg: 'bg-red-500/20 text-red-400' },
+  { id: 'careem_food', label: 'Careem Food', badgeText: 'CF', badgeBg: 'bg-emerald-500/20 text-emerald-400' },
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -484,6 +514,7 @@ function RatingChart({ branches, metricsMap }: {
 export default function MultiBranchHub() {
   const { t } = useTranslation();
   const { employees, currentTenant } = useApp();
+  const navigate = useNavigate();
   const tenantId = currentTenant?.id;
 
   const [branches, setBranches] = useState<RestaurantBranch[]>([]);
@@ -494,6 +525,7 @@ export default function MultiBranchHub() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<RestaurantBranch | null>(null);
   const [addingBranch, setAddingBranch] = useState(false);
+  const [deliveryIntegrations, setDeliveryIntegrations] = useState<DeliveryIntegration[]>([]);
 
   const loadBranches = useCallback(async () => {
     if (!tenantId) return;
@@ -541,6 +573,13 @@ export default function MultiBranchHub() {
           setOverridesMap(ovMap);
         }
       }
+      // Load delivery integrations
+      const { data: diData } = await supabase
+        .from('restaurant_delivery_integrations')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('platform');
+      setDeliveryIntegrations((diData as DeliveryIntegration[]) ?? []);
     } catch {
       setBranches([]);
       setMetricsMap({});
@@ -605,6 +644,22 @@ export default function MultiBranchHub() {
       toast.success(t('restaurant.branches.branchAdded', 'Branch added'));
     }
     await loadBranches();
+  };
+
+  const handleToggleDelivery = async (integration: DeliveryIntegration) => {
+    const next = !integration.is_active;
+    try {
+      const { error } = await supabase
+        .from('restaurant_delivery_integrations')
+        .update({ is_active: next })
+        .eq('id', integration.id)
+        .eq('tenant_id', tenantId ?? '');
+      if (error) throw error;
+      toast.success(`${integration.platform} ${next ? 'enabled' : 'disabled'}`);
+      await loadBranches();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update integration');
+    }
   };
 
   const getManagerName = (employeeId: string | null) => {
@@ -911,6 +966,167 @@ export default function MultiBranchHub() {
             </div>
           );
         })()}
+
+        {/* ── Delivery Integrations ── */}
+        <div className="mb-8 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Truck className="h-4 w-4 text-indigo-400" />
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-400/70">
+                {t('restaurant.delivery.title', 'Delivery Integrations')}
+              </h3>
+            </div>
+            <button
+              onClick={() => { void navigate('/restaurant/delivery'); }}
+              className="flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-300 hover:bg-indigo-500/20 transition-all"
+            >
+              {t('restaurant.delivery.configure', 'Configure')}
+              <ExternalLink className="h-3 w-3" />
+            </button>
+          </div>
+
+          {deliveryIntegrations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/15 py-10 text-center">
+              <Truck className="mb-3 h-8 w-8 text-white/15" />
+              <p className="text-sm font-medium text-white/30">
+                {t('restaurant.delivery.noIntegrations', 'No delivery platforms connected')}
+              </p>
+              <p className="mt-1 text-xs text-white/20">
+                {t('restaurant.delivery.noIntegrationsHint', 'Connect Talabat, Toters or Zomato to receive orders automatically')}
+              </p>
+              <button
+                onClick={() => { void navigate('/restaurant/delivery'); }}
+                className="mt-4 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-5 py-2 text-xs font-semibold text-white"
+              >
+                {t('restaurant.delivery.addPlatform', '+ Add Platform')}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Summary row */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[
+                  {
+                    label: t('restaurant.delivery.connected', 'Connected'),
+                    value: deliveryIntegrations.length,
+                    color: 'text-indigo-400',
+                  },
+                  {
+                    label: t('restaurant.delivery.active', 'Active'),
+                    value: deliveryIntegrations.filter((i) => i.is_active).length,
+                    color: 'text-emerald-400',
+                  },
+                  {
+                    label: t('restaurant.delivery.autoAccept', 'Auto-Accept'),
+                    value: deliveryIntegrations.filter((i) => i.auto_accept).length,
+                    color: 'text-amber-400',
+                  },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center"
+                  >
+                    <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Platform rows */}
+              {DELIVERY_PLATFORMS.map((platform) => {
+                const integration = deliveryIntegrations.find((i) => i.platform === platform.id);
+                if (!integration) return null;
+                return (
+                  <div
+                    key={platform.id}
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-xs font-bold ${platform.badgeBg}`}
+                      >
+                        {platform.badgeText}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-white">{platform.label}</p>
+                        <div className="mt-0.5 flex items-center gap-2">
+                          {integration.external_restaurant_id ? (
+                            <span className="text-[10px] text-white/40">
+                              ID: {integration.external_restaurant_id}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-amber-400/70">No restaurant ID set</span>
+                          )}
+                          {integration.auto_accept && (
+                            <span className="rounded-full bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-medium text-sky-400">
+                              Auto-accept
+                            </span>
+                          )}
+                          <span className="text-[10px] text-white/30">
+                            {integration.prep_time_minutes}m prep
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          integration.is_active
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                            : 'bg-white/5 text-white/30 border border-white/10'
+                        }`}
+                      >
+                        {integration.is_active
+                          ? t('restaurant.delivery.statusActive', 'Active')
+                          : t('restaurant.delivery.statusInactive', 'Inactive')}
+                      </span>
+                      {/* Active toggle */}
+                      <button
+                        role="switch"
+                        aria-checked={integration.is_active}
+                        aria-label={`${integration.is_active ? 'Disable' : 'Enable'} ${platform.label}`}
+                        onClick={() => { void handleToggleDelivery(integration); }}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                          integration.is_active
+                            ? 'bg-indigo-600 border-indigo-600'
+                            : 'bg-white/10 border-white/20'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none mt-0.5 inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+                            integration.is_active ? 'translate-x-5' : 'translate-x-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Platforms not yet connected */}
+              {DELIVERY_PLATFORMS.filter(
+                (p) => !deliveryIntegrations.find((i) => i.platform === p.id),
+              ).length > 0 && (
+                <div className="mt-3 rounded-xl border border-dashed border-white/10 px-4 py-3 text-center">
+                  <p className="text-xs text-white/30">
+                    {DELIVERY_PLATFORMS.filter(
+                      (p) => !deliveryIntegrations.find((i) => i.platform === p.id),
+                    )
+                      .map((p) => p.label)
+                      .join(', ')}{' '}
+                    {t('restaurant.delivery.notConnected', 'not connected yet')}
+                  </p>
+                  <button
+                    onClick={() => { void navigate('/restaurant/delivery'); }}
+                    className="mt-2 text-xs text-indigo-400 underline hover:text-indigo-300"
+                  >
+                    {t('restaurant.delivery.connectNow', 'Connect now →')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* ── Settings Panel ── */}
         {settingsOpen && (

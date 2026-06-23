@@ -174,6 +174,7 @@ export default function RestaurantSettings() {
   const [slugError, setSlugError] = useState('');
   const [copied, setCopied] = useState(false);
   const [copiedBooking, setCopiedBooking] = useState(false);
+  const [copiedFeedback, setCopiedFeedback] = useState(false);
 
   // ---- localStorage-backed state ----
   const [operatingHours, setOperatingHours] = useState<OperatingHours>(DEFAULT_HOURS);
@@ -378,11 +379,22 @@ export default function RestaurantSettings() {
     ? `${window.location.origin}/book/${qrSlug}`
     : '';
 
+  const feedbackUrl = qrSlug
+    ? `${window.location.origin}/feedback/${qrSlug}`
+    : '';
+
   const handleCopyBookingUrl = async () => {
     if (!bookingUrl) return;
     await navigator.clipboard.writeText(bookingUrl);
     setCopiedBooking(true);
     setTimeout(() => setCopiedBooking(false), 2000);
+  };
+
+  const handleCopyFeedbackUrl = async () => {
+    if (!feedbackUrl) return;
+    await navigator.clipboard.writeText(feedbackUrl);
+    setCopiedFeedback(true);
+    setTimeout(() => setCopiedFeedback(false), 2000);
   };
 
   const update = <K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
@@ -959,6 +971,60 @@ export default function RestaurantSettings() {
                         rel="noopener noreferrer"
                         className="flex-none flex items-center gap-1 rounded-lg border border-white/15 bg-white/8 px-2.5 py-1.5 text-xs text-white/60 hover:bg-white/15 hover:text-white transition-colors"
                         aria-label="Preview booking page"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Preview
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* Feedback QR Link */}
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <QrCode className="h-4 w-4 text-emerald-400 flex-none" />
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400/70">
+                    Feedback QR Link
+                  </h2>
+                </div>
+
+                <p className="text-xs text-white/50">
+                  Share this link or print a QR code so guests can leave feedback after their meal — no login required.
+                  For per-table QR codes, use the URL pattern{' '}
+                  <code className="text-emerald-300/80">
+                    {qrSlug ? `…/feedback/${qrSlug}/[table-number]` : '…/feedback/[slug]/[table-number]'}
+                  </code>.
+                </p>
+
+                {!qrSlug ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2.5">
+                    <AlertCircle className="h-4 w-4 flex-none text-amber-400" />
+                    <p className="text-xs text-amber-300">
+                      Set a Menu URL Identifier above and save to activate your feedback link.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">General feedback link</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 min-w-0 truncate text-xs text-emerald-300">
+                        {feedbackUrl}
+                      </code>
+                      <button
+                        onClick={() => { void handleCopyFeedbackUrl(); }}
+                        className="flex-none flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/8 px-2.5 py-1.5 text-xs text-white/60 hover:bg-white/15 hover:text-white transition-colors"
+                        aria-label="Copy feedback link"
+                      >
+                        {copiedFeedback ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                        {copiedFeedback ? 'Copied' : 'Copy'}
+                      </button>
+                      <a
+                        href={feedbackUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-none flex items-center gap-1 rounded-lg border border-white/15 bg-white/8 px-2.5 py-1.5 text-xs text-white/60 hover:bg-white/15 hover:text-white transition-colors"
+                        aria-label="Preview feedback page"
                       >
                         <ExternalLink className="h-3 w-3" />
                         Preview

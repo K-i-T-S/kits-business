@@ -1627,6 +1627,9 @@ export default function WaiterInterface() {
   const [selectedPendingOrder, setSelectedPendingOrder] = useState<PendingOrder | null>(null);
   const [queueRefreshing, setQueueRefreshing] = useState(false);
 
+  // Slide-in panel state (accessible from any tab via header bell badge)
+  const [showPendingPanel, setShowPendingPanel] = useState(false);
+
   // ── Data loading ───────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     if (!tenantId) return;
@@ -1635,7 +1638,7 @@ export default function WaiterInterface() {
         supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId).order('number'),
         supabase.from('table_orders').select('*').eq('tenant_id', tenantId).eq('status', 'open'),
         supabase.from('restaurant_order_items').select('*').eq('tenant_id', tenantId).neq('status', 'served'),
-        supabase.from('restaurant_pending_orders').select('table_id').eq('tenant_id', tenantId).eq('status', 'pending'),
+        supabase.from('restaurant_pending_orders').select('*').eq('tenant_id', tenantId).eq('status', 'pending').order('created_at', { ascending: true }),
         supabase.from('restaurant_settings').select('*').eq('tenant_id', tenantId).maybeSingle(),
         supabase.from('restaurant_menu_categories').select('*').eq('tenant_id', tenantId).order('sort_order'),
         supabase.from('restaurant_menu_items').select('*').eq('tenant_id', tenantId).eq('is_active', true).order('sort_order'),
@@ -1644,8 +1647,10 @@ export default function WaiterInterface() {
       if (oRes.data) setOrders(oRes.data as TableOrder[]);
       if (oiRes.data) setAllItems(oiRes.data as RestaurantOrderItem[]);
       if (poRes.data) {
+        const fullOrders = poRes.data as PendingOrder[];
+        setPendingOrders(fullOrders);
         const counts: Record<string, number> = {};
-        (poRes.data as Array<{ table_id: string }>).forEach(({ table_id }) => {
+        fullOrders.forEach(({ table_id }) => {
           counts[table_id] = (counts[table_id] ?? 0) + 1;
         });
         setPendingOrderCounts(counts);
@@ -1726,25 +1731,7 @@ export default function WaiterInterface() {
     }
   };
 
-  // Load full pending orders when pending tab is active
-  useEffect(() => {
-    if (activeTab !== 'pending') return;
-    if (!tenantId) return;
-    const fetch = async () => {
-      try {
-        const { data } = await supabase
-          .from('restaurant_pending_orders')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: true });
-        if (data) setPendingOrders(data as PendingOrder[]);
-      } catch (err) {
-        console.error('[WaiterInterface] pending fetch error:', err);
-      }
-    };
-    void fetch();
-  }, [activeTab, tenantId]);
+  // Pending orders are now loaded by loadData (every 30s poll) — no separate tab-scoped effect needed.
 
   const handleConfirmPendingOrder = async (order: PendingOrder, editedItems: PendingOrderItem[]) => {
     if (!tenantId) return;
@@ -2182,14 +2169,6 @@ export default function WaiterInterface() {
                 })
               )}
             </div>
-            {selectedPendingOrder && (
-              <PendingOrderModal
-                pendingOrder={selectedPendingOrder}
-                onConfirm={(editedItems) => handleConfirmPendingOrder(selectedPendingOrder, editedItems)}
-                onReject={() => handleRejectPendingOrder(selectedPendingOrder)}
-                onClose={() => setSelectedPendingOrder(null)}
-              />
-            )}
           </motion.div>
         );
       }
@@ -2238,15 +2217,21 @@ export default function WaiterInterface() {
               </p>
             </div>
 
-            {/* Pending QR badge */}
+            {/* Pending QR badge — opens slide-in panel from any tab */}
             {totalPending > 0 && (
-              <motion.div
+              <motion.button
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="flex h-7 min-w-[1.75rem] items-center justify-center rounded-full bg-amber-500 px-1.5 animate-bounce"
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowPendingPanel(true)}
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-all"
+                aria-label={`${totalPending} pending QR orders`}
               >
-                <span className="text-xs font-black text-white">{totalPending}</span>
-              </motion.div>
+                <Bell className="h-4 w-4" />
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-black text-white">
+                  {totalPending}
+                </span>
+              </motion.button>
             )}
 
             {/* Refresh */}
@@ -2325,6 +2310,147 @@ export default function WaiterInterface() {
           menuItems={menuItems}
           onClose={() => setSelectedTableId(null)}
           onOrderClosed={() => { void loadData(); }}
+        />
+      )}
+
+      {/* ── Pending QR Orders slide-in panel ── */}
+      <AnimatePresence>
+        {showPendingPanel && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="pending-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/50"
+              onClick={() => setShowPendingPanel(false)}
+              aria-hidden="true"
+            />
+            {/* Panel */}
+            <motion.div
+              key="pending-panel"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              className="fixed inset-y-0 right-0 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col border-l border-white/10 bg-slate-900"
+            >
+              {/* Panel header */}
+              <div className="flex-none border-b border-white/10 px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-amber-400" />
+                    <h2 className="text-sm font-bold text-white">
+                      {t('restaurant.pendingPanel.title', 'Pending QR Orders')}
+                    </h2>
+                    {totalPending > 0 && (
+                      <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-white">
+                        {totalPending}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowPendingPanel(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-all"
+                    aria-label={t('common.close', 'Close')}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Panel body */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {pendingOrders.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <Bell className="mb-3 h-10 w-10 text-white/20" />
+                    <p className="text-sm text-white/40">
+                      {t('restaurant.pending.none', 'No pending QR orders')}
+                    </p>
+                  </div>
+                ) : (
+                  pendingOrders.map((po) => {
+                    const table = tables.find((tbl) => tbl.id === po.table_id);
+                    const mins = minutesSince(po.created_at);
+                    const subtotal = po.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+                    return (
+                      <div
+                        key={po.id}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3"
+                      >
+                        {/* Order header */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-bold text-white">
+                              {table
+                                ? `${t('restaurant.tableNum', 'Table')} ${table.number}`
+                                : t('restaurant.walkIn', 'Walk-in')}
+                            </p>
+                            <p className="mt-0.5 flex items-center gap-1 text-xs text-white/50">
+                              <Clock className="h-3 w-3" />
+                              {mins}m {t('common.ago', 'ago')}
+                            </p>
+                          </div>
+                          <div className="text-end">
+                            <p className="text-sm font-black text-white">${subtotal.toFixed(2)}</p>
+                            <p className="text-[10px] text-white/40">
+                              {po.items.length} {t('restaurant.orders.items', 'items')}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Items list */}
+                        <div className="space-y-1">
+                          {po.items.map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-xs">
+                              <span className="font-semibold text-white/80">{item.quantity}×</span>
+                              <span className="flex-1 text-white/70">{item.name}</span>
+                              <span className="text-white/40">${(item.unit_price * item.quantity).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => {
+                              void handleRejectPendingOrder(po);
+                            }}
+                            className="rounded-xl border border-red-500/30 bg-red-900/30 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-800/50 transition-all active:scale-95"
+                          >
+                            <X className="mr-1 inline h-3.5 w-3.5" />
+                            {t('restaurant.pendingOrder.reject', 'Reject')}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedPendingOrder(po);
+                              setShowPendingPanel(false);
+                            }}
+                            className="flex-1 rounded-xl bg-green-600 py-2 text-xs font-bold text-white hover:bg-green-500 transition-all active:scale-95"
+                          >
+                            <Check className="mr-1 inline h-3.5 w-3.5" />
+                            {t('restaurant.pendingOrder.confirmAll', 'Confirm')}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Pending order modal — launched from panel or pending tab */}
+      {selectedPendingOrder && (
+        <PendingOrderModal
+          pendingOrder={selectedPendingOrder}
+          onConfirm={(editedItems) => handleConfirmPendingOrder(selectedPendingOrder, editedItems)}
+          onReject={() => handleRejectPendingOrder(selectedPendingOrder)}
+          onClose={() => setSelectedPendingOrder(null)}
         />
       )}
     </div>

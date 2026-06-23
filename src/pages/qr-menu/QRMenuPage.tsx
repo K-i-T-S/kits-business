@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 import '@/styles/qr-menu-themes.css';
 
@@ -13,6 +13,7 @@ import { useCart, getModifierKey } from './useCart';
 import { useQRMenu } from './useQRMenu';
 
 import type { RestaurantMenuItem } from '@/types/restaurant';
+import { supabase } from '@/utils/supabaseClient';
 
 type MenuView = 'splash' | 'menu' | 'item-detail' | 'cart' | 'success';
 
@@ -27,6 +28,9 @@ const PALETTE_CLASS: Record<string, string> = {
 
 export default function QRMenuPage() {
   const { tenantSlug = '', tableId = '' } = useParams<{ tenantSlug: string; tableId: string }>();
+  const [searchParams] = useSearchParams();
+  const tableParam = searchParams.get('table');
+
   const { data, loading, error } = useQRMenu(tenantSlug);
   const { items, totalItems, totalPrice, addItem, updateQuantity, removeItem, clearCart } = useCart();
 
@@ -37,6 +41,31 @@ export default function QRMenuPage() {
   const [fa7emSent, setFa7emSent] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [calledWaiter, setCalledWaiter] = useState(false);
+
+  // Resolve ?table=N query param to a table UUID for pre-filling orders
+  const [resolvedTableId, setResolvedTableId] = useState<string>('');
+
+  useEffect(() => {
+    if (!tableParam || !data?.tenant.id) return;
+    const tableNum = parseInt(tableParam, 10);
+    if (isNaN(tableNum)) return;
+
+    void (async () => {
+      const { data: tableRow } = await supabase
+        .from('restaurant_tables')
+        .select('id')
+        .eq('tenant_id', data.tenant.id)
+        .eq('number', tableNum)
+        .limit(1)
+        .maybeSingle();
+      if (tableRow) {
+        setResolvedTableId((tableRow as { id: string }).id);
+      }
+    })();
+  }, [tableParam, data?.tenant.id]);
+
+  // Effective table ID: path param takes priority, then resolved from ?table=N
+  const effectiveTableId = tableId && tableId !== 'main' ? tableId : resolvedTableId;
 
   // Transition from splash after 1.4s once data load resolves (success or error)
   useEffect(() => {
@@ -132,6 +161,15 @@ export default function QRMenuPage() {
 
   return (
     <div className={`${paletteClass} qr-menu-root relative`}>
+      {/* Table badge — shown when ?table=N is present in the URL */}
+      {tableParam && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 pointer-events-none">
+          <div className="bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-xl px-4 py-2 text-sm font-medium text-center">
+            Table {tableParam}
+          </div>
+        </div>
+      )}
+
       {/* Language toggle */}
       <div className="fixed right-4 top-4 z-50">
         <button
@@ -184,7 +222,8 @@ export default function QRMenuPage() {
             <QRMenuHome
               menuData={data}
               lang={lang}
-              tableId={tableId}
+              tableId={effectiveTableId}
+              tableDisplayLabel={tableParam ?? undefined}
               totalCartItems={totalItems}
               onSelectItem={handleSelectItem}
               onOpenCart={() => setView('cart')}
@@ -237,7 +276,8 @@ export default function QRMenuPage() {
             <QRCart
               key="cart"
               items={items}
-              tableId={tableId}
+              tableId={effectiveTableId}
+              tableDisplayLabel={tableParam ?? undefined}
               tenantId={data?.tenant.id ?? ''}
               totalPrice={totalPrice}
               onUpdateQuantity={(menuItemId, modKey, qty) => updateQuantity(menuItemId, modKey, qty)}

@@ -639,6 +639,35 @@ export interface MenuItemEngineering {
   createdAt: string;
 }
 
+// ── Restaurant Purchase Orders ────────────────────────────────────────────────
+
+export type RestaurantPOStatus = 'draft' | 'ordered' | 'received' | 'cancelled';
+
+export interface RestaurantPurchaseOrder {
+  id: string;
+  tenant_id: string;
+  supplier_id: string | null;
+  order_number: string;
+  status: RestaurantPOStatus;
+  expected_date: string | null;
+  notes: string | null;
+  total_estimated: number;
+  created_at: string;
+  received_at: string | null;
+  // joined
+  items?: RestaurantPOItem[];
+}
+
+export interface RestaurantPOItem {
+  id: string;
+  purchase_order_id: string;
+  ingredient_id: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  unit_cost: number;
+  notes: string | null;
+}
+
 // ── Cash Drawer / Till Management ─────────────────────────────────────────────
 
 export interface CashSession {

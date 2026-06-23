@@ -1329,6 +1329,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
       {showCloseBillModal && order && (
         <CloseBillModal
           tableNumber={table.number}
+          tableId={table.id}
           order={order as TableOrderExtended}
           items={items}
           onUpdateTip={updateTip}

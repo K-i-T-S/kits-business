@@ -20,6 +20,7 @@ import {
   generateInsights,
   holtSmoothing,
   isRamadan,
+  isLebanesHoliday,
 } from '@/utils/restaurantML';
 import type {
   DailyRevenue,
@@ -277,6 +278,202 @@ function ForecastTab({ tenantId }: ForecastTabProps) {
         ) : null
       ))}
     </div>
+  );
+}
+
+// ── 7-Day Demand Forecast Panel (restaurantML) ────────────────────────────────
+
+const DOW_FULL_LABELS: Record<number, string> = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
+
+interface SevenDayForecastPanelProps {
+  forecast: ForecastPoint[];
+  loading: boolean;
+}
+
+interface ForecastChartPoint {
+  label: string;
+  predicted: number;
+  lower: number;
+  upper: number;
+  isWeekend: boolean;
+  isHoliday: boolean;
+  isRamadan: boolean;
+  date: string;
+}
+
+function SevenDayForecastPanel({ forecast, loading }: SevenDayForecastPanelProps) {
+  const [expanded, setExpanded] = useState(true);
+
+  const chartData: ForecastChartPoint[] = forecast.map((f) => {
+    const d = new Date(f.date);
+    const dow = d.getDay();
+    // Lebanese weekend: Thu=4 and Fri=5 are peak days; Sat=6 treated as weekend
+    const isWeekend = dow === 4 || dow === 5 || dow === 6;
+    const isHoliday = isLebanesHoliday(d);
+    return {
+      // eslint-disable-next-line security/detect-object-injection -- dow is 0-6 from Date.getDay(), not user input
+      label: `${DOW_FULL_LABELS[dow] ?? '?'}\n${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+      predicted: f.predicted,
+      lower: f.lower,
+      upper: f.upper,
+      isWeekend,
+      isHoliday,
+      isRamadan: f.isRamadan,
+      date: f.date,
+    };
+  });
+
+  const hasData = forecast.length > 0 && forecast.some((f) => f.predicted > 0);
+
+  return (
+    <section>
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+        {/* Panel header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={18} className="text-indigo-400" />
+            <h3 className="text-white font-semibold">Demand Forecast</h3>
+            <span className="text-white/40 text-xs">next 7 days</span>
+            <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5 ml-1">
+              Holt smoothing · DOW seasonal · Lebanese calendar
+            </span>
+          </div>
+          <button
+            onClick={() => setExpanded((prev) => !prev)}
+            className="text-white/40 hover:text-white/60 transition-colors"
+            aria-label={expanded ? 'Collapse forecast panel' : 'Expand forecast panel'}
+          >
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            />
+          </button>
+        </div>
+
+        {expanded && (
+          <>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : !hasData ? (
+              <p className="text-white/40 text-sm text-center py-8">
+                Not enough data for forecasting yet (need 7+ days of orders)
+              </p>
+            ) : (
+              <>
+                <div className="h-52">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 8, left: 8 }}>
+                      <defs>
+                        <linearGradient id="forecastBarGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
+                          <stop offset="100%" stopColor="#6366f1" stopOpacity={0.5} />
+                        </linearGradient>
+                        <linearGradient id="forecastWeekendGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.9} />
+                          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.5} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+                        interval={0}
+                      />
+                      <YAxis
+                        tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+                        tickFormatter={(v: number) => `$${v}`}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const pt = payload[0]?.payload as ForecastChartPoint | undefined;
+                          if (!pt) return null;
+                          return (
+                            <div className="rounded-xl border border-indigo-500/20 bg-slate-950/95 backdrop-blur-xl p-3 shadow-2xl text-xs space-y-1">
+                              <p className="font-semibold text-white/70">
+                                {new Date(pt.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                                {pt.isHoliday && ' 🎉'}
+                                {pt.isRamadan && ' 🌙'}
+                              </p>
+                              <p className="text-indigo-300">
+                                Forecast: <span className="text-white font-bold">${pt.predicted.toFixed(2)}</span>
+                              </p>
+                              <p className="text-white/40">
+                                80% CI: ${pt.lower.toFixed(2)} – ${pt.upper.toFixed(2)}
+                              </p>
+                              {pt.isWeekend && (
+                                <p className="text-amber-400 text-[10px]">Thu–Sat peak (Lebanese DOW)</p>
+                              )}
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar dataKey="predicted" name="Predicted Revenue" radius={[6, 6, 0, 0]}>
+                        {chartData.map((pt, index) => (
+                          <Cell
+                            key={index}
+                            fill={pt.isWeekend || pt.isHoliday
+                              ? 'url(#forecastWeekendGrad)'
+                              : 'url(#forecastBarGrad)'}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Legend */}
+                <div className="mt-3 flex items-center gap-4 text-[10px] text-white/40">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-indigo-500 inline-block" />
+                    Weekday forecast
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-amber-500 inline-block" />
+                    Thu–Sat / holiday peak
+                  </span>
+                  {forecast.some((f) => f.isRamadan) && (
+                    <span className="text-amber-400">🌙 Ramadan adj. applied</span>
+                  )}
+                  {chartData.some((pt) => pt.isHoliday) && (
+                    <span className="text-emerald-400">🎉 Lebanese holiday</span>
+                  )}
+                </div>
+
+                {/* Summary row */}
+                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/8 pt-4">
+                  <div>
+                    <p className="text-[10px] text-white/40 mb-0.5">7-Day Total</p>
+                    <p className="text-lg font-bold text-indigo-400">
+                      ${forecast.reduce((s, f) => s + f.predicted, 0).toFixed(0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-white/40 mb-0.5">Peak Day</p>
+                    <p className="text-lg font-bold text-amber-400">
+                      {(() => {
+                        const peak = [...forecast].sort((a, b) => b.predicted - a.predicted)[0];
+                        return peak
+                          ? new Date(peak.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                          : '—';
+                      })()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-white/40 mb-0.5">Daily Avg</p>
+                    <p className="text-lg font-bold text-white/70">
+                      ${(forecast.reduce((s, f) => s + f.predicted, 0) / forecast.length).toFixed(0)}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -988,6 +1185,9 @@ export default function RestaurantAnalytics() {
                 </div>
               </section>
             )}
+
+            {/* 7-Day Demand Forecast Panel — restaurantML generateForecast */}
+            <SevenDayForecastPanel forecast={forecast} loading={loading} />
 
             {/* Demand Forecast Panel (Task K) */}
             <DemandForecastPanel tenantId={tenantId} />

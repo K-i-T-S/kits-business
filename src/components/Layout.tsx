@@ -99,6 +99,7 @@ export default function Layout({ children }: LayoutProps) {
   const [logoError, setLogoError] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [platformExpanded, setPlatformExpanded] = useState(!industry);
   const [profileOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [brandModalOpen, setBrandModalOpen] = useState(false);
@@ -239,6 +240,26 @@ export default function Layout({ children }: LayoutProps) {
     ];
     alerts.forEach(addNotification);
   }, [products, sales, customers, addNotification]);
+
+  // Persist platform nav collapse state per tenant; collapse by default when industry is set
+  const platformStorageKey = `kits-platform-nav-${currentTenant?.id ?? 'default'}`;
+  useEffect(() => {
+    const stored = localStorage.getItem(platformStorageKey);
+    if (stored !== null) {
+      setPlatformExpanded(stored === 'true');
+    } else {
+      // Default: collapsed when an industry vertical is active
+      setPlatformExpanded(!industry);
+    }
+  }, [platformStorageKey, industry]);
+
+  const togglePlatformNav = () => {
+    setPlatformExpanded((prev) => {
+      const next = !prev;
+      localStorage.setItem(platformStorageKey, String(next));
+      return next;
+    });
+  };
 
   return (
     <div className="relative min-h-dvh md:h-dvh md:overflow-hidden bg-slate-900 text-slate-100 md:flex">
@@ -426,10 +447,9 @@ export default function Layout({ children }: LayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto" role="navigation" aria-label="Main menu">
 
-            {/* ── Platform compact icon grid ── */}
-            <div className="mb-3">
-              <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.2em] text-white/25">Platform</p>
-              <div className="grid grid-cols-4 gap-1">
+            {/* ── No-industry mode: Standard platform nav ── */}
+            {!industry && (
+              <div className="space-y-0.5">
                 {PLATFORM_ITEMS.map((item) => {
                   const locked = item.feature ? !hasFeature(item.feature) : false;
                   const active = isActive(item.href);
@@ -441,11 +461,13 @@ export default function Layout({ children }: LayoutProps) {
                         key={item.href}
                         title={`${item.name} — requires ${planInfo.name}`}
                         onClick={() => toast.info(`Upgrade to ${planInfo.name} to unlock ${featureInfo.name}`)}
-                        className="relative flex flex-col items-center gap-1 rounded-xl p-2.5 text-white/25 opacity-50 hover:opacity-60 transition-opacity"
+                        className="relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-white/25 opacity-50 hover:opacity-60 transition-opacity"
                       >
-                        <item.icon className="h-4 w-4" />
-                        <span className="text-[9px] font-medium leading-none">{item.short}</span>
-                        <Lock className="absolute top-1 right-1 h-2.5 w-2.5 text-amber-400/60" aria-hidden="true" />
+                        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/5">
+                          <item.icon className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="flex-1 text-start text-xs font-medium">{item.name}</span>
+                        <Lock className="h-3 w-3 text-amber-400/60" aria-hidden="true" />
                       </button>
                     );
                   }
@@ -453,54 +475,199 @@ export default function Layout({ children }: LayoutProps) {
                     <Link
                       key={item.href}
                       to={item.href}
-                      title={item.name}
                       aria-current={active ? 'page' : undefined}
-                      className={`flex flex-col items-center gap-1 rounded-xl p-2.5 transition-all ${
+                      className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-all ${
                         active
-                          ? 'bg-indigo-500/20 text-indigo-300'
-                          : 'text-white/40 hover:bg-white/5 hover:text-white/70'
+                          ? 'bg-indigo-500/15 border border-indigo-500/20 text-indigo-300'
+                          : 'text-white/50 hover:bg-white/5 hover:text-white/80'
                       }`}
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span className="text-[9px] font-medium leading-none">{item.short}</span>
+                      <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${
+                        active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/35'
+                      }`}>
+                        <item.icon className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="flex-1 text-xs font-medium">{item.name}</span>
                     </Link>
                   );
                 })}
               </div>
-            </div>
+            )}
 
-            {/* ── Restaurant Pro — 4 grouped sections ── */}
-            {industry === 'restaurant' && (
-              <div className="mt-1">
-                <div className="mb-2 flex items-center gap-1.5 border-t border-white/8 pt-3">
-                  <UtensilsCrossed className="h-3 w-3 text-amber-400/80" />
-                  <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-amber-400/80">Restaurant Pro</span>
-                </div>
-                {/* Hub — 3D floor plan landing page */}
-                <div className="mb-2.5">
-                  <Link
-                    to="/restaurant"
-                    aria-current={isActive('/restaurant') ? 'page' : undefined}
-                    className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
-                      isActive('/restaurant')
-                        ? 'bg-amber-500/15 border border-amber-500/25 text-amber-200'
-                        : 'text-white/50 hover:bg-white/5 hover:text-white/80'
-                    }`}
-                  >
-                    <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg ${
-                      isActive('/restaurant') ? 'bg-amber-500/25 text-amber-300' : 'bg-white/5 text-white/35'
-                    }`}>
-                      <LayoutDashboard className="h-3.5 w-3.5" />
+            {/* ── Industry vertical mode ── */}
+            {industry && (
+              <>
+                {/* Dashboard always pinned at top */}
+                {(() => {
+                  const dashActive = isActive('/dashboard');
+                  return (
+                    <div className="mb-3">
+                      <Link
+                        to="/dashboard"
+                        aria-current={dashActive ? 'page' : undefined}
+                        className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-all ${
+                          dashActive
+                            ? 'bg-indigo-500/15 border border-indigo-500/20 text-indigo-300'
+                            : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                        }`}
+                      >
+                        <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${
+                          dashActive ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/35'
+                        }`}>
+                          <LayoutDashboard className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="flex-1 text-xs font-medium">{t('nav.dashboard', 'Dashboard')}</span>
+                      </Link>
                     </div>
-                    <span className="text-xs font-medium">Hub</span>
-                  </Link>
-                </div>
-                {RESTAURANT_NAV_GROUPS.map((group) => (
-                  <div key={group.label} className="mb-2.5">
-                    <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-wider text-white/20">{group.label}</p>
+                  );
+                })()}
+
+                {/* ── Restaurant Pro — 4 grouped sections ── */}
+                {industry === 'restaurant' && (
+                  <div className="mt-1">
+                    <div className="mb-2 flex items-center gap-1.5 border-t border-white/8 pt-3">
+                      <UtensilsCrossed className="h-3 w-3 text-amber-400/80" />
+                      <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-amber-400/80">Restaurant Pro</span>
+                    </div>
+                    {/* Hub — 3D floor plan landing page */}
+                    <div className="mb-2.5">
+                      <Link
+                        to="/restaurant"
+                        aria-current={isActive('/restaurant') ? 'page' : undefined}
+                        className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
+                          isActive('/restaurant')
+                            ? 'bg-amber-500/15 border border-amber-500/25 text-amber-200'
+                            : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                        }`}
+                      >
+                        <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg ${
+                          isActive('/restaurant') ? 'bg-amber-500/25 text-amber-300' : 'bg-white/5 text-white/35'
+                        }`}>
+                          <LayoutDashboard className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="text-xs font-medium">Hub</span>
+                      </Link>
+                    </div>
+                    {RESTAURANT_NAV_GROUPS.map((group) => (
+                      <div key={group.label} className="mb-2.5">
+                        <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-wider text-white/20">{group.label}</p>
+                        <div className="space-y-0.5">
+                          {group.items.map((item) => {
+                            const active = isActive(item.href);
+                            return (
+                              <Link
+                                key={item.href}
+                                to={item.href}
+                                aria-current={active ? 'page' : undefined}
+                                className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
+                                  active
+                                    ? 'bg-amber-500/15 border border-amber-500/25 text-amber-200'
+                                    : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                                }`}
+                              >
+                                <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg ${
+                                  active ? 'bg-amber-500/25 text-amber-300' : 'bg-white/5 text-white/35'
+                                }`}>
+                                  <item.icon className="h-3.5 w-3.5" />
+                                </div>
+                                <span className="text-xs font-medium">{item.name}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Other vertical nav items (pharmacy, supermarket, etc.) ── */}
+                {industry !== 'restaurant' && VERTICAL_NAV_ITEMS[industry] && VERTICAL_NAV_ITEMS[industry].length > 0 && (
+                  <div className="mt-1 border-t border-white/8 pt-3">
+                    <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400/70">
+                      {industry.charAt(0).toUpperCase() + industry.slice(1)} Pro
+                    </p>
                     <div className="space-y-0.5">
-                      {group.items.map((item) => {
+                      {VERTICAL_NAV_ITEMS[industry].map((item) => {
+                        const active = item.href ? isActive(item.href) : false;
+                        if (item.href) {
+                          return (
+                            <Link
+                              key={item.name}
+                              to={item.href}
+                              aria-current={active ? 'page' : undefined}
+                              className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
+                                active
+                                  ? 'bg-indigo-500/15 border border-indigo-500/25 text-indigo-300'
+                                  : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                              }`}
+                            >
+                              <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${
+                                active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-indigo-400/50'
+                              }`}>
+                                <item.icon className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="text-xs font-medium">{item.name}</span>
+                            </Link>
+                          );
+                        }
+                        return (
+                          <button
+                            key={item.name}
+                            onClick={() => toast.info(t('nav.vertical.comingSoon', 'Coming in the next sprint — stay tuned!'))}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-white/40 hover:bg-white/5 hover:text-white/70 transition-all"
+                          >
+                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/5 text-indigo-400/40">
+                              <item.icon className="h-3.5 w-3.5" />
+                            </div>
+                            <span className="flex-1 text-start text-xs font-medium">{item.name}</span>
+                            <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide bg-indigo-500/10 text-indigo-400/60">
+                              {t('common.soon', 'Soon')}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Platform tools — collapsible, pinned at bottom of nav ── */}
+                <div className="mt-4 border-t border-white/8 pt-2">
+                  <button
+                    onClick={togglePlatformNav}
+                    aria-expanded={platformExpanded}
+                    className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-white/40 hover:bg-white/5 hover:text-white/60 transition-all"
+                  >
+                    <span className="text-[9px] font-bold uppercase tracking-[0.18em] flex-1 text-start">Platform</span>
+                    {!platformExpanded && (
+                      <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[9px] font-semibold text-white/35">
+                        {PLATFORM_ITEMS.length - 1}
+                      </span>
+                    )}
+                    <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${platformExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+                  {platformExpanded && (
+                    <div className="mt-1 space-y-0.5">
+                      {PLATFORM_ITEMS.slice(1).map((item) => {
+                        const locked = item.feature ? !hasFeature(item.feature) : false;
                         const active = isActive(item.href);
+                        if (locked && item.feature) {
+                          const featureInfo = FEATURE_DISPLAY[item.feature];
+                          const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
+                          return (
+                            <button
+                              key={item.href}
+                              title={`${item.name} — requires ${planInfo.name}`}
+                              onClick={() => toast.info(`Upgrade to ${planInfo.name} to unlock ${featureInfo.name}`)}
+                              className="relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-white/20 opacity-50 hover:opacity-60 transition-opacity"
+                            >
+                              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-white/5">
+                                <item.icon className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="flex-1 text-start text-xs font-medium">{item.name}</span>
+                              <Lock className="h-3 w-3 text-amber-400/50" aria-hidden="true" />
+                            </button>
+                          );
+                        }
                         return (
                           <Link
                             key={item.href}
@@ -508,73 +675,23 @@ export default function Layout({ children }: LayoutProps) {
                             aria-current={active ? 'page' : undefined}
                             className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
                               active
-                                ? 'bg-amber-500/15 border border-amber-500/25 text-amber-200'
-                                : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                                ? 'bg-indigo-500/15 border border-indigo-500/20 text-indigo-300'
+                                : 'text-white/40 hover:bg-white/5 hover:text-white/70'
                             }`}
                           >
                             <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg ${
-                              active ? 'bg-amber-500/25 text-amber-300' : 'bg-white/5 text-white/35'
+                              active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/30'
                             }`}>
                               <item.icon className="h-3.5 w-3.5" />
                             </div>
-                            <span className="text-xs font-medium">{item.name}</span>
+                            <span className="flex-1 text-xs font-medium">{item.name}</span>
                           </Link>
                         );
                       })}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* ── Other vertical nav items (pharmacy, supermarket, etc.) ── */}
-            {industry && industry !== 'restaurant' && VERTICAL_NAV_ITEMS[industry] && VERTICAL_NAV_ITEMS[industry].length > 0 && (
-              <div className="mt-1 border-t border-white/8 pt-3">
-                <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400/70">
-                  {industry.charAt(0).toUpperCase() + industry.slice(1)} Pro
-                </p>
-                <div className="space-y-0.5">
-                  {VERTICAL_NAV_ITEMS[industry].map((item) => {
-                    const active = item.href ? isActive(item.href) : false;
-                    if (item.href) {
-                      return (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          aria-current={active ? 'page' : undefined}
-                          className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
-                            active
-                              ? 'bg-indigo-500/15 border border-indigo-500/25 text-indigo-300'
-                              : 'text-white/50 hover:bg-white/5 hover:text-white/80'
-                          }`}
-                        >
-                          <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${
-                            active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-indigo-400/50'
-                          }`}>
-                            <item.icon className="h-3.5 w-3.5" />
-                          </div>
-                          <span className="text-xs font-medium">{item.name}</span>
-                        </Link>
-                      );
-                    }
-                    return (
-                      <button
-                        key={item.name}
-                        onClick={() => toast.info(t('nav.vertical.comingSoon', 'Coming in the next sprint — stay tuned!'))}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-white/40 hover:bg-white/5 hover:text-white/70 transition-all"
-                      >
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/5 text-indigo-400/40">
-                          <item.icon className="h-3.5 w-3.5" />
-                        </div>
-                        <span className="flex-1 text-start text-xs font-medium">{item.name}</span>
-                        <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide bg-indigo-500/10 text-indigo-400/60">
-                          {t('common.soon', 'Soon')}
-                        </span>
-                      </button>
-                    );
-                  })}
+                  )}
                 </div>
-              </div>
+              </>
             )}
           </nav>
 

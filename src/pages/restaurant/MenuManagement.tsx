@@ -1450,6 +1450,41 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
   const tenantId = currentTenant?.id ?? '';
   const qrBase = `${window.location.origin}/menu/${tenantSlug}`;
 
+  // Per-table QR URL selector
+  const [qrTableId, setQrTableId] = useState<string>('');
+  const [qrTables, setQrTables] = useState<RestaurantTable[]>([]);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Load tables for the dropdown
+  useEffect(() => {
+    if (!tenantId) return;
+    void (async () => {
+      const { data } = await supabase
+        .from('restaurant_tables')
+        .select('id, number, section, status, name, tenant_id, seats, x, y')
+        .eq('tenant_id', tenantId)
+        .order('number');
+      setQrTables((data ?? []) as RestaurantTable[]);
+    })();
+  }, [tenantId]);
+
+  // Compute the QR URL (base + optional ?table=N)
+  const selectedTable = qrTables.find(t => t.id === qrTableId);
+  const qrPreviewUrl = selectedTable
+    ? `${qrBase}/main?table=${selectedTable.number}`
+    : `${qrBase}/main`;
+
+  // Render QR into preview canvas whenever URL changes
+  useEffect(() => {
+    const canvas = qrCanvasRef.current;
+    if (!canvas) return;
+    void QRCode.toCanvas(canvas, qrPreviewUrl, {
+      width: 200,
+      margin: 1,
+      color: { dark: '#ffffff', light: '#1e293b' },
+    });
+  }, [qrPreviewUrl]);
+
   const handleCopyUrl = async (tableNum?: number) => {
     const url = tableNum ? `${qrBase}/table-${tableNum}` : `${qrBase}/main`;
     await navigator.clipboard.writeText(url);
@@ -1490,6 +1525,72 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
         <p className="mt-2 text-xs text-white/30">
           Change theme in Restaurant Settings → QR Menu Palette
         </p>
+      </div>
+
+      {/* Per-table QR generator */}
+      <div>
+        <h3 className="mb-1 text-sm font-semibold text-white/70">Generate Table QR</h3>
+        <p className="mb-3 text-xs text-white/30">
+          Select a table to generate a QR code that pre-selects it when guests scan
+        </p>
+        <div className="rounded-xl border border-white/10 bg-slate-800/40 p-4 space-y-4">
+          {/* Table dropdown */}
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-white/60">
+              Pre-select table (optional)
+            </label>
+            <select
+              value={qrTableId}
+              onChange={e => setQrTableId(e.target.value)}
+              className="bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2 w-full text-sm focus:border-indigo-500/50 focus:outline-none"
+            >
+              <option value="">— Main menu (no table) —</option>
+              {qrTables.map(t => (
+                <option key={t.id} value={t.id}>
+                  Table {t.number}{t.name ? ` — ${t.name}` : ''}{t.section !== 'indoor' ? ` · ${t.section}` : ''}
+                </option>
+              ))}
+            </select>
+            {selectedTable && (
+              <p className="mt-1.5 text-[11px] text-amber-400/70">
+                Scan this QR to auto-select Table {selectedTable.number}
+              </p>
+            )}
+          </div>
+
+          {/* URL display */}
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+            <p className="flex-1 truncate text-xs text-white/50">{qrPreviewUrl}</p>
+            <button
+              onClick={() => { void navigator.clipboard.writeText(qrPreviewUrl).then(() => toast.success('URL copied')); }}
+              className="flex-shrink-0 flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-xs text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <Copy className="h-3 w-3" />
+              Copy
+            </button>
+          </div>
+
+          {/* QR preview canvas */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="overflow-hidden rounded-xl bg-slate-700/60 p-2">
+              <canvas ref={qrCanvasRef} width={200} height={200} />
+            </div>
+            <button
+              onClick={() => {
+                const canvas = qrCanvasRef.current;
+                if (!canvas) return;
+                const link = document.createElement('a');
+                link.download = selectedTable ? `table-${selectedTable.number}-qr.png` : 'menu-qr.png';
+                link.href = canvas.toDataURL();
+                link.click();
+              }}
+              className="flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-xs font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download QR
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* QR URLs */}

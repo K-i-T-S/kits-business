@@ -8,6 +8,7 @@ interface QRMenuHomeProps {
   menuData: QRMenuData;
   lang: 'en' | 'ar';
   tableId: string;
+  tableDisplayLabel?: string;
   totalCartItems: number;
   onSelectItem: (item: RestaurantMenuItem) => void;
   onOpenCart: () => void;
@@ -249,7 +250,7 @@ function CategoryPills({
 }
 
 // Tenant hero header
-function TenantHero({ tenant, lang, tableId }: { tenant: QRMenuTenant; lang: 'en' | 'ar'; tableId: string }) {
+function TenantHero({ tenant, lang, tableId, tableDisplayLabel }: { tenant: QRMenuTenant; lang: 'en' | 'ar'; tableId: string; tableDisplayLabel?: string }) {
   return (
     <div className="relative overflow-hidden px-4 pt-6 pb-4">
       {/* Ambient glow */}
@@ -298,12 +299,12 @@ function TenantHero({ tenant, lang, tableId }: { tenant: QRMenuTenant; lang: 'en
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             Kitchen Open
           </span>
-          {tableId && (
+          {(tableDisplayLabel ?? tableId) && (
             <span
               className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
               style={{ background: 'var(--qr-surface)', border: '1px solid var(--qr-border)', color: 'var(--qr-accent)' }}
             >
-              🪑 Table {tableId.replace('table-', '')}
+              🪑 {tableDisplayLabel ? `Table ${tableDisplayLabel}` : `Table ${tableId.replace('table-', '')}`}
             </span>
           )}
         </motion.div>
@@ -316,6 +317,7 @@ export default function QRMenuHome({
   menuData,
   lang,
   tableId,
+  tableDisplayLabel,
   totalCartItems,
   onSelectItem,
   onOpenCart,
@@ -357,7 +359,7 @@ export default function QRMenuHome({
       </AnimatePresence>
 
       {/* Language + restaurant header */}
-      <TenantHero tenant={menuData.tenant} lang={lang} tableId={tableId} />
+      <TenantHero tenant={menuData.tenant} lang={lang} tableId={tableId} tableDisplayLabel={tableDisplayLabel} />
 
       {/* Featured */}
       {!selectedCategoryId && (

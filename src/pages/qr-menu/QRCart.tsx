@@ -8,6 +8,7 @@ import { supabase } from '@/utils/supabaseClient';
 interface QRCartProps {
   items: QRCartItem[];
   tableId: string;
+  tableDisplayLabel?: string;
   tenantId: string;
   totalPrice: number;
   onUpdateQuantity: (menuItemId: string, modifierKey: string, quantity: number) => void;
@@ -24,7 +25,7 @@ function getModifierKey(item: QRCartItem): string {
   return `${item.menuItemId}__${modStr}`;
 }
 
-export default function QRCart({ items, tableId, tenantId, totalPrice, onUpdateQuantity, onRemoveItem, onClose, onSuccess }: QRCartProps) {
+export default function QRCart({ items, tableId, tableDisplayLabel, tenantId, totalPrice, onUpdateQuantity, onRemoveItem, onClose, onSuccess }: QRCartProps) {
   const [placing, setPlacing] = useState(false);
 
   const handlePlaceOrder = async () => {
@@ -105,9 +106,9 @@ export default function QRCart({ items, tableId, tenantId, totalPrice, onUpdateQ
           <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}>
             Your Order
           </h3>
-          {tableId && (
+          {(tableDisplayLabel ?? tableId) && (
             <p className="text-xs mt-0.5" style={{ color: 'var(--qr-text-muted)' }}>
-              🪑 Table {tableId.replace('table-', '')}
+              🪑 {tableDisplayLabel ? `Table ${tableDisplayLabel}` : `Table ${tableId.replace('table-', '')}`}
             </p>
           )}
         </div>

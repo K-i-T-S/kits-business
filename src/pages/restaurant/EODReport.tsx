@@ -1,3 +1,4 @@
+import '@/styles/thermal-print.css';
 import {
   FileText, Share2, Printer, RefreshCw,
   TrendingUp, DollarSign, Users, Clock,
@@ -117,6 +118,8 @@ export default function EODReport() {
 
   const today = new Date().toLocaleDateString('en', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const todayISO = new Date().toISOString().split('T')[0] ?? '';
+
+  const handlePrint = () => { window.print(); };
 
   const generate = async () => {
     setLoading(true);
@@ -303,7 +306,7 @@ export default function EODReport() {
             <h1 className="text-xl font-bold text-white">{t('restaurant.eod.title', 'End-of-Day Report')}</h1>
             <p className="text-xs text-white/35">{today}</p>
           </div>
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex gap-2 no-print">
             <button
               onClick={() => void generate()}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-all"
@@ -312,7 +315,7 @@ export default function EODReport() {
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
-              onClick={() => window.print()}
+              onClick={handlePrint}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-all"
               title="Print"
             >
@@ -454,13 +457,87 @@ export default function EODReport() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            {/* Thermal receipt — hidden on screen, visible only when printing */}
+            <div className="thermal-receipt" aria-hidden="true">
+              <div className="receipt-header">
+                <strong>{currentTenant?.name ?? 'Restaurant'}</strong>
+                <div>End of Day Report</div>
+                <div>{eod.date}</div>
+              </div>
+              <div className="receipt-divider" />
+              <div className="receipt-row">
+                <span>Total Orders</span>
+                <span>{eod.totalOrders}</span>
+              </div>
+              <div className="receipt-row">
+                <span>Covers</span>
+                <span>{eod.covers}</span>
+              </div>
+              <div className="receipt-row">
+                <span>Avg Ticket</span>
+                <span>${eod.avgTicket.toFixed(2)}</span>
+              </div>
+              <div className="receipt-divider" />
+              <div className="receipt-row">
+                <span>Food & Bev</span>
+                <span>${eod.foodRevenue.toFixed(2)}</span>
+              </div>
+              {eod.argileRevenue > 0 && (
+                <div className="receipt-row">
+                  <span>Argile</span>
+                  <span>${eod.argileRevenue.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="receipt-row">
+                <span>Service (10%)</span>
+                <span>${eod.serviceCharge.toFixed(2)}</span>
+              </div>
+              <div className="receipt-row">
+                <span>VAT (11%)</span>
+                <span>${eod.vat.toFixed(2)}</span>
+              </div>
+              <div className="receipt-divider" />
+              <div className="receipt-row receipt-total">
+                <span>GROSS TOTAL</span>
+                <span>${eod.grossTotal.toFixed(2)}</span>
+              </div>
+              <div className="receipt-row">
+                <span>Est. Margin</span>
+                <span>{eod.grossMarginPct.toFixed(1)}%</span>
+              </div>
+              {eod.topDishes.length > 0 && (
+                <>
+                  <div className="receipt-divider" />
+                  <div style={{ marginBottom: '2px' }}>Top Dishes:</div>
+                  {eod.topDishes.map((d, i) => (
+                    <div key={d.name} className="receipt-row">
+                      <span>{i + 1}. {d.name}</span>
+                      <span>{d.qty} sold</span>
+                    </div>
+                  ))}
+                </>
+              )}
+              <div className="receipt-divider" />
+              <div className="receipt-footer">
+                <div>KiTS Business Terminal</div>
+                <div>Support: +961 81 290 662</div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 no-print">
               <button
                 onClick={() => void save()}
                 disabled={saved}
                 className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 py-3 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/20 disabled:opacity-60 hover:shadow-amber-500/30 transition-all"
               >
                 {saved ? '✓ Saved' : t('restaurant.eod.save', 'Save Report')}
+              </button>
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition-all"
+              >
+                <Printer className="h-4 w-4" />
+                {t('restaurant.eod.print', 'Print Report')}
               </button>
             </div>
           </>

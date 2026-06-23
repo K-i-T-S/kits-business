@@ -14,11 +14,12 @@
  *    (tip/discount are read from the order row via updateTip/updateDiscount first)
  *  - Payment method mapping: cash_usd|cash_lbp → 'cash', card → 'card', split → 'other'
  */
-import { X, Receipt, Check, Send } from 'lucide-react';
+import { X, Receipt, Check, Send, Printer } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import '@/styles/thermal-print.css';
 import { useApp } from '@/context/AppContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import type { RestaurantOrderItem, TableOrderExtended } from '@/types/restaurant';
@@ -91,6 +92,8 @@ function ReceiptView({ receipt, onClose, canSendWhatsApp }: ReceiptViewProps) {
   const [phone, setPhone] = useState('');
   const [sending, setSending] = useState(false);
 
+  const handlePrint = () => { window.print(); };
+
   const handleSendWhatsApp = async () => {
     const trimmed = phone.trim();
     if (!trimmed) return;
@@ -132,8 +135,78 @@ function ReceiptView({ receipt, onClose, canSendWhatsApp }: ReceiptViewProps) {
     }
   };
 
+  const paymentMethodLabel = (method: CloseBillPaymentMethod): string => {
+    switch (method) {
+      case 'cash_usd': return 'Cash (USD)';
+      case 'cash_lbp': return 'Cash (L.L.)';
+      case 'card': return 'Card';
+      case 'split': return 'Split';
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
+      {/* Thermal receipt — hidden on screen, visible only when printing */}
+      <div className="thermal-receipt" aria-hidden="true">
+        <div className="receipt-header">
+          <strong>{receipt.businessName}</strong>
+          {receipt.tableNumber !== null && (
+            <div>Table {receipt.tableNumber}</div>
+          )}
+          <div>Receipt</div>
+          <div>{new Date(receipt.paidAt).toLocaleString()}</div>
+        </div>
+        <div className="receipt-divider" />
+        {receipt.items.map((item) => (
+          <div key={item.id} className="receipt-row">
+            <span>{item.quantity}x {item.product_name}</span>
+            <span>${(item.unit_price * item.quantity).toFixed(2)}</span>
+          </div>
+        ))}
+        <div className="receipt-divider" />
+        <div className="receipt-row">
+          <span>Subtotal</span>
+          <span>${receipt.subtotal.toFixed(2)}</span>
+        </div>
+        {receipt.discountAmount > 0 && (
+          <div className="receipt-row">
+            <span>Discount</span>
+            <span>-${receipt.discountAmount.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="receipt-row">
+          <span>Service Charge</span>
+          <span>${receipt.serviceCharge.toFixed(2)}</span>
+        </div>
+        <div className="receipt-row">
+          <span>VAT</span>
+          <span>${receipt.vat.toFixed(2)}</span>
+        </div>
+        {receipt.tip > 0 && (
+          <div className="receipt-row">
+            <span>Tip</span>
+            <span>${receipt.tip.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="receipt-divider" />
+        <div className="receipt-row receipt-total">
+          <span>TOTAL</span>
+          <span>${receipt.grandTotal.toFixed(2)}</span>
+        </div>
+        <div style={{ fontSize: '10px', marginTop: '2px' }}>
+          (LBP {Math.round(receipt.grandTotal * LBP_RATE).toLocaleString()})
+        </div>
+        <div className="receipt-row" style={{ marginTop: '4px' }}>
+          <span>Payment</span>
+          <span>{paymentMethodLabel(receipt.paymentMethod)}</span>
+        </div>
+        <div className="receipt-divider" />
+        <div className="receipt-footer">
+          <div>Thank you for dining with us!</div>
+          <div>Support: +961 81 290 662</div>
+        </div>
+      </div>
+
       {/* Receipt card */}
       <div
         id="bill-receipt"
@@ -198,12 +271,12 @@ function ReceiptView({ receipt, onClose, canSendWhatsApp }: ReceiptViewProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 no-print">
         <button
-          onClick={() => window.print()}
+          onClick={handlePrint}
           className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 py-3 text-sm font-semibold text-white/70 hover:bg-white/10 transition-all active:scale-95"
         >
-          <Receipt className="h-4 w-4" />
+          <Printer className="h-4 w-4" />
           {t('restaurant.bill.print', 'Print')}
         </button>
         <button
@@ -434,7 +507,7 @@ export default function CloseBillModal({
       role="dialog"
       aria-modal="true"
       aria-label={t('restaurant.closeBill.title', 'Close Bill')}
-      className="fixed inset-0 z-[75] flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[75] flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center no-print"
     >
       <div className="w-full max-w-md rounded-t-3xl border-t border-white/10 bg-slate-900 flex flex-col max-h-[90dvh] sm:max-h-[85vh] sm:rounded-2xl sm:border">
         {/* Header */}

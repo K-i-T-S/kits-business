@@ -614,6 +614,229 @@ function DemandForecastPanel({ tenantId }: DemandForecastPanelProps) {
   );
 }
 
+// ── Menu Profitability Panel ──────────────────────────────────────────────────
+
+interface MenuItemRow {
+  id: string;
+  name: string;
+  price_usd: number;
+}
+
+interface ItemRecipeLink {
+  menu_item_id: string;
+  recipe_id: string;
+}
+
+interface RecipeIngredientRow {
+  recipe_id: string;
+  ingredient_id: string;
+  quantity: number;
+}
+
+interface IngredientCostRow {
+  id: string;
+  cost_per_unit: number;
+}
+
+interface ItemProfit {
+  id: string;
+  name: string;
+  price: number;
+  cost: number;
+  margin: number;
+  marginPct: number;
+  costPct: number;
+  hasRecipe: boolean;
+}
+
+interface MenuProfitabilityPanelProps {
+  tenantId?: string;
+}
+
+function MenuProfitabilityPanel({ tenantId }: MenuProfitabilityPanelProps) {
+  const [profits, setProfits] = useState<ItemProfit[]>([]);
+  const [avgCostPct, setAvgCostPct] = useState(0);
+  const [profitLoading, setProfitLoading] = useState(true);
+  const [profitExpanded, setProfitExpanded] = useState(true);
+
+  useEffect(() => {
+    if (!tenantId) {
+      setProfitLoading(false);
+      return;
+    }
+
+    const fetchProfitability = async () => {
+      setProfitLoading(true);
+      try {
+        const [menuItemsRes, itemRecipeLinksRes, recipeIngredientsRes, ingredientsRes] = await Promise.all([
+          supabase
+            .from('restaurant_menu_items')
+            .select('id, name, price_usd')
+            .eq('tenant_id', tenantId)
+            .eq('is_active', true),
+          supabase
+            .from('restaurant_menu_item_recipes')
+            .select('menu_item_id, recipe_id')
+            .eq('tenant_id', tenantId),
+          supabase
+            .from('restaurant_recipe_ingredients')
+            .select('recipe_id, ingredient_id, quantity')
+            .eq('tenant_id', tenantId),
+          supabase
+            .from('restaurant_ingredients')
+            .select('id, cost_per_unit')
+            .eq('tenant_id', tenantId),
+        ]);
+
+        const menuItems = (menuItemsRes.data ?? []) as MenuItemRow[];
+        const itemRecipeLinks = (itemRecipeLinksRes.data ?? []) as ItemRecipeLink[];
+        const recipeIngredients = (recipeIngredientsRes.data ?? []) as RecipeIngredientRow[];
+        const ingredients = (ingredientsRes.data ?? []) as IngredientCostRow[];
+
+        const computed: ItemProfit[] = menuItems.map((item) => {
+          const recipeLink = itemRecipeLinks.find((l) => l.menu_item_id === item.id);
+          if (!recipeLink) {
+            return {
+              id: item.id,
+              name: item.name,
+              price: item.price_usd,
+              cost: 0,
+              margin: item.price_usd,
+              marginPct: 100,
+              costPct: 0,
+              hasRecipe: false,
+            };
+          }
+
+          const lines = recipeIngredients.filter((r) => r.recipe_id === recipeLink.recipe_id);
+          const cost = lines.reduce((sum, line) => {
+            const ing = ingredients.find((i) => i.id === line.ingredient_id);
+            return sum + line.quantity * (ing?.cost_per_unit ?? 0);
+          }, 0);
+
+          const margin = item.price_usd - cost;
+          return {
+            id: item.id,
+            name: item.name,
+            price: item.price_usd,
+            cost,
+            margin,
+            marginPct: item.price_usd > 0 ? (margin / item.price_usd) * 100 : 0,
+            costPct: item.price_usd > 0 ? (cost / item.price_usd) * 100 : 0,
+            hasRecipe: true,
+          };
+        }).sort((a, b) => b.marginPct - a.marginPct);
+
+        const withRecipe = computed.filter((p) => p.hasRecipe);
+        const avg = withRecipe.length
+          ? withRecipe.reduce((s, p) => s + p.costPct, 0) / withRecipe.length
+          : 0;
+
+        setProfits(computed);
+        setAvgCostPct(avg);
+      } catch (err) {
+        console.error('[MenuProfitabilityPanel] fetch error:', err);
+        setProfits([]);
+        setAvgCostPct(0);
+      } finally {
+        setProfitLoading(false);
+      }
+    };
+
+    void fetchProfitability();
+  }, [tenantId]);
+
+  const withRecipe = profits.filter((p) => p.hasRecipe);
+
+  return (
+    <section>
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+        {/* Panel header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={18} className="text-emerald-400" />
+            <h3 className="text-white font-semibold">Menu Profitability</h3>
+            <span className="text-white/40 text-xs">food cost % · gross margin</span>
+          </div>
+          <button
+            onClick={() => setProfitExpanded((prev) => !prev)}
+            className="text-white/40 hover:text-white/60 transition-colors"
+            aria-label={profitExpanded ? 'Collapse profitability panel' : 'Expand profitability panel'}
+          >
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${profitExpanded ? 'rotate-180' : ''}`}
+            />
+          </button>
+        </div>
+
+        {profitExpanded && (
+          profitLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <>
+              {/* Summary strip */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <p className="text-white/40 text-xs mb-1">Avg Food Cost</p>
+                  <p className={`text-lg font-bold ${avgCostPct < 30 ? 'text-green-400' : avgCostPct < 35 ? 'text-amber-400' : 'text-red-400'}`}>
+                    {avgCostPct.toFixed(1)}%
+                  </p>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <p className="text-white/40 text-xs mb-1">Items with Recipes</p>
+                  <p className="text-white text-lg font-bold">{withRecipe.length}/{profits.length}</p>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <p className="text-white/40 text-xs mb-1">Best Margin</p>
+                  <p className="text-green-400 text-lg font-bold">{profits[0]?.marginPct.toFixed(0) ?? 0}%</p>
+                </div>
+              </div>
+
+              {withRecipe.length === 0 ? (
+                <p className="text-white/30 text-sm text-center py-6">
+                  Add recipes in Recipe &amp; Cost to unlock cost analysis
+                </p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-white/30 text-xs border-b border-white/10">
+                      <th className="text-left pb-2 font-normal">Item</th>
+                      <th className="text-right pb-2 font-normal">Price</th>
+                      <th className="text-right pb-2 font-normal">Cost</th>
+                      <th className="text-right pb-2 font-normal">Food Cost %</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {profits.slice(0, 15).map((item) => (
+                      <tr key={item.id}>
+                        <td className="py-1.5 text-white/80 text-xs">{item.name}</td>
+                        <td className="text-right py-1.5 text-white/50 text-xs">${item.price.toFixed(2)}</td>
+                        <td className="text-right py-1.5 text-white/50 text-xs">
+                          {item.hasRecipe ? `$${item.cost.toFixed(2)}` : '—'}
+                        </td>
+                        <td className="text-right py-1.5 text-xs">
+                          {item.hasRecipe ? (
+                            <span className={`px-1.5 py-0.5 rounded text-xs ${item.costPct < 30 ? 'bg-green-500/20 text-green-400' : item.costPct < 35 ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>
+                              {item.costPct.toFixed(1)}%
+                            </span>
+                          ) : <span className="text-white/20 text-xs">No recipe</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          )
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ── Waiter Leaderboard ────────────────────────────────────────────────────────
 
 interface WaiterOrderRow {
@@ -1196,6 +1419,9 @@ export default function RestaurantAnalytics() {
 
             {/* Demand Forecast Panel (Task K) */}
             <DemandForecastPanel tenantId={tenantId} />
+
+            {/* Menu Profitability Panel */}
+            <MenuProfitabilityPanel tenantId={tenantId} />
 
             {/* Menu velocity */}
             <section>

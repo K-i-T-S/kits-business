@@ -81,6 +81,7 @@ const RestaurantCashDrawer = lazy(() => import('./pages/restaurant/CashDrawer'))
 const RestaurantEventsManager = lazy(() => import('./pages/restaurant/EventsManager'));
 const QRMenuPage = lazy(() => import('./pages/qr-menu/QRMenuPage'));
 const BookReservation = lazy(() => import('./pages/BookReservation'));
+const TableFeedback = lazy(() => import('./pages/TableFeedback'));
 
 // Pharmacy Vertical Components
 const PharmacyHub = lazy(() => import('./pages/pharmacy/PharmacyHub'));
@@ -408,6 +409,7 @@ export default function App() {
                                 {/* ── Restaurant Vertical routes ── */}
                                 <Route path="/menu/:tenantSlug/:tableId" element={<QRMenuPage />} />
                                 <Route path="/book/:tenantSlug" element={<Suspense fallback={<div className="min-h-screen bg-slate-950" />}><BookReservation /></Suspense>} />
+                                <Route path="/feedback/:tenantSlug/:tableId?" element={<Suspense fallback={<div className="min-h-screen bg-slate-950" />}><TableFeedback /></Suspense>} />
                                 <Route
                                   path="/restaurant"
                                   element={isAuthenticated ? <RestaurantHub /> : <Navigate to="/login" replace />}

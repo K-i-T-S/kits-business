@@ -1,6 +1,6 @@
 import {
   Plus, X, Receipt, Send, Users, ChevronRight, Trash2, Utensils, SplitSquareVertical, Calculator,
-  Settings2, Check, Sparkles, CalendarClock,
+  Settings2, Check, Sparkles, CalendarClock, Copy, Link,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
@@ -105,6 +105,8 @@ export default function TableManagement() {
   const [orderItems, setOrderItems] = useState<RestaurantOrderItem[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [copiedFeedbackTableId, setCopiedFeedbackTableId] = useState<string | null>(null);
 
   // Section management UI
   const [showSectionManager, setShowSectionManager] = useState(false);
@@ -567,6 +569,32 @@ export default function TableManagement() {
                         )}
                       </div>
                     </div>
+
+                    {/* Feedback link */}
+                    {currentTenant?.slug && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${window.location.origin}/feedback/${currentTenant.slug}/${selectedTable.number}`;
+                          void navigator.clipboard.writeText(url).then(() => {
+                            setCopiedFeedbackTableId(selectedTable.id);
+                            setTimeout(() => setCopiedFeedbackTableId(null), 2000);
+                          });
+                        }}
+                        className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/50 hover:bg-white/10 hover:text-white/70 transition-colors w-full"
+                        aria-label="Copy feedback link for this table"
+                      >
+                        {copiedFeedbackTableId === selectedTable.id
+                          ? <Check className="h-3 w-3 text-emerald-400 flex-none" />
+                          : <Link className="h-3 w-3 flex-none" />}
+                        <span className="flex-1 text-left truncate">
+                          {copiedFeedbackTableId === selectedTable.id
+                            ? 'Feedback link copied!'
+                            : `Copy feedback link — Table ${selectedTable.number}`}
+                        </span>
+                        <Copy className="h-3 w-3 flex-none opacity-40" />
+                      </button>
+                    )}
 
                     {/* Order section */}
                     {!selectedOrder ? (

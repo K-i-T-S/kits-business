@@ -20,6 +20,7 @@ import {
   Pencil,
   TrendingDown,
   Calendar,
+  CalendarHeart,
   HelpCircle,
   UtensilsCrossed,
   Pill,
@@ -175,6 +176,7 @@ export default function Layout({ children }: LayoutProps) {
         { name: t('nav.vertical.menuManagement', 'Menu'), icon: BookOpen, href: '/restaurant/menu' },
         { name: t('nav.vertical.waiter', 'Waiter'), icon: User, href: '/restaurant/waiter' },
         { name: t('nav.vertical.reservations', 'Reservations'), icon: Clock, href: '/restaurant/reservations' },
+        { name: t('nav.vertical.events', 'Events'), icon: CalendarHeart, href: '/restaurant/events' },
       ],
     },
     {

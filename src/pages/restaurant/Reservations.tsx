@@ -1,5 +1,5 @@
 import {
-  Plus, X, Phone, Users, Calendar, Clock, CheckCircle, XCircle, AlertCircle, ChevronDown, Armchair,
+  Plus, X, Phone, Users, Calendar, Clock, CheckCircle, XCircle, AlertCircle, ChevronDown, Armchair, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import { RESERVATION_STATUS_LABELS } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
 
 type FilterType = 'today' | 'upcoming' | 'all';
+type ViewMode = 'list' | 'calendar';
 
 const STATUS_CONFIG: Record<ReservationStatus, { bg: string; text: string; icon: typeof CheckCircle }> = {
   pending: { bg: 'bg-amber-500/15 border border-amber-500/30', text: 'text-amber-400', icon: Clock },
@@ -21,6 +22,39 @@ const STATUS_CONFIG: Record<ReservationStatus, { bg: string; text: string; icon:
   no_show: { bg: 'bg-red-500/15 border border-red-500/30', text: 'text-red-400', icon: XCircle },
   cancelled: { bg: 'bg-slate-500/10 border border-slate-500/20', text: 'text-slate-500', icon: XCircle },
 };
+
+// Calendar block colours by status
+const CAL_STATUS_STYLE: Record<ReservationStatus, string> = {
+  pending: 'bg-yellow-500/30 border-yellow-500/40 text-yellow-200',
+  confirmed: 'bg-indigo-500/30 border-indigo-500/40 text-indigo-200',
+  seated: 'bg-green-500/30 border-green-500/40 text-green-200',
+  completed: 'bg-white/5 border-white/10 text-white/30',
+  cancelled: 'bg-red-900/20 border-red-500/20 text-red-400',
+  no_show: 'bg-red-900/20 border-red-500/20 text-red-400',
+};
+
+const SLOT_HEIGHT = 40; // px per half-hour slot
+const START_HOUR = 10; // 10:00 am
+const TOTAL_SLOTS = 32; // 10:00 → 02:00 next day = 16 hours × 2
+
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function timeToSlot(dateStr: string): number {
+  const d = new Date(dateStr);
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const adjH = h < START_HOUR ? h + 24 : h; // 00:00–09:59 treated as next day (24+h)
+  return (adjH - START_HOUR) * 2 + Math.floor(m / 30);
+}
+
+function slotToLabel(slot: number): string {
+  const totalMins = (START_HOUR * 60) + slot * 30;
+  const h = Math.floor(totalMins / 60) % 24;
+  const m = totalMins % 60;
+  const hh = String(h).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
 
 interface ReservationFormData {
   guest_name: string;
@@ -56,6 +90,13 @@ function buildWhatsAppLink(phone: string, guestName: string, reservedAt: string,
   return `https://wa.me/${digits}?text=${msg}`;
 }
 
+function startOfSunday(): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - d.getDay());
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function Reservations() {
   const { t } = useTranslation();
   const { currentTenant } = useApp();
@@ -65,11 +106,28 @@ export default function Reservations() {
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('today');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [calWeekStart, setCalWeekStart] = useState<Date>(startOfSunday);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<ReservationFormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [statusMenuId, setStatusMenuId] = useState<string | null>(null);
   const [seatingId, setSeatingId] = useState<string | null>(null);
+
+  const calWeekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(calWeekStart);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+
+  const weekEnd = new Date(calWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const calReservations = reservations.filter((r) => {
+    const d = new Date(r.reserved_at);
+    return d >= calWeekStart && d < weekEnd;
+  });
+
+  const nowSlot = timeToSlot(new Date().toISOString());
+  const todayStr = new Date().toDateString();
 
   const loadData = useCallback(async () => {
     if (!tenantId) return;
@@ -130,18 +188,6 @@ export default function Reservations() {
     }
   };
 
-  /**
-   * Core seat-and-open logic shared by both the "Seat Now" button and the
-   * status dropdown when the operator selects "seated".
-   *
-   * Steps:
-   *   1. Guard: table must be assigned.
-   *   2. Check for an existing open order on that table — warn and abort if found.
-   *   3. INSERT table_orders (open, covers = party_size).
-   *   4. UPDATE restaurant_tables → occupied.
-   *   5. UPDATE reservations → seated.
-   *   6. Reflect changes in local state + show success toast.
-   */
   const seatReservation = useCallback(async (reservation: Reservation): Promise<boolean> => {
     if (!tenantId) return false;
 
@@ -150,7 +196,6 @@ export default function Reservations() {
       return false;
     }
 
-    // Step 2: duplicate-order guard
     const { data: existingOrders, error: checkError } = await supabase
       .from('table_orders')
       .select('id')
@@ -165,7 +210,6 @@ export default function Reservations() {
       return false;
     }
 
-    // Step 3: create table order
     const { error: orderError } = await supabase
       .from('table_orders')
       .insert({
@@ -177,7 +221,6 @@ export default function Reservations() {
       });
     if (orderError) { toast.error(orderError.message); return false; }
 
-    // Step 4: mark table occupied
     const { error: tableError } = await supabase
       .from('restaurant_tables')
       .update({ status: 'occupied' })
@@ -185,7 +228,6 @@ export default function Reservations() {
       .eq('tenant_id', tenantId);
     if (tableError) { toast.error(tableError.message); return false; }
 
-    // Step 5: mark reservation seated
     const { error: resError } = await supabase
       .from('reservations')
       .update({ status: 'seated' })
@@ -193,7 +235,6 @@ export default function Reservations() {
       .eq('tenant_id', tenantId);
     if (resError) { toast.error(resError.message); return false; }
 
-    // Step 6: local state + toast
     setReservations((prev) => prev.map((r) => r.id === reservation.id ? { ...r, status: 'seated' as ReservationStatus } : r));
     setTables((prev) => prev.map((tb) => tb.id === reservation.table_id ? { ...tb, status: 'occupied' as const } : tb));
     toast.success(`Table opened for ${reservation.guest_name} — ${reservation.party_size} covers`);
@@ -203,7 +244,6 @@ export default function Reservations() {
   const handleStatusChange = async (id: string, status: ReservationStatus) => {
     if (!tenantId) return;
 
-    // When transitioning to 'seated', delegate to the full seat flow
     if (status === 'seated') {
       const reservation = reservations.find((r) => r.id === id);
       if (reservation) {
@@ -241,6 +281,16 @@ export default function Reservations() {
     seated: ['completed'],
   };
 
+  const advanceWeek = (dir: -1 | 1) => {
+    setCalWeekStart((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + dir * 7);
+      return d;
+    });
+  };
+
+  const goToday = () => setCalWeekStart(startOfSunday());
+
   return (
     <Layout>
       <div className="min-h-screen bg-slate-900 p-4 sm:p-6">
@@ -252,158 +302,358 @@ export default function Reservations() {
               <h1 className="text-2xl font-bold text-white">{t('restaurant.reservations', 'Reservations')}</h1>
               <p className="mt-1 text-sm text-white/40">{t('restaurant.reservationsDesc', 'Manage guest bookings and table assignments')}</p>
             </div>
-            <button
-              onClick={() => { setForm(EMPTY_FORM); setModalOpen(true); }}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90"
-            >
-              <Plus className="h-4 w-4" />
-              {t('restaurant.newReservation', 'New Reservation')}
-            </button>
-          </div>
+            <div className="flex items-center gap-2">
+              {/* List | Calendar toggle */}
+              <div className="flex rounded-xl border border-white/10 bg-white/5 p-0.5">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold transition-all ${
+                    viewMode === 'list'
+                      ? 'bg-indigo-600 text-white shadow'
+                      : 'text-white/40 hover:text-white/70'
+                  }`}
+                >
+                  List
+                </button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold transition-all ${
+                    viewMode === 'calendar'
+                      ? 'bg-indigo-600 text-white shadow'
+                      : 'text-white/40 hover:text-white/70'
+                  }`}
+                >
+                  Calendar
+                </button>
+              </div>
 
-          {/* Filters */}
-          <div className="mb-4 flex gap-2">
-            {(['today', 'upcoming', 'all'] as FilterType[]).map((f) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold capitalize transition-all ${
-                  filter === f
-                    ? 'border border-amber-500/30 bg-amber-500/15 text-amber-200 shadow-lg shadow-amber-500/10'
-                    : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:border-white/20'
-                }`}
+                onClick={() => { setForm(EMPTY_FORM); setModalOpen(true); }}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90"
               >
-                {t(`restaurant.filter.${f}`, f === 'today' ? 'Today' : f === 'upcoming' ? 'Upcoming' : 'All')}
+                <Plus className="h-4 w-4" />
+                {t('restaurant.newReservation', 'New Reservation')}
               </button>
-            ))}
-            <span className="ml-auto self-center rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
-              {filteredReservations.length} {t('restaurant.reservationCount', 'reservations')}
-            </span>
+            </div>
           </div>
 
-          {/* List */}
-          {loading ? (
-            <div className="flex h-48 items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-indigo-500" />
-            </div>
-          ) : filteredReservations.length === 0 ? (
-            <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl">
-              <Calendar className="h-8 w-8 text-white/20" />
-              <p className="text-sm text-white/30">{t('restaurant.noReservations', 'No reservations')}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredReservations.map((reservation) => {
-                const cfg = STATUS_CONFIG[reservation.status];
-                const StatusIcon = cfg.icon;
-                const table = tables.find((t) => t.id === reservation.table_id);
-                const actions = nextStatuses[reservation.status] ?? [];
-
-                return (
-                  <div
-                    key={reservation.id}
-                    className="flex flex-wrap items-start gap-4 rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 p-4 shadow-xl transition-all hover:border-amber-500/20 hover:shadow-amber-500/5"
+          {/* ── LIST VIEW ── */}
+          {viewMode === 'list' && (
+            <>
+              {/* Filters */}
+              <div className="mb-4 flex gap-2">
+                {(['today', 'upcoming', 'all'] as FilterType[]).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`rounded-xl px-4 py-2 text-sm font-semibold capitalize transition-all ${
+                      filter === f
+                        ? 'border border-amber-500/30 bg-amber-500/15 text-amber-200 shadow-lg shadow-amber-500/10'
+                        : 'border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:border-white/20'
+                    }`}
                   >
-                    {/* Guest info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-semibold text-white">{reservation.guest_name}</h3>
-                        <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${cfg.bg} ${cfg.text}`}>
-                          <StatusIcon className="h-2.5 w-2.5" />
-                          {RESERVATION_STATUS_LABELS[reservation.status]}
-                        </span>
-                        {table && (
-                          <span className="rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 text-[10px] text-indigo-400">
-                            T{table.number}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-xs text-white/50">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatReservedAt(reservation.reserved_at)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {reservation.party_size} {t('restaurant.guests', 'guests')}
-                        </span>
-                        <a
-                          href={`tel:${reservation.guest_phone}`}
-                          className="flex items-center gap-1 text-indigo-400/80 hover:text-indigo-400 transition-colors"
-                        >
-                          <Phone className="h-3 w-3" />
-                          {reservation.guest_phone}
-                        </a>
-                      </div>
-                      {reservation.notes && (
-                        <p className="mt-1.5 text-xs text-amber-400/70 italic">{reservation.notes}</p>
-                      )}
-                    </div>
+                    {t(`restaurant.filter.${f}`, f === 'today' ? 'Today' : f === 'upcoming' ? 'Upcoming' : 'All')}
+                  </button>
+                ))}
+                <span className="ml-auto self-center rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
+                  {filteredReservations.length} {t('restaurant.reservationCount', 'reservations')}
+                </span>
+              </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-shrink-0 items-center gap-2">
-                      {/* Seat Now — only for confirmed reservations */}
-                      {reservation.status === 'confirmed' && (
-                        <button
-                          onClick={() => { void handleSeatNow(reservation); }}
-                          disabled={seatingId === reservation.id}
-                          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-500 disabled:opacity-50"
-                          title="Seat guest now"
-                        >
-                          <Armchair className="h-3 w-3" />
-                          {seatingId === reservation.id ? '…' : t('restaurant.seatNow', 'Seat Now')}
-                        </button>
-                      )}
+              {/* List */}
+              {loading ? (
+                <div className="flex h-48 items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-indigo-500" />
+                </div>
+              ) : filteredReservations.length === 0 ? (
+                <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 shadow-2xl">
+                  <Calendar className="h-8 w-8 text-white/20" />
+                  <p className="text-sm text-white/30">{t('restaurant.noReservations', 'No reservations')}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredReservations.map((reservation) => {
+                    const cfg = STATUS_CONFIG[reservation.status];
+                    const StatusIcon = cfg.icon;
+                    const table = tables.find((t) => t.id === reservation.table_id);
+                    const actions = nextStatuses[reservation.status] ?? [];
 
-                      {/* WhatsApp confirm */}
-                      <a
-                        href={buildWhatsAppLink(reservation.guest_phone, reservation.guest_name, reservation.reserved_at, reservation.party_size)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-600/30 px-2.5 py-1.5 text-xs font-semibold text-emerald-400 transition-all hover:bg-emerald-600/30"
-                        title="Send WhatsApp confirmation"
+                    return (
+                      <div
+                        key={reservation.id}
+                        className="flex flex-wrap items-start gap-4 rounded-2xl border border-white/10 backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 p-4 shadow-xl transition-all hover:border-amber-500/20 hover:shadow-amber-500/5"
                       >
-                        <Phone className="h-3 w-3" />
-                        WA
-                      </a>
-
-                      {/* Status actions */}
-                      {actions.length > 0 && (
-                        <div className="relative">
-                          <button
-                            onClick={() => setStatusMenuId(statusMenuId === reservation.id ? null : reservation.id)}
-                            className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white/50 hover:bg-white/10 transition-all"
-                          >
-                            {t('restaurant.updateStatus', 'Status')}
-                            <ChevronDown className="h-3 w-3" />
-                          </button>
-                          {statusMenuId === reservation.id && (
-                            <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
-                              {actions.map((s) => (
-                                <button
-                                  key={s}
-                                  onClick={() => { void handleStatusChange(reservation.id, s); }}
-                                  className="flex w-full items-center px-3 py-2 text-xs text-white/60 hover:bg-white/5 hover:text-white transition-colors first:rounded-t-xl last:rounded-b-xl capitalize"
-                                >
-                                  {RESERVATION_STATUS_LABELS[s]}
-                                </button>
-                              ))}
-                            </div>
+                        {/* Guest info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="mb-1 flex flex-wrap items-center gap-2">
+                            <h3 className="text-sm font-semibold text-white">{reservation.guest_name}</h3>
+                            <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${cfg.bg} ${cfg.text}`}>
+                              <StatusIcon className="h-2.5 w-2.5" />
+                              {RESERVATION_STATUS_LABELS[reservation.status]}
+                            </span>
+                            {table && (
+                              <span className="rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 text-[10px] text-indigo-400">
+                                T{table.number}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-3 text-xs text-white/50">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatReservedAt(reservation.reserved_at)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {reservation.party_size} {t('restaurant.guests', 'guests')}
+                            </span>
+                            <a
+                              href={`tel:${reservation.guest_phone}`}
+                              className="flex items-center gap-1 text-indigo-400/80 hover:text-indigo-400 transition-colors"
+                            >
+                              <Phone className="h-3 w-3" />
+                              {reservation.guest_phone}
+                            </a>
+                          </div>
+                          {reservation.notes && (
+                            <p className="mt-1.5 text-xs text-amber-400/70 italic">{reservation.notes}</p>
                           )}
                         </div>
-                      )}
 
-                      <button
-                        onClick={() => { void handleDelete(reservation.id); }}
-                        className="rounded-xl border border-white/10 p-1.5 text-white/20 hover:border-red-500/30 hover:text-red-400 transition-all"
-                        aria-label={`Delete reservation for ${reservation.guest_name}`}
+                        {/* Actions */}
+                        <div className="flex flex-shrink-0 items-center gap-2">
+                          {reservation.status === 'confirmed' && (
+                            <button
+                              onClick={() => { void handleSeatNow(reservation); }}
+                              disabled={seatingId === reservation.id}
+                              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-500 disabled:opacity-50"
+                              title="Seat guest now"
+                            >
+                              <Armchair className="h-3 w-3" />
+                              {seatingId === reservation.id ? '…' : t('restaurant.seatNow', 'Seat Now')}
+                            </button>
+                          )}
+
+                          <a
+                            href={buildWhatsAppLink(reservation.guest_phone, reservation.guest_name, reservation.reserved_at, reservation.party_size)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-600/30 px-2.5 py-1.5 text-xs font-semibold text-emerald-400 transition-all hover:bg-emerald-600/30"
+                            title="Send WhatsApp confirmation"
+                          >
+                            <Phone className="h-3 w-3" />
+                            WA
+                          </a>
+
+                          {actions.length > 0 && (
+                            <div className="relative">
+                              <button
+                                onClick={() => setStatusMenuId(statusMenuId === reservation.id ? null : reservation.id)}
+                                className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white/50 hover:bg-white/10 transition-all"
+                              >
+                                {t('restaurant.updateStatus', 'Status')}
+                                <ChevronDown className="h-3 w-3" />
+                              </button>
+                              {statusMenuId === reservation.id && (
+                                <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
+                                  {actions.map((s) => (
+                                    <button
+                                      key={s}
+                                      onClick={() => { void handleStatusChange(reservation.id, s); }}
+                                      className="flex w-full items-center px-3 py-2 text-xs text-white/60 hover:bg-white/5 hover:text-white transition-colors first:rounded-t-xl last:rounded-b-xl capitalize"
+                                    >
+                                      {RESERVATION_STATUS_LABELS[s]}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <button
+                            onClick={() => { void handleDelete(reservation.id); }}
+                            className="rounded-xl border border-white/10 p-1.5 text-white/20 hover:border-red-500/30 hover:text-red-400 transition-all"
+                            aria-label={`Delete reservation for ${reservation.guest_name}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── CALENDAR VIEW ── */}
+          {viewMode === 'calendar' && (
+            <div>
+              {/* Week navigation */}
+              <div className="mb-3 flex items-center gap-2">
+                <button
+                  onClick={() => advanceWeek(-1)}
+                  className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/50 hover:bg-white/10 transition-all"
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                  Prev
+                </button>
+                <button
+                  onClick={goToday}
+                  className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-xs text-indigo-300 hover:bg-indigo-500/20 transition-all"
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => advanceWeek(1)}
+                  className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/50 hover:bg-white/10 transition-all"
+                >
+                  Next
+                  <ChevronRight className="h-3 w-3" />
+                </button>
+                <span className="ml-2 text-xs text-white/30">
+                  {calWeekDays[0]?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                  {' — '}
+                  {calWeekDays[6]?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+                <span className="ml-auto rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
+                  {calReservations.length} this week
+                </span>
+              </div>
+
+              {/* Grid container */}
+              <div className="rounded-2xl border border-white/10 overflow-hidden">
+                {/* Sticky day headers */}
+                <div className="sticky top-0 z-10 grid bg-slate-900 border-b border-white/10" style={{ gridTemplateColumns: '48px repeat(7, 1fr)' }}>
+                  {/* time gutter header */}
+                  <div className="border-r border-white/10" />
+                  {calWeekDays.map((day) => {
+                    const isToday = day.toDateString() === todayStr;
+                    return (
+                      <div
+                        key={day.toISOString()}
+                        className={`py-2 text-center border-r border-white/5 last:border-r-0 ${isToday ? 'bg-indigo-500/10' : ''}`}
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+                        <p className={`text-[10px] font-semibold uppercase ${isToday ? 'text-indigo-300' : 'text-white/30'}`}>
+                          {DAY_LABELS[day.getDay()]}
+                        </p>
+                        <p className={`text-sm font-bold ${isToday ? 'text-indigo-300' : 'text-white/60'}`}>
+                          {day.getDate()}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Scrollable time grid */}
+                <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
+                  <div className="grid" style={{ gridTemplateColumns: '48px repeat(7, 1fr)' }}>
+                    {/* Time labels column */}
+                    <div className="relative border-r border-white/10">
+                      {Array.from({ length: TOTAL_SLOTS }, (_, slot) => (
+                        <div
+                          key={slot}
+                          className="border-b border-white/5 flex items-start justify-end pr-2"
+                          style={{ height: SLOT_HEIGHT }}
+                        >
+                          {slot % 2 === 0 && (
+                            <span className="text-[9px] text-white/20 -mt-2">{slotToLabel(slot)}</span>
+                          )}
+                        </div>
+                      ))}
                     </div>
+
+                    {/* Day columns */}
+                    {calWeekDays.map((day) => {
+                      const isToday = day.toDateString() === todayStr;
+                      const dayStr = day.toDateString();
+
+                      // Reservations that fall on this day
+                      const dayReservations = calReservations.filter((r) => {
+                        return new Date(r.reserved_at).toDateString() === dayStr;
+                      });
+
+                      return (
+                        <div
+                          key={day.toISOString()}
+                          className={`relative border-r border-white/5 last:border-r-0 ${isToday ? 'bg-white/[0.02]' : ''}`}
+                          style={{ height: TOTAL_SLOTS * SLOT_HEIGHT }}
+                        >
+                          {/* Slot grid lines */}
+                          {Array.from({ length: TOTAL_SLOTS }, (_, slot) => (
+                            <div
+                              key={slot}
+                              className="border-b border-white/5"
+                              style={{ height: SLOT_HEIGHT }}
+                            />
+                          ))}
+
+                          {/* Current time line — today only */}
+                          {isToday && nowSlot >= 0 && nowSlot < TOTAL_SLOTS && (
+                            <div
+                              className="absolute left-0 right-0 h-px bg-red-500/60 z-10"
+                              style={{ top: nowSlot * SLOT_HEIGHT }}
+                            />
+                          )}
+
+                          {/* Reservation blocks */}
+                          {dayReservations.map((r) => {
+                            const slot = timeToSlot(r.reserved_at);
+                            // Only render if slot is within view range
+                            if (slot < 0 || slot >= TOTAL_SLOTS) return null;
+                            const actions = nextStatuses[r.status] ?? [];
+
+                            return (
+                              <div
+                                key={r.id}
+                                className="absolute left-0.5 right-0.5 z-20"
+                                style={{ top: slot * SLOT_HEIGHT, minHeight: SLOT_HEIGHT }}
+                              >
+                                {/* Block */}
+                                <div
+                                  className={`relative h-full min-h-[${SLOT_HEIGHT}px] rounded border px-1 py-0.5 text-[10px] leading-tight cursor-pointer transition-all hover:opacity-90 ${CAL_STATUS_STYLE[r.status]}`}
+                                  style={{ minHeight: SLOT_HEIGHT }}
+                                  onClick={() => setStatusMenuId(statusMenuId === r.id ? null : r.id)}
+                                >
+                                  <p className="font-semibold truncate">{r.guest_name}</p>
+                                  <p className="opacity-80">{r.party_size}p</p>
+
+                                  {/* Inline status dropdown */}
+                                  {statusMenuId === r.id && actions.length > 0 && (
+                                    <div
+                                      className="absolute left-0 top-full z-30 mt-1 w-36 rounded-xl border border-white/10 bg-slate-900 shadow-2xl"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {actions.map((s) => (
+                                        <button
+                                          key={s}
+                                          onClick={() => { void handleStatusChange(r.id, s); }}
+                                          className="flex w-full items-center px-3 py-2 text-xs text-white/60 hover:bg-white/5 hover:text-white transition-colors first:rounded-t-xl last:rounded-b-xl capitalize"
+                                        >
+                                          {RESERVATION_STATUS_LABELS[s]}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="mt-3 flex flex-wrap gap-3">
+                {(Object.keys(CAL_STATUS_STYLE) as ReservationStatus[]).map((s) => (
+                  <span key={s} className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${CAL_STATUS_STYLE[s]}`}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {RESERVATION_STATUS_LABELS[s]}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>

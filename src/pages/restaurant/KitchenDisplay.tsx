@@ -651,7 +651,7 @@ export default function KitchenDisplay() {
   useEffect(() => {
     if (!tenantId) return;
     const channel = supabase
-      .channel('kds-order-items')
+      .channel(`kds-items-${tenantId}`)
       .on(
         'postgres_changes',
         {

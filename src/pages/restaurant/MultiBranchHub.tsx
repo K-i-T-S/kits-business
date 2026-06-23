@@ -194,17 +194,25 @@ function BranchFormModal({ branch, onClose, onSave }: BranchFormModalProps) {
   );
 }
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface BranchMenuOverrideMin {
+  branch_id: string;
+  is_available: boolean;
+}
+
 // ── Branch Comparison Card ────────────────────────────────────────────────────
 
 interface BranchCardProps {
   branch: RestaurantBranch;
   metrics: BranchMetrics | undefined;
   isTop: boolean;
+  unavailableCount: number;
   onViewDetails: (id: string) => void;
   onEdit: (branch: RestaurantBranch) => void;
 }
 
-function BranchCard({ branch, metrics, isTop, onViewDetails, onEdit }: BranchCardProps) {
+function BranchCard({ branch, metrics, isTop, unavailableCount, onViewDetails, onEdit }: BranchCardProps) {
   const { t } = useTranslation();
   const fc = foodCostStatus(metrics?.food_cost_pct ?? null);
 
@@ -269,6 +277,16 @@ function BranchCard({ branch, metrics, isTop, onViewDetails, onEdit }: BranchCar
           <span className="text-sm text-amber-400">
             {ratingStars(metrics?.customer_rating_avg ?? null)}
           </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-white/50">{t('restaurant.branches.menuItems', 'Menu items')}</span>
+          {unavailableCount > 0 ? (
+            <span className="text-sm font-medium text-amber-400">
+              {unavailableCount} unavailable
+            </span>
+          ) : (
+            <span className="text-sm text-emerald-400">All available</span>
+          )}
         </div>
       </div>
 
@@ -470,6 +488,7 @@ export default function MultiBranchHub() {
 
   const [branches, setBranches] = useState<RestaurantBranch[]>([]);
   const [metricsMap, setMetricsMap] = useState<Record<string, BranchMetrics>>({});
+  const [overridesMap, setOverridesMap] = useState<Record<string, number>>({});
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -506,10 +525,26 @@ export default function MultiBranchHub() {
           }
           setMetricsMap(map);
         }
+
+        // Load per-branch unavailable item counts
+        const { data: ovData } = await supabase
+          .from('restaurant_menu_items_branch_overrides')
+          .select('branch_id, is_available')
+          .eq('tenant_id', tenantId)
+          .eq('is_available', false);
+
+        if (ovData) {
+          const ovMap: Record<string, number> = {};
+          for (const ov of ovData as BranchMenuOverrideMin[]) {
+            ovMap[ov.branch_id] = (ovMap[ov.branch_id] ?? 0) + 1;
+          }
+          setOverridesMap(ovMap);
+        }
       }
     } catch {
       setBranches([]);
       setMetricsMap({});
+      setOverridesMap({});
     } finally {
       setLoading(false);
     }
@@ -731,6 +766,7 @@ export default function MultiBranchHub() {
                 branch={b}
                 metrics={metricsMap[b.id]}
                 isTop={b.id === topBranchId && selectedBranch === 'all'}
+                unavailableCount={overridesMap[b.id] ?? 0}
                 onViewDetails={(id) => setSelectedBranch(id)}
                 onEdit={setEditingBranch}
               />

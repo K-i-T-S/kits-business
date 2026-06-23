@@ -72,6 +72,20 @@ const QR_PALETTES = [
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+interface BranchMenuOverride {
+  id: string;
+  tenant_id: string;
+  branch_id: string;
+  menu_item_id: string;
+  is_available: boolean;
+  price_override_usd: number | null;
+}
+
+interface RestaurantBranchMin {
+  id: string;
+  name: string;
+}
+
 interface OrderLineItem {
   item: RestaurantMenuItem;
   qty: number;
@@ -126,12 +140,19 @@ function AllergenBadge({ a }: { a: Allergen }) {
 
 interface MenuItemCardProps {
   item: RestaurantMenuItem;
+  branches: RestaurantBranchMin[];
+  overrides: BranchMenuOverride[];
   onEdit: (item: RestaurantMenuItem) => void;
   onDelete: (id: string) => void;
   onToggleAvailable: (item: RestaurantMenuItem) => void;
 }
 
-function MenuItemCard({ item, onEdit, onDelete, onToggleAvailable }: MenuItemCardProps) {
+function MenuItemCard({ item, branches, overrides, onEdit, onDelete, onToggleAvailable }: MenuItemCardProps) {
+  // Count how many branches have this item disabled
+  const disabledCount = branches.length > 1
+    ? overrides.filter(o => o.menu_item_id === item.id && !o.is_available).length
+    : 0;
+
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-white/10 to-white/3 backdrop-blur-md shadow-xl transition-all duration-300 hover:border-amber-500/25 hover:shadow-2xl hover:shadow-amber-500/8 hover:-translate-y-0.5">
       {/* Photo area */}
@@ -150,6 +171,11 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailable }: MenuItemCar
         {item.is_eighty_sixd && (
           <span className="absolute right-2 top-2 rounded-full bg-red-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
             86'd
+          </span>
+        )}
+        {disabledCount > 0 && (
+          <span className="absolute bottom-2 left-2 rounded-full border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 backdrop-blur-sm">
+            {disabledCount}/{branches.length} branches
           </span>
         )}
       </div>
@@ -219,11 +245,13 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailable }: MenuItemCar
 interface ItemFormModalProps {
   item: RestaurantMenuItem | null;
   categories: RestaurantMenuCategory[];
+  branches: RestaurantBranchMin[];
+  overrides: BranchMenuOverride[];
   onClose: () => void;
   onSave: () => void;
 }
 
-function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps) {
+function ItemFormModal({ item, categories, branches, overrides, onClose, onSave }: ItemFormModalProps) {
   const { currentTenant } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<ItemFormState>(() => {
@@ -247,6 +275,60 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [togglingBranch, setTogglingBranch] = useState<string | null>(null);
+  // Local shadow of overrides for this item so toggles are instant
+  const [localOverrides, setLocalOverrides] = useState<BranchMenuOverride[]>(() =>
+    item ? overrides.filter(o => o.menu_item_id === item.id) : [],
+  );
+
+  const isBranchAvailable = (branchId: string): boolean => {
+    const ov = localOverrides.find(o => o.branch_id === branchId);
+    return ov === undefined ? true : ov.is_available;
+  };
+
+  const handleToggleBranch = async (branchId: string) => {
+    if (!item || !currentTenant?.id) return;
+    const currentlyAvailable = isBranchAvailable(branchId);
+    setTogglingBranch(branchId);
+    try {
+      if (currentlyAvailable) {
+        // Disable: upsert override with is_available = false
+        const upsertRes = await supabase
+          .from('restaurant_menu_items_branch_overrides')
+          .upsert(
+            {
+              tenant_id: currentTenant.id,
+              branch_id: branchId,
+              menu_item_id: item.id,
+              is_available: false,
+            },
+            { onConflict: 'tenant_id,branch_id,menu_item_id' },
+          )
+          .select()
+          .single();
+        if (upsertRes.error) throw upsertRes.error;
+        setLocalOverrides(prev => {
+          const without = prev.filter(o => o.branch_id !== branchId);
+          const row = upsertRes.data as BranchMenuOverride | null;
+          return row ? [...without, row] : without;
+        });
+      } else {
+        // Enable: delete the override row
+        const { error } = await supabase
+          .from('restaurant_menu_items_branch_overrides')
+          .delete()
+          .eq('tenant_id', currentTenant.id)
+          .eq('branch_id', branchId)
+          .eq('menu_item_id', item.id);
+        if (error) throw error;
+        setLocalOverrides(prev => prev.filter(o => o.branch_id !== branchId));
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update branch availability');
+    } finally {
+      setTogglingBranch(null);
+    }
+  };
 
   const toggleAllergen = (a: Allergen) => {
     setForm(f => ({
@@ -568,6 +650,45 @@ function ItemFormModal({ item, categories, onClose, onSave }: ItemFormModalProps
               </label>
             ))}
           </div>
+
+          {/* Branch Availability — only shown when editing an existing item with 2+ branches */}
+          {item && branches.length > 1 && (
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white/60">Branch Availability</label>
+              <div className="space-y-1.5">
+                {branches.map(branch => {
+                  const available = isBranchAvailable(branch.id);
+                  const isToggling = togglingBranch === branch.id;
+                  return (
+                    <div
+                      key={branch.id}
+                      className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <span className="text-sm text-white/80">{branch.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => { void handleToggleBranch(branch.id); }}
+                        disabled={isToggling}
+                        className={`relative h-6 w-11 flex-shrink-0 rounded-full border transition-all disabled:opacity-50 ${
+                          available
+                            ? 'border-emerald-500/50 bg-emerald-500/30'
+                            : 'border-white/20 bg-white/10'
+                        }`}
+                        aria-label={available ? `Disable at ${branch.name}` : `Enable at ${branch.name}`}
+                      >
+                        <span className={`block h-4 w-4 rounded-full transition-transform ${
+                          available ? 'translate-x-6 bg-emerald-400' : 'translate-x-1 bg-white/30'
+                        }`} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-[10px] text-white/30">
+                Toggle OFF to hide this item at a specific branch only
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -611,6 +732,8 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
   const [addingCat, setAddingCat] = useState(false);
   const [savingCat, setSavingCat] = useState(false);
   const [search, setSearch] = useState('');
+  const [branches, setBranches] = useState<RestaurantBranchMin[]>([]);
+  const [overrides, setOverrides] = useState<BranchMenuOverride[]>([]);
 
   const displayedItems = items.filter(i => {
     const matchesCat = selectedCategoryId ? i.category_id === selectedCategoryId : true;
@@ -620,6 +743,38 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
       : true;
     return matchesCat && matchesSearch;
   });
+
+  // Load branches + overrides eagerly when the builder mounts
+  useEffect(() => {
+    if (!currentTenant?.id) return;
+    void (async () => {
+      const tenantId = currentTenant.id;
+      const [branchRes, overrideRes] = await Promise.all([
+        supabase
+          .from('restaurant_branches')
+          .select('id, name')
+          .eq('tenant_id', tenantId)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('restaurant_menu_items_branch_overrides')
+          .select('id, tenant_id, branch_id, menu_item_id, is_available, price_override_usd')
+          .eq('tenant_id', tenantId),
+      ]);
+      setBranches((branchRes.data ?? []) as RestaurantBranchMin[]);
+      setOverrides((overrideRes.data ?? []) as BranchMenuOverride[]);
+    })();
+  }, [currentTenant?.id]);
+
+  // Refresh overrides after item modal saves (so badges update)
+  const refreshOverrides = async () => {
+    if (!currentTenant?.id) return;
+    const { data } = await supabase
+      .from('restaurant_menu_items_branch_overrides')
+      .select('id, tenant_id, branch_id, menu_item_id, is_available, price_override_usd')
+      .eq('tenant_id', currentTenant.id);
+    setOverrides((data ?? []) as BranchMenuOverride[]);
+  };
 
   const handleAddCategory = async () => {
     if (!newCatName.trim() || !currentTenant?.id) return;
@@ -773,6 +928,8 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
               <MenuItemCard
                 key={item.id}
                 item={item}
+                branches={branches}
+                overrides={overrides}
                 onEdit={setEditingItem}
                 onDelete={(id) => { void handleDeleteItem(id); }}
                 onToggleAvailable={(it) => { void handleToggleAvailable(it); }}
@@ -787,8 +944,10 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
         <ItemFormModal
           item={editingItem}
           categories={categories}
+          branches={branches}
+          overrides={overrides}
           onClose={() => setEditingItem(undefined)}
-          onSave={onRefresh}
+          onSave={() => { void refreshOverrides(); onRefresh(); }}
         />
       )}
     </div>

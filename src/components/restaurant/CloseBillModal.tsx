@@ -272,6 +272,12 @@ export interface CloseBillModalProps {
   onConfirm: (mappedPaymentMethod: string) => Promise<void>;
   /** Close the modal without confirming */
   onClose: () => void;
+  /** Linked loyalty customer — shows redemption UI when provided with loyaltyRedeemRate */
+  linkedCustomer?: { id: string; name: string; pointsBalance: number } | null;
+  /** Loyalty redeem rate: e.g. 0.01 means 100 pts = $1. Defaults to 0.01 */
+  loyaltyRedeemRate?: number;
+  /** Called when user toggles points redemption; receives the USD discount amount (0 to cancel) */
+  onRedeemPoints?: (discountUsd: number) => void;
 }
 
 export default function CloseBillModal({
@@ -282,6 +288,9 @@ export default function CloseBillModal({
   onUpdateDiscount,
   onConfirm,
   onClose,
+  linkedCustomer,
+  loyaltyRedeemRate,
+  onRedeemPoints,
 }: CloseBillModalProps) {
   const { t } = useTranslation();
   const { canPerform, plan } = useSubscription();
@@ -295,6 +304,7 @@ export default function CloseBillModal({
   const [cashReceived, setCashReceived] = useState<number>(0);
   const [confirming, setConfirming] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const [redeemingPoints, setRedeemingPoints] = useState(false);
 
   // Keyboard accessibility: focus close button on mount
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -319,7 +329,11 @@ export default function CloseBillModal({
   const afterDiscount = subtotal - discountAmount;
   const serviceCharge = (afterDiscount * (order.service_charge_pct ?? 10)) / 100;
   const vat = (afterDiscount + serviceCharge) * ((order.vat_pct ?? 11) / 100);
-  const grandTotal = afterDiscount + serviceCharge + vat + tipAmount;
+  // Loyalty redemption — capped at 50% of subtotal
+  const loyaltyDiscountUsd = redeemingPoints && linkedCustomer && loyaltyRedeemRate
+    ? Math.min(linkedCustomer.pointsBalance * loyaltyRedeemRate, subtotal * 0.5)
+    : 0;
+  const grandTotal = afterDiscount + serviceCharge + vat + tipAmount - loyaltyDiscountUsd;
   const grandTotalLbp = Math.round(grandTotal * LBP_RATE);
   const changeUsd =
     paymentMethod.startsWith('cash') ? Math.max(0, cashReceived - grandTotal) : 0;
@@ -328,6 +342,10 @@ export default function CloseBillModal({
   const handleConfirm = async () => {
     setConfirming(true);
     try {
+      // Notify parent of redemption amount so it can deduct points
+      if (loyaltyDiscountUsd > 0 && onRedeemPoints) {
+        onRedeemPoints(loyaltyDiscountUsd);
+      }
       // Persist tip & discount to DB so the RPC reads them from the order row
       await onUpdateTip(tipAmount);
       if (canDiscount) {
@@ -449,6 +467,12 @@ export default function CloseBillModal({
                     <span className="text-white">${tipAmount.toFixed(2)}</span>
                   </div>
                 )}
+                {loyaltyDiscountUsd > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-emerald-400">{t('restaurant.bill.loyaltyDiscount', 'Points Discount')}</span>
+                    <span className="text-emerald-400">&#8722;${loyaltyDiscountUsd.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="border-t border-white/10 pt-2.5 flex justify-between items-end">
                   <span className="text-base font-bold text-white">
                     {t('restaurant.bill.total', 'Grand Total')}
@@ -496,6 +520,53 @@ export default function CloseBillModal({
                     className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
                     placeholder="0"
                   />
+                </div>
+              )}
+
+              {/* Loyalty redemption — shown when customer is linked with points */}
+              {linkedCustomer && loyaltyRedeemRate && linkedCustomer.pointsBalance > 0 && (
+                <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {linkedCustomer.name}
+                      </p>
+                      <p className="text-xs text-white/50 mt-0.5">
+                        {linkedCustomer.pointsBalance.toLocaleString()} pts ·{' '}
+                        <span className="text-emerald-400 font-semibold">
+                          worth ${(linkedCustomer.pointsBalance * loyaltyRedeemRate).toFixed(2)}
+                        </span>
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <span className="text-xs text-white/60">
+                        {t('restaurant.bill.redeemPoints', 'Redeem')}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={redeemingPoints}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setRedeemingPoints(checked);
+                          const disc = checked
+                            ? Math.min(linkedCustomer.pointsBalance * loyaltyRedeemRate, subtotal * 0.5)
+                            : 0;
+                          onRedeemPoints?.(disc);
+                        }}
+                        className="h-4 w-4 rounded accent-indigo-500 cursor-pointer"
+                      />
+                    </label>
+                  </div>
+                  {redeemingPoints && loyaltyDiscountUsd > 0 && (
+                    <div className="flex items-center justify-between rounded-xl bg-emerald-500/15 px-3 py-2">
+                      <span className="text-xs font-semibold text-emerald-400">
+                        {t('restaurant.bill.loyaltyDiscount', 'Points Discount Applied')}
+                      </span>
+                      <span className="text-sm font-black text-emerald-400">
+                        &#8722;${loyaltyDiscountUsd.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 

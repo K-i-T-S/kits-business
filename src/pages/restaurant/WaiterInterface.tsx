@@ -33,6 +33,7 @@ import {
   LayoutGrid,
   Lightbulb,
   Sparkles,
+  UserCircle,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -819,9 +820,51 @@ interface TableDetailProps {
 
 function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, onOrderClosed }: TableDetailProps) {
   const { t } = useTranslation();
-  const { currentTenant } = useApp();
+  const { currentTenant, customers } = useApp();
   const { table, order } = tableData;
   const tenantId = currentTenant?.id;
+
+  // ── Customer / Loyalty state ──────────────────────────────────────────────
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [linkedCustomerId, setLinkedCustomerId] = useState<string | null>(null);
+  const [linkedCustomer, setLinkedCustomer] = useState<{ id: string; name: string; phone: string } | null>(null);
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number>(0);
+  const [loyaltyTier, setLoyaltyTier] = useState<string>('bronze');
+  const [loyaltyRedeemDiscount, setLoyaltyRedeemDiscount] = useState(0);
+
+  const filteredCustomers = customers.filter(
+    (c) => c.name?.toLowerCase().includes(customerQuery.toLowerCase()) || c.phone?.includes(customerQuery),
+  ).slice(0, 5);
+
+  const loadLoyaltyPoints = async (customerId: string) => {
+    if (!tenantId) return;
+    const { data } = await supabase
+      .from('customer_points')
+      .select('points_balance, tier')
+      .eq('tenant_id', tenantId)
+      .eq('customer_id', customerId)
+      .maybeSingle();
+    setLoyaltyPoints((data as { points_balance: number; tier: string } | null)?.points_balance ?? 0);
+    setLoyaltyTier((data as { points_balance: number; tier: string } | null)?.tier ?? 'bronze');
+  };
+
+  const handleSelectCustomer = async (customer: { id: string; name: string; phone: string }) => {
+    setLinkedCustomerId(customer.id);
+    setLinkedCustomer(customer);
+    setCustomerQuery('');
+    setShowCustomerDropdown(false);
+    setLoyaltyRedeemDiscount(0);
+    await loadLoyaltyPoints(customer.id);
+  };
+
+  const handleUnlinkCustomer = () => {
+    setLinkedCustomerId(null);
+    setLinkedCustomer(null);
+    setLoyaltyPoints(0);
+    setLoyaltyTier('bronze');
+    setLoyaltyRedeemDiscount(0);
+  };
 
   const {
     order: _hookOrder,
@@ -914,6 +957,62 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
     // closeBill calls fn_close_restaurant_bill(p_order_id, p_payment_method)
     // which reads tip/discount from the order row — already updated by the modal
     await closeBill(mappedPaymentMethod);
+
+    // ── Award loyalty points ───────────────────────────────────────────────
+    if (linkedCustomerId && tenantId && currentTenant?.loyalty_enabled) {
+      const ptsPerDollar = currentTenant.loyalty_points_per_dollar ?? 1;
+      const billTotal = totals.total - loyaltyRedeemDiscount;
+      const earned = Math.floor(billTotal * ptsPerDollar);
+      if (earned > 0) {
+        try {
+          const { data: existing } = await supabase
+            .from('customer_points')
+            .select('points_balance, lifetime_points')
+            .eq('tenant_id', tenantId)
+            .eq('customer_id', linkedCustomerId)
+            .maybeSingle();
+          const existingData = existing as { points_balance: number; lifetime_points: number } | null;
+          const currentBal = existingData?.points_balance ?? 0;
+          // Deduct redeemed points (if any) from the stored balance
+          const redeemedPts = loyaltyRedeemDiscount > 0
+            ? Math.ceil(loyaltyRedeemDiscount / (currentTenant.loyalty_points_redeem_rate ?? 0.01))
+            : 0;
+          const balAfterRedeem = Math.max(0, currentBal - redeemedPts);
+          const newBal = balAfterRedeem + earned;
+          const lifetimePts = (existingData?.lifetime_points ?? 0) + earned;
+          await supabase.from('customer_points').upsert({
+            tenant_id: tenantId,
+            customer_id: linkedCustomerId,
+            points_balance: newBal,
+            lifetime_points: lifetimePts,
+            tier: newBal >= 5000 ? 'gold' : newBal >= 1000 ? 'silver' : 'bronze',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'tenant_id,customer_id' });
+          await supabase.from('point_transactions').insert({
+            tenant_id: tenantId,
+            customer_id: linkedCustomerId,
+            type: 'earned',
+            points: earned,
+            balance_after: newBal,
+            description: `Restaurant · Table ${table.number}`,
+          });
+          if (redeemedPts > 0) {
+            await supabase.from('point_transactions').insert({
+              tenant_id: tenantId,
+              customer_id: linkedCustomerId,
+              type: 'redeemed',
+              points: -redeemedPts,
+              balance_after: balAfterRedeem,
+              description: `Redemption · Table ${table.number}`,
+            });
+          }
+          toast.success(`+${earned} pts awarded to ${linkedCustomer?.name ?? 'customer'}`);
+        } catch (err) {
+          console.error('[Loyalty] award error:', err);
+        }
+      }
+    }
+
     setShowCloseBillModal(false);
     onOrderClosed();
     onClose();
@@ -1162,6 +1261,86 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
         {/* BILL TAB */}
         {activeTab === 'bill' && order && (
           <div className="p-4 space-y-4">
+
+            {/* Customer panel */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+              <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50">
+                <UserCircle className="h-3.5 w-3.5" />
+                {t('restaurant.bill.customer', 'Customer')}
+              </h4>
+              {linkedCustomer ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white">{linkedCustomer.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                        loyaltyTier === 'gold'
+                          ? 'bg-yellow-500/20 text-yellow-400'
+                          : loyaltyTier === 'silver'
+                            ? 'bg-gray-400/20 text-gray-300'
+                            : 'bg-amber-700/20 text-amber-600'
+                      }`}>
+                        {loyaltyTier}
+                      </span>
+                      <span className="text-xs text-white/50">{loyaltyPoints.toLocaleString()} pts</span>
+                      {loyaltyPoints > 0 && currentTenant?.loyalty_points_redeem_rate && (
+                        <span className="text-[10px] text-white/30">
+                          (${(loyaltyPoints * currentTenant.loyalty_points_redeem_rate).toFixed(2)})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleUnlinkCustomer}
+                    className="rounded-lg p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    aria-label="Unlink customer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-slate-800 px-3 py-2.5">
+                    <Search className="h-4 w-4 flex-none text-white/30" />
+                    <input
+                      type="text"
+                      value={customerQuery}
+                      onChange={(e) => {
+                        setCustomerQuery(e.target.value);
+                        setShowCustomerDropdown(e.target.value.length > 0);
+                      }}
+                      onFocus={() => { if (customerQuery.length > 0) setShowCustomerDropdown(true); }}
+                      placeholder={t('restaurant.bill.searchCustomer', 'Search customer by name or phone…')}
+                      className="flex-1 bg-transparent text-sm text-white placeholder-white/30 focus:outline-none"
+                      autoComplete="off"
+                    />
+                    {customerQuery && (
+                      <button onClick={() => { setCustomerQuery(''); setShowCustomerDropdown(false); }} className="text-white/30 hover:text-white/60">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  {showCustomerDropdown && filteredCustomers.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-2xl border border-white/10 bg-slate-800 shadow-xl overflow-hidden">
+                      {filteredCustomers.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => { void handleSelectCustomer(c); }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-start hover:bg-white/10 transition-all"
+                        >
+                          <UserCircle className="h-4 w-4 flex-none text-white/40" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white">{c.name}</p>
+                            {c.phone && <p className="text-xs text-white/40">{c.phone}</p>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Bill summary */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2">
               <div className="flex justify-between text-sm">
@@ -1335,6 +1514,13 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
           onUpdateDiscount={updateDiscount}
           onConfirm={handleCloseBillConfirm}
           onClose={() => setShowCloseBillModal(false)}
+          linkedCustomer={
+            linkedCustomer && loyaltyPoints > 0
+              ? { id: linkedCustomer.id, name: linkedCustomer.name, pointsBalance: loyaltyPoints }
+              : null
+          }
+          loyaltyRedeemRate={currentTenant?.loyalty_points_redeem_rate}
+          onRedeemPoints={(discountUsd) => setLoyaltyRedeemDiscount(discountUsd)}
         />
       )}
 

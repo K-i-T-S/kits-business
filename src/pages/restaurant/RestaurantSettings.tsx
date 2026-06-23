@@ -1,4 +1,4 @@
-import { Settings2, Save, ToggleLeft, ToggleRight, AlertCircle, QrCode, Copy, Check, ExternalLink, Clock, MapPin, DollarSign, Trash2, Plus } from 'lucide-react';
+import { Settings2, Save, ToggleLeft, ToggleRight, AlertCircle, QrCode, Copy, Check, ExternalLink, Clock, MapPin, DollarSign, Trash2, Plus, CalendarDays } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -173,6 +173,7 @@ export default function RestaurantSettings() {
   const [qrBanner, setQrBanner] = useState('');
   const [slugError, setSlugError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedBooking, setCopiedBooking] = useState(false);
 
   // ---- localStorage-backed state ----
   const [operatingHours, setOperatingHours] = useState<OperatingHours>(DEFAULT_HOURS);
@@ -371,6 +372,17 @@ export default function RestaurantSettings() {
     await navigator.clipboard.writeText(`${qrBaseUrl}/1`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const bookingUrl = qrSlug
+    ? `${window.location.origin}/book/${qrSlug}`
+    : '';
+
+  const handleCopyBookingUrl = async () => {
+    if (!bookingUrl) return;
+    await navigator.clipboard.writeText(bookingUrl);
+    setCopiedBooking(true);
+    setTimeout(() => setCopiedBooking(false), 2000);
   };
 
   const update = <K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
@@ -904,6 +916,56 @@ export default function RestaurantSettings() {
                   />
                   <p className="mt-1 text-right text-[10px] text-white/25">{qrBanner.length}/120</p>
                 </div>
+              </section>
+
+              {/* Online Booking Link */}
+              <section className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-amber-400 flex-none" />
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">
+                    Online Booking Link
+                  </h2>
+                </div>
+
+                <p className="text-xs text-white/50">
+                  Share this link via WhatsApp, your website, or a QR code so guests can book a table directly — no login required.
+                </p>
+
+                {!qrSlug ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2.5">
+                    <AlertCircle className="h-4 w-4 flex-none text-amber-400" />
+                    <p className="text-xs text-amber-300">
+                      Set a Menu URL Identifier above and save to activate your booking link.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Share this link</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 min-w-0 truncate text-xs text-indigo-300">
+                        {bookingUrl}
+                      </code>
+                      <button
+                        onClick={() => { void handleCopyBookingUrl(); }}
+                        className="flex-none flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/8 px-2.5 py-1.5 text-xs text-white/60 hover:bg-white/15 hover:text-white transition-colors"
+                        aria-label="Copy booking link"
+                      >
+                        {copiedBooking ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                        {copiedBooking ? 'Copied' : 'Copy'}
+                      </button>
+                      <a
+                        href={bookingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-none flex items-center gap-1 rounded-lg border border-white/15 bg-white/8 px-2.5 py-1.5 text-xs text-white/60 hover:bg-white/15 hover:text-white transition-colors"
+                        aria-label="Preview booking page"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Preview
+                      </a>
+                    </div>
+                  </div>
+                )}
               </section>
 
               {/* Save */}

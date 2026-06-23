@@ -431,6 +431,7 @@ interface WaiterAgg {
   waiterId: string;
   name: string;
   ordersServed: number;
+  totalCovers: number;
   totalTips: number;
   avgTurnaroundMin: number;
 }
@@ -467,16 +468,17 @@ function WaiterLeaderboard({ tenantId, rangeStart }: WaiterLeaderboardProps) {
         const orders = (data as WaiterOrderRow[]) ?? [];
 
         // Aggregate per waiter
-        const map = new Map<string, { tips: number; count: number; turnaroundMins: number[] }>();
+        const map = new Map<string, { tips: number; count: number; covers: number; turnaroundMins: number[] }>();
         for (const o of orders) {
           if (!o.waiter_id) continue;
           const openedMs = new Date(o.opened_at).getTime();
           const paidMs = o.paid_at ? new Date(o.paid_at).getTime() : null;
           const minutesDiff = paidMs !== null ? (paidMs - openedMs) / 60000 : null;
 
-          const existing = map.get(o.waiter_id) ?? { tips: 0, count: 0, turnaroundMins: [] };
+          const existing = map.get(o.waiter_id) ?? { tips: 0, count: 0, covers: 0, turnaroundMins: [] };
           existing.tips += o.tip_amount_usd ?? 0;
           existing.count += 1;
+          existing.covers += o.covers ?? 0;
           if (minutesDiff !== null && minutesDiff > 0) {
             existing.turnaroundMins.push(minutesDiff);
           }
@@ -495,6 +497,7 @@ function WaiterLeaderboard({ tenantId, rangeStart }: WaiterLeaderboardProps) {
             waiterId,
             name,
             ordersServed: stats.count,
+            totalCovers: stats.covers,
             totalTips: stats.tips,
             avgTurnaroundMin: Math.round(avgMins),
           });
@@ -536,6 +539,7 @@ function WaiterLeaderboard({ tenantId, rangeStart }: WaiterLeaderboardProps) {
                   <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">#</th>
                   <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Name</th>
                   <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Orders</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Covers</th>
                   <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Tips (USD)</th>
                   <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Avg Time</th>
                 </tr>
@@ -553,6 +557,7 @@ function WaiterLeaderboard({ tenantId, rangeStart }: WaiterLeaderboardProps) {
                       {w.name}
                     </td>
                     <td className="px-4 py-3 text-right text-white/60">{w.ordersServed}</td>
+                    <td className="px-4 py-3 text-right text-white/50">{w.totalCovers}</td>
                     <td className="px-4 py-3 text-right font-bold text-emerald-400">
                       ${w.totalTips.toFixed(2)}
                     </td>

@@ -638,3 +638,36 @@ export interface MenuItemEngineering {
   potentialRevenueImpact: number;
   createdAt: string;
 }
+
+// ── Cash Drawer / Till Management ─────────────────────────────────────────────
+
+export interface CashSession {
+  id: string;
+  tenant_id: string;
+  branch_id: string | null;
+  opened_by: string | null;
+  opened_at: string;
+  opening_float_usd: number;
+  opening_float_lbp: number;
+  closed_at: string | null;
+  closing_count_usd: number | null;
+  closing_count_lbp: number | null;
+  expected_usd: number | null;
+  expected_lbp: number | null;
+  variance_usd: number | null;
+  notes: string | null;
+  status: 'open' | 'closed';
+}
+
+export interface CashMovement {
+  id: string;
+  tenant_id: string;
+  session_id: string;
+  movement_type: 'sale' | 'refund' | 'expense' | 'float_add' | 'float_remove' | 'tip_out';
+  amount_usd: number;
+  amount_lbp: number;
+  reference_id: string | null;
+  description: string | null;
+  created_at: string;
+  created_by: string | null;
+}

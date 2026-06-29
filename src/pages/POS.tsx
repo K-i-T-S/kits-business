@@ -1,5 +1,5 @@
-import { Barcode, Minus, Plus, Trash2, DollarSign, Receipt, User, Tag, Star, Settings, Split, Printer, MessageCircle, Loader2 } from 'lucide-react';
-import { useState, useRef, useCallback } from 'react';
+import { Barcode, Minus, Plus, Trash2, DollarSign, Receipt, User, Tag, Star, Settings, Split, Printer, MessageCircle, Loader2, WifiOff } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import DiscountModal from '../components/DiscountModal';
@@ -16,6 +16,7 @@ import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../
 import { formatTaxBreakdown } from '../utils/formatting';
 import { POSCalculator } from '../utils/posCalculations';
 import { supabase } from '../utils/supabaseClient';
+import { queueMutation, getPendingActions, removeQueuedAction, incrementRetry } from '../utils/offlineQueue';
 import '../styles/print.css';
 
 // ─── Barcode scanner tuning ───────────────────────────────────────────────────
@@ -82,6 +83,60 @@ export default function POS() {
   const [selectedReceiptTemplate, setSelectedReceiptTemplate] = useState<ReceiptTemplate | null>(null);
   const [whatsappSending, setWhatsappSending] = useState(false);
   const taxRate = currentTenant?.tax_rate ?? 0;
+
+  // ── Offline detection + auto-sync on reconnect ────────────────────────────
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const syncPendingSales = async () => {
+      if (!currentTenant) return;
+      const pending = await getPendingActions();
+      const salesWrites = pending.filter(w => w.table === 'sales');
+      for (const write of salesWrites) {
+        try {
+          const { _items, ...salePayload } = write.payload;
+          const { data: saleRow, error } = await supabase
+            .from('sales')
+            .insert(salePayload)
+            .select()
+            .single();
+          if (error) throw error;
+          if (
+            Array.isArray(_items) &&
+            _items.length > 0 &&
+            saleRow !== null &&
+            typeof saleRow === 'object' &&
+            'id' in saleRow
+          ) {
+            const saleId = String((saleRow as Record<string, unknown>)['id']);
+            await supabase.from('sale_items').insert(
+              (_items as Array<Record<string, unknown>>).map(item => ({
+                ...item,
+                sale_id: saleId,
+              })),
+            );
+          }
+          await removeQueuedAction(write.id);
+          toast.success('Offline sale synced');
+        } catch {
+          await incrementRetry(write);
+        }
+      }
+    };
+
+    const onOnline = () => {
+      setIsOnline(true);
+      void syncPendingSales();
+    };
+    const onOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, [currentTenant]);
 
   const handleSendWhatsApp = async () => {
     if (!lastSale || !selectedCustomer) return;
@@ -386,6 +441,46 @@ export default function POS() {
       loyaltyPointsRedeemed,
     };
 
+    // ── Offline path — queue and show receipt locally ─────────────────────
+    if (!isOnline) {
+      if (!currentTenant) {
+        toast.error('No active tenant');
+        return;
+      }
+      await queueMutation({
+        table: 'sales',
+        operation: 'insert',
+        payload: {
+          tenant_id: currentTenant.id,
+          employee_id: sale.employeeId || currentEmployee?.id || null,
+          customer_id: sale.customerId ?? null,
+          subtotal: sale.subtotal,
+          total_amount: sale.total,
+          discount: 0,
+          tax_amount: 0,
+          payment_method: sale.paymentMethod,
+          payment_status: 'completed',
+          _items: sale.items.map(item => ({
+            product_id: item.productId,
+            quantity: item.quantity,
+            unit_price: item.price,
+            total_price: item.price * item.quantity,
+          })),
+        },
+      });
+      setLastSale(receiptData);
+      setShowReceipt(true);
+      setCart([]);
+      setBarcode('');
+      setSelectedCustomer('');
+      setSplitPayments([]);
+      setTipInfo(null);
+      setAppliedCoupon(null);
+      setLoyaltyPointsRedeemed(0);
+      toast.success('Sale saved offline — will sync when reconnected');
+      return;
+    }
+
     try {
       await addSale(sale);
 
@@ -471,6 +566,13 @@ export default function POS() {
             Operator: <span className="text-base font-semibold text-white">{currentEmployee?.name}</span>
           </div>
         </section>
+
+        {!isOnline && (
+          <div className="mx-4 mt-2 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            <WifiOff className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>Working offline — sales will sync automatically when reconnected</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">

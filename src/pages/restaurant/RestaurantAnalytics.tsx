@@ -1,6 +1,7 @@
 import {
   BarChart2, Users, Clock, TrendingUp, AlertCircle, Flame,
   Brain, Zap, ChevronDown, RefreshCw, Star, Trophy,
+  Sparkles, Loader2,
 } from 'lucide-react';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -940,6 +941,170 @@ function MenuEngineeringMatrix({ profits, velocities }: MenuEngineeringMatrixPro
   );
 }
 
+// ── AI Menu Suggestions Panel ─────────────────────────────────────────────────
+
+interface AISuggestion {
+  emoji: string;
+  title: string;
+  detail: string;
+}
+
+interface GroqAPIResponse {
+  choices: Array<{ message: { content: string } }>;
+}
+
+async function callGroq(prompt: string): Promise<string> {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
+  if (!apiKey) return 'AI features require VITE_GROQ_API_KEY to be configured.';
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: 'You are a restaurant menu engineering expert for Lebanese/MENA restaurants. Be concise and actionable.' },
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 800,
+    }),
+  });
+  const data = await res.json() as GroqAPIResponse;
+  return data.choices[0]?.message.content ?? '';
+}
+
+function parseSuggestions(raw: string): AISuggestion[] {
+  return raw
+    .split('\n')
+    .filter((line) => line.includes('|'))
+    .map((line) => {
+      const parts = line.split('|').map((s) => s.trim());
+      return {
+        emoji: parts[0] ?? '💡',
+        title: parts[1] ?? '',
+        detail: parts[2] ?? '',
+      };
+    })
+    .filter((s) => s.title.length > 0);
+}
+
+interface AIMenuSuggestionsPanelProps {
+  profits: ItemProfit[];
+  velocities: ItemVelocity[];
+}
+
+function AIMenuSuggestionsPanel({ profits, velocities }: AIMenuSuggestionsPanelProps) {
+  const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const generateSuggestions = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Build velocity map (name → last 7-day qty)
+      const qtyByName = new Map<string, number>();
+      for (const v of velocities) {
+        qtyByName.set(v.name.toLowerCase().trim(), v.last7DayQty);
+      }
+
+      // Only items with recipes have reliable margin data
+      const eligible = profits.filter((p) => p.hasRecipe);
+
+      // Compute median thresholds (same logic as MenuEngineeringMatrix)
+      const qtys = eligible.map((p) => qtyByName.get(p.name.toLowerCase().trim()) ?? 0);
+      const margins = eligible.map((p) => p.marginPct);
+      const medQty = medianOf(qtys);
+      const medMargin = medianOf(margins);
+
+      const stars: ItemProfit[] = [];
+      const dogs: ItemProfit[] = [];
+      for (const p of eligible) {
+        const soldQty = qtyByName.get(p.name.toLowerCase().trim()) ?? 0;
+        const highQty = soldQty >= medQty;
+        const highMargin = p.marginPct >= medMargin;
+        if (highQty && highMargin) stars.push(p);
+        else if (!highQty && !highMargin) dogs.push(p);
+      }
+
+      // High food cost items (cost % > 60 %)
+      const highCostItems = profits
+        .filter((p) => p.hasRecipe && p.costPct > 60)
+        .map((p) => ({ name: p.name, foodCostPct: Math.round(p.costPct) }));
+
+      // Top sellers by last-7-day velocity
+      const topSellers = [...velocities]
+        .sort((a, b) => b.last7DayQty - a.last7DayQty)
+        .slice(0, 5);
+
+      const prompt = `
+Restaurant menu analysis:
+- Stars (high profit + high popularity): ${stars.map((i) => i.name).join(', ') || 'none identified'}
+- Dogs (low profit + low popularity): ${dogs.map((i) => i.name).join(', ') || 'none identified'}
+- High food cost items (>60%): ${highCostItems.map((i) => `${i.name} (${i.foodCostPct}%)`).join(', ') || 'none'}
+- Top sellers: ${topSellers.map((i) => i.name).join(', ') || 'no sales data yet'}
+
+Provide 4-5 specific, actionable recommendations to improve menu profitability and appeal.
+Format each as: emoji | short title | one-sentence detail.
+Focus on Lebanese/MENA dining context.
+`.trim();
+
+      const raw = await callGroq(prompt);
+      const parsed = parseSuggestions(raw);
+      setSuggestions(
+        parsed.length > 0
+          ? parsed
+          : [{ emoji: '💡', title: 'Suggestion received', detail: raw.slice(0, 200) }],
+      );
+    } catch (err) {
+      console.error('[AIMenuSuggestionsPanel] error:', err);
+      setSuggestions([{ emoji: '⚠️', title: 'Error generating suggestions', detail: 'Check your VITE_GROQ_API_KEY and console for details.' }]);
+    } finally {
+      setLoading(false);
+    }
+  }, [profits, velocities]);
+
+  return (
+    <section>
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-indigo-400" />
+            <h3 className="text-base font-semibold text-white">AI Menu Recommendations</h3>
+          </div>
+          <button
+            onClick={() => void generateSuggestions()}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 px-3 py-1.5 text-xs font-medium text-indigo-300 hover:bg-indigo-500/30 transition-all disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            {loading ? 'Analyzing...' : 'Generate Insights'}
+          </button>
+        </div>
+
+        {suggestions.length > 0 && (
+          <div className="space-y-3">
+            {suggestions.map((s, i) => (
+              <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-lg">{s.emoji}</span>
+                  <div>
+                    <p className="text-sm font-medium text-white">{s.title}</p>
+                    <p className="mt-1 text-xs text-white/60">{s.detail}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {suggestions.length === 0 && !loading && (
+          <p className="text-sm text-white/40 text-center py-4">
+            Click &quot;Generate Insights&quot; to get AI-powered menu recommendations
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ── Waiter Leaderboard ────────────────────────────────────────────────────────
 
 interface WaiterOrderRow {
@@ -1613,6 +1778,9 @@ export default function RestaurantAnalytics() {
 
             {/* Menu Engineering Matrix */}
             <MenuEngineeringMatrix profits={profits} velocities={velocities} />
+
+            {/* AI Menu Suggestions Panel */}
+            <AIMenuSuggestionsPanel profits={profits} velocities={velocities} />
 
             {/* Menu velocity */}
             <section>

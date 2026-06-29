@@ -51,7 +51,7 @@ export default function CustomerManagement() {
   const handleAddCustomer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustomerForm.name.trim()) return;
-    addCustomer({
+    void addCustomer({
       id: crypto.randomUUID(),
       name: newCustomerForm.name.trim(),
       phone: newCustomerForm.phone,

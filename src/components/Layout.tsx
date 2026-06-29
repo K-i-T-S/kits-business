@@ -45,6 +45,10 @@ import {
   Instagram,
   Truck,
   Landmark,
+  ArrowRightLeft,
+  TrendingUp,
+  Shield,
+  MapPin,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -160,15 +164,60 @@ export default function Layout({ children }: LayoutProps) {
     retail: [],
   }), [t]);
 
-  const PLATFORM_ITEMS = useMemo(() => [
-    { name: t('nav.dashboard', 'Dashboard'), short: 'Home', href: '/dashboard', icon: LayoutDashboard, feature: undefined as Feature | undefined },
-    { name: t('nav.pos', 'POS / Sales'), short: 'POS', href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature },
-    { name: t('nav.inventory', 'Inventory'), short: 'Stock', href: '/inventory', icon: Package, feature: 'inventory_management' as Feature },
-    { name: t('nav.customers', 'Customers'), short: 'CRM', href: '/customers', icon: Users, feature: undefined as Feature | undefined },
-    { name: t('nav.employees', 'Employees'), short: 'Team', href: '/employees', icon: UserCircle, feature: undefined as Feature | undefined },
-    { name: t('nav.finance', 'Finance'), short: 'Finance', href: '/finance', icon: TrendingDown, feature: undefined as Feature | undefined },
-    { name: t('nav.reports', 'Reports'), short: 'Reports', href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature },
-    { name: t('nav.settings', 'Settings'), short: 'Settings', href: '/system-settings', icon: Settings, feature: undefined as Feature | undefined },
+  const PLATFORM_GROUPS = useMemo(() => [
+    {
+      label: undefined as string | undefined,
+      items: [
+        { name: t('nav.dashboard', 'Dashboard'), href: '/dashboard', icon: LayoutDashboard, feature: undefined as Feature | undefined, adminOnly: false },
+        { name: t('nav.pos', 'POS / Sales'), href: '/pos', icon: ShoppingCart, feature: 'pos' as Feature, adminOnly: false },
+        { name: t('nav.finance', 'Finance'), href: '/finance', icon: TrendingDown, feature: undefined as Feature | undefined, adminOnly: false },
+        { name: t('nav.reports', 'Reports'), href: '/reports', icon: BarChart3, feature: 'basic_reports' as Feature, adminOnly: false },
+      ],
+    },
+    {
+      label: 'Inventory',
+      items: [
+        { name: t('nav.inventory', 'Overview'), href: '/inventory', icon: Package, feature: 'inventory_management' as Feature, adminOnly: false },
+        { name: t('nav.suppliers', 'Suppliers'), href: '/inventory/suppliers', icon: Truck, feature: 'inventory_management' as Feature, adminOnly: false },
+        { name: t('nav.purchaseOrders', 'Purchase Orders'), href: '/inventory/purchase-orders', icon: FileText, feature: 'inventory_management' as Feature, adminOnly: false },
+        { name: t('nav.stockTransfers', 'Stock Transfers'), href: '/inventory/stock-transfers', icon: ArrowRightLeft, feature: 'inventory_management' as Feature, adminOnly: false },
+        { name: t('nav.batchTracking', 'Batch Tracking'), href: '/inventory/batch-tracking', icon: ScanLine, feature: 'inventory_management' as Feature, adminOnly: false },
+        { name: t('nav.reorderPoints', 'Reorder Points'), href: '/inventory/reorder-points', icon: AlertTriangle, feature: 'inventory_management' as Feature, adminOnly: false },
+      ],
+    },
+    {
+      label: 'Customers & Growth',
+      items: [
+        { name: t('nav.customers', 'Customers'), href: '/customers', icon: Users, feature: 'crm' as Feature, adminOnly: false },
+        { name: t('nav.forecasting', 'Forecasting'), href: '/forecasting', icon: TrendingUp, feature: 'forecasting' as Feature, adminOnly: false },
+      ],
+    },
+    {
+      label: 'Team',
+      items: [
+        { name: t('nav.employees', 'Employees'), href: '/employees', icon: UserCircle, feature: undefined as Feature | undefined, adminOnly: false },
+        { name: t('nav.activityLog', 'Activity Log'), href: '/activity-log', icon: Calendar, feature: undefined as Feature | undefined, adminOnly: false },
+      ],
+    },
+    {
+      label: 'Enterprise',
+      items: [
+        { name: t('nav.enterprise', 'Enterprise Hub'), href: '/enterprise', icon: Building2, feature: 'enterprise_dashboard' as Feature, adminOnly: false },
+        { name: t('nav.roles', 'Roles & Permissions'), href: '/enterprise/roles', icon: Shield, feature: 'enterprise_dashboard' as Feature, adminOnly: false },
+        { name: t('nav.workflows', 'Workflows'), href: '/enterprise/workflows', icon: Wrench, feature: 'enterprise_dashboard' as Feature, adminOnly: false },
+        { name: t('nav.locations', 'Locations'), href: '/enterprise/locations', icon: MapPin, feature: 'multi_location' as Feature, adminOnly: false },
+        { name: t('nav.api', 'API & Webhooks'), href: '/enterprise/api', icon: Cpu, feature: 'api_webhooks' as Feature, adminOnly: false },
+        { name: t('nav.monitoring', 'Monitoring'), href: '/monitoring', icon: BarChart2, feature: 'monitoring' as Feature, adminOnly: false },
+      ],
+    },
+    {
+      label: 'System',
+      items: [
+        { name: t('nav.settings', 'Settings'), href: '/system-settings', icon: Settings, feature: undefined as Feature | undefined, adminOnly: false },
+        { name: t('nav.helpSupport', 'Help & Support'), href: '/help-support', icon: HelpCircle, feature: undefined as Feature | undefined, adminOnly: false },
+        { name: t('nav.admin', 'Admin Panel'), href: '/admin', icon: Settings, feature: undefined as Feature | undefined, adminOnly: true },
+      ],
+    },
   ], [t]);
 
   const RESTAURANT_NAV_GROUPS = useMemo(() => [
@@ -260,6 +309,74 @@ export default function Layout({ children }: LayoutProps) {
       return next;
     });
   };
+
+  const renderPlatformGroup = (
+    group: { label: string | undefined; items: Array<{ name: string; href: string; icon: typeof LayoutDashboard; feature?: Feature; adminOnly?: boolean }> },
+    compact: boolean,
+  ) => {
+    const iconSize = compact ? 'h-6 w-6' : 'h-7 w-7';
+    const itemPy = compact ? 'py-1.5' : 'py-2';
+    const defaultColor = compact ? 'text-white/40' : 'text-white/50';
+    const hoverColor = compact ? 'hover:text-white/70' : 'hover:text-white/80';
+
+    const visibleItems = group.items.filter((item) => !item.adminOnly || isOwnerOrAdmin);
+    if (visibleItems.length === 0) return null;
+
+    return (
+      <div key={group.label ?? 'core'} className={group.label ? (compact ? 'mt-2' : 'mt-3') : ''}>
+        {group.label && (
+          <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-wider text-white/20">{group.label}</p>
+        )}
+        <div className="space-y-0.5">
+          {visibleItems.map((item) => {
+            const locked = item.feature ? !hasFeature(item.feature) : false;
+            const active = isActive(item.href);
+            if (locked && item.feature) {
+              const featureInfo = FEATURE_DISPLAY[item.feature];
+              const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
+              return (
+                <button
+                  key={item.href}
+                  title={`${item.name} — requires ${planInfo.name}`}
+                  onClick={() => toast.info(`Upgrade to ${planInfo.name} to unlock ${featureInfo.name}`)}
+                  className={`relative flex w-full items-center gap-2.5 rounded-xl px-2.5 ${itemPy} text-white/25 opacity-50 hover:opacity-60 transition-opacity`}
+                >
+                  <div className={`flex ${iconSize} flex-shrink-0 items-center justify-center rounded-lg bg-white/5`}>
+                    <item.icon className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="flex-1 text-start text-xs font-medium">{item.name}</span>
+                  <Lock className="h-3 w-3 text-amber-400/60" aria-hidden="true" />
+                </button>
+              );
+            }
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                aria-current={active ? 'page' : undefined}
+                className={`flex items-center gap-2.5 rounded-xl px-2.5 ${itemPy} transition-all ${
+                  active
+                    ? 'bg-indigo-500/15 border border-indigo-500/20 text-indigo-300'
+                    : `${defaultColor} hover:bg-white/5 ${hoverColor}`
+                }`}
+              >
+                <div className={`flex ${iconSize} flex-shrink-0 items-center justify-center rounded-lg ${
+                  active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/35'
+                }`}>
+                  <item.icon className="h-3.5 w-3.5" />
+                </div>
+                <span className="flex-1 text-xs font-medium">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const platformItemCount = PLATFORM_GROUPS.flatMap((g) => g.items).filter(
+    (i) => (!i.adminOnly || isOwnerOrAdmin) && i.href !== '/dashboard',
+  ).length;
 
   return (
     <div className="relative min-h-dvh md:h-dvh md:overflow-hidden bg-slate-900 text-slate-100 md:flex">
@@ -447,50 +564,10 @@ export default function Layout({ children }: LayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto" role="navigation" aria-label="Main menu">
 
-            {/* ── No-industry mode: Standard platform nav ── */}
+            {/* ── No-industry mode: Standard platform nav (grouped) ── */}
             {!industry && (
-              <div className="space-y-0.5">
-                {PLATFORM_ITEMS.map((item) => {
-                  const locked = item.feature ? !hasFeature(item.feature) : false;
-                  const active = isActive(item.href);
-                  if (locked && item.feature) {
-                    const featureInfo = FEATURE_DISPLAY[item.feature];
-                    const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
-                    return (
-                      <button
-                        key={item.href}
-                        title={`${item.name} — requires ${planInfo.name}`}
-                        onClick={() => toast.info(`Upgrade to ${planInfo.name} to unlock ${featureInfo.name}`)}
-                        className="relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-white/25 opacity-50 hover:opacity-60 transition-opacity"
-                      >
-                        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/5">
-                          <item.icon className="h-3.5 w-3.5" />
-                        </div>
-                        <span className="flex-1 text-start text-xs font-medium">{item.name}</span>
-                        <Lock className="h-3 w-3 text-amber-400/60" aria-hidden="true" />
-                      </button>
-                    );
-                  }
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      aria-current={active ? 'page' : undefined}
-                      className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-all ${
-                        active
-                          ? 'bg-indigo-500/15 border border-indigo-500/20 text-indigo-300'
-                          : 'text-white/50 hover:bg-white/5 hover:text-white/80'
-                      }`}
-                    >
-                      <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${
-                        active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/35'
-                      }`}>
-                        <item.icon className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="flex-1 text-xs font-medium">{item.name}</span>
-                    </Link>
-                  );
-                })}
+              <div>
+                {PLATFORM_GROUPS.map((group) => renderPlatformGroup(group, false))}
               </div>
             )}
 
@@ -640,53 +717,19 @@ export default function Layout({ children }: LayoutProps) {
                     <span className="text-[9px] font-bold uppercase tracking-[0.18em] flex-1 text-start">Platform</span>
                     {!platformExpanded && (
                       <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[9px] font-semibold text-white/35">
-                        {PLATFORM_ITEMS.length - 1}
+                        {platformItemCount}
                       </span>
                     )}
                     <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${platformExpanded ? 'rotate-180' : ''}`} />
                   </button>
                   {platformExpanded && (
-                    <div className="mt-1 space-y-0.5">
-                      {PLATFORM_ITEMS.slice(1).map((item) => {
-                        const locked = item.feature ? !hasFeature(item.feature) : false;
-                        const active = isActive(item.href);
-                        if (locked && item.feature) {
-                          const featureInfo = FEATURE_DISPLAY[item.feature];
-                          const planInfo = PLAN_DISPLAY[featureInfo.requiredPlan];
-                          return (
-                            <button
-                              key={item.href}
-                              title={`${item.name} — requires ${planInfo.name}`}
-                              onClick={() => toast.info(`Upgrade to ${planInfo.name} to unlock ${featureInfo.name}`)}
-                              className="relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-white/20 opacity-50 hover:opacity-60 transition-opacity"
-                            >
-                              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-white/5">
-                                <item.icon className="h-3.5 w-3.5" />
-                              </div>
-                              <span className="flex-1 text-start text-xs font-medium">{item.name}</span>
-                              <Lock className="h-3 w-3 text-amber-400/50" aria-hidden="true" />
-                            </button>
-                          );
-                        }
-                        return (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            aria-current={active ? 'page' : undefined}
-                            className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all ${
-                              active
-                                ? 'bg-indigo-500/15 border border-indigo-500/20 text-indigo-300'
-                                : 'text-white/40 hover:bg-white/5 hover:text-white/70'
-                            }`}
-                          >
-                            <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg ${
-                              active ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/30'
-                            }`}>
-                              <item.icon className="h-3.5 w-3.5" />
-                            </div>
-                            <span className="flex-1 text-xs font-medium">{item.name}</span>
-                          </Link>
-                        );
+                    <div className="mt-1">
+                      {PLATFORM_GROUPS.map((group) => {
+                        const filteredGroup = {
+                          ...group,
+                          items: group.items.filter((i) => i.href !== '/dashboard'),
+                        };
+                        return renderPlatformGroup(filteredGroup, true);
                       })}
                     </div>
                   )}

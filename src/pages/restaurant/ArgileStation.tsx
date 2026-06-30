@@ -799,7 +799,7 @@ export default function ArgileStation() {
               <p className="text-[10px] text-white/40">
                 {sessions.length} {t('argile.activeSessions', 'active sessions')}
                 {pendingFa7emCount > 0 && (
-                  <span className="ml-1 font-bold text-amber-400">
+                  <span className="ms-1 font-bold text-amber-400">
                     · {pendingFa7emCount} fa7em
                   </span>
                 )}

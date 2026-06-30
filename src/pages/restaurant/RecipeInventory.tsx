@@ -1106,13 +1106,13 @@ export default function RecipeInventory() {
             <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-left">
+                  <tr className="border-b border-white/10 text-start">
                     <th className="px-4 py-3 font-medium text-white/50">Name</th>
                     <th className="px-4 py-3 font-medium text-white/50">Category</th>
                     <th className="px-4 py-3 font-medium text-white/50">Unit</th>
-                    <th className="px-4 py-3 font-medium text-white/50 text-right">Cost/Unit</th>
-                    <th className="px-4 py-3 font-medium text-white/50 text-right">In Stock</th>
-                    <th className="px-4 py-3 font-medium text-white/50 text-right">Reorder At</th>
+                    <th className="px-4 py-3 font-medium text-white/50 text-end">Cost/Unit</th>
+                    <th className="px-4 py-3 font-medium text-white/50 text-end">In Stock</th>
+                    <th className="px-4 py-3 font-medium text-white/50 text-end">Reorder At</th>
                     <th className="px-4 py-3 font-medium text-white/50">Status</th>
                     <th className="px-4 py-3 font-medium text-white/50">Actions</th>
                   </tr>
@@ -1136,13 +1136,13 @@ export default function RecipeInventory() {
                       </td>
                       <td className="px-4 py-3 text-white/60 capitalize">{INGREDIENT_CATEGORY_LABELS[ing.category] ?? ing.category}</td>
                       <td className="px-4 py-3 text-white/60">{ing.unit}</td>
-                      <td className="px-4 py-3 text-right font-mono text-white/80">{fmtUSD(ing.cost_per_unit)}</td>
-                      <td className="px-4 py-3 text-right font-mono">
+                      <td className="px-4 py-3 text-end font-mono text-white/80">{fmtUSD(ing.cost_per_unit)}</td>
+                      <td className="px-4 py-3 text-end font-mono">
                         <span className={getIngredientStockStatus(ing) === 'critical' ? 'text-red-400 font-semibold' : getIngredientStockStatus(ing) === 'low' ? 'text-amber-400' : 'text-white/80'}>
                           {fmt(ing.current_stock, 1)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-white/50">{fmt(ing.reorder_level, 1)}</td>
+                      <td className="px-4 py-3 text-end font-mono text-white/50">{fmt(ing.reorder_level, 1)}</td>
                       <td className="px-4 py-3"><StockBadge ingredient={ing} /></td>
                       <td className="px-4 py-3">
                         <button
@@ -1602,12 +1602,12 @@ export default function RecipeInventory() {
             <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-left">
+                  <tr className="border-b border-white/10 text-start">
                     <th className="px-4 py-3 font-medium text-white/50">Time</th>
                     <th className="px-4 py-3 font-medium text-white/50">Ingredient</th>
                     <th className="px-4 py-3 font-medium text-white/50">Qty</th>
                     <th className="px-4 py-3 font-medium text-white/50">Reason</th>
-                    <th className="px-4 py-3 font-medium text-white/50 text-right">Cost</th>
+                    <th className="px-4 py-3 font-medium text-white/50 text-end">Cost</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1627,7 +1627,7 @@ export default function RecipeInventory() {
                         <td className="px-4 py-3 text-white">{ing?.name ?? entry.ingredient_id}</td>
                         <td className="px-4 py-3 font-mono text-white/70">{fmt(entry.quantity, 2)} {entry.unit}</td>
                         <td className="px-4 py-3 text-white/60 capitalize">{(entry.reason ?? '—').replace(/_/g, ' ')}</td>
-                        <td className={`px-4 py-3 text-right font-mono font-semibold ${isHighCost ? 'text-red-300' : 'text-red-400'}`}>
+                        <td className={`px-4 py-3 text-end font-mono font-semibold ${isHighCost ? 'text-red-300' : 'text-red-400'}`}>
                           ${fmt(entry.cost_value ?? 0)}
                         </td>
                       </tr>
@@ -1746,7 +1746,7 @@ export default function RecipeInventory() {
                             {po.expected_date && <span> · Expected {po.expected_date}</span>}
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
+                        <div className="text-end flex-shrink-0">
                           <div className="text-sm font-bold text-white">${fmt(po.total_estimated)}</div>
                           <div className="text-xs text-white/40">{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
                         </div>

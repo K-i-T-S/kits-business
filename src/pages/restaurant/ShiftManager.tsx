@@ -347,7 +347,7 @@ export default function ShiftManager() {
                 >
                   <p className={`text-xs font-semibold mb-2 ${isToday ? 'text-amber-300' : 'text-white/50'}`}>
                     {new Date(day).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    {isToday && <span className="ml-2 text-amber-400/80">• Today</span>}
+                    {isToday && <span className="ms-2 text-amber-400/80">• Today</span>}
                   </p>
                   {dayShifts.length === 0 ? (
                     <p className="text-xs text-white/20">{t('restaurant.shifts.noShift', 'No shift')}</p>
@@ -407,7 +407,7 @@ export default function ShiftManager() {
                     <DollarSign className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
                     <p className="text-xs text-amber-300/80">{getTipsLabel()}</p>
                     {!tipsConfig && (
-                      <a href="/restaurant/tips" className="ml-auto text-[10px] text-amber-400/70 underline flex items-center gap-1">
+                      <a href="/restaurant/tips" className="ms-auto text-[10px] text-amber-400/70 underline flex items-center gap-1">
                         <Link className="h-3 w-3" />Configure
                       </a>
                     )}
@@ -581,7 +581,7 @@ export default function ShiftManager() {
         <div className="backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border border-white/10 rounded-2xl shadow-2xl">
           <button
             onClick={() => setShowPayrollExport(v => !v)}
-            className="flex w-full items-center justify-between px-4 py-3 text-left"
+            className="flex w-full items-center justify-between px-4 py-3 text-start"
           >
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-sky-500/10">

@@ -418,7 +418,7 @@ export default function EventsManager() {
                 {opt.label}
               </button>
             ))}
-            <span className="ml-auto self-center rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
+            <span className="ms-auto self-center rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
               {filtered.length} {filtered.length === 1 ? 'event' : 'events'}
             </span>
           </div>
@@ -643,7 +643,7 @@ export default function EventsManager() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-white/50">
-                    <Phone className="inline h-3 w-3 mr-1" />Phone
+                    <Phone className="inline h-3 w-3 me-1" />Phone
                   </label>
                   <input
                     type="tel"
@@ -655,7 +655,7 @@ export default function EventsManager() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-white/50">
-                    <Mail className="inline h-3 w-3 mr-1" />Email
+                    <Mail className="inline h-3 w-3 me-1" />Email
                   </label>
                   <input
                     type="email"

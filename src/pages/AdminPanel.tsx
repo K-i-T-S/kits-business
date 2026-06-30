@@ -435,7 +435,7 @@ export default function AdminPanel() {
                 <thead>
                   <tr className="border-b border-white/10 bg-white/5">
                     {['Business', 'Slug', 'Owner Email', 'Users', 'Plan', 'Status', 'DB', 'Created', 'Actions'].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white/40 uppercase tracking-wider">{h}</th>
+                      <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-white/40 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -614,7 +614,7 @@ export default function AdminPanel() {
                     <thead>
                       <tr className="border-b border-white/10 bg-white/5">
                         {['Business', 'Owner', 'Type', 'Region', 'Supabase URL', 'Provisioned'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white/40 uppercase tracking-wider">{h}</th>
+                          <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-white/40 uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -646,7 +646,7 @@ export default function AdminPanel() {
                     <thead>
                       <tr className="border-b border-white/10 bg-white/5">
                         {['Business', 'Owner', 'DB Status'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white/40 uppercase tracking-wider">{h}</th>
+                          <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-white/40 uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
                     </thead>

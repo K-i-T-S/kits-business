@@ -249,7 +249,7 @@ function PlatformCard({ platform, integration, tenantId, onSaved }: PlatformCard
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-label={`${expanded ? 'Collapse' : 'Expand'} ${platform.label} settings`}
-          className="ml-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70 transition-all"
+          className="ms-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70 transition-all"
         >
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
@@ -303,7 +303,7 @@ function PlatformCard({ platform, integration, tenantId, onSaved }: PlatformCard
           {/* Prep Time */}
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-white/60" htmlFor={`prep-time-${platform.id}`}>
-              <Clock className="inline h-3 w-3 mr-1 mb-0.5" />
+              <Clock className="inline h-3 w-3 me-1 mb-0.5" />
               Default Prep Time (minutes)
             </label>
             <input

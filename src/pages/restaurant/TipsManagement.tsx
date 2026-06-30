@@ -217,7 +217,7 @@ export default function TipsManagement() {
           </div>
           <button
             onClick={saveConfig}
-            className="ml-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all"
+            className="ms-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all"
           >
             <Save className="h-4 w-4" />
             {t('common.save', 'Save')}
@@ -236,7 +236,7 @@ export default function TipsManagement() {
                 <button
                   key={id}
                   onClick={() => setConfig(c => ({ ...c, algorithm: id }))}
-                  className={`rounded-2xl border p-4 text-left transition-all shadow-2xl ${
+                  className={`rounded-2xl border p-4 text-start transition-all shadow-2xl ${
                     active
                       ? 'border-amber-500/30 bg-amber-500/10 shadow-amber-500/10'
                       : 'backdrop-blur-md bg-gradient-to-br from-white/8 to-white/3 border-white/10 hover:border-white/20 hover:bg-white/10'
@@ -252,7 +252,7 @@ export default function TipsManagement() {
                     </div>
                     <span className={`text-sm font-semibold ${active ? 'text-amber-200' : 'text-white/70'}`}>{title}</span>
                     {active && (
-                      <span className="ml-auto text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                      <span className="ms-auto text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full">
                         Active
                       </span>
                     )}
@@ -271,7 +271,7 @@ export default function TipsManagement() {
                 <span className="bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent font-bold">
                   {config.waiterSharePct}%
                 </span>
-                <span className="ml-2 text-white/35 text-xs">(pool gets {100 - config.waiterSharePct}%)</span>
+                <span className="ms-2 text-white/35 text-xs">(pool gets {100 - config.waiterSharePct}%)</span>
               </label>
               <input
                 type="range"

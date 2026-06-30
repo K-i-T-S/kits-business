@@ -143,7 +143,7 @@ function DenomStepper({ label, count, onChange }: StepperProps) {
           <ChevronUp className="w-4 h-4" />
         </button>
       </div>
-      <span className="text-xs text-white/40 w-16 text-right font-mono">
+      <span className="text-xs text-white/40 w-16 text-end font-mono">
         ×{count}
       </span>
     </div>
@@ -682,12 +682,12 @@ export default function CashManagement() {
                 <div className="overflow-x-auto rounded-xl border border-white/10">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-white/5 text-left">
+                      <tr className="bg-white/5 text-start">
                         <th className="px-4 py-3 text-white/50 font-medium">Opened</th>
                         <th className="px-4 py-3 text-white/50 font-medium">Closed</th>
-                        <th className="px-4 py-3 text-white/50 font-medium text-right">Float USD</th>
-                        <th className="px-4 py-3 text-white/50 font-medium text-right">Actual USD</th>
-                        <th className="px-4 py-3 text-white/50 font-medium text-right">Over/Short</th>
+                        <th className="px-4 py-3 text-white/50 font-medium text-end">Float USD</th>
+                        <th className="px-4 py-3 text-white/50 font-medium text-end">Actual USD</th>
+                        <th className="px-4 py-3 text-white/50 font-medium text-end">Over/Short</th>
                         <th className="px-4 py-3 text-white/50 font-medium text-center">Status</th>
                       </tr>
                     </thead>
@@ -703,13 +703,13 @@ export default function CashManagement() {
                             <td className="px-4 py-3 text-white/80">
                               {s.closed_at ? fmtDateTime(s.closed_at) : '—'}
                             </td>
-                            <td className="px-4 py-3 text-white font-mono text-right">
+                            <td className="px-4 py-3 text-white font-mono text-end">
                               {fmtUSD(s.opening_float_usd)}
                             </td>
-                            <td className="px-4 py-3 text-white font-mono text-right">
+                            <td className="px-4 py-3 text-white font-mono text-end">
                               {s.actual_cash_usd !== null ? fmtUSD(s.actual_cash_usd) : '—'}
                             </td>
-                            <td className={`px-4 py-3 font-mono text-right font-semibold ${overShortColor(usdStatus)}`}>
+                            <td className={`px-4 py-3 font-mono text-end font-semibold ${overShortColor(usdStatus)}`}>
                               {diff !== null ? (
                                 <span className="flex items-center justify-end gap-1">
                                   {overShortIcon(usdStatus)}

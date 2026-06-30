@@ -784,11 +784,11 @@ export default function CashDrawer() {
                   <div className="overflow-x-auto rounded-xl border border-white/10">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-white/5 text-left">
+                        <tr className="bg-white/5 text-start">
                           <th className="px-4 py-3 text-white/50 font-medium">Time</th>
                           <th className="px-4 py-3 text-white/50 font-medium">Type</th>
-                          <th className="px-4 py-3 text-white/50 font-medium text-right">USD</th>
-                          <th className="px-4 py-3 text-white/50 font-medium text-right">LBP</th>
+                          <th className="px-4 py-3 text-white/50 font-medium text-end">USD</th>
+                          <th className="px-4 py-3 text-white/50 font-medium text-end">LBP</th>
                           <th className="px-4 py-3 text-white/50 font-medium">Description</th>
                         </tr>
                       </thead>
@@ -812,7 +812,7 @@ export default function CashDrawer() {
                                   {MOVEMENT_LABELS[m.movement_type]}
                                 </span>
                               </td>
-                              <td className={`px-4 py-3 font-mono text-right ${
+                              <td className={`px-4 py-3 font-mono text-end ${
                                 m.amount_usd > 0
                                   ? incoming ? 'text-emerald-400' : 'text-red-400'
                                   : 'text-white/30'
@@ -821,7 +821,7 @@ export default function CashDrawer() {
                                   ? `${incoming ? '+' : '-'}${fmtUSD(m.amount_usd)}`
                                   : '—'}
                               </td>
-                              <td className={`px-4 py-3 font-mono text-right text-xs ${
+                              <td className={`px-4 py-3 font-mono text-end text-xs ${
                                 m.amount_lbp > 0
                                   ? incoming ? 'text-emerald-400' : 'text-red-400'
                                   : 'text-white/30'

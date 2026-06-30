@@ -355,7 +355,7 @@ export default function Reservations() {
                     {t(`restaurant.filter.${f}`, f === 'today' ? 'Today' : f === 'upcoming' ? 'Upcoming' : 'All')}
                   </button>
                 ))}
-                <span className="ml-auto self-center rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
+                <span className="ms-auto self-center rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
                   {filteredReservations.length} {t('restaurant.reservationCount', 'reservations')}
                 </span>
               </div>
@@ -552,7 +552,7 @@ export default function Reservations() {
                       {Array.from({ length: TOTAL_SLOTS }, (_, slot) => (
                         <div
                           key={slot}
-                          className="border-b border-white/5 flex items-start justify-end pr-2"
+                          className="border-b border-white/5 flex items-start justify-end pe-2"
                           style={{ height: SLOT_HEIGHT }}
                         >
                           {slot % 2 === 0 && (

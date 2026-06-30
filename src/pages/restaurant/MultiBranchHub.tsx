@@ -782,7 +782,7 @@ export default function MultiBranchHub() {
             >
               {b.name}
               {b.id === topBranchId && (
-                <Trophy className="ml-1.5 inline h-3 w-3 text-amber-400" />
+                <Trophy className="ms-1.5 inline h-3 w-3 text-amber-400" />
               )}
             </button>
           ))}

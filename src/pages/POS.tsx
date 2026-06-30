@@ -905,7 +905,7 @@ export default function POS() {
       <SplitPaymentModal
         isOpen={showSplitPayment}
         totalAmount={calculateTotal()}
-        onComplete={completeSale}
+        onComplete={(payments) => { void completeSale(payments); }}
         onCancel={() => setShowSplitPayment(false)}
       />
 

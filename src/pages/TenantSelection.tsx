@@ -292,7 +292,7 @@ export default function TenantSelection() {
             onClick={() => {
               void (async () => {
                 await supabase.auth.signOut();
-                navigate('/login');
+                void navigate('/login');
               })();
             }}
             className="text-white/40 hover:text-white/70 transition-colors text-sm"

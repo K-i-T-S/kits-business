@@ -399,8 +399,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 show_dual_currency: tenantData.show_dual_currency ?? false,
                 tin: tenantData.tin ?? null,
                 loyalty_enabled: tenantData.loyalty_enabled ?? false,
-                loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
-                loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
+                loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar !== null && tenantData.loyalty_points_per_dollar !== undefined ? Number(tenantData.loyalty_points_per_dollar) : 1,
+                loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate !== null && tenantData.loyalty_points_redeem_rate !== undefined ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
                 industry: tenantData.industry ?? null,
                 qr_menu_palette: tenantData.qr_menu_palette ?? null,
                 qr_menu_promotional_banner: tenantData.qr_menu_promotional_banner ?? null,
@@ -448,8 +448,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 show_dual_currency: tenantData.show_dual_currency ?? false,
                 tin: tenantData.tin ?? null,
                 loyalty_enabled: tenantData.loyalty_enabled ?? false,
-                loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar != null ? Number(tenantData.loyalty_points_per_dollar) : 1,
-                loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate != null ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
+                loyalty_points_per_dollar: tenantData.loyalty_points_per_dollar !== null && tenantData.loyalty_points_per_dollar !== undefined ? Number(tenantData.loyalty_points_per_dollar) : 1,
+                loyalty_points_redeem_rate: tenantData.loyalty_points_redeem_rate !== null && tenantData.loyalty_points_redeem_rate !== undefined ? Number(tenantData.loyalty_points_redeem_rate) : 0.01,
                 industry: tenantData.industry ?? null,
                 qr_menu_palette: tenantData.qr_menu_palette ?? null,
                 qr_menu_promotional_banner: tenantData.qr_menu_promotional_banner ?? null,
@@ -938,7 +938,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ── Tenant ───────────────────────────────────────────────────────────────
 
   const switchTenant = (_tenantId: string) => {
-    void setTimeout(() => { loadData(); }, 100);
+    void setTimeout(() => { void loadData(); }, 100);
   };
 
   if (loading && hasSession) {

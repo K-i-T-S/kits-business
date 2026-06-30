@@ -39,7 +39,7 @@ async function replayWrite(write: QueuedWrite): Promise<boolean> {
       const { error } = await supabase
         .from(write.table)
         .update(write.payload)
-        .eq('id', String(rowId));
+        .eq('id', rowId as string);
       if (error) throw error;
     } else if (write.operation === 'delete') {
       const rowId = write.payload['id'];
@@ -49,7 +49,7 @@ async function replayWrite(write: QueuedWrite): Promise<boolean> {
       const { error } = await supabase
         .from(write.table)
         .delete()
-        .eq('id', String(rowId));
+        .eq('id', rowId as string);
       if (error) throw error;
     }
     return true;

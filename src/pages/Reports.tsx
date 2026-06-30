@@ -630,7 +630,7 @@ export default function Reports() {
               </p>
               <div className="grid grid-cols-1 gap-3">
                 <Button
-                  onClick={() => handleExport('csv')}
+                  onClick={() => { void handleExport('csv'); }}
                   className="justify-start"
                   variant="outline"
                 >
@@ -638,7 +638,7 @@ export default function Reports() {
                   Export as CSV
                 </Button>
                 <Button
-                  onClick={() => handleExport('excel')}
+                  onClick={() => { void handleExport('excel'); }}
                   className="justify-start"
                   variant="outline"
                 >
@@ -646,7 +646,7 @@ export default function Reports() {
                   Export as Excel
                 </Button>
                 <Button
-                  onClick={() => handleExport('pdf')}
+                  onClick={() => { void handleExport('pdf'); }}
                   className="justify-start"
                   variant="outline"
                 >

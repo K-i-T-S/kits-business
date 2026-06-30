@@ -172,7 +172,7 @@ export default function SystemSettings() {
     setFinancialForm(prev => ({
       ...prev,
       taxRate:
-        currentTenant.tax_rate != null
+        currentTenant.tax_rate !== undefined
           ? String(+(currentTenant.tax_rate * 100).toFixed(4))
           : (settings['tax_rate'] as string | undefined) ?? prev.taxRate,
       defaultCurrency: (settings['currency'] as string | undefined) ?? prev.defaultCurrency,
@@ -413,7 +413,7 @@ export default function SystemSettings() {
             </p>
           </div>
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => { void navigate('/dashboard'); }}
             className="flex items-center gap-2 px-3 py-2 text-white/60 hover:text-white transition-colors"
           >
             <X className="h-5 w-5" />

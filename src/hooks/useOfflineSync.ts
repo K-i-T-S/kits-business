@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import {
-  type OfflineAction,
+  type QueuedWrite,
   getPendingActions,
   removeQueuedAction,
   incrementRetry,
@@ -12,7 +12,7 @@ import { supabase } from '@/utils/supabaseClient';
 
 // Re-export for consumers that import from this hook file
 export { queueMutation } from '@/utils/offlineQueue';
-export type { OfflineAction } from '@/utils/offlineQueue';
+export type { QueuedWrite } from '@/utils/offlineQueue';
 
 interface SyncStatus {
   isOnline: boolean;
@@ -22,36 +22,39 @@ interface SyncStatus {
 }
 
 /**
- * Replay a single queued action against Supabase.
+ * Replay a single queued write against Supabase.
+ * For update/delete operations the primary key is read from payload.id.
  * Returns true on success, false on failure.
  */
-async function replayAction(action: OfflineAction): Promise<boolean> {
+async function replayWrite(write: QueuedWrite): Promise<boolean> {
   try {
-    if (action.operation === 'insert') {
-      const { error } = await supabase.from(action.table).insert(action.payload);
+    if (write.operation === 'insert') {
+      const { error } = await supabase.from(write.table).insert(write.payload);
       if (error) throw error;
-    } else if (action.operation === 'update') {
-      if (!action.matchColumn || action.matchValue === undefined) {
-        throw new Error(`update action missing matchColumn/matchValue for table ${action.table}`);
+    } else if (write.operation === 'update') {
+      const rowId = write.payload['id'];
+      if (rowId === undefined) {
+        throw new Error(`update write is missing payload.id for table ${write.table}`);
       }
       const { error } = await supabase
-        .from(action.table)
-        .update(action.payload)
-        .eq(action.matchColumn, action.matchValue);
+        .from(write.table)
+        .update(write.payload)
+        .eq('id', String(rowId));
       if (error) throw error;
-    } else if (action.operation === 'delete') {
-      if (!action.matchColumn || action.matchValue === undefined) {
-        throw new Error(`delete action missing matchColumn/matchValue for table ${action.table}`);
+    } else if (write.operation === 'delete') {
+      const rowId = write.payload['id'];
+      if (rowId === undefined) {
+        throw new Error(`delete write is missing payload.id for table ${write.table}`);
       }
       const { error } = await supabase
-        .from(action.table)
+        .from(write.table)
         .delete()
-        .eq(action.matchColumn, action.matchValue);
+        .eq('id', String(rowId));
       if (error) throw error;
     }
     return true;
   } catch (err) {
-    console.warn(`[OfflineSync] Failed to replay ${action.operation} on ${action.table}:`, err);
+    console.warn(`[OfflineSync] Failed to replay ${write.operation} on ${write.table}:`, err);
     return false;
   }
 }
@@ -64,7 +67,7 @@ export function useOfflineSync() {
     isSyncing: false,
   });
 
-  /** Sync all pending queued actions against Supabase in timestamp order. */
+  /** Sync all pending queued writes against Supabase in createdAt order. */
   const syncActions = useCallback(async (): Promise<{ successful: number; failed: number }> => {
     if (!navigator.onLine) return { successful: 0, failed: 0 };
 
@@ -74,24 +77,22 @@ export function useOfflineSync() {
     let failed = 0;
 
     try {
-      const actions = await getPendingActions();
+      const writes = await getPendingActions();
 
-      for (const action of actions) {
-        const ok = await replayAction(action);
+      for (const write of writes) {
+        const ok = await replayWrite(write);
         if (ok) {
-          await removeQueuedAction(action.id);
+          await removeQueuedAction(write.id);
           successful++;
         } else {
-          await incrementRetry(action);
+          await incrementRetry(write);
           failed++;
-          // Show a conflict toast so the user knows about it
           toast.warning('Sync conflict', {
-            description: `Could not sync a queued ${action.operation} on ${action.table}. It will retry automatically.`,
+            description: `Could not sync a queued ${write.operation} on ${write.table}. It will retry automatically.`,
           });
         }
       }
 
-      // Refresh pending count after sync
       const remaining = await getPendingActions();
       setSyncStatus(prev => ({
         ...prev,
@@ -107,11 +108,14 @@ export function useOfflineSync() {
     return { successful, failed };
   }, []);
 
-  /** Add an action to the IndexedDB queue (delegate to shared utility). */
+  /** Add a write to the IndexedDB queue (delegates to shared utility). */
   const queueAction = useCallback(
-    async (action: Omit<OfflineAction, 'id' | 'timestamp' | 'retryCount'>): Promise<void> => {
-      await queueMutationUtil(action);
+    async (
+      action: Omit<QueuedWrite, 'id' | 'createdAt' | 'retries' | 'status'>,
+    ): Promise<string> => {
+      const id = await queueMutationUtil(action);
       setSyncStatus(prev => ({ ...prev, pendingActions: prev.pendingActions + 1 }));
+      return id;
     },
     [],
   );
@@ -130,11 +134,13 @@ export function useOfflineSync() {
     window.addEventListener('offline', handleOffline);
 
     // Hydrate count from IndexedDB on mount
-    getPendingActions().then(actions => {
-      setSyncStatus(prev => ({ ...prev, pendingActions: actions.length }));
-    }).catch(err => {
-      console.warn('[OfflineSync] Could not read pending actions:', err);
-    });
+    getPendingActions()
+      .then(writes => {
+        setSyncStatus(prev => ({ ...prev, pendingActions: writes.length }));
+      })
+      .catch(err => {
+        console.warn('[OfflineSync] Could not read pending writes:', err);
+      });
 
     return () => {
       window.removeEventListener('online', handleOnline);

@@ -949,12 +949,12 @@ export default function RestaurantHub() {
             {viewMode === 'floor' ? (
               <motion.div
                 key="floor"
-                className="flex flex-col"
+                className="flex flex-col h-full"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                style={{ height: 'clamp(360px, 56dvh, 100%)' }}
+                style={{ minHeight: '360px' }}
               >
                 <WebGLErrorBoundary
                   fallback={

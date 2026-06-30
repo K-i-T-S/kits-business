@@ -175,7 +175,7 @@ export function FloorPlan3D({
 
   if (isLoading) {
     return (
-      <div className="h-full w-full"  style={{ minHeight: 0 }}>
+      <div className="h-full w-full" style={{ minHeight: 0 }}>
         <LoadingOverlay />
       </div>
     );

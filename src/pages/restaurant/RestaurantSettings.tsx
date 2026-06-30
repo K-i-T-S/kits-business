@@ -49,13 +49,13 @@ const DAY_LABELS: Record<DayKey, string> = {
 };
 
 const DEFAULT_HOURS: OperatingHours = {
-  monday:    { open: true,  openTime: '11:00', closeTime: '23:00' },
-  tuesday:   { open: true,  openTime: '11:00', closeTime: '23:00' },
-  wednesday: { open: true,  openTime: '11:00', closeTime: '23:00' },
-  thursday:  { open: true,  openTime: '11:00', closeTime: '00:00' },
-  friday:    { open: true,  openTime: '11:00', closeTime: '01:00' },
-  saturday:  { open: true,  openTime: '11:00', closeTime: '01:00' },
-  sunday:    { open: false, openTime: '11:00', closeTime: '23:00' },
+  monday: { open: true, openTime: '11:00', closeTime: '23:00' },
+  tuesday: { open: true, openTime: '11:00', closeTime: '23:00' },
+  wednesday: { open: true, openTime: '11:00', closeTime: '23:00' },
+  thursday: { open: true, openTime: '11:00', closeTime: '00:00' },
+  friday: { open: true, openTime: '11:00', closeTime: '01:00' },
+  saturday: { open: true, openTime: '11:00', closeTime: '01:00' },
+  sunday: { open: false, openTime: '11:00', closeTime: '23:00' },
 };
 
 function isValidOperatingHours(v: unknown): v is OperatingHours {
@@ -763,9 +763,9 @@ export default function RestaurantSettings() {
                 <div className="space-y-2">
                   {(
                     [
-                      { value: 'usd',  label: 'USD only',   desc: 'Show prices in US Dollars' },
-                      { value: 'lbp',  label: 'LBP only',   desc: 'Show prices in Lebanese Pounds' },
-                      { value: 'both', label: 'Show both',  desc: 'Display USD and LBP side by side' },
+                      { value: 'usd', label: 'USD only', desc: 'Show prices in US Dollars' },
+                      { value: 'lbp', label: 'LBP only', desc: 'Show prices in Lebanese Pounds' },
+                      { value: 'both', label: 'Show both', desc: 'Display USD and LBP side by side' },
                     ] satisfies { value: CurrencyDisplay; label: string; desc: string }[]
                   ).map(({ value, label, desc }) => (
                     <label

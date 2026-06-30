@@ -1624,6 +1624,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
           onConfirm={(qty, notes, unitPrice, modifiers, course) => {
             if (!isOnline) {
               void queueMutation({
+                tenantId: tenantId ?? '',
                 table: 'restaurant_order_items',
                 operation: 'insert',
                 payload: {
@@ -1658,6 +1659,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
           onUpsellAdd={(upsellItem) => {
             if (!isOnline) {
               void queueMutation({
+                tenantId: tenantId ?? '',
                 table: 'restaurant_order_items',
                 operation: 'insert',
                 payload: {
@@ -1889,6 +1891,7 @@ export default function WaiterInterface() {
       if (!isOnline) {
         for (const row of itemRows) {
           void queueMutation({
+            tenantId: tenantId ?? '',
             table: 'restaurant_order_items',
             operation: 'insert',
             payload: row as unknown as Record<string, unknown>,

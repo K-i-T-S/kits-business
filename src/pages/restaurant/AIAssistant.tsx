@@ -1,511 +1,419 @@
 /**
- * AIAssistant — Full-screen AI chat interface for restaurant management.
+ * AIAssistant — Production AI chat interface for restaurant operations.
  *
- * Phase 2 AI Layer:
- * - Bilingual (EN/AR) chat interface with history display
- * - Language toggle in header
- * - Suggested prompts (chips) for common queries
- * - Message input with send button
- * - Chat history loaded from restaurant_ai_queries table
- * - Powered by restaurant-ai-assistant Edge Function (Claude Sonnet with tools)
- *
- * Usage: Assistant can answer data questions, draft marketing copy, recommend actions
+ * Sprint 22-A:
+ * - Direct Groq streaming via groqChatStream (llama-3.3-70b-versatile)
+ * - Real-time token streaming with typing indicator
+ * - localStorage history (last 20 messages, keyed by tenantId)
+ * - Quick prompt chips
+ * - Setup instructions panel when API key is absent
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, Globe, Trash2, ArrowLeft } from 'lucide-react';
+import { Send, Sparkles, Trash2, ArrowLeft, Terminal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import Layout from '@/components/Layout';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useApp } from '@/context/AppContext';
-import { useLanguage } from '@/context/LanguageContext';
-import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
-import {
-  useChatHistory,
-  useSendAIMessage,
-  useClearChatHistory,
-  getSuggestedPrompts,
-  type AIMessage,
-} from '@/hooks/useAIAssistant';
+import { groqChatStream, type GroqMessage } from '@/utils/groqClient';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-interface LocalMessage extends AIMessage {
-  isLocal?: boolean; // For pending messages before backend persistence
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+
+const SYSTEM_PROMPT: GroqMessage = {
+  role: 'system',
+  content: `You are KiTS AI, a restaurant operations assistant for Lebanese and MENA restaurants.
+Help with: menu optimization, cost analysis, staff scheduling, customer insights, daily operations.
+Be concise, practical, and direct. Currency in USD. Understand Lebanese cuisine and local context.`,
+};
+
+const QUICK_PROMPTS = [
+  'Top dishes this week',
+  'Low margin items',
+  'Reduce food waste',
+  'Weekend specials',
+  "Today's performance",
+];
+
+const HISTORY_LIMIT = 20;
+
+function getStorageKey(tenantId: string): string {
+  return `kits-ai-chat-${tenantId}`;
+}
+
+function loadHistory(tenantId: string): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(getStorageKey(tenantId));
+    if (!raw) return [];
+    return JSON.parse(raw) as ChatMessage[];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(tenantId: string, messages: ChatMessage[]): void {
+  try {
+    const trimmed = messages.slice(-HISTORY_LIMIT);
+    localStorage.setItem(getStorageKey(tenantId), JSON.stringify(trimmed));
+  } catch {
+    // storage may be full — ignore
+  }
+}
+
+// ── Setup Instructions Panel ───────────────────────────────────────────────────
+
+function SetupPanel() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-6 px-6 py-12">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10">
+        <Terminal className="h-8 w-8 text-amber-400" />
+      </div>
+      <div className="max-w-sm text-center">
+        <h2 className="mb-2 text-xl font-bold text-white">Configure Groq API Key</h2>
+        <p className="mb-6 text-sm text-white/60">
+          AI Assistant requires a Groq API key to function. Add it to your environment:
+        </p>
+        <div className="rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-left">
+          <p className="font-mono text-xs text-amber-400">
+            VITE_GROQ_API_KEY=gsk_...
+          </p>
+        </div>
+        <p className="mt-4 text-xs text-white/40">
+          Add to <span className="font-mono text-white/60">.env.local</span> then restart{' '}
+          <span className="font-mono text-white/60">npm run dev</span>
+        </p>
+        <a
+          href="https://console.groq.com/keys"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-block rounded-lg bg-indigo-600/20 px-4 py-2 text-sm text-indigo-300 transition-colors hover:bg-indigo-600/30"
+        >
+          Get API Key at console.groq.com
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ── Typing Indicator ───────────────────────────────────────────────────────────
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-purple-500/10">
+        <Sparkles className="h-4 w-4 text-purple-400" />
+      </div>
+      <div className="me-auto rounded-2xl rounded-es-sm bg-white/8 px-4 py-3">
+        <div className="flex gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="h-2 w-2 rounded-full bg-white/40"
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 0.8, delay: i * 0.2, repeat: Infinity }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ── Message Bubble ─────────────────────────────────────────────────────────────
 
 interface MessageBubbleProps {
-  message: LocalMessage;
-  isUser: boolean;
+  message: ChatMessage;
 }
 
-function MessageBubble({ message, isUser }: MessageBubbleProps) {
-  const bubbleVariants = {
-    initial: { opacity: 0, y: 12, scale: 0.95 },
-    animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2 } },
-    exit: { opacity: 0, y: -12 },
-  };
+function MessageBubble({ message }: MessageBubbleProps) {
+  const isUser = message.role === 'user';
 
   return (
     <motion.div
-      className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
-      variants={bubbleVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
+      className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18 }}
     >
-      {/* Avatar / Indicator */}
+      {/* Avatar */}
       <div
-        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
-        style={{
-          background: isUser ? 'rgba(99, 102, 241, 0.1)' : 'rgba(168, 85, 247, 0.1)',
-          border: `1px solid ${isUser ? 'rgba(99, 102, 241, 0.2)' : 'rgba(168, 85, 247, 0.2)'}`,
-        }}
+        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
+          isUser ? 'bg-indigo-500/10' : 'bg-purple-500/10'
+        }`}
       >
         {isUser ? (
-          <span className="text-xs font-semibold" style={{ color: '#6366f1' }}>
-            You
-          </span>
+          <span className="text-xs font-semibold text-indigo-400">You</span>
         ) : (
-          <Sparkles className="h-4 w-4" style={{ color: '#a855f7' }} />
+          <Sparkles className="h-4 w-4 text-purple-400" />
         )}
       </div>
 
-      {/* Message Content */}
+      {/* Bubble */}
       <div
-        className="max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
-        style={{
-          background: isUser ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-          border: `1px solid ${isUser ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.1)'}`,
-          color: isUser ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.8)',
-        }}
+        className={
+          isUser
+            ? 'ms-auto max-w-xs rounded-2xl rounded-ee-sm bg-indigo-600 px-4 py-2.5 text-sm text-white'
+            : 'me-auto max-w-sm rounded-2xl rounded-es-sm bg-white/8 px-4 py-2.5 text-sm text-white/90'
+        }
       >
-        {/* Support markdown-like formatting */}
-        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
       </div>
     </motion.div>
   );
 }
 
-// ── Chat Header ────────────────────────────────────────────────────────────────
+// ── Quick Prompt Chips ─────────────────────────────────────────────────────────
 
-interface ChatHeaderProps {
-  language: 'en' | 'ar';
-  onLanguageChange: (lang: 'en' | 'ar') => void;
-  onClear: () => void;
-  loading: boolean;
-}
-
-function ChatHeader({ language, onLanguageChange, onClear, loading }: ChatHeaderProps) {
-  const navigate = useNavigate();
-
-  return (
-    <div
-      className="flex items-center justify-between gap-4 border-b px-6 py-4"
-      style={{
-        background: RESTAURANT_COLORS.surface,
-        borderColor: RESTAURANT_COLORS.border,
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <motion.button
-          onClick={() => void navigate(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg hover:opacity-75 transition-opacity"
-          style={{ background: 'rgba(255, 255, 255, 0.05)' }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </motion.button>
-
-        <div className="flex flex-col gap-0">
-          <h1
-            className="text-lg font-bold"
-            style={{ color: RESTAURANT_COLORS.textPrimary }}
-          >
-            {language === 'en' ? 'AI Assistant' : 'مساعد ذكي'}
-          </h1>
-          <p
-            className="text-xs"
-            style={{ color: RESTAURANT_COLORS.textTertiary }}
-          >
-            {language === 'en' ? 'Bilingual restaurant AI' : 'ذكاء اصطناعي ثنائي اللغة'}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        {/* Language Toggle */}
-        <motion.button
-          onClick={() => onLanguageChange(language === 'en' ? 'ar' : 'en')}
-          className="flex h-9 w-9 items-center justify-center rounded-lg hover:opacity-75 transition-opacity"
-          style={{ background: 'rgba(255, 255, 255, 0.05)' }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          disabled={loading}
-          title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
-        >
-          <Globe className="h-5 w-5" />
-        </motion.button>
-
-        {/* Clear History */}
-        <motion.button
-          onClick={onClear}
-          className="flex h-9 w-9 items-center justify-center rounded-lg hover:opacity-75 transition-opacity"
-          style={{ background: 'rgba(255, 255, 255, 0.05)' }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          disabled={loading}
-          title={language === 'en' ? 'Clear history' : 'حذف السجل'}
-        >
-          <Trash2 className="h-5 w-5" />
-        </motion.button>
-      </div>
-    </div>
-  );
-}
-
-// ── Suggested Prompts ──────────────────────────────────────────────────────────
-
-interface SuggestedPromptsProps {
-  language: 'en' | 'ar';
+interface QuickPromptsProps {
   onSelect: (prompt: string) => void;
-  loading: boolean;
+  disabled: boolean;
 }
 
-function SuggestedPrompts({ language, onSelect, loading }: SuggestedPromptsProps) {
-  const prompts = getSuggestedPrompts(language);
-
+function QuickPrompts({ onSelect, disabled }: QuickPromptsProps) {
   return (
-    <div className="flex flex-wrap gap-2">
-      <AnimatePresence>
-        {prompts.map((prompt) => (
-          <motion.button
-            key={prompt.id}
-            onClick={() => !loading && onSelect(prompt.text)}
-            className="flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all hover:opacity-75 disabled:opacity-50"
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderColor: RESTAURANT_COLORS.border,
-              color: RESTAURANT_COLORS.textPrimary,
-            }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={loading}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-          >
-            {prompt.icon && <span className="text-base">{prompt.icon}</span>}
-            <span>{prompt.text}</span>
-          </motion.button>
-        ))}
-      </AnimatePresence>
+    <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-white/10">
+      {QUICK_PROMPTS.map((prompt) => (
+        <button
+          key={prompt}
+          onClick={() => { if (!disabled) onSelect(prompt); }}
+          disabled={disabled}
+          className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {prompt}
+        </button>
+      ))}
     </div>
   );
 }
 
-// ── Main AI Assistant Page ─────────────────────────────────────────────────────
+// ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function AIAssistant() {
   const { currentTenant } = useApp();
-  const { currentLanguage, changeLanguage } = useLanguage();
+  const navigate = useNavigate();
   const tenantId = currentTenant?.id;
-  const language = (currentLanguage as 'en' | 'ar') || 'en';
 
-  const { data: chatHistory, isLoading: historyLoading } = useChatHistory(tenantId || '');
-  const sendMessage = useSendAIMessage();
-  const clearHistory = useClearChatHistory();
+  const hasApiKey = Boolean(import.meta.env.VITE_GROQ_API_KEY as string | undefined);
 
-  const [messages, setMessages] = useState<LocalMessage[]>([]);
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [streaming, setStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync chat history from query
+  // Load history from localStorage on mount
   useEffect(() => {
-    if (chatHistory && chatHistory.length > 0) {
-      setMessages(chatHistory);
-      setShowSuggestions(false);
+    if (tenantId) {
+      setMessages(loadHistory(tenantId));
     }
-  }, [chatHistory]);
+  }, [tenantId]);
 
-  // Auto-scroll to bottom
+  // Persist history when messages change
+  useEffect(() => {
+    if (tenantId && messages.length > 0) {
+      saveHistory(tenantId, messages);
+    }
+  }, [tenantId, messages]);
+
+  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, streaming]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // ── Send ───────────────────────────────────────────────────────────────────
 
-  const handleSendMessage = useCallback(
-    async (text: string) => {
-      if (!text.trim() || !tenantId || sendMessage.isPending) return;
+  const handleSend = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || streaming) return;
 
-      const userMessage: LocalMessage = {
-        id: `local-${Date.now()}`,
+      const userMsg: ChatMessage = {
+        id: `u-${Date.now()}`,
         role: 'user',
-        content: text,
-        timestamp: new Date().toISOString(),
-        language: language as 'en' | 'ar',
-        isLocal: true,
+        content: trimmed,
       };
 
-      // Add user message to UI immediately
-      setMessages((prev) => [...prev, userMessage]);
+      setMessages((prev) => [...prev, userMsg]);
       setInput('');
-      setShowSuggestions(false);
+      setStreaming(true);
 
-      // Send to AI
-      const result = await sendMessage.mutateAsync({
-        tenantId,
-        question: text,
-        language: language as 'en' | 'ar',
+      const aiMsgId = `a-${Date.now()}`;
+
+      // Seed the assistant placeholder
+      setMessages((prev) => [
+        ...prev,
+        { id: aiMsgId, role: 'assistant', content: '' },
+      ]);
+
+      // Build context from last 10 messages + system
+      setMessages((prevMessages) => {
+        const ctx: GroqMessage[] = [
+          SYSTEM_PROMPT,
+          ...prevMessages
+            .filter((m) => m.id !== aiMsgId)
+            .slice(-10)
+            .map((m): GroqMessage => ({ role: m.role, content: m.content })),
+        ];
+
+        void groqChatStream(
+          ctx,
+          (token) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMsgId ? { ...m, content: m.content + token } : m,
+              ),
+            );
+          },
+          { maxTokens: 1024 },
+        )
+          .catch((err: unknown) => {
+            const errMsg = err instanceof Error ? err.message : 'Unknown error';
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMsgId
+                  ? { ...m, content: `Sorry, I encountered an error: ${errMsg}` }
+                  : m,
+              ),
+            );
+          })
+          .finally(() => {
+            setStreaming(false);
+            inputRef.current?.focus();
+          });
+
+        return prevMessages;
       });
-
-      // Add assistant response
-      if (result.success) {
-        const assistantMessage: LocalMessage = {
-          id: result.messageId || `local-${Date.now()}-response`,
-          role: 'assistant',
-          content: result.response,
-          timestamp: new Date().toISOString(),
-          language: language as 'en' | 'ar',
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      }
     },
-    [tenantId, sendMessage, language],
+    [streaming],
   );
 
-  const handleSuggestedPrompt = useCallback(
-    (prompt: string) => {
-      void handleSendMessage(prompt);
-    },
-    [handleSendMessage],
-  );
-
-  const handleClearHistory = useCallback(() => {
+  const handleClear = useCallback(() => {
     if (!tenantId) return;
     if (window.confirm('Clear all chat history? This cannot be undone.')) {
-      void clearHistory.mutateAsync(tenantId).then(() => {
-        setMessages([]);
-        setShowSuggestions(true);
-      });
+      setMessages([]);
+      localStorage.removeItem(getStorageKey(tenantId));
     }
-  }, [tenantId, clearHistory]);
+  }, [tenantId]);
 
-  const handleLanguageChange = useCallback(
-    (newLanguage: 'en' | 'ar') => {
-      changeLanguage(newLanguage);
-    },
-    [changeLanguage],
-  );
+  // ── Guard ──────────────────────────────────────────────────────────────────
 
-  if (!tenantId) {
-    return <LoadingSpinner />;
-  }
+  if (!tenantId) return <LoadingSpinner />;
 
-  const isLoading = historyLoading || sendMessage.isPending || clearHistory.isPending;
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <Layout>
-      <div
-        className="flex h-full flex-col"
-        style={{ background: RESTAURANT_COLORS.base }}
-      >
+      <div className="flex h-full flex-col bg-slate-900">
         {/* Header */}
-        <ChatHeader
-          language={language as 'en' | 'ar'}
-          onLanguageChange={handleLanguageChange}
-          onClear={handleClearHistory}
-          loading={isLoading}
-        />
-
-        {/* Messages Area */}
-        <div
-          className="flex-1 overflow-y-auto px-6 py-6"
-          style={{ background: RESTAURANT_COLORS.base }}
-        >
-          {messages.length === 0 ? (
-            // Empty State
-            <motion.div
-              className="flex h-full flex-col items-center justify-center gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+        <div className="flex items-center justify-between gap-4 border-b border-white/10 bg-slate-900/80 px-5 py-3 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { void navigate(-1); }}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              aria-label="Go back"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: RESTAURANT_COLORS.glass }}>
-                <Sparkles className="h-8 w-8" style={{ color: '#a855f7' }} />
-              </div>
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="text-base font-bold text-white">AI Assistant</h1>
+              <p className="text-xs text-white/40">Powered by Groq · llama-3.3-70b</p>
+            </div>
+          </div>
 
-              <div className="text-center">
-                <h2
-                  className="mb-2 text-xl font-bold"
-                  style={{ color: RESTAURANT_COLORS.textPrimary }}
-                >
-                  {language === 'en' ? 'Welcome to AI Assistant' : 'أهلا بك في المساعد الذكي'}
-                </h2>
-                <p
-                  className="text-sm"
-                  style={{ color: RESTAURANT_COLORS.textTertiary }}
-                >
-                  {language === 'en'
-                    ? 'Ask anything about your restaurant operations'
-                    : 'اسأل عن أي شيء يتعلق بعملياتك في المطعم'}
-                </p>
-              </div>
+          <button
+            onClick={handleClear}
+            disabled={messages.length === 0 || streaming}
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Clear chat history"
+            title="Clear chat"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
 
-              {/* Suggested Prompts */}
-              <div className="w-full max-w-md">
-                <SuggestedPrompts
-                  language={language as 'en' | 'ar'}
-                  onSelect={handleSuggestedPrompt}
-                  loading={isLoading}
-                />
-              </div>
-            </motion.div>
-          ) : (
-            // Messages
-            <motion.div
-              className="flex flex-col gap-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <AnimatePresence>
-                {messages.map((message) => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    isUser={message.role === 'user'}
-                  />
-                ))}
-              </AnimatePresence>
+        {!hasApiKey ? (
+          <SetupPanel />
+        ) : (
+          <>
+            {/* Quick Prompts */}
+            <QuickPrompts onSelect={handleSend} disabled={streaming} />
 
-              {sendMessage.isPending && (
+            {/* Messages */}
+            <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
+              {messages.length === 0 ? (
                 <motion.div
-                  className="flex gap-3"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  className="flex h-full flex-col items-center justify-center gap-4 text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                 >
-                  <div
-                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
-                    style={{ background: 'rgba(168, 85, 247, 0.1)' }}
-                  >
-                    <Sparkles className="h-4 w-4 animate-pulse" style={{ color: '#a855f7' }} />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/10">
+                    <Sparkles className="h-7 w-7 text-purple-400" />
                   </div>
-                  <div className="flex items-center gap-2 px-4 py-3">
-                    <span
-                      className="text-xs"
-                      style={{ color: RESTAURANT_COLORS.textTertiary }}
-                    >
-                      {language === 'en' ? 'Thinking...' : 'يفكر...'}
-                    </span>
-                    <div className="flex gap-1">
-                      {[0, 1, 2].map((i) => (
-                        <motion.div
-                          key={i}
-                          className="h-1.5 w-1.5 rounded-full"
-                          style={{ background: RESTAURANT_COLORS.textTertiary }}
-                          animate={{ opacity: [0.3, 1, 0.3] }}
-                          transition={{ duration: 0.8, delay: i * 0.2, repeat: Infinity }}
-                        />
-                      ))}
-                    </div>
+                  <div>
+                    <h2 className="mb-1 text-lg font-semibold text-white">
+                      Welcome to KiTS AI
+                    </h2>
+                    <p className="text-sm text-white/50">
+                      Ask anything about your restaurant operations
+                    </p>
                   </div>
                 </motion.div>
+              ) : (
+                <AnimatePresence initial={false}>
+                  {messages.map((msg) => (
+                    <MessageBubble key={msg.id} message={msg} />
+                  ))}
+                </AnimatePresence>
+              )}
+
+              {streaming && messages[messages.length - 1]?.content === '' && (
+                <TypingIndicator />
               )}
 
               <div ref={messagesEndRef} />
-            </motion.div>
-          )}
-        </div>
+            </div>
 
-        {/* Input Area */}
-        <div
-          className="border-t px-6 py-4"
-          style={{
-            background: RESTAURANT_COLORS.surface,
-            borderColor: RESTAURANT_COLORS.border,
-          }}
-        >
-          <div className="mb-4 flex gap-2">
-            {messages.length > 0 && !showSuggestions && (
-              <motion.button
-                onClick={() => setShowSuggestions(!showSuggestions)}
-                className="text-xs font-medium transition-opacity hover:opacity-75 disabled:opacity-50"
-                style={{ color: RESTAURANT_COLORS.textTertiary }}
-                disabled={isLoading}
-              >
-                {language === 'en' ? '💡 Show suggestions' : '💡 عرض الاقتراحات'}
-              </motion.button>
-            )}
-            {messages.length > 0 && showSuggestions && (
-              <div className="w-full">
-                <SuggestedPrompts
-                  language={language as 'en' | 'ar'}
-                  onSelect={handleSuggestedPrompt}
-                  loading={isLoading}
+            {/* Input */}
+            <div className="border-t border-white/10 bg-slate-900/80 px-5 py-3 backdrop-blur-sm">
+              <div className="flex gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Ask me anything..."
+                  value={input}
+                  onChange={(e) => { setInput(e.target.value); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && !streaming) {
+                      handleSend(input);
+                    }
+                  }}
+                  disabled={streaming}
+                  className="bg-slate-800 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white flex-1 placeholder:text-white/30 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
                 />
+
+                <button
+                  onClick={() => { handleSend(input); }}
+                  disabled={!input.trim() || streaming}
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Send message"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
               </div>
-            )}
-          </div>
-
-          {/* Message Input */}
-          <div className="flex gap-3">
-            <input
-              type="text"
-              placeholder={
-                language === 'en'
-                  ? 'Ask me anything...'
-                  : 'اسأل عن أي شيء...'
-              }
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
-                  void handleSendMessage(input);
-                }
-              }}
-              disabled={isLoading}
-              className="flex-1 rounded-xl border px-4 py-3 text-sm focus:outline-none disabled:opacity-50"
-              style={{
-                background: RESTAURANT_COLORS.elevated,
-                borderColor: RESTAURANT_COLORS.border,
-                color: RESTAURANT_COLORS.textPrimary,
-              }}
-              dir={language === 'ar' ? 'rtl' : 'ltr'}
-            />
-
-            <motion.button
-              onClick={() => void handleSendMessage(input)}
-              disabled={!input.trim() || isLoading}
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-white disabled:opacity-50"
-              style={{
-                background: input.trim() && !isLoading
-                  ? 'linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%)'
-                  : RESTAURANT_COLORS.surface,
-              }}
-              whileHover={input.trim() && !isLoading ? { scale: 1.05 } : {}}
-              whileTap={input.trim() && !isLoading ? { scale: 0.95 } : {}}
-            >
-              <Send className="h-5 w-5" />
-            </motion.button>
-          </div>
-
-          <p
-            className="mt-2 text-xs"
-            style={{ color: RESTAURANT_COLORS.textTertiary }}
-          >
-            {language === 'en'
-              ? 'Press Enter to send or click the send button'
-              : 'اضغط Enter للإرسال أو انقر على زر الإرسال'}
-          </p>
-        </div>
+              <p className="mt-1.5 text-xs text-white/30">Press Enter to send</p>
+            </div>
+          </>
+        )}
       </div>
     </Layout>
   );

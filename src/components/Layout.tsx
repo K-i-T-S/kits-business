@@ -529,7 +529,7 @@ export default function Layout({ children }: LayoutProps) {
                       {(currentTenant?.name ?? BRAND.shortName).slice(0, 2)}
                     </span>
                   )}
-                  <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-slate-900 animate-pulse status-indicator" aria-hidden="true" />
+                  <div className="absolute -bottom-1 -end-1 h-3 w-3 rounded-full bg-green-500 border-2 border-slate-900 animate-pulse status-indicator" aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs uppercase tracking-[0.3em] text-white/50 font-medium">Your Business</div>
@@ -741,7 +741,7 @@ export default function Layout({ children }: LayoutProps) {
           {/* ── Bottom bar: compact support links + logout ── */}
           <div className="border-t border-white/8 pt-3 space-y-2">
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] uppercase tracking-[0.15em] text-white/20 font-semibold mr-1">Help</span>
+              <span className="text-[9px] uppercase tracking-[0.15em] text-white/20 font-semibold me-1">Help</span>
               <a
                 href={`mailto:${BRAND.supportEmail}`}
                 title={`Email: ${BRAND.supportEmail}`}
@@ -771,7 +771,7 @@ export default function Layout({ children }: LayoutProps) {
                 onClick={() => { void handleLogout(); }}
                 data-testid="logout-button"
                 aria-label="Sign out of your account"
-                className="logout-button ml-auto flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300"
+                className="logout-button ms-auto flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300"
               >
                 <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                 Logout
@@ -842,7 +842,7 @@ export default function Layout({ children }: LayoutProps) {
                           </span>
                         )}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-slate-900 animate-pulse status-indicator" aria-hidden="true"></div>
+                      <div className="absolute -bottom-1 -end-1 h-3 w-3 rounded-full bg-green-500 border-2 border-slate-900 animate-pulse status-indicator" aria-hidden="true"></div>
                     </div>
                     <div className="hidden sm:block">
                       <div className="flex items-baseline gap-2">
@@ -916,7 +916,7 @@ export default function Layout({ children }: LayoutProps) {
                       <Bell className="h-5 w-5" />
                       {unreadCount > 0 && (
                         <span
-                          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center notification-badge"
+                          className="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center notification-badge"
                           aria-label={`${unreadCount} unread notifications`}
                         >
                           {unreadCount > 99 ? '99+' : unreadCount}
@@ -949,7 +949,7 @@ export default function Layout({ children }: LayoutProps) {
 
                     {profileOpen && (
                       <div
-                        className="absolute right-0 mt-2 w-64 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 dropdown-menu"
+                        className="absolute end-0 mt-2 w-64 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 dropdown-menu"
                         role="menu"
                         aria-label="User menu"
                       >

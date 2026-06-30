@@ -512,6 +512,11 @@
   text-align: right;
 }
 
+/* RTL utility: mirror icons that imply direction (arrows, chevrons, etc.) */
+.rtl-flip {
+  transform: scaleX(-1);
+}
+
 /* RTL for animations and transitions */
 [dir="rtl"] .slide-in-left {
   transform: translateX(100%);

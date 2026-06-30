@@ -137,7 +137,7 @@ function TableTile({ data, slowThreshold, onSelect, onMarkAvailable }: TableTile
       style={{ minHeight: 120 }}
     >
       {/* Status dot */}
-      <div className={`absolute right-3 top-3 h-3 w-3 rounded-full ${dotColor}`} aria-hidden="true" />
+      <div className={`absolute end-3 top-3 h-3 w-3 rounded-full ${dotColor}`} aria-hidden="true" />
 
       {/* Cleaning overlay */}
       {isCleaning && (
@@ -154,7 +154,7 @@ function TableTile({ data, slowThreshold, onSelect, onMarkAvailable }: TableTile
             className="rounded-lg bg-emerald-600/80 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-600 active:scale-95 transition-all touch-manipulation"
             aria-label={`Mark Table ${table.number} as available`}
           >
-            <Check className="mr-1 inline h-3 w-3" />
+            <Check className="me-1 inline h-3 w-3" />
             {t('restaurant.markReady', 'Ready')}
           </button>
         </div>
@@ -318,7 +318,7 @@ function PendingOrderModal({ pendingOrder, onConfirm, onReject, onClose }: Pendi
             onClick={() => { void onReject(); onClose(); }}
             className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-500/20 transition-all"
           >
-            <X className="mr-1.5 inline h-4 w-4" />
+            <X className="me-1.5 inline h-4 w-4" />
             {t('restaurant.pendingOrder.reject', 'Reject')}
           </button>
           <button
@@ -326,7 +326,7 @@ function PendingOrderModal({ pendingOrder, onConfirm, onReject, onClose }: Pendi
             disabled={confirming}
             className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 py-3 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-50"
           >
-            <Check className="mr-1.5 inline h-4 w-4" />
+            <Check className="me-1.5 inline h-4 w-4" />
             {t('restaurant.pendingOrder.confirmAll', 'Confirm All')}
           </button>
         </div>
@@ -540,7 +540,7 @@ function QuickAddModal({
                       </span>
                     )}
                     {group.max_selections > 1 && (
-                      <span className="ml-auto text-[9px] text-white/30">
+                      <span className="ms-auto text-[9px] text-white/30">
                         {t('restaurant.modifier.selectUpTo', 'up to {{n}}', { n: group.max_selections })}
                       </span>
                     )}
@@ -612,7 +612,7 @@ function QuickAddModal({
             >
               <Plus className="h-5 w-5" />
             </button>
-            <span className="ml-2 text-sm text-white/40">= ${(unitPrice * qty).toFixed(2)}</span>
+            <span className="ms-2 text-sm text-white/40">= $<span dir="ltr">{(unitPrice * qty).toFixed(2)}</span></span>
           </div>
         </div>
 
@@ -716,7 +716,7 @@ function MenuBrowserSheet({ categories, items, onClose, onSelect }: MenuBrowserS
             <X className="h-4 w-4" />
           </button>
           <h2 className="text-base font-bold text-white">{t('restaurant.menu', 'Menu')}</h2>
-          <span className="ml-auto rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/50">{displayed.length}</span>
+          <span className="ms-auto rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/50">{displayed.length}</span>
         </div>
         {/* Search */}
         <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
@@ -800,7 +800,7 @@ function MenuBrowserSheet({ categories, items, onClose, onSelect }: MenuBrowserS
                     </div>
                   )}
                   {item.is_featured && !item.is_eighty_sixd && (
-                    <span className="absolute left-1.5 top-1.5 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-bold text-white">⭐</span>
+                    <span className="absolute start-1.5 top-1.5 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-bold text-white">⭐</span>
                   )}
                 </div>
 
@@ -1102,7 +1102,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
             <span className="text-sm font-semibold text-amber-400">
               {pendingOrders.length} {t('restaurant.pendingOrders.waiting', 'customer order(s) waiting for confirmation')}
             </span>
-            <ChevronRight className="ml-auto h-4 w-4 text-amber-400/60" />
+            <ChevronRight className="ms-auto h-4 w-4 text-amber-400/60 rtl:rotate-180" />
           </button>
         )}
       </div>
@@ -1123,7 +1123,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
               <Icon className="h-4 w-4" />
               {label}
               {badge !== undefined && badge > 0 && (
-                <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[9px] font-black text-white">
+                <span className="absolute end-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[9px] font-black text-white">
                   {badge}
                 </span>
               )}
@@ -1378,7 +1378,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
                     )}
                   </div>
                   {showCustomerDropdown && filteredCustomers.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-2xl border border-white/10 bg-slate-800 shadow-xl overflow-hidden">
+                    <div className="absolute start-0 end-0 top-full z-10 mt-1 rounded-2xl border border-white/10 bg-slate-800 shadow-xl overflow-hidden">
                       {filteredCustomers.map((c) => (
                         <button
                           key={c.id}
@@ -2313,7 +2313,7 @@ export default function WaiterInterface() {
             setActiveTab('tables');
           }
         }}
-        className="fixed bottom-24 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-sky-500 shadow-lg shadow-indigo-900/40 transition-shadow"
+        className="fixed bottom-24 end-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-sky-500 shadow-lg shadow-indigo-900/40 transition-shadow"
         aria-label={t('restaurant.fab.newOrder', 'New order')}
       >
         <Plus className="h-7 w-7 text-white" />
@@ -2340,7 +2340,7 @@ export default function WaiterInterface() {
                 <Icon className="h-5 w-5" />
                 <span>{label}</span>
                 {badge !== undefined && badge > 0 && (
-                  <span className="absolute right-2 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-black text-white">
+                  <span className="absolute end-2 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-black text-white">
                     {badge}
                   </span>
                 )}
@@ -2384,7 +2384,7 @@ export default function WaiterInterface() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 right-0 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col border-l border-white/10 bg-slate-900"
+              className="fixed inset-y-0 end-0 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col border-s border-white/10 bg-slate-900"
             >
               {/* Panel header */}
               <div className="flex-none border-b border-white/10 px-4 py-4">
@@ -2469,7 +2469,7 @@ export default function WaiterInterface() {
                             }}
                             className="rounded-xl border border-red-500/30 bg-red-900/30 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-800/50 transition-all active:scale-95"
                           >
-                            <X className="mr-1 inline h-3.5 w-3.5" />
+                            <X className="me-1 inline h-3.5 w-3.5" />
                             {t('restaurant.pendingOrder.reject', 'Reject')}
                           </button>
                           <button
@@ -2479,7 +2479,7 @@ export default function WaiterInterface() {
                             }}
                             className="flex-1 rounded-xl bg-green-600 py-2 text-xs font-bold text-white hover:bg-green-500 transition-all active:scale-95"
                           >
-                            <Check className="mr-1 inline h-3.5 w-3.5" />
+                            <Check className="me-1 inline h-3.5 w-3.5" />
                             {t('restaurant.pendingOrder.confirmAll', 'Confirm')}
                           </button>
                         </div>

@@ -454,7 +454,7 @@ export default function Reservations() {
                                 <ChevronDown className="h-3 w-3" />
                               </button>
                               {statusMenuId === reservation.id && (
-                                <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
+                                <div className="absolute end-0 top-full z-20 mt-1 w-40 rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
                                   {actions.map((s) => (
                                     <button
                                       key={s}
@@ -494,7 +494,7 @@ export default function Reservations() {
                   onClick={() => advanceWeek(-1)}
                   className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/50 hover:bg-white/10 transition-all"
                 >
-                  <ChevronLeft className="h-3 w-3" />
+                  <ChevronLeft className="h-3 w-3 rtl:rotate-180" />
                   Prev
                 </button>
                 <button
@@ -508,14 +508,14 @@ export default function Reservations() {
                   className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/50 hover:bg-white/10 transition-all"
                 >
                   Next
-                  <ChevronRight className="h-3 w-3" />
+                  <ChevronRight className="h-3 w-3 rtl:rotate-180" />
                 </button>
-                <span className="ml-2 text-xs text-white/30">
+                <span className="ms-2 text-xs text-white/30">
                   {calWeekDays[0]?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                   {' — '}
                   {calWeekDays[6]?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
-                <span className="ml-auto rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
+                <span className="ms-auto rounded-full bg-white/5 px-3 py-1 text-xs text-white/40">
                   {calReservations.length} this week
                 </span>
               </div>
@@ -590,7 +590,7 @@ export default function Reservations() {
                           {/* Current time line — today only */}
                           {isToday && nowSlot >= 0 && nowSlot < TOTAL_SLOTS && (
                             <div
-                              className="absolute left-0 right-0 h-px bg-red-500/60 z-10"
+                              className="absolute start-0 end-0 h-px bg-red-500/60 z-10"
                               style={{ top: nowSlot * SLOT_HEIGHT }}
                             />
                           )}
@@ -605,7 +605,7 @@ export default function Reservations() {
                             return (
                               <div
                                 key={r.id}
-                                className="absolute left-0.5 right-0.5 z-20"
+                                className="absolute start-0.5 end-0.5 z-20"
                                 style={{ top: slot * SLOT_HEIGHT, minHeight: SLOT_HEIGHT }}
                               >
                                 {/* Block */}
@@ -620,7 +620,7 @@ export default function Reservations() {
                                   {/* Inline status dropdown */}
                                   {statusMenuId === r.id && actions.length > 0 && (
                                     <div
-                                      className="absolute left-0 top-full z-30 mt-1 w-36 rounded-xl border border-white/10 bg-slate-900 shadow-2xl"
+                                      className="absolute end-0 top-full z-30 mt-1 w-36 rounded-xl border border-white/10 bg-slate-900 shadow-2xl"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       {actions.map((s) => (

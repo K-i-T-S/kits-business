@@ -156,17 +156,17 @@ function MenuItemCard({ item, branches, overrides, onEdit, onDelete, onToggleAva
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
         {item.is_featured && (
-          <span className="absolute left-2 top-2 rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+          <span className="absolute start-2 top-2 rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
             ⭐ Featured
           </span>
         )}
         {item.is_eighty_sixd && (
-          <span className="absolute right-2 top-2 rounded-full bg-red-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+          <span className="absolute end-2 top-2 rounded-full bg-red-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
             86'd
           </span>
         )}
         {disabledCount > 0 && (
-          <span className="absolute bottom-2 left-2 rounded-full border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 backdrop-blur-sm">
+          <span className="absolute bottom-2 start-2 rounded-full border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 backdrop-blur-sm">
             {disabledCount}/{branches.length} branches
           </span>
         )}
@@ -465,7 +465,7 @@ function ItemFormModal({ item, categories, branches, overrides, onClose, onSave 
                   <img src={form.photo_url} alt="Preview" className="w-full h-40 object-cover" />
                   <button
                     onClick={() => setForm(f => ({ ...f, photo_url: '' }))}
-                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500/90 text-white hover:bg-red-600 transition-colors"
+                    className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500/90 text-white hover:bg-red-600 transition-colors"
                     aria-label="Remove photo"
                   >
                     <X className="h-4 w-4" />
@@ -845,7 +845,7 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
 
         <button
           onClick={() => setSelectedCategoryId(null)}
-          className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all ${
+          className={`w-full rounded-xl px-3 py-2.5 text-start text-sm font-medium transition-all ${
             selectedCategoryId === null
               ? 'bg-amber-500/15 border border-amber-500/30 text-amber-200'
               : 'border border-transparent text-white/60 hover:bg-white/5 hover:text-white'
@@ -854,7 +854,7 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
           <span className="flex items-center gap-2">
             <span>🍽️</span>
             <span>All Items</span>
-            <span className="ml-auto text-xs opacity-60">{items.length}</span>
+            <span className="ms-auto text-xs opacity-60">{items.length}</span>
           </span>
         </button>
 
@@ -862,7 +862,7 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
           <div key={cat.id} className="group relative">
             <button
               onClick={() => setSelectedCategoryId(cat.id)}
-              className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all ${
+              className={`w-full rounded-xl px-3 py-2.5 text-start text-sm font-medium transition-all ${
                 selectedCategoryId === cat.id
                   ? 'bg-amber-500/15 border border-amber-500/30 text-amber-200'
                   : 'border border-transparent text-white/60 hover:bg-white/5 hover:text-white'
@@ -871,14 +871,14 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
               <span className="flex items-center gap-2">
                 <GripVertical className="h-3.5 w-3.5 opacity-30" />
                 <span>{cat.icon} {cat.name}</span>
-                <span className="ml-auto text-xs opacity-60">
+                <span className="ms-auto text-xs opacity-60">
                   {items.filter(i => i.category_id === cat.id).length}
                 </span>
               </span>
             </button>
             <button
               onClick={() => void handleDeleteCategory(cat.id)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-white/0 group-hover:text-red-400/60 hover:text-red-400 transition-colors"
+              className="absolute end-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-white/0 group-hover:text-red-400/60 hover:text-red-400 transition-colors"
               aria-label="Delete category"
             >
               <Trash2 className="h-3 w-3" />
@@ -891,11 +891,11 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
       <div className="flex-1 min-w-0">
         <div className="mb-4 flex items-center gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder-white/30 focus:border-indigo-500/30 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-white/5 py-2 ps-9 pe-3 text-sm text-white placeholder-white/30 focus:border-indigo-500/30 focus:outline-none"
               placeholder="Search items..."
             />
           </div>
@@ -1111,11 +1111,11 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder-white/30 focus:border-indigo-500/30 focus:outline-none"
+            className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 ps-9 pe-3 text-sm text-white placeholder-white/30 focus:border-indigo-500/30 focus:outline-none"
             placeholder="Quick search…"
           />
         </div>
@@ -1509,7 +1509,7 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
             >
               <p className="text-[10px] font-semibold text-white leading-tight">{p.label}</p>
               {p.key === currentPalette && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[8px] text-white font-bold">✓</span>
+                <span className="absolute -top-1.5 -end-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[8px] text-white font-bold">✓</span>
               )}
             </div>
           ))}

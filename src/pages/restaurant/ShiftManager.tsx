@@ -320,7 +320,7 @@ export default function ShiftManager() {
           </div>
           <button
             onClick={() => setShowOpenModal(true)}
-            className="ml-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all"
+            className="ms-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all"
           >
             <Clock className="h-4 w-4" />
             {t('restaurant.shifts.openShift', 'Open Shift')}
@@ -558,7 +558,7 @@ export default function ShiftManager() {
                           <p className="text-xs text-white/40">{emp ? emp.name : 'All Staff'}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
+                          <span dir="ltr" className="text-sm font-bold bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
                             ${fee.amount_usd.toFixed(2)}
                           </span>
                           <button
@@ -640,17 +640,17 @@ export default function ShiftManager() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-white/30 text-xs border-b border-white/10">
-                        <th className="text-left pb-2 font-medium">Employee</th>
-                        <th className="text-right pb-2 font-medium">Hours</th>
-                        <th className="text-right pb-2 font-medium">Role</th>
+                        <th className="text-start pb-2 font-medium">Employee</th>
+                        <th className="text-end pb-2 font-medium">Hours</th>
+                        <th className="text-end pb-2 font-medium">Role</th>
                       </tr>
                     </thead>
                     <tbody>
                       {exportPreview.map((row, i) => (
                         <tr key={i} className="border-b border-white/5 last:border-0">
                           <td className="py-1.5 text-white/80">{row.name}</td>
-                          <td className="text-right py-1.5 text-white/80 font-mono">{row.hours.toFixed(1)}h</td>
-                          <td className="text-right py-1.5 text-white/40 capitalize">{row.role.replace(/_/g, ' ')}</td>
+                          <td className="text-end py-1.5 text-white/80 font-mono">{row.hours.toFixed(1)}h</td>
+                          <td className="text-end py-1.5 text-white/40 capitalize">{row.role.replace(/_/g, ' ')}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -1,223 +1,248 @@
-import { Wifi, WifiOff, RefreshCw, AlertTriangle, Database, Clock, CheckCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { WifiOff, RefreshCw, CheckCircle, AlertTriangle, Database, Clock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
-import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useApp } from '@/context/AppContext';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
+
+// ---------------------------------------------------------------------------
+// Sync-complete transient state
+// ---------------------------------------------------------------------------
+const SYNC_DONE_DURATION_MS = 3000;
 
 export function OfflineIndicator() {
-  const { syncStatus, syncActions } = useOfflineSync();
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const { currentTenant } = useApp();
+  const tenantId = currentTenant?.id ?? '';
+
+  const { isOnline, pendingCount, isSyncing, syncPending } = useOfflineQueue(tenantId);
+
+  // Track "all synced" flash state
+  const [showSyncComplete, setShowSyncComplete] = useState(false);
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Previous pending count — used to detect a sync-complete transition
+  const prevPendingRef = useRef(pendingCount);
+  const prevSyncingRef = useRef(isSyncing);
 
   useEffect(() => {
-    if (syncStatus.isOnline && syncStatus.pendingActions === 0) {
-      setLastSyncTime(new Date().toLocaleTimeString());
-    }
-  }, [syncStatus.isOnline, syncStatus.pendingActions]);
+    const wassyncing = prevSyncingRef.current;
+    const hadPending = prevPendingRef.current;
 
-  useEffect(() => {
-    if (!syncStatus.isOnline || syncStatus.pendingActions > 0) {
-      setIsAnimating(true);
-    }
-  }, [syncStatus.isOnline, syncStatus.pendingActions]);
+    prevSyncingRef.current = isSyncing;
+    prevPendingRef.current = pendingCount;
 
-  if (syncStatus.isOnline && syncStatus.pendingActions === 0) {
+    // Transition: was syncing → no longer syncing → nothing left → show "All synced"
+    if (wassyncing && !isSyncing && hadPending > 0 && pendingCount === 0 && isOnline) {
+      setShowSyncComplete(true);
+
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+      dismissTimer.current = setTimeout(() => {
+        setShowSyncComplete(false);
+      }, SYNC_DONE_DURATION_MS);
+    }
+
+    return () => {
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    };
+  }, [isSyncing, pendingCount, isOnline]);
+
+  // ---------------------------------------------------------------------------
+  // Determine which state to show
+  // ---------------------------------------------------------------------------
+  const isOffline = !isOnline;
+  const hasPending = pendingCount > 0;
+
+  // Nothing to show — online, nothing pending, no transient message
+  if (isOnline && !hasPending && !isSyncing && !showSyncComplete) {
     return null;
   }
 
-  const handleSync = async () => {
-    await syncActions();
-  };
+  // ---------------------------------------------------------------------------
+  // State-specific content
+  // ---------------------------------------------------------------------------
+  type IndicatorState = 'offline' | 'syncing' | 'syncComplete' | 'pendingOnline';
 
-  const getStatusColor = () => {
-    if (!syncStatus.isOnline) return 'orange';
-    if (syncStatus.isSyncing) return 'indigo';
-    if (syncStatus.pendingActions > 0) return 'yellow';
-    return 'green';
-  };
+  const state: IndicatorState = isOffline
+    ? 'offline'
+    : isSyncing
+      ? 'syncing'
+      : showSyncComplete
+        ? 'syncComplete'
+        : 'pendingOnline';
 
-  const getStatusIcon = () => {
-    if (!syncStatus.isOnline) return WifiOff;
-    if (syncStatus.isSyncing) return RefreshCw;
-    return Wifi;
-  };
+  const config = {
+    offline: {
+      color: 'amber' as const,
+      Icon: WifiOff,
+      title: 'Working offline',
+      description: `${pendingCount} operation${pendingCount !== 1 ? 's' : ''} queued`,
+      headerGradient: 'from-amber-600 to-amber-700',
+      iconBg: 'bg-amber-600/20 border-amber-600/30',
+      iconColor: 'text-amber-400',
+    },
+    syncing: {
+      color: 'indigo' as const,
+      Icon: RefreshCw,
+      title: 'Syncing',
+      description: `Syncing ${pendingCount} operation${pendingCount !== 1 ? 's' : ''}...`,
+      headerGradient: 'from-indigo-600 to-indigo-700',
+      iconBg: 'bg-indigo-600/20 border-indigo-600/30',
+      iconColor: 'text-indigo-400',
+    },
+    syncComplete: {
+      color: 'green' as const,
+      Icon: CheckCircle,
+      title: 'All synced',
+      description: 'All operations have been synced successfully.',
+      headerGradient: 'from-emerald-600 to-emerald-700',
+      iconBg: 'bg-emerald-600/20 border-emerald-600/30',
+      iconColor: 'text-emerald-400',
+    },
+    pendingOnline: {
+      color: 'yellow' as const,
+      Icon: Database,
+      title: 'Sync pending',
+      description: `${pendingCount} operation${pendingCount !== 1 ? 's' : ''} waiting to sync`,
+      headerGradient: 'from-amber-600 to-amber-700',
+      iconBg: 'bg-amber-600/20 border-amber-600/30',
+      iconColor: 'text-amber-400',
+    },
+  }[state];
 
-  const getStatusText = () => {
-    if (!syncStatus.isOnline) return 'Offline Mode';
-    if (syncStatus.isSyncing) return 'Syncing Data';
-    return 'Syncing Pending';
-  };
-
-  const getStatusDescription = () => {
-    if (!syncStatus.isOnline) {
-      return 'Working offline. Changes will sync when connection is restored.';
-    }
-    if (syncStatus.isSyncing) {
-      return `Syncing ${syncStatus.pendingActions} actions to server...`;
-    }
-    return `${syncStatus.pendingActions} actions pending sync`;
-  };
-
-  const Icon = getStatusIcon();
-  const statusColor = getStatusColor();
+  const { Icon, title, description, headerGradient, iconBg, iconColor } = config;
 
   return (
-    <div className={`fixed top-4 right-4 left-4 md:left-auto md:w-80 z-40 transition-all duration-500 ease-out ${
-      isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-    }`}>
-      <Card className="backdrop-blur-xl border-white/15 shadow-2xl overflow-hidden" style={{
-        backgroundColor: 'rgba(11, 15, 36, 0.98)',
-        border: '1px solid rgba(255, 255, 255, 0.15)',
-        boxShadow: '0 10px 40px rgba(2, 3, 12, 0.6)',
-        backdropFilter: 'blur(12px)',
-      }}>
-        {/* Status Header */}
-        <div className={`h-1 bg-gradient-to-r ${
-          statusColor === 'green' ? 'from-emerald-600 to-emerald-700' :
-            statusColor === 'indigo' ? 'from-indigo-600 to-indigo-700' :
-              statusColor === 'yellow' ? 'from-amber-600 to-amber-700' :
-                'from-orange-600 to-orange-700'
-        }`} />
+    <div className="fixed top-4 right-4 left-4 md:left-auto md:w-80 z-40 transition-all duration-500 ease-out opacity-100 translate-y-0">
+      <Card
+        className="backdrop-blur-xl border-white/15 shadow-2xl overflow-hidden"
+        style={{
+          backgroundColor: 'rgba(11, 15, 36, 0.98)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          boxShadow: '0 10px 40px rgba(2, 3, 12, 0.6)',
+          backdropFilter: 'blur(12px)',
+        }}
+      >
+        {/* Colour stripe */}
+        <div className={`h-1 bg-gradient-to-r ${headerGradient}`} />
 
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
-            <div className={`relative p-2.5 rounded-2xl border ${
-              statusColor === 'green' ? 'bg-emerald-600/20 border-emerald-600/30' :
-                statusColor === 'indigo' ? 'bg-indigo-600/20 border-indigo-600/30' :
-                  statusColor === 'yellow' ? 'bg-amber-600/20 border-amber-600/30' :
-                    'bg-orange-600/20 border-orange-600/30'
-            }`}>
-              <Icon className={`h-5 w-5 ${
-                statusColor === 'green' ? 'text-emerald-400' :
-                  statusColor === 'indigo' ? 'text-indigo-400' :
-                    statusColor === 'yellow' ? 'text-amber-400' :
-                      'text-orange-400'
-              }`} />
-              {syncStatus.isSyncing && (
+            <div className={`relative p-2.5 rounded-2xl border ${iconBg}`}>
+              <Icon
+                className={`h-5 w-5 ${iconColor} ${state === 'syncing' ? 'animate-spin' : ''}`}
+              />
+              {state === 'syncing' && (
                 <div className="absolute inset-0 rounded-2xl border-2 border-indigo-400 animate-pulse" />
               )}
             </div>
             <div className="flex-1">
-              <CardTitle className="text-base font-semibold text-white">
-                {getStatusText()}
-              </CardTitle>
-              <CardDescription className="text-sm text-white/60">
-                {getStatusDescription()}
-              </CardDescription>
+              <CardTitle className="text-base font-semibold text-white">{title}</CardTitle>
+              <CardDescription className="text-sm text-white/60">{description}</CardDescription>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="pt-0 space-y-4">
-          {/* Status Details */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 p-3 rounded-xl" style={{
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.2)',
-            }}>
-              <Database className="h-4 w-4 text-blue-400" />
-              <div>
-                <div className="text-xs text-white/60">Pending</div>
-                <div className="text-sm font-medium text-white">{syncStatus.pendingActions}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 p-3 rounded-xl" style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-            }}>
-              <Clock className="h-4 w-4 text-white/60" />
-              <div>
-                <div className="text-xs text-white/60">Last Sync</div>
-                <div className="text-sm font-medium text-white">{lastSyncTime || 'Never'}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          {(syncStatus.isOnline && syncStatus.pendingActions > 0) && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs" style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    color: '#60a5fa',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                  }}>
-                    {syncStatus.pendingActions} items
-                  </Badge>
-                  {syncStatus.isSyncing && (
-                    <div className="flex items-center gap-1 text-xs text-indigo-400">
-                      <RefreshCw className="h-3 w-3 animate-spin" />
-                      <span>Syncing...</span>
-                    </div>
-                  )}
+          {/* Pending count + last-sync row */}
+          {state !== 'syncComplete' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div
+                className="flex items-center gap-2 p-3 rounded-xl"
+                style={{
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                }}
+              >
+                <Database className="h-4 w-4 text-blue-400" />
+                <div>
+                  <div className="text-xs text-white/60">Queued</div>
+                  <div className="text-sm font-medium text-white">{pendingCount}</div>
                 </div>
-                <Button
-                  onClick={() => void handleSync()}
-                  disabled={syncStatus.isSyncing}
-                  size="sm"
-                  className="transition-all duration-200 active:scale-95"
-                  style={{
-                    backgroundColor: '#6366f1',
-                    color: 'white',
-                    border: 'none',
-                  }}
-                >
-                  {syncStatus.isSyncing ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 me-2 animate-spin" />
-                      Syncing
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 me-2" />
-                      Sync Now
-                    </>
-                  )}
-                </Button>
+              </div>
+              <div
+                className="flex items-center gap-2 p-3 rounded-xl"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}
+              >
+                <Clock className="h-4 w-4 text-white/60" />
+                <div>
+                  <div className="text-xs text-white/60">Status</div>
+                  <div className="text-sm font-medium text-white">
+                    {isOffline ? 'Offline' : 'Online'}
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {!syncStatus.isOnline && (
+          {/* Offline advisory */}
+          {state === 'offline' && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 p-3 bg-orange-600/10 border border-orange-600/20 rounded-xl">
-                <AlertTriangle className="h-4 w-4 text-orange-400" />
-                <span className="text-xs text-orange-400">
-                  All changes are saved locally and will sync automatically when connection is restored
+              <div className="flex items-center gap-2 p-3 bg-amber-600/10 border border-amber-600/20 rounded-xl">
+                <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+                <span className="text-xs text-amber-400">
+                  Changes are saved locally and will sync automatically when the connection is
+                  restored.
                 </span>
               </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <CheckCircle className="h-3 w-3 text-green-400" />
-                  <span>Local storage active</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <Database className="h-3 w-3 text-blue-400" />
-                  <span>Data preserved offline</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <Clock className="h-3 w-3 text-white/40" />
-                  <span>Auto-sync on reconnection</span>
-                </div>
-              </div>
             </div>
           )}
 
-          {/* Progress Indicator */}
-          {syncStatus.isSyncing && (
+          {/* Manual sync button — only when online and pending */}
+          {state === 'pendingOnline' && (
+            <div className="flex items-center justify-between">
+              <Badge
+                variant="secondary"
+                className="text-xs"
+                style={{
+                  backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                  color: '#60a5fa',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                }}
+              >
+                {pendingCount} item{pendingCount !== 1 ? 's' : ''}
+              </Badge>
+              <Button
+                onClick={() => void syncPending()}
+                disabled={isSyncing}
+                size="sm"
+                className="transition-all duration-200 active:scale-95"
+                style={{ backgroundColor: '#6366f1', color: 'white', border: 'none' }}
+              >
+                <RefreshCw className="h-4 w-4 me-2" />
+                Sync Now
+              </Button>
+            </div>
+          )}
+
+          {/* Syncing progress bar */}
+          {state === 'syncing' && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-white/50">
                 <span>Sync Progress</span>
                 <span>Processing...</span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-1.5">
-                <div className="bg-indigo-600 h-1.5 rounded-full animate-pulse" style={{ width: '60%' }} />
+                <div
+                  className="bg-indigo-600 h-1.5 rounded-full animate-pulse"
+                  style={{ width: '60%' }}
+                />
               </div>
+            </div>
+          )}
+
+          {/* Sync-complete confirmation */}
+          {state === 'syncComplete' && (
+            <div className="flex items-center gap-2 p-3 bg-emerald-600/10 border border-emerald-600/20 rounded-xl">
+              <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span className="text-xs text-emerald-400">
+                All queued operations synced successfully.
+              </span>
             </div>
           )}
         </CardContent>

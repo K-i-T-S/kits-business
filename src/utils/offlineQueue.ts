@@ -1,78 +1,115 @@
 /**
- * Offline queue utility — plain functions with no React dependencies.
- * Safe to import from AppContext or any non-React module.
+ * Offline write queue — IndexedDB-backed, React-free.
+ * Safe to import from AppContext, hooks, or any non-React module.
  *
- * Uses IndexedDB (same database as useOfflineSync) so the hook and
- * these utilities share the same queue and can both read pending counts.
+ * Database : kits-offline-queue
+ * Store    : writes
  */
 
-const DB_NAME = 'BusinessTerminalDB';
+const DB_NAME = 'kits-offline-queue';
 const DB_VERSION = 1;
-const STORE_NAME = 'pendingActions';
+const STORE_NAME = 'writes';
 
-export interface OfflineAction {
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface QueuedWrite {
   id: string;
-  table: 'products' | 'sales' | 'customers' | 'employees' | 'sale_items';
+  tenantId: string;
+  table: string;
   operation: 'insert' | 'update' | 'delete';
   payload: Record<string, unknown>;
-  matchColumn?: string; // for update/delete: which column to match
-  matchValue?: string; // the value to match
-  timestamp: number;
-  retryCount: number;
+  createdAt: number;
+  retries: number;
+  status: 'pending' | 'syncing' | 'failed';
 }
 
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/** Opens (or upgrades) the offline-queue database. */
+export async function openOfflineDB(): Promise<IDBDatabase> {
+  return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
+
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
+
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        store.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-      if (!db.objectStoreNames.contains('cachedData')) {
-        const dataStore = db.createObjectStore('cachedData', { keyPath: 'key' });
-        dataStore.createIndex('expiry', 'expiry', { unique: false });
+        store.createIndex('tenantId', 'tenantId', { unique: false });
+        store.createIndex('status', 'status', { unique: false });
+        store.createIndex('createdAt', 'createdAt', { unique: false });
       }
     };
   });
 }
 
-/** Queue a mutation to be replayed when the app comes back online. */
+// ---------------------------------------------------------------------------
+// Core write operations
+// ---------------------------------------------------------------------------
+
+/**
+ * Add a write to the queue.
+ * Returns the generated id so callers can reference or cancel it.
+ */
 export async function queueMutation(
-  action: Omit<OfflineAction, 'id' | 'timestamp' | 'retryCount'>,
-): Promise<void> {
-  const db = await openDB();
-  const full: OfflineAction = {
-    ...action,
-    id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-    timestamp: Date.now(),
-    retryCount: 0,
+  params: Omit<QueuedWrite, 'id' | 'createdAt' | 'retries' | 'status'>,
+): Promise<string> {
+  const db = await openOfflineDB();
+
+  const write: QueuedWrite = {
+    ...params,
+    id: crypto.randomUUID(),
+    createdAt: Date.now(),
+    retries: 0,
+    status: 'pending',
   };
-  return new Promise((resolve, reject) => {
+
+  return new Promise<string>((resolve, reject) => {
     const tx = db.transaction([STORE_NAME], 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    const req = store.add(full);
-    req.onsuccess = () => resolve();
+    const req = store.add(write);
+    req.onsuccess = () => resolve(write.id);
     req.onerror = () => reject(req.error);
   });
 }
 
-/** Fetch all pending actions, ordered by timestamp ascending. */
-export async function getPendingActions(): Promise<OfflineAction[]> {
+/** Alias used by legacy callers and POS.tsx (Sprint 21-B). */
+export const enqueueWrite = queueMutation;
+
+// ---------------------------------------------------------------------------
+// Read operations
+// ---------------------------------------------------------------------------
+
+/**
+ * Return pending writes, optionally scoped to a tenant.
+ * Only returns items with status === 'pending' (never 'failed' or 'syncing').
+ * Ordered by createdAt ascending so oldest writes replay first.
+ */
+export async function getPendingActions(tenantId?: string): Promise<QueuedWrite[]> {
   try {
-    const db = await openDB();
-    return await new Promise<OfflineAction[]>((resolve, reject) => {
+    const db = await openOfflineDB();
+
+    return await new Promise<QueuedWrite[]>((resolve, reject) => {
       const tx = db.transaction([STORE_NAME], 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const req = store.getAll();
+
       req.onsuccess = () => {
-        const all = req.result as OfflineAction[];
-        all.sort((a, b) => a.timestamp - b.timestamp);
-        resolve(all);
+        const all = (req.result as unknown[]).map((v) => v as QueuedWrite);
+        const pending = all
+          .filter((w) => w.status === 'pending')
+          .filter((w) => (tenantId !== undefined ? w.tenantId === tenantId : true))
+          .sort((a, b) => a.createdAt - b.createdAt);
+        resolve(pending);
       };
+
       req.onerror = () => reject(req.error);
     });
   } catch {
@@ -80,10 +117,27 @@ export async function getPendingActions(): Promise<OfflineAction[]> {
   }
 }
 
-/** Remove a successfully replayed (or permanently failed) action from the queue. */
+/** Alias for getPendingActions. */
+export const getPendingWrites = getPendingActions;
+
+/**
+ * Count pending writes for a given tenant.
+ * Counts only status === 'pending'.
+ */
+export async function getPendingCount(tenantId: string): Promise<number> {
+  const pending = await getPendingActions(tenantId);
+  return pending.length;
+}
+
+// ---------------------------------------------------------------------------
+// Mutation operations
+// ---------------------------------------------------------------------------
+
+/** Remove a write after it has been successfully synced. */
 export async function removeQueuedAction(id: string): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
+  const db = await openOfflineDB();
+
+  return new Promise<void>((resolve, reject) => {
     const tx = db.transaction([STORE_NAME], 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     const req = store.delete(id);
@@ -92,16 +146,24 @@ export async function removeQueuedAction(id: string): Promise<void> {
   });
 }
 
-/** Increment the retry count for an action. Remove it after MAX_RETRIES. */
-export async function incrementRetry(action: OfflineAction): Promise<void> {
-  const MAX_RETRIES = 3;
-  const updated: OfflineAction = { ...action, retryCount: action.retryCount + 1 };
-  if (updated.retryCount > MAX_RETRIES) {
-    await removeQueuedAction(action.id);
-    return;
-  }
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
+/** Alias — mark a write as synced (removes it from the queue). */
+export const markWriteSynced = removeQueuedAction;
+
+/**
+ * Increment the retry counter for a write.
+ * If retries reaches 3 or more the write is marked 'failed' and kept for
+ * inspection; otherwise it stays 'pending' for the next sync cycle.
+ */
+export async function incrementRetry(write: QueuedWrite): Promise<void> {
+  const updated: QueuedWrite = {
+    ...write,
+    retries: write.retries + 1,
+    status: write.retries + 1 >= 3 ? 'failed' : 'pending',
+  };
+
+  const db = await openOfflineDB();
+
+  return new Promise<void>((resolve, reject) => {
     const tx = db.transaction([STORE_NAME], 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     const req = store.put(updated);
@@ -109,3 +171,6 @@ export async function incrementRetry(action: OfflineAction): Promise<void> {
     req.onerror = () => reject(req.error);
   });
 }
+
+/** Alias — mark a write as failed (increments retry, sets status after threshold). */
+export const markWriteFailed = incrementRetry;

@@ -618,6 +618,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Offline path: queue for later replay
     if (!navigator.onLine) {
       await queueMutation({
+        tenantId: currentTenant.id,
         table: 'sales',
         operation: 'insert',
         payload: {

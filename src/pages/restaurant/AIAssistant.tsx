@@ -301,7 +301,7 @@ export default function AIAssistant() {
 
   const handleLanguageChange = useCallback(
     (newLanguage: 'en' | 'ar') => {
-      changeLanguage(newLanguage);
+      void changeLanguage(newLanguage);
     },
     [changeLanguage],
   );

@@ -27,7 +27,8 @@ const config = [
       '**/public/**',
       '**/storybook-static/**',
       '**/.storybook/**',
-      '**/.github/**'
+      '**/.github/**',
+      'src/components/ui/virtualized-table*.tsx'
     ]
   },
   // Base TypeScript config

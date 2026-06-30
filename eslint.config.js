@@ -27,7 +27,11 @@ const config = [
       '**/public/**',
       '**/storybook-static/**',
       '**/.storybook/**',
-      '**/.github/**'
+      '**/.github/**',
+      // Dead code: not imported anywhere; depends on react-window / react-virtualized-auto-sizer which are not installed
+      'src/components/ui/virtualized-table.tsx',
+      'src/components/ui/virtualized-table-simple.tsx',
+      'src/components/ui/virtualized-table-final.tsx'
     ]
   },
   // Base TypeScript config

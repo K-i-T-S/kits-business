@@ -337,7 +337,7 @@ function LocationsTab({ locations, loading, onRefresh }: LocationsTabProps) {
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => handleToggleActive(loc)}
+                    onClick={() => { void handleToggleActive(loc); }}
                     disabled={loc.is_main}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors disabled:cursor-not-allowed disabled:opacity-30"
                     title={loc.is_active ? 'Deactivate' : 'Activate'}

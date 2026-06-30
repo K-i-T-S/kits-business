@@ -451,13 +451,15 @@ export default function SupplierManagement() {
                           )}
                           {!supplier.is_active && (
                             <button
-                              onClick={async () => {
-                                try {
-                                  await supabase.from('suppliers').update({ is_active: true }).eq('id', supplier.id);
-                                  await loadSuppliers();
-                                } catch (e) {
-                                  setError(e instanceof Error ? e.message : 'Failed to reactivate');
-                                }
+                              onClick={() => {
+                                void (async () => {
+                                  try {
+                                    await supabase.from('suppliers').update({ is_active: true }).eq('id', supplier.id);
+                                    await loadSuppliers();
+                                  } catch (e) {
+                                    setError(e instanceof Error ? e.message : 'Failed to reactivate');
+                                  }
+                                })();
                               }}
                               className="rounded-lg border border-white/20 p-1.5 text-white/60 hover:bg-emerald-500/20 hover:text-emerald-400 transition-colors"
                               title="Reactivate"

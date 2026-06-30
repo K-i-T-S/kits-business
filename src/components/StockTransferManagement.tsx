@@ -80,7 +80,7 @@ export default function StockTransferManagement() {
     }
   }, []);
 
-  void useEffect(() => { loadTransfers(); }, [loadTransfers]);
+  useEffect(() => { void loadTransfers(); }, [loadTransfers]);
 
   // ── Derived stats ──────────────────────────────────────────
 
@@ -441,13 +441,13 @@ export default function StockTransferManagement() {
                       {transfer.status === 'pending' && (
                         <>
                           <button
-                            onClick={() => advanceStatus(transfer)}
+                            onClick={() => { void advanceStatus(transfer); }}
                             className="rounded-lg border border-blue-500/30 px-3 py-1 text-xs text-blue-400 hover:bg-blue-500/10"
                           >
                             Mark In Transit
                           </button>
                           <button
-                            onClick={() => cancelTransfer(transfer.id)}
+                            onClick={() => { void cancelTransfer(transfer.id); }}
                             className="rounded-lg border border-red-500/30 px-3 py-1 text-xs text-red-400 hover:bg-red-500/10"
                           >
                             Cancel
@@ -456,7 +456,7 @@ export default function StockTransferManagement() {
                       )}
                       {transfer.status === 'in_transit' && (
                         <button
-                          onClick={() => advanceStatus(transfer)}
+                          onClick={() => { void advanceStatus(transfer); }}
                           className="flex items-center gap-1 rounded-lg border border-green-500/30 px-3 py-1 text-xs text-green-400 hover:bg-green-500/10"
                         >
                           <CheckCircle className="h-3.5 w-3.5" /> Complete

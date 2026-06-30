@@ -30,7 +30,7 @@ export const LanguageSelector = memo(() => {
         {supportedLanguages.map((language) => (
           <DropdownMenuItem
             key={language.code}
-            onClick={() => changeLanguage(language.code)}
+            onClick={() => { void changeLanguage(language.code); }}
             className={currentLanguage === language.code ? 'bg-accent' : ''}
           >
             <div className="flex flex-col">

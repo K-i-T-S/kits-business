@@ -448,6 +448,7 @@ export default function POS() {
         return;
       }
       await queueMutation({
+        tenantId: currentTenant.id,
         table: 'sales',
         operation: 'insert',
         payload: {

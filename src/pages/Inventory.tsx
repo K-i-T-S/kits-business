@@ -77,7 +77,7 @@ export default function Inventory() {
 
   const handleDelete = (id: string, name: string) => {
     if (window.confirm(`Delete "${name}"? This action cannot be undone.`)) {
-      deleteProduct(id);
+      void deleteProduct(id);
     }
   };
 

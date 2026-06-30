@@ -85,7 +85,7 @@ export default function Employees() {
       shifts: [],
     };
 
-    addEmployee(employee);
+    void addEmployee(employee);
     setNewEmployee({ name: '', email: '', role: 'cashier', commission: 3 });
     setShowAddModal(false);
   };

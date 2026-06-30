@@ -225,7 +225,7 @@ export default function HelpSupport() {
               <p className="text-white/60">Get help with your Kits business management system</p>
             </div>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => { void navigate('/dashboard'); }}
               className="flex items-center gap-2 px-4 py-2 text-white/60 hover:text-white transition-colors"
             >
               <X className="h-5 w-5" />

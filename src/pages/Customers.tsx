@@ -84,7 +84,7 @@ export default function Customers() {
       totalPurchases: 0,
     };
 
-    addCustomer(customer);
+    void addCustomer(customer);
     setNewCustomer({ name: '', phone: '' });
     setShowAddModal(false);
   };
@@ -93,7 +93,7 @@ export default function Customers() {
     const customer = customers.find(c => c.id === customerId);
     if (customer) {
       const newBalance = Math.max(0, (customer.debtBalance || 0) - amount);
-      updateCustomer(customerId, { debtBalance: newBalance });
+      void updateCustomer(customerId, { debtBalance: newBalance });
     }
   };
 

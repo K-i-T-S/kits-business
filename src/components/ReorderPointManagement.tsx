@@ -272,7 +272,7 @@ export default function ReorderPointManagement() {
                         {p.editing ? (
                           <div className="flex gap-2">
                             <button
-                              onClick={() => saveMinLevel(p)}
+                              onClick={() => { void saveMinLevel(p); }}
                               disabled={saving === p.id}
                               className="text-xs px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
                             >

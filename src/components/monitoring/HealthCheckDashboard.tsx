@@ -78,7 +78,7 @@ export default function HealthCheckDashboard() {
   useEffect(() => {
     void checkHealth();
     if (isAutoRefresh) {
-      const interval = setInterval(checkHealth, 30000);
+      const interval = setInterval(() => { void checkHealth(); }, 30000);
       return () => clearInterval(interval);
     }
   }, [checkHealth, isAutoRefresh]);

@@ -115,10 +115,10 @@ export class SecurityMonitor {
     }
   }
 
-  private async getRecentEventCount(_eventType: string, _timeWindowMs: number, _userId?: string): Promise<number> {
+  private getRecentEventCount(_eventType: string, _timeWindowMs: number, _userId?: string): Promise<number> {
     // In a real implementation, this would query the audit log
     // For now, return a mock count
-    return Math.floor(Math.random() * 10);
+    return Promise.resolve(Math.floor(Math.random() * 10));
   }
 
   // Security health check

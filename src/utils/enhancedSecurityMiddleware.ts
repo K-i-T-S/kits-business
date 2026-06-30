@@ -283,7 +283,7 @@ export class EnhancedSecurityMiddleware {
     const email = input.trim().toLowerCase();
 
     // Enhanced email validation
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 
     if (!emailRegex.test(email)) {
       errors.push('Invalid email format');
@@ -356,8 +356,8 @@ export class EnhancedSecurityMiddleware {
     // Enhanced XSS and injection prevention
     const sanitized = input
       .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Control characters
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Script tags
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // Iframe tags
+      .replace(/<script\b[\s\S]*?<\/script>/gi, '') // Script tags
+      .replace(/<iframe\b[\s\S]*?<\/iframe>/gi, '') // Iframe tags
       .replace(/javascript:/gi, '') // JavaScript protocol
       .replace(/on\w+\s*=/gi, '') // Event handlers
       .replace(/[<>'"&]/g, '') // HTML characters

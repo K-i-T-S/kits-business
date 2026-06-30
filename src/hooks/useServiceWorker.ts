@@ -112,7 +112,7 @@ export function useServiceWorker() {
       try {
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration && Notification.permission === 'granted') {
-          return registration.showNotification(title, options);
+          return await registration.showNotification(title, options);
         }
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -194,7 +194,7 @@ export function useOfflineDetection() {
     };
 
     void checkOfflineActions();
-    const interval = setInterval(checkOfflineActions, 5000); // Check every 5 seconds
+    const interval = setInterval(() => { void checkOfflineActions(); }, 5000); // Check every 5 seconds
 
     return () => clearInterval(interval);
   }, []);

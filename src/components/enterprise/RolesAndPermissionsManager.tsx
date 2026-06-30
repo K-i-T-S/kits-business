@@ -187,7 +187,7 @@ export default function RolesAndPermissionsManager() {
                         <TableCell>
                           <Select
                             value={employee.role}
-                            onValueChange={(val) => handleRoleChange(employee.id, val as EmployeeRole)}
+                            onValueChange={(val) => { void handleRoleChange(employee.id, val as EmployeeRole); }}
                             disabled={updatingId === employee.id}
                           >
                             <SelectTrigger className="w-32 h-8 border-white/20 bg-white/5 text-white text-sm">

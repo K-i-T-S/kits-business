@@ -417,7 +417,7 @@ function ItemsTab({ tenantId }: { tenantId: string }) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => toggle86(item)} className={`rounded-lg p-1.5 transition-all ${item.is_eighty_sixd ? 'text-amber-400 hover:bg-amber-500/10' : 'text-white/30 hover:bg-white/10 hover:text-white/60'}`} title={item.is_eighty_sixd ? 'Restore item' : '86 this item'}>
+                      <button onClick={() => { void toggle86(item); }} className={`rounded-lg p-1.5 transition-all ${item.is_eighty_sixd ? 'text-amber-400 hover:bg-amber-500/10' : 'text-white/30 hover:bg-white/10 hover:text-white/60'}`} title={item.is_eighty_sixd ? 'Restore item' : '86 this item'}>
                         {item.is_eighty_sixd ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                       </button>
                       <button onClick={() => openEdit(item)} className="rounded-lg p-1.5 text-white/30 hover:bg-white/10 hover:text-white transition-all" title="Edit item">

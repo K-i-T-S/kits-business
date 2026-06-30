@@ -111,7 +111,7 @@ export default function StoreSwitcher() {
               {stores.map((store) => (
                 <button
                   key={store.id}
-                  onClick={() => handleStoreSwitch(store)}
+                  onClick={() => { void handleStoreSwitch(store); }}
                   className={`w-full p-3 flex items-start gap-3 hover:bg-white/5 transition-all group ${
                     store.id === currentStore?.id ? 'bg-white/5' : ''
                   }`}

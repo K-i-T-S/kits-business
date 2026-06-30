@@ -140,7 +140,7 @@ function ResultItem({ result, isHighlighted, onClick, onMouseEnter }: ResultItem
       ref={ref}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
-      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+      className={`w-full flex items-center gap-3 px-4 py-2.5 text-start transition-colors ${
         isHighlighted ? 'bg-white/10' : 'hover:bg-white/10'
       }`}
       role="option"
@@ -354,6 +354,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
             onKeyDown={handleKeyDown}
             placeholder="Search products, customers, employees..."
             className="flex-1 bg-transparent text-white placeholder:text-white/40 text-sm focus:outline-none"
+            dir="auto"
             aria-label="Search"
             aria-autocomplete="list"
             aria-controls="search-results"

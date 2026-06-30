@@ -41,7 +41,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
 
   const inputClass = 'bg-white/5 border border-white/20 text-white placeholder:text-white/40 rounded-xl px-4 py-3 w-full focus:outline-none focus:border-indigo-500 transition-colors';
   const selectClass = 'bg-slate-800 border border-white/20 text-white rounded-xl px-4 py-3 w-full focus:outline-none focus:border-indigo-500 transition-colors';
-  const labelClass = 'block text-sm font-medium text-white/70 mb-1';
+  const labelClass = 'block text-sm font-medium text-white/70 mb-1 text-start';
   const primaryBtn = 'w-full btn-brand text-white rounded-xl px-6 py-3 font-semibold disabled:opacity-60 disabled:cursor-not-allowed';
 
   // Map country → nearest Supabase region (all MENA closest to eu-central-1)
@@ -346,7 +346,7 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
               <p className="text-white/50 text-sm">Your business is ready to go.</p>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-2">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-start space-y-2">
               <div className="flex items-center gap-3 text-sm">
                 <CheckCircle className="h-4 w-4 text-emerald-400 flex-shrink-0" />
                 <span className="text-white/70">Business profile configured</span>

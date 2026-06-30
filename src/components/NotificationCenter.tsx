@@ -140,7 +140,7 @@ function NotificationRow({ notification, onClose }: NotificationRowProps) {
         <p className="text-xs text-white/50 mt-0.5 leading-relaxed">{notification.body}</p>
 
         <div className="flex items-center gap-3 mt-2">
-          <span className="text-[11px] text-white/30">{timeLabel}</span>
+          <span className="text-[11px] text-white/30 text-end">{timeLabel}</span>
           {notification.href && (
             <Link
               to={notification.href}
@@ -202,8 +202,8 @@ export default function NotificationCenter({ open, onClose }: NotificationCenter
 
       {/* Slide-out panel */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-sm bg-slate-900 border-l border-white/10 shadow-2xl transition-transform duration-300 ease-out ${
-          open ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed inset-y-0 end-0 z-50 flex flex-col w-full max-w-sm bg-slate-900 border-s border-white/10 shadow-2xl transition-transform duration-300 ease-out ${
+          open ? 'translate-x-0' : 'ltr:translate-x-full rtl:-translate-x-full'
         }`}
         role="dialog"
         aria-modal="true"

@@ -69,8 +69,9 @@ export function useServiceWorker() {
 
       // Listen for messages from service worker
       navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'CACHE_UPDATED') {
-          log.info('Cache updated', { payload: event.data.payload });
+        const msg = event.data as Record<string, unknown> | null;
+        if (msg && msg['type'] === 'CACHE_UPDATED') {
+          log.info('Cache updated', { payload: msg['payload'] });
         }
       });
     }
@@ -143,7 +144,8 @@ export function useOfflineDetection() {
       if ('serviceWorker' in navigator) {
         void navigator.serviceWorker.ready.then(registration => {
           if ('sync' in registration) {
-            (registration as any).sync.register('background-sync');
+            // Background Sync API is not in standard TS types — TODO S23: type this properly
+            (registration as unknown as { sync: { register: (tag: string) => void } }).sync.register('background-sync');
           }
         });
       }

@@ -62,15 +62,26 @@ export function useMenuEngineering(tenantId: string | undefined, categoryFilter?
         throw new Error(err.message);
       }
 
-      const items: MenuEngineeringItem[] = (rows ?? []).map((row: any) => ({
+      interface MenuEngRow {
+        id: string;
+        menu_item_id: string | null;
+        popularity_score: string | number | null;
+        margin_score: string | number | null;
+        category: string;
+        recommended_action: string | null;
+        potential_revenue_impact: string | number | null;
+        restaurant_menu_items: { name: string } | null;
+      }
+
+      const items: MenuEngineeringItem[] = ((rows ?? []) as unknown as MenuEngRow[]).map((row) => ({
         id: row.id,
-        menuItemId: row.menu_item_id,
+        menuItemId: row.menu_item_id ?? '',
         itemName: row.restaurant_menu_items?.name ?? 'Unknown Item',
         category: row.category as 'star' | 'plowhorse' | 'puzzle' | 'dog',
-        popularityScore: parseFloat(row.popularity_score ?? 0),
-        marginScore: parseFloat(row.margin_score ?? 0),
+        popularityScore: parseFloat(String(row.popularity_score ?? 0)),
+        marginScore: parseFloat(String(row.margin_score ?? 0)),
         recommendedAction: row.recommended_action ?? '',
-        potentialRevenueImpact: parseFloat(row.potential_revenue_impact ?? 0),
+        potentialRevenueImpact: parseFloat(String(row.potential_revenue_impact ?? 0)),
       }));
 
       setData({ items, loading: false, error: null });

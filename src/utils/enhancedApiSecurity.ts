@@ -16,7 +16,7 @@ export class ApiSecurityWrapper {
   async secureApiCall<T>(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     endpoint: string,
-    data?: any,
+    data?: unknown,
     requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer',
   ): Promise<T> {
     // Get current session for context
@@ -109,10 +109,10 @@ export const secureApi = {
   get: <T>(endpoint: string, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
     apiSecurity.secureApiCall<T>('GET', endpoint, undefined, requiredRole),
 
-  post: <T>(endpoint: string, data: any, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
+  post: <T>(endpoint: string, data: unknown, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
     apiSecurity.secureApiCall<T>('POST', endpoint, data, requiredRole),
 
-  put: <T>(endpoint: string, data: any, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
+  put: <T>(endpoint: string, data: unknown, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>
     apiSecurity.secureApiCall<T>('PUT', endpoint, data, requiredRole),
 
   delete: <T>(endpoint: string, requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer') =>

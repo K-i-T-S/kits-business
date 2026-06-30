@@ -47,8 +47,11 @@ export function PerformanceMonitor({
     const renderEndTime = performance.now();
     const renderTime = renderEndTime - renderStartTime.current;
 
-    // Get memory usage if available
-    const memoryInfo = (performance as any).memory;
+    // Get memory usage if available (Chrome-specific non-standard API)
+    interface ChromePerformance extends Performance {
+      memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
+    }
+    const memoryInfo = (performance as ChromePerformance).memory;
     const memoryUsage = memoryInfo ? memoryInfo.usedJSHeapSize : 0;
 
     // Count child components (rough estimate)

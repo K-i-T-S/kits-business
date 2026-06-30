@@ -3,7 +3,7 @@ import { parseISO } from 'date-fns';
 import i18n from '../i18n';
 
 // Locale mappings for date-fns
-const _dateLocales: Record<string, any> = {
+const _dateLocales: Record<string, string> = {
   en: 'en',
   es: 'es',
   fr: 'fr',

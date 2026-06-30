@@ -7,9 +7,9 @@ export interface AuditLogEntry {
   action: string;
   resource_type: string;
   resource_id?: string;
-  old_values?: Record<string, any>;
-  new_values?: Record<string, any>;
-  metadata?: Record<string, any>;
+  old_values?: Record<string, unknown>;
+  new_values?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
   session_id?: string;
@@ -86,7 +86,7 @@ export class AuditLogger {
     userId: string,
     action: 'login' | 'logout' | 'register' | 'password_change' | 'password_reset' | 'mfa_enabled' | 'mfa_disabled',
     success: boolean,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     error?: string,
   ): Promise<void> {
     await this.log({
@@ -107,9 +107,9 @@ export class AuditLogger {
     action: 'create' | 'read' | 'update' | 'delete' | 'export' | 'import',
     resourceType: string,
     resourceId: string | undefined,
-    oldValues?: Record<string, any>,
-    newValues?: Record<string, any>,
-    metadata?: Record<string, any>,
+    oldValues?: Record<string, unknown>,
+    newValues?: Record<string, unknown>,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     const severity = this.getDataOperationSeverity(action, resourceType);
 
@@ -132,7 +132,7 @@ export class AuditLogger {
     userId: string | undefined,
     action: 'rate_limit_exceeded' | 'suspicious_activity' | 'blocked_request' | 'privilege_escalation' | 'data_breach_attempt',
     resourceType: string,
-    metadata: Record<string, any>,
+    metadata: Record<string, unknown>,
     severity: 'high' | 'critical' = 'high',
   ): Promise<void> {
     await this.log({

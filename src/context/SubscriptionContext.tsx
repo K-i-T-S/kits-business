@@ -67,17 +67,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return;
       }
 
-      const { data, error } = await supabase.rpc('get_current_user_tenant');
+      const rpcResult = await supabase.rpc('get_current_user_tenant');
 
       // If the RPC errors (e.g. no tenant yet), keep starter/viewer — do not crash.
-      if (error || !data) {
+      if (rpcResult.error || !rpcResult.data) {
         setIsLoading(false);
         return;
       }
 
       // RPC returns an array of rows (one per tenant the user belongs to).
       // We always use the first row — matching the pattern in tenantManager.ts.
-      const row: TenantRow | undefined = Array.isArray(data) ? data[0] : data;
+      const rawData = rpcResult.data as TenantRow[] | TenantRow;
+      const row: TenantRow | undefined = Array.isArray(rawData) ? rawData[0] : rawData;
       if (!row) {
         setIsLoading(false);
         return;

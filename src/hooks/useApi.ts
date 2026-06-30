@@ -2,8 +2,13 @@ import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@ta
 import { toast } from 'sonner';
 
 import type { Product, Sale, Customer, Employee } from '../context/AppContext';
-import { supabase } from '../utils/supabaseClient';
-import { api } from '../utils/supabaseClient';
+import { api, supabase } from '../utils/supabaseClient';
+
+// API response shape from the Edge Function / localApi
+interface ApiResp<T> {
+  data: T;
+  error: string | null;
+}
 
 // Query keys for cache management
 export const queryKeys = {
@@ -39,7 +44,7 @@ export function useProduct(id: string, options?: Partial<UseQueryOptions<Product
     queryFn: async () => {
       const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
       if (error) throw error;
-      return data;
+      return data as Product;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single product
@@ -51,16 +56,16 @@ export function useCreateProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (product: Omit<Product, 'id'>) => {
-      const { data, error } = await api.post('/products', product);
-      if (error) throw error;
-      return data.product;
+    mutationFn: async (product: Omit<Product, 'id'>): Promise<Product> => {
+      const result = await api.post('/products', product) as ApiResp<{ product: Product }>;
+      if (result.error) throw new Error(result.error);
+      return result.data.product;
     },
     onSuccess: (newProduct) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.products });
       toast.success('Product added', { description: newProduct.name });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to add product', {
         description: error.message || 'Unknown error occurred.',
       });
@@ -72,17 +77,17 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, product }: { id: string; product: Partial<Product> }) => {
-      const { data, error } = await api.put(`/products/${id}`, product);
-      if (error) throw error;
-      return data.product;
+    mutationFn: async ({ id, product }: { id: string; product: Partial<Product> }): Promise<Product> => {
+      const result = await api.put(`/products/${id}`, product) as ApiResp<{ product: Product }>;
+      if (result.error) throw new Error(result.error);
+      return result.data.product;
     },
     onSuccess: (updatedProduct) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.products });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
+      if (updatedProduct.id) void queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
       toast.success('Product updated', { description: updatedProduct.name });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to update product', {
         description: error.message || 'Unknown error occurred.',
       });
@@ -94,16 +99,16 @@ export function useDeleteProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await api.delete(`/products/${id}`);
-      if (error) throw error;
+    mutationFn: async (id: string): Promise<string> => {
+      const result = await api.delete(`/products/${id}`) as ApiResp<null>;
+      if (result.error) throw new Error(result.error);
       return id;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.products });
       toast.success('Product deleted');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to delete product', {
         description: error.message || 'Unknown error occurred.',
       });
@@ -125,10 +130,10 @@ export function useCreateSale() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (sale: Omit<Sale, 'id'>) => {
-      const { data, error } = await api.post('/sales', sale);
-      if (error) throw error;
-      return data.sale;
+    mutationFn: async (sale: Omit<Sale, 'id'>): Promise<Sale> => {
+      const result = await api.post('/sales', sale) as ApiResp<{ sale: Sale }>;
+      if (result.error) throw new Error(result.error);
+      return result.data.sale;
     },
     onSuccess: (newSale) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.sales });
@@ -137,7 +142,7 @@ export function useCreateSale() {
         description: `Total $${newSale.total.toFixed(2)}`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to record sale', {
         description: error.message || 'Unknown error occurred.',
       });
@@ -161,7 +166,7 @@ export function useCustomer(id: string, options?: Partial<UseQueryOptions<Custom
     queryFn: async () => {
       const { data, error } = await supabase.from('customers').select('*').eq('id', id).single();
       if (error) throw error;
-      return data;
+      return data as Customer;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single customer
@@ -173,16 +178,16 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (customer: Omit<Customer, 'id'>) => {
-      const { data, error } = await api.post('/customers', customer);
-      if (error) throw error;
-      return data.customer;
+    mutationFn: async (customer: Omit<Customer, 'id'>): Promise<Customer> => {
+      const result = await api.post('/customers', customer) as ApiResp<{ customer: Customer }>;
+      if (result.error) throw new Error(result.error);
+      return result.data.customer;
     },
     onSuccess: (newCustomer) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       toast.success('Customer added', { description: newCustomer.name });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to add customer', {
         description: error.message || 'Unknown error occurred.',
       });
@@ -194,17 +199,17 @@ export function useUpdateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, customer }: { id: string; customer: Partial<Customer> }) => {
-      const { data, error } = await api.put(`/customers/${id}`, customer);
-      if (error) throw error;
-      return data.customer;
+    mutationFn: async ({ id, customer }: { id: string; customer: Partial<Customer> }): Promise<Customer> => {
+      const result = await api.put(`/customers/${id}`, customer) as ApiResp<{ customer: Customer }>;
+      if (result.error) throw new Error(result.error);
+      return result.data.customer;
     },
     onSuccess: (updatedCustomer) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customer(updatedCustomer.id) });
       toast.success('Customer updated', { description: updatedCustomer.name });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to update customer', {
         description: error.message || 'Unknown error occurred.',
       });
@@ -228,7 +233,7 @@ export function useEmployee(id: string, options?: Partial<UseQueryOptions<Employ
     queryFn: async () => {
       const { data, error } = await supabase.from('employees').select('*').eq('id', id).single();
       if (error) throw error;
-      return data;
+      return data as Employee;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single employee
@@ -240,11 +245,11 @@ export function useCreateEmployee() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (employee: Omit<Employee, 'id'>) => {
+    mutationFn: async (employee: Omit<Employee, 'id'>): Promise<Employee & { tempPassword: string }> => {
       const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-      const { data, error } = await api.post('/employees', { ...employee, password: tempPassword });
-      if (error) throw error;
-      return { ...data.employee, tempPassword };
+      const result = await api.post('/employees', { ...employee, password: tempPassword }) as ApiResp<{ employee: Employee }>;
+      if (result.error) throw new Error(result.error);
+      return { ...result.data.employee, tempPassword };
     },
     onSuccess: (newEmployee) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.employees });
@@ -252,7 +257,7 @@ export function useCreateEmployee() {
         description: `Temp password: ${newEmployee.tempPassword}`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to add employee', {
         description: error.message || 'Unknown error occurred.',
       });
@@ -264,17 +269,17 @@ export function useUpdateEmployee() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, employee }: { id: string; employee: Partial<Employee> }) => {
-      const { data, error } = await api.put(`/employees/${id}`, employee);
-      if (error) throw error;
-      return data.employee;
+    mutationFn: async ({ id, employee }: { id: string; employee: Partial<Employee> }): Promise<Employee> => {
+      const result = await api.put(`/employees/${id}`, employee) as ApiResp<{ employee: Employee }>;
+      if (result.error) throw new Error(result.error);
+      return result.data.employee;
     },
     onSuccess: (updatedEmployee) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.employees });
       void queryClient.invalidateQueries({ queryKey: queryKeys.employee(updatedEmployee.id) });
       toast.success('Employee updated', { description: updatedEmployee.name });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to update employee', {
         description: error.message || 'Unknown error occurred.',
       });
@@ -291,17 +296,17 @@ export function useUpdateStock() {
       productId: string
       variantId: string
       quantity: number
-    }) => {
-      const { data, error } = await api.post(`/products/${productId}/variants/${variantId}/stock`, { quantity });
-      if (error) throw error;
-      return data.product;
+    }): Promise<Product> => {
+      const result = await api.post(`/products/${productId}/variants/${variantId}/stock`, { quantity }) as ApiResp<{ product: Product }>;
+      if (result.error) throw new Error(result.error);
+      return result.data.product;
     },
     onSuccess: (updatedProduct) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.products });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
+      if (updatedProduct.id) void queryClient.invalidateQueries({ queryKey: queryKeys.product(updatedProduct.id) });
       toast.success('Stock updated');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to update stock', {
         description: error.message || 'Unknown error occurred.',
       });

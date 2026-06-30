@@ -113,9 +113,9 @@ export default function App() {
     // Initialize Sentry in production
     if (process.env.NODE_ENV === 'production' && import.meta.env.VITE_SENTRY_DSN) {
       sentryService.initialize({
-        dsn: import.meta.env.VITE_SENTRY_DSN,
+        dsn: import.meta.env.VITE_SENTRY_DSN as string,
         environment: import.meta.env.MODE || 'production',
-        release: import.meta.env.VITE_APP_VERSION || '1.0.0',
+        release: (import.meta.env.VITE_APP_VERSION as string | undefined) ?? '1.0.0',
         tracesSampleRate: 0.1,
       });
     }
@@ -132,7 +132,7 @@ export default function App() {
         sentryService.setUser({
           id: session.user.id,
           email: session.user.email,
-          username: session.user.user_metadata?.name || session.user.email,
+          username: (session.user.user_metadata?.['name'] as string | undefined) || session.user.email,
         });
       } else {
         sentryService.setUser(null);

@@ -6,8 +6,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
 // Mock auth functionality
+// TODO S23: type this properly — session shape mirrors Supabase AuthSession
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let currentUser: any = null;
-let authStateChangeCallbacks: Array<(event: string, session: any) => void> = [];
+let authStateChangeCallbacks: Array<(event: string, session: unknown) => void> = [];
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${API_URL}${endpoint}`;
@@ -29,7 +31,7 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
 
 export const apiClient = {
   auth: {
-    onAuthStateChange: (callback: (event: string, session: any) => void) => {
+    onAuthStateChange: (callback: (event: string, session: unknown) => void) => {
       authStateChangeCallbacks.push(callback);
       // Immediately call with current state
       callback(currentUser ? 'SIGNED_IN' : 'SIGNED_IN', currentUser);
@@ -68,8 +70,8 @@ export const apiClient = {
         authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
 
         return { data: { user: response.data }, error: null };
-      } catch (error: any) {
-        return { data: null, error: { message: error.message } };
+      } catch (error: unknown) {
+        return { data: null, error: { message: error instanceof Error ? error.message : 'Request failed' } };
       }
     },
 
@@ -89,8 +91,8 @@ export const apiClient = {
         authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
 
         return { data: { user: response.data }, error: null };
-      } catch (error: any) {
-        return { data: null, error: { message: error.message } };
+      } catch (error: unknown) {
+        return { data: null, error: { message: error instanceof Error ? error.message : 'Request failed' } };
       }
     },
 

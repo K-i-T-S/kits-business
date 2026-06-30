@@ -41,7 +41,7 @@ export function useChatHistory(tenantId: string, options?: Partial<UseQueryOptio
       // For Phase 2, we may be storing this in a temporary in-memory structure
       // This will call the Edge Function to fetch persisted history
       try {
-        const { data, error } = await supabase.functions.invoke('restaurant-ai-assistant', {
+        const { data, error } = await supabase.functions.invoke<{ messages?: AIMessage[] }>('restaurant-ai-assistant', {
           body: {
             tenantId,
             action: 'get_history',
@@ -53,7 +53,7 @@ export function useChatHistory(tenantId: string, options?: Partial<UseQueryOptio
           return [];
         }
 
-        return (data.messages || []) as AIMessage[];
+        return (data?.messages ?? []) as AIMessage[];
       } catch {
         // During Phase 2 if Edge Function isn't deployed, return empty array
         return [] as AIMessage[];
@@ -96,7 +96,7 @@ export function useSendAIMessage() {
       }
 
       try {
-        const { data, error } = await supabase.functions.invoke('restaurant-ai-assistant', {
+        const { data, error } = await supabase.functions.invoke<{ response?: string; messageId?: string }>('restaurant-ai-assistant', {
           body: {
             tenantId,
             question,
@@ -107,13 +107,13 @@ export function useSendAIMessage() {
 
         if (error) {
           console.error('Error sending message to AI:', error);
-          throw new Error(error?.message || 'Failed to send message to AI assistant');
+          throw new Error(error.message || 'Failed to send message to AI assistant');
         }
 
         return {
           success: true,
-          response: data.response || '',
-          messageId: data.messageId,
+          response: data?.response ?? '',
+          messageId: data?.messageId,
         };
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -140,9 +140,9 @@ export function useSendAIMessage() {
         });
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Error sending message', {
-        description: error?.message || 'Unknown error occurred',
+        description: error.message || 'Unknown error occurred',
       });
     },
   });
@@ -183,9 +183,9 @@ export function useClearChatHistory() {
 
       toast.success('Chat history cleared');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error('Failed to clear chat history', {
-        description: error?.message || 'Unknown error',
+        description: error.message || 'Unknown error',
       });
     },
   });

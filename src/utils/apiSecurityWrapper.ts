@@ -41,15 +41,15 @@ export class ApiSecurityWrapper {
   }
 
   // Secure database operations
-  async secureQuery<T = any>(
+  async secureQuery<T = unknown>(
     operation: 'select' | 'insert' | 'update' | 'delete',
     table: string,
     options: {
       select?: string;
-      filter?: Record<string, any>;
-      data?: Record<string, any>;
+      filter?: Record<string, unknown>;
+      data?: Record<string, unknown>;
       upsert?: boolean;
-      inputs?: Array<{ value: any; type: string }>;
+      inputs?: Array<{ value: unknown; type: string }>;
       requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer';
     } = {},
   ): Promise<{ data: T[] | null; error: string | null }> {
@@ -150,11 +150,11 @@ export class ApiSecurityWrapper {
   }
 
   // Secure RPC calls
-  async secureRpc<T = any>(
+  async secureRpc<T = unknown>(
     functionName: string,
-    params: Record<string, any>,
+    params: Record<string, unknown>,
     options: {
-      inputs?: Array<{ value: any; type: string }>;
+      inputs?: Array<{ value: unknown; type: string }>;
       requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer';
     } = {},
   ): Promise<{ data: T | null; error: string | null }> {
@@ -300,13 +300,13 @@ export class ApiSecurityWrapper {
       email?: string;
       password?: string;
       newPassword?: string;
-      options?: Record<string, any>;
+      options?: Record<string, unknown>;
     },
-  ): Promise<{ data: any; error: string | null }> {
+  ): Promise<{ data: unknown; error: string | null }> {
     const context = await this.getContext();
 
     // Validate inputs
-    const inputs: Array<{ value: any; type: string }> = [];
+    const inputs: Array<{ value: unknown; type: string }> = [];
     if (credentials.email) inputs.push({ value: credentials.email, type: 'email' });
     if (credentials.password) inputs.push({ value: credentials.password, type: 'text' });
     if (credentials.newPassword) inputs.push({ value: credentials.newPassword, type: 'text' });

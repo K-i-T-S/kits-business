@@ -40,8 +40,8 @@ interface TranslationContextType {
 
   // Translation statistics
   getTranslationStats: (language?: string) => TranslationStats[];
-  exportTranslations: (language?: string) => Record<string, any>;
-  importTranslations: (translations: Record<string, any>, language?: string) => void;
+  exportTranslations: (language?: string) => Record<string, unknown>;
+  importTranslations: (translations: Record<string, unknown>, language?: string) => void;
 
   // Translation validation
   validateTranslations: (language?: string) => { valid: boolean; errors: string[] };
@@ -76,7 +76,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     namespace?: string,
   ) => {
     const ns = namespace || 'translation';
-    const resources = i18n.getResourceBundle(language, ns);
+    const resources = i18n.getResourceBundle(language, ns) as Record<string, unknown> | null | undefined;
     if (!resources) {
       i18n.addResourceBundle(language, ns, {});
     }
@@ -109,7 +109,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     namespace?: string,
   ) => {
     const ns = namespace || 'translation';
-    const resources = i18n.getResourceBundle(language, ns);
+    const resources = i18n.getResourceBundle(language, ns) as Record<string, unknown> | null | undefined;
     if (resources && resources[key]) {
       delete resources[key];
       i18n.addResourceBundle(language, ns, resources, true);
@@ -153,11 +153,11 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const stats: TranslationStats[] = [];
 
     // Get all keys from the base language (English)
-    const baseResources = i18n.getResourceBundle('en', 'translation') || {};
+    const baseResources = i18n.getResourceBundle('en', 'translation') as Record<string, unknown> || {};
     const allKeys = Object.keys(baseResources);
 
     languages.forEach(lang => {
-      const resources = i18n.getResourceBundle(lang, 'translation') || {};
+      const resources = i18n.getResourceBundle(lang, 'translation') as Record<string, unknown> || {};
       const translatedKeys = Object.keys(resources).filter(key => resources[key]);
       const missingKeys = allKeys.filter(key => !resources[key]);
 
@@ -174,12 +174,12 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [i18n]);
 
   // Export translations
-  const exportTranslations = useCallback((language?: string): Record<string, any> => {
+  const exportTranslations = useCallback((language?: string): Record<string, unknown> => {
     const languages = language ? [language] : supportedLanguages.map(lang => lang.code);
-    const exported: Record<string, any> = {};
+    const exported: Record<string, unknown> = {};
 
     languages.forEach(lang => {
-      const resources = i18n.getResourceBundle(lang, 'translation');
+      const resources = i18n.getResourceBundle(lang, 'translation') as unknown;
       if (resources) {
         exported[lang] = resources;
       }
@@ -190,12 +190,12 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Import translations
   const importTranslations = useCallback((
-    translations: Record<string, any>,
+    translations: Record<string, unknown>,
     language?: string,
   ) => {
     Object.entries(translations).forEach(([lang, resources]) => {
       if (!language || lang === language) {
-        i18n.addResourceBundle(lang, 'translation', resources, true, true);
+        i18n.addResourceBundle(lang, 'translation', resources as object, true, true);
       }
     });
   }, [i18n]);
@@ -206,11 +206,11 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const errors: string[] = [];
 
     // Get all keys from the base language
-    const baseResources = i18n.getResourceBundle('en', 'translation') || {};
+    const baseResources = i18n.getResourceBundle('en', 'translation') as Record<string, unknown> || {};
     const allKeys = Object.keys(baseResources);
 
     languages.forEach(lang => {
-      const resources = i18n.getResourceBundle(lang, 'translation') || {};
+      const resources = i18n.getResourceBundle(lang, 'translation') as Record<string, unknown> || {};
 
       allKeys.forEach(key => {
         if (!resources[key]) {
@@ -234,7 +234,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     // 2. Compare with available keys
     // 3. Return keys that are not used
 
-    const baseResources = i18n.getResourceBundle('en', 'translation') || {};
+    const baseResources = i18n.getResourceBundle('en', 'translation') as Record<string, unknown> || {};
     const _allKeys = Object.keys(baseResources);
 
     // For now, return empty array - this would need code analysis
@@ -250,7 +250,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const results: TranslationKey[] = [];
 
     languages.forEach(lang => {
-      const resources = i18n.getResourceBundle(lang, 'translation') || {};
+      const resources = i18n.getResourceBundle(lang, 'translation') as Record<string, unknown> || {};
 
       Object.entries(resources).forEach(([key, value]) => {
         if (

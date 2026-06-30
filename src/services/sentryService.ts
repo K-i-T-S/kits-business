@@ -60,10 +60,11 @@ export class SentryService {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        const meta = session.user.user_metadata as Record<string, string | undefined> | null | undefined;
         event.user = {
           id: session.user.id,
           email: session.user.email,
-          username: session.user.user_metadata?.name || session.user.email,
+          username: meta?.['name'] ?? session.user.email,
         };
       }
     } catch (error) {
@@ -79,7 +80,7 @@ export class SentryService {
     Sentry.setTag(key, value);
   }
 
-  public setContext(key: string, context: Record<string, any>): void {
+  public setContext(key: string, context: Record<string, unknown>): void {
     Sentry.setContext(key, context);
   }
 
@@ -87,20 +88,20 @@ export class SentryService {
     Sentry.addBreadcrumb(breadcrumb);
   }
 
-  public captureException(error: Error, context?: Record<string, any>): void {
+  public captureException(error: Error, context?: Record<string, unknown>): void {
     Sentry.captureException(error, {
       extra: context,
     });
   }
 
-  public captureMessage(message: string, level: Sentry.SeverityLevel = 'info', context?: Record<string, any>): void {
+  public captureMessage(message: string, level: Sentry.SeverityLevel = 'info', context?: Record<string, unknown>): void {
     Sentry.captureMessage(message, level);
     if (context) {
       Sentry.setExtra('context', context);
     }
   }
 
-  public captureUserAction(action: string, details?: Record<string, any>): void {
+  public captureUserAction(action: string, details?: Record<string, unknown>): void {
     this.addBreadcrumb({
       category: 'user',
       message: action,
@@ -190,8 +191,11 @@ export const PerformanceMonitor = {
 };
 
 // API monitoring middleware
+// TODO S23: type req/res/next properly with Express types if @types/express is added
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createApiMonitoringMiddleware = () => {
-  return (req: any, res: any, next: Function) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (req: any, res: any, next: () => void) => {
     const start = Date.now();
 
     // Capture request start

@@ -134,7 +134,7 @@ export function holtSmoothing(
 ): HoltResult {
   if (series.length < 2) {
     const val = series[0] ?? 0;
-    return { forecast: Array(steps).fill(val), level: val, trend: 0 };
+    return { forecast: Array<number>(steps).fill(val), level: val, trend: 0 };
   }
 
   let level = series[0]!;

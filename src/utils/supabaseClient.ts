@@ -72,7 +72,7 @@ export const api = {
     return handleResponse(response);
   },
 
-  async post(endpoint: string, data: any) {
+  async post(endpoint: string, data: unknown) {
     if (useLocalMode) {
       return localApi.post(endpoint, data);
     }
@@ -93,7 +93,7 @@ export const api = {
     return handleResponse(response);
   },
 
-  async put(endpoint: string, data: any) {
+  async put(endpoint: string, data: unknown) {
     if (useLocalMode) {
       return localApi.put(endpoint, data);
     }

@@ -17,9 +17,9 @@ export async function logAudit(
   action: string,
   entityType: string,
   entityId?: string,
-  oldValues?: any,
-  newValues?: any,
-  metadata?: any,
+  oldValues?: Record<string, unknown>,
+  newValues?: Record<string, unknown>,
+  metadata?: Record<string, unknown>,
 ) {
   if (useLocalMode) {
     console.warn('Audit logging is not available in local mode');
@@ -47,7 +47,7 @@ export async function logActivity(
   description: string,
   entityType?: string,
   entityId?: string,
-  metadata?: any,
+  metadata?: Record<string, unknown>,
 ) {
   if (useLocalMode) {
     console.warn('Activity logging is not available in local mode');
@@ -139,7 +139,7 @@ export async function logSecurityEvent(
   eventType: string,
   description: string,
   severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
-  metadata?: any,
+  metadata?: Record<string, unknown>,
 ) {
   if (useLocalMode) {
     console.warn('Security event logging is not available in local mode');
@@ -311,11 +311,8 @@ export async function getUserActivitySummary(
   if (error) throw error;
 
   // Group activities by action type
-  const summary = data?.reduce((acc: any, activity: any) => {
-    if (!acc[activity.action]) {
-      acc[activity.action] = 0;
-    }
-    acc[activity.action]++;
+  const summary = data?.reduce<Record<string, number>>((acc, activity: { action: string }) => {
+    acc[activity.action] = (acc[activity.action] ?? 0) + 1;
     return acc;
   }, {});
 

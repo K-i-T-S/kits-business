@@ -2,10 +2,10 @@ import { Package } from 'lucide-react';
 import React, { memo, useMemo } from 'react';
 
 interface VirtualizedListProps {
-  items: any[];
+  items: unknown[];
   height: number;
   itemHeight: number;
-  renderItem: (item: any, index: number) => React.ReactNode;
+  renderItem: (item: unknown, index: number) => React.ReactNode;
   className?: string;
 }
 

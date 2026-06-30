@@ -57,7 +57,7 @@ export async function updateStore(storeId: string, updates: {
   email?: string;
   manager_id?: string;
   is_active?: boolean;
-  settings?: any;
+  settings?: Record<string, unknown>;
 }) {
   if (useLocalMode) {
     return { id: storeId, ...updates };

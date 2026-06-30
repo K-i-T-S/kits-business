@@ -138,6 +138,30 @@ export interface Tenant {
   qr_menu_promotional_banner?: string | null;
 }
 
+// ── Tenant RPC row shape (returned by get_current_user_tenant()) ──────────────
+interface TenantRpcRow {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_slug: string;
+  user_role: string;
+  settings: Record<string, unknown> | null;
+  brand_logo_url?: string | null;
+  brand_primary?: string | null;
+  brand_secondary?: string | null;
+  brand_tagline?: string | null;
+  tax_rate?: number | null;
+  secondary_currency?: string | null;
+  exchange_rate?: number | null;
+  show_dual_currency?: boolean | null;
+  tin?: string | null;
+  loyalty_enabled?: boolean | null;
+  loyalty_points_per_dollar?: number | null;
+  loyalty_points_redeem_rate?: number | null;
+  industry?: string | null;
+  qr_menu_palette?: string | null;
+  qr_menu_promotional_banner?: string | null;
+}
+
 function applyBrandColors(primary?: string, secondary?: string) {
   const root = document.documentElement;
   root.style.setProperty('--brand-primary', primary ?? '#6366f1');
@@ -381,13 +405,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setHasSession(!!session);
         if (session) {
           try {
-            const tenantData = await getCurrentUserTenant();
+            const tenantData = await getCurrentUserTenant() as TenantRpcRow | null;
             if (tenantData && isMounted) {
               const tenant: Tenant = {
                 id: tenantData.tenant_id,
                 name: tenantData.tenant_name,
                 slug: tenantData.tenant_slug,
-                userRole: tenantData.user_role,
+                userRole: tenantData.user_role as Tenant['userRole'],
                 settings: tenantData.settings || {},
                 brand_logo_url: tenantData.brand_logo_url ?? null,
                 brand_primary: tenantData.brand_primary ?? '#6366f1',
@@ -430,13 +454,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (session) {
         void (async () => {
           try {
-            const tenantData = await getCurrentUserTenant();
+            const tenantData = await getCurrentUserTenant() as TenantRpcRow | null;
             if (tenantData) {
               const tenant: Tenant = {
                 id: tenantData.tenant_id,
                 name: tenantData.tenant_name,
                 slug: tenantData.tenant_slug,
-                userRole: tenantData.user_role,
+                userRole: tenantData.user_role as Tenant['userRole'],
                 settings: tenantData.settings || {},
                 brand_logo_url: tenantData.brand_logo_url ?? null,
                 brand_primary: tenantData.brand_primary ?? '#6366f1',
@@ -498,7 +522,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const variant = product.variants?.[0];
       log.info('Creating product', { product });
 
-      const { data, error } = await supabase.from('products').insert({
+      const insertResult = await supabase.from('products').insert({
         tenant_id: currentTenant.id,
         name: product.name,
         sku: product.sku || null,
@@ -512,9 +536,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         min_stock_level: variant?.reorderLevel ?? 0,
       }).select().single();
 
-      if (error) throw error;
+      if (insertResult.error) throw insertResult.error;
 
-      const newProduct = dbProductToFrontend(data as DbProduct);
+      const newProduct = dbProductToFrontend(insertResult.data as DbProduct);
       log.info('Product created successfully', { newProduct });
       setProducts(prev => [...prev, newProduct]);
       toast.success('Product added', { description: newProduct.name });
@@ -551,10 +575,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (variant?.stock !== undefined) dbUpdate.stock_quantity = variant.stock;
       if (variant?.reorderLevel !== undefined) dbUpdate.min_stock_level = variant.reorderLevel;
 
-      const { data, error } = await supabase.from('products').update(dbUpdate).eq('id', id).select().single();
-      if (error) throw error;
+      const updateResult = await supabase.from('products').update(dbUpdate).eq('id', id).select().single();
+      if (updateResult.error) throw updateResult.error;
 
-      const updated = dbProductToFrontend(data as DbProduct);
+      const updated = dbProductToFrontend(updateResult.data as DbProduct);
       setProducts(prev => prev.map(p => p.id === id ? updated : p));
       toast.success('Product updated', { description: updated.name });
       if (currentTenant) {
@@ -638,7 +662,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data: saleRow, error: saleError } = await supabase.from('sales').insert({
+      const saleInsertResult = await supabase.from('sales').insert({
         tenant_id: currentTenant.id,
         employee_id: sale.employeeId || currentEmployee?.id || null,
         customer_id: sale.customerId || null,
@@ -650,7 +674,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         payment_status: 'completed',
       }).select().single();
 
-      if (saleError) throw saleError;
+      if (saleInsertResult.error) throw saleInsertResult.error;
+      const saleRow = saleInsertResult.data as DbSale;
 
       if (sale.items.length > 0) {
         const { error: itemsError } = await supabase.from('sale_items').insert(
@@ -676,7 +701,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const newSale = dbSaleToFrontend(saleRow as DbSale);
+      const newSale = dbSaleToFrontend(saleRow);
       newSale.items = sale.items; // keep full items with names/costs for local state
       setSales(prev => [newSale, ...prev]);
 
@@ -735,7 +760,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!currentTenant) throw new Error('No active tenant');
 
     try {
-      const { data, error } = await supabase.from('customers').insert({
+      const insertResult = await supabase.from('customers').insert({
         tenant_id: currentTenant.id,
         name: customer.name,
         phone: customer.phone || null,
@@ -744,9 +769,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         visit_count: 0,
       }).select().single();
 
-      if (error) throw error;
+      if (insertResult.error) throw insertResult.error;
 
-      const newCustomer = dbCustomerToFrontend(data as DbCustomer);
+      const newCustomer = dbCustomerToFrontend(insertResult.data as DbCustomer);
       setCustomers(prev => [...prev, newCustomer]);
       toast.success('Customer added', { description: newCustomer.name });
       logActivity({
@@ -777,10 +802,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (updatedCustomer.visitCount !== undefined) dbUpdate.visit_count = updatedCustomer.visitCount;
       if (updatedCustomer.lastPurchaseDate !== undefined) dbUpdate.last_purchase_date = updatedCustomer.lastPurchaseDate;
 
-      const { data, error } = await supabase.from('customers').update(dbUpdate).eq('id', id).select().single();
-      if (error) throw error;
+      const updateResult = await supabase.from('customers').update(dbUpdate).eq('id', id).select().single();
+      if (updateResult.error) throw updateResult.error;
 
-      const updated = dbCustomerToFrontend(data as DbCustomer);
+      const updated = dbCustomerToFrontend(updateResult.data as DbCustomer);
       setCustomers(prev => prev.map(c => c.id === id ? updated : c));
       toast.success('Customer updated', { description: updated.name });
       if (currentTenant) {
@@ -820,7 +845,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const dbRole = employee.role === 'admin' ? 'owner' : employee.role;
 
-      const { data, error } = await supabase.from('employees').insert({
+      const insertResult = await supabase.from('employees').insert({
         tenant_id: currentTenant.id,
         name: employee.name,
         email: employee.email || null,
@@ -829,9 +854,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         is_active: true,
       }).select().single();
 
-      if (error) throw error;
+      if (insertResult.error) throw insertResult.error;
 
-      const newEmployee = dbEmployeeToFrontend(data as DbEmployee);
+      const newEmployee = dbEmployeeToFrontend(insertResult.data as DbEmployee);
       setEmployees(prev => [...prev, newEmployee]);
       toast.success('Employee created', { description: newEmployee.name });
       logActivity({
@@ -860,10 +885,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (updatedEmployee.role !== undefined) dbUpdate.role = updatedEmployee.role === 'admin' ? 'owner' : updatedEmployee.role;
       if (updatedEmployee.commission !== undefined) dbUpdate.commission_rate = updatedEmployee.commission;
 
-      const { data, error } = await supabase.from('employees').update(dbUpdate).eq('id', id).select().single();
-      if (error) throw error;
+      const updateResult = await supabase.from('employees').update(dbUpdate).eq('id', id).select().single();
+      if (updateResult.error) throw updateResult.error;
 
-      const updated = dbEmployeeToFrontend(data as DbEmployee);
+      const updated = dbEmployeeToFrontend(updateResult.data as DbEmployee);
       setEmployees(prev => prev.map(e => e.id === id ? updated : e));
       if (currentEmployee?.id === id) setCurrentEmployee(updated);
       toast.success('Employee updated', { description: updated.name });
@@ -908,14 +933,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const result = await OperationQueue.enqueue(
         `stock-${productId}-${variantId}`,
         async () => {
-          const { data, error } = await supabase
+          const stockResult = await supabase
             .from('products')
             .update({ stock_quantity: Math.max(0, quantity) })
             .eq('id', productId)
             .select()
             .single();
-          if (error) throw error;
-          return dbProductToFrontend(data as DbProduct);
+          if (stockResult.error) throw stockResult.error;
+          return dbProductToFrontend(stockResult.data as DbProduct);
         },
         'stock-update',
       );

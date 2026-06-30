@@ -102,9 +102,15 @@ export function useOptimisticUpdates<T extends { id: string }>(
   };
 }
 
+interface ProductStockEntry {
+  id: string;
+  variants: Array<{ id: string; stock: number; [key: string]: unknown }>;
+  [key: string]: unknown;
+}
+
 export function useOptimisticStockUpdates(
-  products: any[],
-  onUpdate: (products: any[]) => void,
+  products: ProductStockEntry[],
+  onUpdate: (products: ProductStockEntry[]) => void,
 ) {
   const [stockUpdates, setStockUpdates] = useState<Map<string, number>>(new Map());
 

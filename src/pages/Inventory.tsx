@@ -210,21 +210,21 @@ export default function Inventory() {
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-[2fr,1fr]">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
+              <Search className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
               <input
                 type="text"
                 placeholder="Search by product, barcode, or SKU…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
+                className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 ps-12 pe-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
               />
             </div>
             <div className="relative">
-              <Filter className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
+              <Filter className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full appearance-none rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-10 text-sm text-white shadow-inner focus:border-white/50 focus:outline-none"
+                className="w-full appearance-none rounded-2xl border border-white/30 bg-white/20 py-3 ps-12 pe-10 text-sm text-white shadow-inner focus:border-white/50 focus:outline-none"
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -232,7 +232,7 @@ export default function Inventory() {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/60">▾</div>
+              <div className="pointer-events-none absolute end-4 top-1/2 -translate-y-1/2 text-white/60">▾</div>
             </div>
           </div>
         </section>
@@ -240,7 +240,7 @@ export default function Inventory() {
         <section className="hero-gradient glass-panel overflow-hidden p-0 text-white hidden md:block">
           <div className="overflow-x-auto">
             <div className="min-w-[720px]">
-              <table className="w-full text-left text-sm text-white/80">
+              <table className="w-full text-start text-sm text-white/80">
                 <thead className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white/60">
                   <tr>
                     <th className="px-6 py-4">Product</th>
@@ -459,7 +459,7 @@ export default function Inventory() {
                   <div className="bg-white/10 rounded-lg p-2">
                     <p className="text-white/50">Stock</p>
                     <p className={`font-semibold mt-0.5 ${stats.isLowStock ? 'text-amber-400' : 'text-white'}`}>
-                      {stats.isLowStock && <AlertTriangle className="inline h-3 w-3 mr-1" />}
+                      {stats.isLowStock && <AlertTriangle className="inline h-3 w-3 me-1" />}
                       {stats.totalStock}
                     </p>
                   </div>

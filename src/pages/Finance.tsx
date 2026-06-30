@@ -377,7 +377,7 @@ function OverviewTab({ expenses, categories, sales, selectedMonth, setSelectedMo
                     <p className="text-sm font-medium text-white">{e.description}</p>
                     <p className="text-xs text-white/40">{cat?.name ?? 'Uncategorised'} · {FREQUENCY_LABELS[e.recurring_frequency ?? ''] ?? e.recurring_frequency}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-end">
                     <p className="text-sm font-semibold text-amber-300">{fmtUSD(e.amount_usd)}</p>
                     <p className="text-xs text-white/40">In {daysAway}d — {e.nextDue ? format(e.nextDue, 'MMM d') : ''}</p>
                   </div>
@@ -557,14 +557,14 @@ function ExpensesTab({ expenses, categories, currentTenant, onRefresh }: Expense
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10">
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/40">Date</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/40">Description</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/40">Category</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/40">Vendor</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Amount</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/40">Payment</th>
+              <th className="px-4 py-3 text-start text-xs font-medium text-white/40">Date</th>
+              <th className="px-4 py-3 text-start text-xs font-medium text-white/40">Description</th>
+              <th className="px-4 py-3 text-start text-xs font-medium text-white/40">Category</th>
+              <th className="px-4 py-3 text-start text-xs font-medium text-white/40">Vendor</th>
+              <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Amount</th>
+              <th className="px-4 py-3 text-start text-xs font-medium text-white/40">Payment</th>
               <th className="px-4 py-3 text-center text-xs font-medium text-white/40">Receipt</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Actions</th>
+              <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -585,7 +585,7 @@ function ExpensesTab({ expenses, categories, currentTenant, onRefresh }: Expense
                   </td>
                   <td className="px-4 py-3 text-white/60">{cat?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-white/60">{e.vendor ?? '—'}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-end">
                     <span className="font-semibold text-white">{fmtUSD(e.amount_usd)}</span>
                     {e.currency !== 'USD' && (
                       <span className="block text-xs text-white/40">{e.amount.toLocaleString()} {e.currency}</span>
@@ -1285,25 +1285,25 @@ function PayrollTab({ employees, currentTenant }: PayrollTabProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-white/40">Employee</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Gross</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-white/40">NSSF Emp.</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-white/40">EOS</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Net</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Total Cost</th>
+                  <th className="px-4 py-3 text-start text-xs font-medium text-white/40">Employee</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Gross</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium text-white/40">NSSF Emp.</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium text-white/40">EOS</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Net</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Total Cost</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-white/40">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Actions</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {payroll.map(entry => (
                   <tr key={entry.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                     <td className="px-4 py-3 font-medium text-white">{entry.employee_name}</td>
-                    <td className="px-4 py-3 text-right text-white/80">{fmtUSD(entry.gross_salary)}</td>
-                    <td className="px-4 py-3 text-right text-white/60">{fmtUSD(entry.nssf_employer)}</td>
-                    <td className="px-4 py-3 text-right text-white/60">{fmtUSD(entry.eos_accrual)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-emerald-400">{fmtUSD(entry.net_salary)}</td>
-                    <td className="px-4 py-3 text-right text-indigo-300 font-semibold">{fmtUSD(entry.total_employer_cost)}</td>
+                    <td className="px-4 py-3 text-end text-white/80">{fmtUSD(entry.gross_salary)}</td>
+                    <td className="px-4 py-3 text-end text-white/60">{fmtUSD(entry.nssf_employer)}</td>
+                    <td className="px-4 py-3 text-end text-white/60">{fmtUSD(entry.eos_accrual)}</td>
+                    <td className="px-4 py-3 text-end font-semibold text-emerald-400">{fmtUSD(entry.net_salary)}</td>
+                    <td className="px-4 py-3 text-end text-indigo-300 font-semibold">{fmtUSD(entry.total_employer_cost)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border ${entry.payment_status === 'paid' ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' : 'text-amber-400 border-amber-500/30 bg-amber-500/10'}`}>
                         {entry.payment_status === 'paid' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
@@ -1501,12 +1501,12 @@ function BudgetTab({ expenses, categories }: BudgetTabProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10">
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/40">Category</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Budget (USD)</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Actual (USD)</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-white/40">Variance</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-white/40">% Used</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white/40 w-32">Progress</th>
+              <th className="px-4 py-3 text-start text-xs font-medium text-white/40">Category</th>
+              <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Budget (USD)</th>
+              <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Actual (USD)</th>
+              <th className="px-4 py-3 text-end text-xs font-medium text-white/40">Variance</th>
+              <th className="px-4 py-3 text-end text-xs font-medium text-white/40">% Used</th>
+              <th className="px-4 py-3 text-start text-xs font-medium text-white/40 w-32">Progress</th>
             </tr>
           </thead>
           <tbody>
@@ -1523,7 +1523,7 @@ function BudgetTab({ expenses, categories }: BudgetTabProps) {
               return (
                 <tr key={cat.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                   <td className="px-4 py-3 text-white">{cat.name}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-end">
                     <input
                       type="number"
                       step="0.01"
@@ -1549,15 +1549,15 @@ function BudgetTab({ expenses, categories }: BudgetTabProps) {
                         }
                       }}
                       placeholder="0.00"
-                      className="w-28 bg-slate-800 border border-white/20 text-white rounded-lg px-2 py-1 text-sm text-right"
+                      className="w-28 bg-slate-800 border border-white/20 text-white rounded-lg px-2 py-1 text-sm text-end"
                       disabled={savingBudget === cat.id}
                     />
                   </td>
-                  <td className="px-4 py-3 text-right text-white/80">{actual > 0 ? fmtUSD(actual) : '—'}</td>
-                  <td className={`px-4 py-3 text-right font-medium ${budgeted > 0 ? (variance >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-white/20'}`}>
+                  <td className="px-4 py-3 text-end text-white/80">{actual > 0 ? fmtUSD(actual) : '—'}</td>
+                  <td className={`px-4 py-3 text-end font-medium ${budgeted > 0 ? (variance >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-white/20'}`}>
                     {budgeted > 0 ? `${variance >= 0 ? '+' : ''}${fmtUSD(variance)}` : '—'}
                   </td>
-                  <td className={`px-4 py-3 text-right text-xs ${pct > 100 ? 'text-rose-400' : pct > 80 ? 'text-amber-400' : 'text-white/60'}`}>
+                  <td className={`px-4 py-3 text-end text-xs ${pct > 100 ? 'text-rose-400' : pct > 80 ? 'text-amber-400' : 'text-white/60'}`}>
                     {budgeted > 0 ? fmtPct(pct) : '—'}
                   </td>
                   <td className="px-4 py-3">

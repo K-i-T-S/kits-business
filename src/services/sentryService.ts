@@ -192,7 +192,6 @@ export const PerformanceMonitor = {
 
 // API monitoring middleware
 // TODO S23: type req/res/next properly with Express types if @types/express is added
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createApiMonitoringMiddleware = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (req: any, res: any, next: () => void) => {

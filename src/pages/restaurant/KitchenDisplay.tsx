@@ -15,6 +15,7 @@ import {
   Plus,
   Trash2,
   X,
+  WifiOff,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -249,6 +250,7 @@ interface TicketCardProps {
   onTogglePriority: (orderId: string) => void;
   onBumpAllReady: (orderId: string) => void;
   onMarkAllReady: (orderId: string) => void;
+  isOnline: boolean;
 }
 
 function TicketCard({
@@ -258,6 +260,7 @@ function TicketCard({
   onTogglePriority,
   onBumpAllReady,
   onMarkAllReady,
+  isOnline,
 }: TicketCardProps) {
   const { t } = useTranslation();
   const { order, table, items, isPriority } = ticket;
@@ -409,11 +412,13 @@ function TicketCard({
                       {!partial && (
                         <button
                           onClick={() => onBumpItem(item.id)}
-                          disabled={isReady}
+                          disabled={isReady || !isOnline}
                           className={`flex flex-shrink-0 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-all ${
                             isReady
                               ? 'cursor-default text-emerald-400'
-                              : 'text-white/30 hover:bg-emerald-500/20 hover:text-emerald-400 active:scale-90'
+                              : !isOnline
+                                ? 'cursor-not-allowed opacity-50 text-white/30'
+                                : 'text-white/30 hover:bg-emerald-500/20 hover:text-emerald-400 active:scale-90'
                           }`}
                           aria-label={`Mark ${item.product_name} ready`}
                         >
@@ -435,7 +440,7 @@ function TicketCard({
           <div className="flex gap-2">
             <button
               onClick={markSelected}
-              disabled={selected.size === 0}
+              disabled={selected.size === 0 || !isOnline}
               className="min-h-[44px] flex-1 rounded-xl bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-400 disabled:opacity-40 hover:bg-emerald-500/30"
             >
               {t('restaurant.kds.markSelected', 'Mark Ready')} ({selected.size})
@@ -455,7 +460,8 @@ function TicketCard({
             {inProgressItems.length > 0 && (
               <button
                 onClick={() => onMarkAllReady(order.id)}
-                className="min-h-[44px] flex-1 rounded-xl bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg px-3 py-1.5 active:scale-[0.98] transition-all"
+                disabled={!isOnline}
+                className={`min-h-[44px] flex-1 rounded-xl bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg px-3 py-1.5 active:scale-[0.98] transition-all${!isOnline ? ' opacity-50 cursor-not-allowed' : ''}`}
               >
                 ✓ {t('restaurant.kds.allReady', 'All Ready')} ({inProgressItems.length})
               </button>
@@ -463,7 +469,8 @@ function TicketCard({
             {inProgressItems.length === 0 && pendingItems.length > 0 && (
               <button
                 onClick={() => onBumpAll(order.id)}
-                className="min-h-[44px] flex-1 rounded-xl bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-400 hover:bg-emerald-500/30 active:scale-[0.98] transition-all"
+                disabled={!isOnline}
+                className={`min-h-[44px] flex-1 rounded-xl bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-400 hover:bg-emerald-500/30 active:scale-[0.98] transition-all${!isOnline ? ' opacity-50 cursor-not-allowed' : ''}`}
               >
                 {t('restaurant.kds.bumpAll', 'All Ready')} ({pendingItems.length})
               </button>
@@ -480,7 +487,8 @@ function TicketCard({
             {readyItems.length > 0 && pendingItems.length === 0 && (
               <button
                 onClick={() => onBumpAllReady(order.id)}
-                className="min-h-[44px] flex-1 rounded-xl bg-indigo-500/20 py-2.5 text-sm font-semibold text-indigo-400 hover:bg-indigo-500/30"
+                disabled={!isOnline}
+                className={`min-h-[44px] flex-1 rounded-xl bg-indigo-500/20 py-2.5 text-sm font-semibold text-indigo-400 hover:bg-indigo-500/30${!isOnline ? ' opacity-50 cursor-not-allowed' : ''}`}
               >
                 {t('restaurant.kds.serve', 'Serve All')}
               </button>
@@ -533,6 +541,7 @@ export default function KitchenDisplay() {
   const [showConfig, setShowConfig] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [isKdsMode, setIsKdsMode] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const prevTicketCount = useRef(0);
 
@@ -677,6 +686,18 @@ export default function KitchenDisplay() {
       void supabase.removeChannel(channel);
     };
   }, [tenantId, refreshTickets]);
+
+  // ── Online/offline detection ──────────────────────────────────
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // ── Bump handlers ─────────────────────────────────────────────
   const handleBumpItem = useCallback(async (itemId: string) => {
@@ -925,6 +946,14 @@ export default function KitchenDisplay() {
         </div>
       </div>
 
+      {/* ── Offline banner ── */}
+      {!isOnline && (
+        <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-300">
+          <WifiOff className="h-3.5 w-3.5" />
+          <span>Offline — showing last known orders. Realtime updates paused.</span>
+        </div>
+      )}
+
       {/* ── Station tabs ── */}
       <div className="flex items-center gap-1 overflow-x-auto border-b border-white/5 bg-slate-900/60 px-4 py-2 no-scrollbar">
         {stations.map((station) => {
@@ -1007,6 +1036,7 @@ export default function KitchenDisplay() {
               <TicketCard
                 key={ticket.order.id}
                 ticket={ticket}
+                isOnline={isOnline}
                 onBumpItem={(id) => {
                   void handleBumpItem(id);
                 }}

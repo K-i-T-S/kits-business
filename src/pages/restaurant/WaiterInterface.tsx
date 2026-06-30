@@ -34,6 +34,7 @@ import {
   Lightbulb,
   Sparkles,
   UserCircle,
+  WifiOff,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,6 +47,7 @@ import CloseBillModal from '@/components/restaurant/CloseBillModal';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
 import { useUpsellRules } from '@/hooks/useUpsellRules';
+import { queueMutation, getPendingActions, removeQueuedAction } from '@/utils/offlineQueue';
 import { supabase } from '@/utils/supabaseClient';
 import type {
   RestaurantTable,
@@ -837,9 +839,10 @@ interface TableDetailProps {
   menuItems: RestaurantMenuItem[];
   onClose: () => void;
   onOrderClosed: () => void;
+  isOnline: boolean;
 }
 
-function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, onOrderClosed }: TableDetailProps) {
+function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, onOrderClosed, isOnline }: TableDetailProps) {
   const { t } = useTranslation();
   const { currentTenant, customers } = useApp();
   const { table, order } = tableData;
@@ -1619,6 +1622,29 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
           defaultCourse={currentCourse}
           onClose={() => setSelectedMenuItem(null)}
           onConfirm={(qty, notes, unitPrice, modifiers, course) => {
+            if (!isOnline) {
+              void queueMutation({
+                table: 'restaurant_order_items',
+                operation: 'insert',
+                payload: {
+                  tenant_id: tenantId ?? '',
+                  order_id: order?.id ?? '',
+                  table_id: table.id,
+                  product_name: selectedMenuItem.name,
+                  quantity: qty,
+                  unit_price: unitPrice,
+                  course,
+                  notes: notes || null,
+                  menu_item_id: selectedMenuItem.id,
+                  modifiers,
+                  status: 'pending',
+                  sent_at: null,
+                },
+              });
+              toast.info('Item queued — will sync when online');
+              setSelectedMenuItem(null);
+              return;
+            }
             void addItem({
               product_name: selectedMenuItem.name,
               quantity: qty,
@@ -1630,6 +1656,27 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
             });
           }}
           onUpsellAdd={(upsellItem) => {
+            if (!isOnline) {
+              void queueMutation({
+                table: 'restaurant_order_items',
+                operation: 'insert',
+                payload: {
+                  tenant_id: tenantId ?? '',
+                  order_id: order?.id ?? '',
+                  table_id: table.id,
+                  product_name: upsellItem.name,
+                  quantity: 1,
+                  unit_price: upsellItem.base_price_usd,
+                  course: currentCourse,
+                  menu_item_id: upsellItem.id,
+                  modifiers: [],
+                  status: 'pending',
+                  sent_at: null,
+                },
+              });
+              toast.info('Item queued — will sync when online');
+              return;
+            }
             void addItem({
               product_name: upsellItem.name,
               quantity: 1,
@@ -1662,6 +1709,7 @@ export default function WaiterInterface() {
   const [menuCategories, setMenuCategories] = useState<RestaurantMenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<RestaurantMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [filterSection, setFilterSection] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -1723,6 +1771,38 @@ export default function WaiterInterface() {
       if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
     };
   }, [loadData]);
+
+  // Online/offline detection — sync queued restaurant_order_items on reconnect
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      void (async () => {
+        try {
+          const pending = await getPendingActions();
+          const restaurantWrites = pending.filter((a) => a.table === 'restaurant_order_items');
+          for (const action of restaurantWrites) {
+            if (action.operation === 'insert' && tenantId) {
+              const { error } = await supabase.from('restaurant_order_items').insert(action.payload);
+              if (!error) await removeQueuedAction(action.id);
+            }
+          }
+          if (restaurantWrites.length > 0) {
+            void loadData();
+            toast.success(`${restaurantWrites.length} queued item(s) synced`);
+          }
+        } catch (err) {
+          console.error('[WaiterInterface] sync error:', err);
+        }
+      })();
+    };
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [tenantId, loadData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -1805,6 +1885,18 @@ export default function WaiterInterface() {
         status: 'pending' as const,
         sent_at: null,
       }));
+      // Offline — queue each item for later sync
+      if (!isOnline) {
+        for (const row of itemRows) {
+          void queueMutation({
+            table: 'restaurant_order_items',
+            operation: 'insert',
+            payload: row as unknown as Record<string, unknown>,
+          });
+        }
+        toast.info('Item queued — will sync when online');
+        return;
+      }
       const { error: insErr } = await supabase.from('restaurant_order_items').insert(itemRows);
       if (insErr) throw insErr;
       const { error: updErr } = await supabase
@@ -2296,6 +2388,14 @@ export default function WaiterInterface() {
         </div>
       </header>
 
+      {/* ── Offline banner ── */}
+      {!isOnline && (
+        <div className="mx-4 mt-2 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+          <WifiOff className="h-3.5 w-3.5" />
+          <span>Offline — order changes queued for sync</span>
+        </div>
+      )}
+
       {/* ── Scrollable main content area ── */}
       <main className="flex flex-1 flex-col overflow-y-auto">
         <AnimatePresence mode="wait">
@@ -2359,6 +2459,7 @@ export default function WaiterInterface() {
           menuItems={menuItems}
           onClose={() => setSelectedTableId(null)}
           onOrderClosed={() => { void loadData(); }}
+          isOnline={isOnline}
         />
       )}
 

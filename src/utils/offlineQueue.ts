@@ -12,7 +12,7 @@ const STORE_NAME = 'pendingActions';
 
 export interface OfflineAction {
   id: string;
-  table: 'products' | 'sales' | 'customers' | 'employees' | 'sale_items';
+  table: 'products' | 'sales' | 'customers' | 'employees' | 'sale_items' | 'restaurant_order_items' | 'table_orders';
   operation: 'insert' | 'update' | 'delete';
   payload: Record<string, unknown>;
   matchColumn?: string; // for update/delete: which column to match

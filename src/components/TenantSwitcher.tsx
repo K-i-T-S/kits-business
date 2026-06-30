@@ -37,7 +37,7 @@ export default function TenantSwitcher() {
     }
   };
 
-  const handleTenantSwitch = async (tenant: Tenant) => {
+  const handleTenantSwitch = (tenant: Tenant) => {
     if (tenant.id === currentTenant?.id) {
       setIsOpen(false);
       return;

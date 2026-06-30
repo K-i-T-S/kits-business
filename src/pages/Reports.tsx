@@ -295,7 +295,7 @@ export default function Reports() {
     <Layout>
       <div className="space-y-10 pb-4 lg:pb-6">
         <section className="hero-gradient glass-panel relative overflow-hidden p-6 md:p-8 text-white">
-          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-white/20" />
+          <Sparkles className="pointer-events-none absolute -end-6 -top-6 h-24 w-24 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <p className="stat-chip bg-white/10 text-white/80">Advanced Intelligence</p>
@@ -324,7 +324,7 @@ export default function Reports() {
                   onClick={() => setShowReportBuilder(true)}
                   className="flex-1 min-h-[40px]"
                 >
-                  <Settings className="h-4 w-4 mr-2" />
+                  <Settings className="h-4 w-4 me-2" />
                   Build Report
                 </Button>
                 <Button
@@ -333,7 +333,7 @@ export default function Reports() {
                   onClick={() => setShowExportDialog(true)}
                   className="flex-1 min-h-[40px]"
                 >
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4 me-2" />
                   Export
                 </Button>
               </div>
@@ -495,24 +495,24 @@ export default function Reports() {
                     <span className="text-xs uppercase tracking-[0.35em] text-white/70">Kits insights</span>
                   </div>
                   <div className="mt-4 overflow-x-auto">
-                    <table className="w-full text-left text-sm text-white/80">
+                    <table className="w-full text-start text-sm text-white/80">
                       <thead className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white/60">
                         <tr>
                           <th className="px-4 py-3">Product</th>
-                          <th className="px-4 py-3 text-right">Qty sold</th>
-                          <th className="px-4 py-3 text-right">Revenue</th>
-                          <th className="px-4 py-3 text-right">Profit</th>
+                          <th className="px-4 py-3 text-end">Qty sold</th>
+                          <th className="px-4 py-3 text-end">Revenue</th>
+                          <th className="px-4 py-3 text-end">Profit</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/20 bg-white/10">
                         {topProducts.map((product, index) => (
                           <tr key={index}>
                             <td className="px-4 py-3 text-white">{product.name}</td>
-                            <td className="px-4 py-3 text-right text-white/80">{product.quantity}</td>
-                            <td className="px-4 py-3 text-right font-semibold text-white">
+                            <td className="px-4 py-3 text-end text-white/80">{product.quantity}</td>
+                            <td className="px-4 py-3 text-end font-semibold text-white">
                               {formatCurrency(product.revenue)}
                             </td>
-                            <td className="px-4 py-3 text-right text-emerald-300">
+                            <td className="px-4 py-3 text-end text-emerald-300">
                               {formatCurrency(product.profit)}
                             </td>
                           </tr>
@@ -534,13 +534,13 @@ export default function Reports() {
                     <span className="text-xs uppercase tracking-[0.35em] text-white/70">Audit ready</span>
                   </div>
                   <div className="mt-4 overflow-x-auto">
-                    <table className="w-full text-left text-sm text-white/80">
+                    <table className="w-full text-start text-sm text-white/80">
                       <thead className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white/60">
                         <tr>
                           <th className="px-4 py-3">Product</th>
-                          <th className="px-4 py-3 text-right">Previous</th>
-                          <th className="px-4 py-3 text-right">Current</th>
-                          <th className="px-4 py-3 text-right">Change</th>
+                          <th className="px-4 py-3 text-end">Previous</th>
+                          <th className="px-4 py-3 text-end">Current</th>
+                          <th className="px-4 py-3 text-end">Change</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/20 bg-white/10">
@@ -550,13 +550,13 @@ export default function Reports() {
                               <p className="font-semibold text-white">{shift.product}</p>
                               <p className="text-xs uppercase tracking-[0.2em] text-white/60">{shift.variant}</p>
                             </td>
-                            <td className="px-4 py-3 text-right text-white/80">
+                            <td className="px-4 py-3 text-end text-white/80">
                               {formatCurrency(shift.previousCost)}
                             </td>
-                            <td className="px-4 py-3 text-right text-white">
+                            <td className="px-4 py-3 text-end text-white">
                               {formatCurrency(shift.currentCost)}
                             </td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-4 py-3 text-end">
                               <span
                                 className={
                                   shift.currentCost > shift.previousCost ? 'text-rose-300' : 'text-emerald-300'
@@ -634,7 +634,7 @@ export default function Reports() {
                   className="justify-start"
                   variant="outline"
                 >
-                  <FileText className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 me-2" />
                   Export as CSV
                 </Button>
                 <Button
@@ -642,7 +642,7 @@ export default function Reports() {
                   className="justify-start"
                   variant="outline"
                 >
-                  <FileText className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 me-2" />
                   Export as Excel
                 </Button>
                 <Button
@@ -650,7 +650,7 @@ export default function Reports() {
                   className="justify-start"
                   variant="outline"
                 >
-                  <FileText className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 me-2" />
                   Export as PDF
                 </Button>
               </div>

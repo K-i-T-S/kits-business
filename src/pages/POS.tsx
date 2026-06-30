@@ -495,7 +495,7 @@ export default function POS() {
                   {searchQuery.trim() ? 'No products match your search.' : 'No products found. Add products in the Inventory section.'}
                 </p>
               ) : (
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-1">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pe-1">
                   {(searchQuery.trim() ? filteredProducts : filteredProducts.slice(0, 24)).map(product => {
                     const v = product.variants[0];
                     if (!v) return null;
@@ -507,7 +507,7 @@ export default function POS() {
                         onClick={() => addProductToCart(product)}
                         disabled={v.stock <= 0}
                         className={[
-                          'rounded-2xl border p-3 text-left transition min-h-[80px] flex flex-col justify-between',
+                          'rounded-2xl border p-3 text-start transition min-h-[80px] flex flex-col justify-between',
                           isFlashing
                             ? 'border-emerald-400 bg-emerald-500/30 ring-2 ring-emerald-400'
                             : 'border-white/30 bg-white/10 hover:bg-white/20',

@@ -119,7 +119,7 @@ export default function Employees() {
       <div className="space-y-10 pb-4 lg:pb-6">
         {/* Hero */}
         <section className="hero-gradient glass-panel relative overflow-hidden p-6 md:p-8 text-white">
-          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-white/20" />
+          <Sparkles className="pointer-events-none absolute -end-6 -top-6 h-24 w-24 text-white/20" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <div className="flex items-center gap-4 mb-4">
@@ -206,13 +206,13 @@ export default function Employees() {
                 </p>
               </div>
               <div className="mt-4 relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
+                <Search className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
                 <input
                   type="text"
                   placeholder="Search by name, email, or role…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 pl-12 pr-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
+                  className="w-full rounded-2xl border border-white/30 bg-white/20 py-3 ps-12 pe-4 text-sm text-white placeholder-white/50 shadow-inner focus:border-white/50 focus:outline-none"
                 />
               </div>
             </section>
@@ -391,7 +391,7 @@ export default function Employees() {
                 </label>
                 <div className="relative">
                   <DollarSign
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+                    className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2"
                     style={{ color: 'rgba(255, 255, 255, 0.4)' }}
                   />
                   <input
@@ -403,7 +403,7 @@ export default function Employees() {
                     onChange={(e) =>
                       setNewEmployee({ ...newEmployee, commission: parseFloat(e.target.value) })
                     }
-                    className="w-full pl-9 pr-4 py-2 sm:py-3 rounded-lg transition-colors"
+                    className="w-full ps-9 pe-4 py-2 sm:py-3 rounded-lg transition-colors"
                     style={{
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',

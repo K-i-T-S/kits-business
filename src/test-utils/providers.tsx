@@ -3,23 +3,31 @@ import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 
 import { AppProvider } from '../context/AppContext';
+import { IndustryProvider } from '../context/IndustryContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import { SubscriptionProvider } from '../context/SubscriptionContext';
+import { ThemeProvider } from '../context/ThemeContext';
 import { AccessibilityProvider } from '../providers/AccessibilityProvider';
 import { QueryProvider } from '../providers/QueryProvider';
 
-// Enhanced test wrapper with proper async handling
-// Provider order mirrors App.tsx: AppProvider → SubscriptionProvider → QueryProvider → AccessibilityProvider
+// LanguageProvider/TranslationProvider omitted — i18n is mocked via vi.mock in vitest.setup.ts
 export const TestWrapper = ({ children }: { children: ReactNode }) => (
   <BrowserRouter>
-    <AppProvider>
-      <SubscriptionProvider>
-        <QueryProvider>
-          <AccessibilityProvider>
-            {children}
-          </AccessibilityProvider>
-        </QueryProvider>
-      </SubscriptionProvider>
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <SubscriptionProvider>
+          <IndustryProvider>
+            <QueryProvider>
+              <NotificationProvider>
+                <AccessibilityProvider>
+                  {children}
+                </AccessibilityProvider>
+              </NotificationProvider>
+            </QueryProvider>
+          </IndustryProvider>
+        </SubscriptionProvider>
+      </AppProvider>
+    </ThemeProvider>
   </BrowserRouter>
 );
 

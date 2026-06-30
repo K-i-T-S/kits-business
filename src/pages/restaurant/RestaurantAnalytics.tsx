@@ -335,7 +335,7 @@ function SevenDayForecastPanel({ forecast, loading }: SevenDayForecastPanelProps
             <TrendingUp size={18} className="text-indigo-400" />
             <h3 className="text-white font-semibold">Demand Forecast</h3>
             <span className="text-white/40 text-xs">next 7 days</span>
-            <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5 ml-1">
+            <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5 ms-1">
               Holt smoothing · DOW seasonal · Lebanese calendar
             </span>
           </div>
@@ -722,21 +722,21 @@ function MenuProfitabilityPanel({ profits, profitLoading }: MenuProfitabilityPan
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-white/30 text-xs border-b border-white/10">
-                      <th className="text-left pb-2 font-normal">Item</th>
-                      <th className="text-right pb-2 font-normal">Price</th>
-                      <th className="text-right pb-2 font-normal">Cost</th>
-                      <th className="text-right pb-2 font-normal">Food Cost %</th>
+                      <th className="text-start pb-2 font-normal">Item</th>
+                      <th className="text-end pb-2 font-normal">Price</th>
+                      <th className="text-end pb-2 font-normal">Cost</th>
+                      <th className="text-end pb-2 font-normal">Food Cost %</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {profits.slice(0, 15).map((item) => (
                       <tr key={item.id}>
                         <td className="py-1.5 text-white/80 text-xs">{item.name}</td>
-                        <td className="text-right py-1.5 text-white/50 text-xs">${item.price.toFixed(2)}</td>
-                        <td className="text-right py-1.5 text-white/50 text-xs">
-                          {item.hasRecipe ? `$${item.cost.toFixed(2)}` : '—'}
+                        <td className="text-end py-1.5 text-white/50 text-xs"><span dir="ltr">${item.price.toFixed(2)}</span></td>
+                        <td className="text-end py-1.5 text-white/50 text-xs">
+                          {item.hasRecipe ? <span dir="ltr">${item.cost.toFixed(2)}</span> : '—'}
                         </td>
-                        <td className="text-right py-1.5 text-xs">
+                        <td className="text-end py-1.5 text-xs">
                           {item.hasRecipe ? (
                             <span className={`px-1.5 py-0.5 rounded text-xs ${item.costPct < 30 ? 'bg-green-500/20 text-green-400' : item.costPct < 35 ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>
                               {item.costPct.toFixed(1)}%
@@ -856,7 +856,7 @@ function MenuEngineeringMatrix({ profits, velocities }: MenuEngineeringMatrixPro
             <BarChart2 size={18} className="text-amber-400" />
             <h3 className="text-white font-semibold">Menu Engineering Matrix</h3>
             <span className="text-white/40 text-xs">Stars · Plowhorses · Puzzles · Dogs</span>
-            <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5 ml-1">
+            <span className="text-[9px] text-white/30 bg-white/5 rounded-lg px-2 py-0.5 ms-1">
               median split
             </span>
           </div>
@@ -1224,19 +1224,19 @@ function WaiterLeaderboard({ tenantId, rangeStart }: WaiterLeaderboardProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/8">
-                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">#</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Name</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Orders</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Covers</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Tips (USD)</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Avg Time</th>
+                  <th className="px-4 py-3 text-start text-[10px] font-bold uppercase tracking-wider text-white/30">#</th>
+                  <th className="px-4 py-3 text-start text-[10px] font-bold uppercase tracking-wider text-white/30">Name</th>
+                  <th className="px-4 py-3 text-end text-[10px] font-bold uppercase tracking-wider text-white/30">Orders</th>
+                  <th className="px-4 py-3 text-end text-[10px] font-bold uppercase tracking-wider text-white/30">Covers</th>
+                  <th className="px-4 py-3 text-end text-[10px] font-bold uppercase tracking-wider text-white/30">Tips (USD)</th>
+                  <th className="px-4 py-3 text-end text-[10px] font-bold uppercase tracking-wider text-white/30">Avg Time</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((w, i) => (
                   <tr
                     key={w.waiterId}
-                    className={`border-b border-white/5 hover:bg-white/3 transition-colors ${i === 0 ? 'border-l-2 border-l-yellow-500/30' : ''}`}
+                    className={`border-b border-white/5 hover:bg-white/3 transition-colors ${i === 0 ? 'border-s-2 border-s-yellow-500/30' : ''}`}
                   >
                     <td className="px-4 py-3 text-white/40">
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
@@ -1244,12 +1244,12 @@ function WaiterLeaderboard({ tenantId, rangeStart }: WaiterLeaderboardProps) {
                     <td className={`px-4 py-3 font-medium ${i === 0 ? 'text-yellow-300' : 'text-white/80'}`}>
                       {w.name}
                     </td>
-                    <td className="px-4 py-3 text-right text-white/60">{w.ordersServed}</td>
-                    <td className="px-4 py-3 text-right text-white/50">{w.totalCovers}</td>
-                    <td className="px-4 py-3 text-right font-bold text-emerald-400">
-                      ${w.totalTips.toFixed(2)}
+                    <td className="px-4 py-3 text-end text-white/60">{w.ordersServed}</td>
+                    <td className="px-4 py-3 text-end text-white/50">{w.totalCovers}</td>
+                    <td className="px-4 py-3 text-end font-bold text-emerald-400">
+                      <span dir="ltr">${w.totalTips.toFixed(2)}</span>
                     </td>
-                    <td className="px-4 py-3 text-right text-white/50">
+                    <td className="px-4 py-3 text-end text-white/50">
                       {w.avgTurnaroundMin > 0 ? `${w.avgTurnaroundMin}m` : '—'}
                     </td>
                   </tr>
@@ -1583,13 +1583,13 @@ export default function RestaurantAnalytics() {
               <select
                 value={range}
                 onChange={(e) => setRange(e.target.value as Range)}
-                className="appearance-none rounded-xl border border-white/20 bg-slate-800 pl-3 pr-8 py-2 text-xs text-white focus:outline-none"
+                className="appearance-none rounded-xl border border-white/20 bg-slate-800 ps-3 pe-8 py-2 text-xs text-white focus:outline-none"
               >
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
                 <option value="90d">Last 90 days</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+              <ChevronDown className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
             </div>
             <button
               onClick={() => { void load(true); }}
@@ -1618,7 +1618,7 @@ export default function RestaurantAnalytics() {
             >
               {tabItem.icon} {tabItem.label}
               {tab === tabItem.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-yellow-400" />
+                <div className="absolute bottom-0 start-0 end-0 h-0.5 bg-gradient-to-r from-amber-500 to-yellow-400" />
               )}
             </button>
           ))}
@@ -1795,25 +1795,25 @@ export default function RestaurantAnalytics() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-white/8">
-                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/30">Item</th>
-                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Last 7d</th>
-                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Prev 7d</th>
-                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Trend</th>
-                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-white/30">Signal</th>
+                          <th className="px-4 py-3 text-start text-[10px] font-bold uppercase tracking-wider text-white/30">Item</th>
+                          <th className="px-4 py-3 text-end text-[10px] font-bold uppercase tracking-wider text-white/30">Last 7d</th>
+                          <th className="px-4 py-3 text-end text-[10px] font-bold uppercase tracking-wider text-white/30">Prev 7d</th>
+                          <th className="px-4 py-3 text-end text-[10px] font-bold uppercase tracking-wider text-white/30">Trend</th>
+                          <th className="px-4 py-3 text-end text-[10px] font-bold uppercase tracking-wider text-white/30">Signal</th>
                         </tr>
                       </thead>
                       <tbody>
                         {velocities.slice(0, 10).map((item, i) => (
                           <tr key={i} className="border-b border-white/5 hover:bg-white/3 transition-colors">
                             <td className="px-4 py-3 font-medium text-white/80 max-w-[180px] truncate">{item.name}</td>
-                            <td className="px-4 py-3 text-right text-white/60">{item.last7DayQty}</td>
-                            <td className="px-4 py-3 text-right text-white/40">{item.prev7DayQty}</td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-4 py-3 text-end text-white/60">{item.last7DayQty}</td>
+                            <td className="px-4 py-3 text-end text-white/40">{item.prev7DayQty}</td>
+                            <td className="px-4 py-3 text-end">
                               <span className={item.trend > 0 ? 'text-emerald-400' : item.trend < 0 ? 'text-red-400' : 'text-white/40'}>
                                 {item.trend > 0 ? '+' : ''}{Math.round(item.trend * 100)}%
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-4 py-3 text-end">
                               <span className={`rounded-lg px-2 py-0.5 text-[10px] font-semibold ${
                                 item.alert === 'rising' ? 'bg-emerald-500/20 text-emerald-400'
                                   : item.alert === 'falling' ? 'bg-red-500/20 text-red-400'

@@ -333,7 +333,7 @@ export default function TableManagement() {
                   return (
                     <div
                       key={sec.id}
-                      className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 pl-3 pr-2"
+                      className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 ps-3 pe-2"
                     >
                       <span className="text-sm">{sec.emoji}</span>
                       <span className="text-sm font-medium text-white">{sec.name}</span>
@@ -355,7 +355,7 @@ export default function TableManagement() {
                 {!addSectionOpen && (
                   <button
                     onClick={() => setAddSectionOpen(true)}
-                    className="flex items-center gap-1.5 rounded-full border border-dashed border-white/20 py-1.5 pl-3 pr-3 text-sm text-white/40 hover:border-indigo-500/40 hover:text-indigo-400 transition-all"
+                    className="flex items-center gap-1.5 rounded-full border border-dashed border-white/20 py-1.5 ps-3 pe-3 text-sm text-white/40 hover:border-indigo-500/40 hover:text-indigo-400 transition-all"
                   >
                     <Plus className="h-3 w-3" />
                     Add Section
@@ -587,7 +587,7 @@ export default function TableManagement() {
                         {copiedFeedbackTableId === selectedTable.id
                           ? <Check className="h-3 w-3 text-emerald-400 flex-none" />
                           : <Link className="h-3 w-3 flex-none" />}
-                        <span className="flex-1 text-left truncate">
+                        <span className="flex-1 text-start truncate">
                           {copiedFeedbackTableId === selectedTable.id
                             ? 'Feedback link copied!'
                             : `Copy feedback link — Table ${selectedTable.number}`}

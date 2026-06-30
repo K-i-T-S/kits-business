@@ -321,7 +321,7 @@ function TicketCard({
             <span className="text-xs text-white/40">{table.name}</span>
           )}
         </div>
-        <div className={`flex items-center gap-1.5 font-mono text-sm font-bold ${AGE_TEXT[level]}`}>
+        <div dir="ltr" className={`flex items-center gap-1.5 font-mono text-sm font-bold ${AGE_TEXT[level]}`}>
           <Clock className="h-3.5 w-3.5" />
           {formatElapsed(elapsed)}
         </div>
@@ -504,7 +504,7 @@ function TicketCard({
           }`}
         >
           <Star
-            className={`mr-1 inline h-3 w-3 ${isPriority ? 'fill-indigo-300' : ''}`}
+            className={`me-1 inline h-3 w-3 ${isPriority ? 'fill-indigo-300' : ''}`}
           />
           {isPriority
             ? t('restaurant.kds.removePriority', 'Remove Priority')

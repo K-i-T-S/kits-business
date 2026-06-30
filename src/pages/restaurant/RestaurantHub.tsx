@@ -21,9 +21,11 @@ import {
   Clock,
   DollarSign,
   LayoutGrid,
+  Loader2,
   MessageSquare,
   QrCode,
   RefreshCw,
+  Sparkles,
   Star,
   Users,
   UtensilsCrossed,
@@ -514,6 +516,38 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
   );
 }
 
+// ── Groq AI helper ────────────────────────────────────────────────────────────
+
+interface GroqResponse {
+  choices: Array<{ message: { content: string } }>;
+}
+
+interface BriefingCache {
+  briefing: string;
+  yesterdayRevenue: number;
+  reservationCount: number | null;
+  occupiedTables: number | null;
+}
+
+async function callGroq(systemPrompt: string, userPrompt: string): Promise<string> {
+  const k = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
+  if (!k) return 'Configure VITE_GROQ_API_KEY to enable AI briefings.';
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${k}` },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      max_tokens: 300,
+    }),
+  });
+  const d = await r.json() as GroqResponse;
+  return d.choices[0]?.message.content ?? '';
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function RestaurantHub() {
@@ -536,6 +570,19 @@ export default function RestaurantHub() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTableId, setSelectedTableId] = useState<string | undefined>();
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+
+  // ── AI daily briefing state ───────────────────────────────────────────────
+
+  const [briefing, setBriefing] = useState('');
+  const [briefingLoading, setBriefingLoading] = useState(false);
+  const [yesterdayRevenue, setYesterdayRevenue] = useState(0);
+  const [reservationCount, setReservationCount] = useState<number | null>(null);
+  const [briefingOccupied, setBriefingOccupied] = useState<number | null>(null);
+
+  const todayLabel = useMemo(
+    () => new Date().toLocaleDateString('en-LB', { weekday: 'long', day: 'numeric', month: 'long' }),
+    [],
+  );
 
   // Rolling history for sparklines — last 5 snapshots per KPI
   const [kpiHistory, setKpiHistory] = useState<{
@@ -685,6 +732,95 @@ export default function RestaurantHub() {
   const handleSlowAlerts = () => {
     void navigate('/restaurant/analytics');
   };
+
+  // ── AI daily briefing ─────────────────────────────────────────────────────
+
+  const loadBriefingData = useCallback(async (force = false) => {
+    if (!tenantId) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const cacheKey = `kits-briefing-${tenantId}-${todayStr}`;
+
+    if (!force) {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as BriefingCache;
+          setBriefing(parsed.briefing);
+          setYesterdayRevenue(parsed.yesterdayRevenue);
+          setReservationCount(parsed.reservationCount);
+          setBriefingOccupied(parsed.occupiedTables);
+          return;
+        } catch (_parseErr) { /* ignore stale/malformed cache */ }
+      }
+    }
+
+    setBriefingLoading(true);
+    try {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const dayStr = yesterday.toISOString().split('T')[0];
+
+      const [salesRes, reservationsRes, tablesRes] = await Promise.all([
+        supabase
+          .from('sales')
+          .select('total_amount')
+          .eq('tenant_id', tenantId)
+          .gte('created_at', `${dayStr}T00:00:00`)
+          .lt('created_at', `${dayStr}T23:59:59`),
+        supabase
+          .from('reservations')
+          .select('*', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId)
+          .gte('reserved_at', `${todayStr}T00:00:00`),
+        supabase
+          .from('restaurant_tables')
+          .select('*', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId)
+          .eq('status', 'occupied'),
+      ]);
+
+      const calcRevenue = ((salesRes.data ?? []) as Array<Record<string, unknown>>).reduce(
+        (s, r) => {
+          const v = r['total_amount'];
+          return s + (typeof v === 'number' ? v : 0);
+        },
+        0,
+      );
+      const calcReservations = reservationsRes.count;
+      const calcOccupied = tablesRes.count;
+
+      setYesterdayRevenue(calcRevenue);
+      setReservationCount(calcReservations);
+      setBriefingOccupied(calcOccupied);
+
+      const today = new Date().toLocaleDateString('en-LB', { weekday: 'long', day: 'numeric', month: 'long' });
+      const systemP = 'You are a restaurant management assistant for Lebanese restaurants. Be concise and practical.';
+      const userP = `Today is ${today}. Restaurant: ${currentTenant?.name ?? 'this restaurant'}.\nYesterday revenue: $${calcRevenue.toFixed(2)}. Today reservations: ${calcReservations ?? 0}. Occupied tables: ${calcOccupied ?? 0}.\nWrite a 2-3 sentence morning briefing for the manager. Include revenue assessment, today's expected volume, and one operational focus.`;
+
+      const text = await callGroq(systemP, userP);
+      setBriefing(text);
+
+      const cachePayload: BriefingCache = {
+        briefing: text,
+        yesterdayRevenue: calcRevenue,
+        reservationCount: calcReservations,
+        occupiedTables: calcOccupied,
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(cachePayload));
+    } catch (err) {
+      console.error('[DailyBriefing] error:', err);
+    } finally {
+      setBriefingLoading(false);
+    }
+  }, [tenantId, currentTenant]);
+
+  const refreshBriefing = useCallback(async () => {
+    await loadBriefingData(true);
+  }, [loadBriefingData]);
+
+  useEffect(() => {
+    void loadBriefingData();
+  }, [loadBriefingData]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -908,6 +1044,48 @@ export default function RestaurantHub() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, delay: 0.15 }}
         >
+          {/* AI Daily Briefing */}
+          <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/8 via-purple-500/4 to-transparent p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-indigo-400" />
+                <div>
+                  <p className="text-sm font-semibold text-white">Good morning · AI Briefing</p>
+                  <p className="text-[10px] text-white/40">{todayLabel}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { void refreshBriefing(); }}
+                className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1 text-[10px] text-white/40 hover:text-white/70 hover:bg-white/10 transition-all"
+              >
+                Refresh
+              </button>
+            </div>
+            {briefingLoading && (
+              <div className="flex items-center gap-2 text-white/40 text-xs">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Generating briefing...
+              </div>
+            )}
+            {briefing && !briefingLoading && (
+              <p className="text-sm text-white/80 leading-relaxed">{briefing}</p>
+            )}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                <p className="text-base font-bold text-white">${yesterdayRevenue.toFixed(0)}</p>
+                <p className="text-[9px] text-white/35 uppercase tracking-wide">Yesterday</p>
+              </div>
+              <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                <p className="text-base font-bold text-white">{reservationCount ?? 0}</p>
+                <p className="text-[9px] text-white/35 uppercase tracking-wide">Bookings</p>
+              </div>
+              <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                <p className="text-base font-bold text-white">{briefingOccupied ?? 0}</p>
+                <p className="text-[9px] text-white/35 uppercase tracking-wide">Occupied</p>
+              </div>
+            </div>
+          </div>
+
           {/* KPI grid */}
           <section>
             <div className="mb-3 flex items-center justify-between">

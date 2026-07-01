@@ -168,7 +168,7 @@ export default function Reservations() {
     setSaving(true);
     try {
       const reserved_at = new Date(`${form.reserved_date}T${form.reserved_time}`).toISOString();
-      const { data, error } = await supabase.from('reservations').insert({
+      const result = await supabase.from('reservations').insert({
         tenant_id: tenantId,
         table_id: form.table_id || null,
         guest_name: form.guest_name.trim(),
@@ -178,8 +178,8 @@ export default function Reservations() {
         notes: form.notes.trim() || null,
         status: 'pending',
       }).select().single();
-      if (error) { toast.error(error.message); return; }
-      if (data) setReservations((prev) => [...prev, data as Reservation].sort((a, b) => a.reserved_at.localeCompare(b.reserved_at)));
+      if (result.error) { toast.error(result.error.message); return; }
+      if (result.data) setReservations((prev) => [...prev, result.data as Reservation].sort((a, b) => a.reserved_at.localeCompare(b.reserved_at)));
       setModalOpen(false);
       setForm(EMPTY_FORM);
       toast.success(t('restaurant.reservation.created', 'Reservation created'));

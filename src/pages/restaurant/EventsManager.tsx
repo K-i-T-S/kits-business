@@ -265,27 +265,27 @@ export default function EventsManager() {
       };
 
       if (editingEvent) {
-        const { data, error } = await supabase
+        const result = await supabase
           .from('restaurant_events')
           .update(payload)
           .eq('id', editingEvent.id)
           .eq('tenant_id', tenantId)
           .select()
           .single();
-        if (error) { toast.error(error.message); return; }
-        if (data) {
-          setEvents((prev) => prev.map((e) => e.id === editingEvent.id ? (data as RestaurantEvent) : e));
+        if (result.error) { toast.error(result.error.message); return; }
+        if (result.data) {
+          setEvents((prev) => prev.map((e) => e.id === editingEvent.id ? (result.data as RestaurantEvent) : e));
         }
         toast.success('Event updated');
       } else {
-        const { data, error } = await supabase
+        const result = await supabase
           .from('restaurant_events')
           .insert({ ...payload, status: 'inquiry' })
           .select()
           .single();
-        if (error) { toast.error(error.message); return; }
-        if (data) {
-          setEvents((prev) => [data as RestaurantEvent, ...prev]);
+        if (result.error) { toast.error(result.error.message); return; }
+        if (result.data) {
+          setEvents((prev) => [result.data as RestaurantEvent, ...prev]);
         }
         toast.success('Event created');
       }

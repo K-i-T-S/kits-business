@@ -1311,11 +1311,11 @@ export default function RestaurantAnalytics() {
         supabase.from('restaurant_slow_alerts').select('id').eq('tenant_id', tenantId).is('resolved_at', null),
       ]);
 
-      const tables = tablesRes.data ?? [];
-      const orders = ordersRes.data ?? [];
-      const argileSessions = argileRes.data ?? [];
-      const orderItems = itemsRes.data ?? [];
-      const fb = feedbackRes.data ?? [];
+      const tables = (tablesRes.data ?? []) as Array<{ id: string; status: string }>;
+      const orders = (ordersRes.data ?? []) as Array<{ id: string; status: string; opened_at: string; closed_at: string | null; paid_at: string | null; tip_amount_usd: number | null }>;
+      const argileSessions = (argileRes.data ?? []) as Array<{ id: string; base_price_usd: number | null; refill_price_usd: number | null; refill_count: number | null; opened_at: string }>;
+      const orderItems = (itemsRes.data ?? []) as Array<{ order_id: string; product_name: string; unit_price: number; quantity: number; sent_at: string | null }>;
+      const fb = (feedbackRes.data ?? []) as TableFeedback[];
 
       // ── Live ops ────────────────────────────────────────────────────────
       setLive({

@@ -13,9 +13,9 @@ interface AuditEvent {
   action: string;
   entityType: string;
   entityId?: string;
-  oldValues?: any;
-  newValues?: any;
-  metadata?: any;
+  oldValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   severity?: 'low' | 'medium' | 'high' | 'critical';
   category?: 'security' | 'business' | 'system' | 'compliance';
 }
@@ -47,7 +47,7 @@ export class EnhancedAuditLogger {
 
       // Add security context to metadata
       const enhancedMetadata = {
-        ...sanitizedMetadata,
+        ...(sanitizedMetadata as Record<string, unknown>),
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
         sessionId: this.getSessionId(),
@@ -81,7 +81,7 @@ export class EnhancedAuditLogger {
         await this.logSecurityEvent(event, context);
       }
 
-      return data;
+      return data as string | null;
     } catch (error) {
       console.error('Enhanced audit logging error:', error);
       return null;
@@ -165,7 +165,7 @@ export class EnhancedAuditLogger {
   async logDataExport(
     exportType: string,
     recordCount: number,
-    filters: any,
+    filters: Record<string, unknown>,
     context: SecurityContext,
   ): Promise<void> {
     const event: AuditEvent = {
@@ -211,7 +211,7 @@ export class EnhancedAuditLogger {
     violationType: string,
     description: string,
     context: SecurityContext,
-    details: any = {},
+    details: Record<string, unknown> = {},
   ): Promise<void> {
     const event: AuditEvent = {
       action: `security_violation_${violationType}`,
@@ -230,30 +230,30 @@ export class EnhancedAuditLogger {
 
   // Private helper methods
 
-  private sanitizeData(data: any): any {
+  private sanitizeData(data: unknown): unknown {
     if (!data || typeof data !== 'object') return data;
 
-    const sanitized = Array.isArray(data) ? [] : {} as any;
+    const sanitized: Record<string, unknown> = {};
 
-    for (const [key, value] of Object.entries(data)) {
+    for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
       if (this.sensitiveFields.some(field => key.toLowerCase().includes(field))) {
         // Mask sensitive fields
-        (sanitized as any)[key] = '***REDACTED***';
+        sanitized[key] = '***REDACTED***';
       } else if (this.piiFields.some(field => key.toLowerCase().includes(field))) {
         // Partially mask PII fields
-        (sanitized as any)[key] = this.maskPII(key, value);
+        sanitized[key] = this.maskPII(key, value);
       } else if (typeof value === 'object' && value !== null) {
         // Recursively sanitize nested objects
-        (sanitized as any)[key] = this.sanitizeData(value);
+        sanitized[key] = this.sanitizeData(value);
       } else {
-        (sanitized as any)[key] = value;
+        sanitized[key] = value;
       }
     }
 
     return sanitized;
   }
 
-  private maskPII(field: string, value: any): any {
+  private maskPII(field: string, value: unknown): unknown {
     if (typeof value !== 'string') return value;
 
     if (field.toLowerCase().includes('email')) {

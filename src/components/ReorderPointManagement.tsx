@@ -15,6 +15,15 @@ import { supabase } from '../utils/supabaseClient';
 
 type StockStatus = 'out_of_stock' | 'low_stock' | 'optimal' | 'overstock';
 
+interface ProductRow {
+  id: string;
+  name: string;
+  sku: string | null;
+  category: string | null;
+  stock_quantity: number;
+  min_stock_level: number;
+}
+
 interface ProductReorderData {
   id: string;
   name: string;
@@ -75,7 +84,7 @@ export default function ReorderPointManagement() {
       if (dbError) throw dbError;
 
       setItems(
-        (data ?? []).map(p => ({
+        ((data ?? []) as ProductRow[]).map(p => ({
           id: p.id,
           name: p.name,
           sku: p.sku,

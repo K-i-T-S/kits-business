@@ -99,13 +99,13 @@ export default function AcceptInvite() {
   const acceptInvitation = async (id: string, resolvedTenantName: string) => {
     setPageState('accepting');
     try {
-      const { data, error } = await supabase.rpc('accept_pending_invitation', {
+      const { data: rpcRaw, error } = await supabase.rpc('accept_pending_invitation', {
         p_invitation_id: id,
-      });
+      }) as { data: { success?: boolean; tenant_id?: string } | null; error: { message: string } | null };
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
 
-      const result = data as { success?: boolean; tenant_id?: string } | null;
+      const result = rpcRaw;
       if (!result?.success) {
         throw new Error('Invitation acceptance returned an unexpected response.');
       }

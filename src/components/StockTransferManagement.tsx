@@ -135,16 +135,17 @@ export default function StockTransferManagement() {
 
     setSubmitting(true);
     try {
-      const { data: transferRow, error: transferErr } = await supabase
+      const transferResult = await supabase
         .from('stock_transfers')
         .insert({ from_location: fromLocation.trim(), to_location: toLocation.trim(), notes: notes.trim() || null })
-        .select()
+        .select('id')
         .single();
-      if (transferErr) throw transferErr;
+      if (transferResult.error) throw transferResult.error;
+      const transferId = (transferResult.data as { id: string }).id;
 
       const { error: itemsErr } = await supabase
         .from('stock_transfer_items')
-        .insert(newItems.map(i => ({ transfer_id: (transferRow as { id: string }).id, product_id: i.product_id, quantity: i.quantity })));
+        .insert(newItems.map(i => ({ transfer_id: transferId, product_id: i.product_id, quantity: i.quantity })));
       if (itemsErr) throw itemsErr;
 
       toast.success('Transfer created');

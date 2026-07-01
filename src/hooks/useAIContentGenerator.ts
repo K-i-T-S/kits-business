@@ -22,7 +22,7 @@ export function useAIContentGenerator() {
       const { itemName, ingredients, cuisine = 'Lebanese' } = params;
 
       // Call the Edge Function via Supabase
-      const { data, error } = await supabase.functions.invoke('restaurant-ai-assistant', {
+      const invocation = await supabase.functions.invoke('restaurant-ai-assistant', {
         body: {
           question: `Generate menu descriptions for: ${itemName}`,
           language: 'en',
@@ -32,9 +32,12 @@ export function useAIContentGenerator() {
         },
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to generate descriptions');
+      if (invocation.error) {
+        const errMsg = (invocation.error as { message?: string }).message ?? 'Failed to generate descriptions';
+        throw new Error(errMsg);
       }
+
+      const data: unknown = invocation.data;
 
       // The Edge Function returns a response with en and ar descriptions
       // Extract them from the response

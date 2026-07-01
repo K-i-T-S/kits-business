@@ -110,13 +110,13 @@ export class SecurityTestSuite {
 
     // Test XSS prevention
     const xssResult = enhancedSecurityMiddleware.validateInput('<script>alert("xss")</script>', 'text');
-    if (xssResult.isValid || xssResult.sanitized?.includes('<script>')) {
+    if (xssResult.isValid || (typeof xssResult.sanitized === 'string' && xssResult.sanitized.includes('<script>'))) {
       throw new Error('XSS prevention failed');
     }
 
     // Test SQL injection prevention
     const sqlResult = enhancedSecurityMiddleware.validateInput("'; DROP TABLE users; --", 'text');
-    if (sqlResult.isValid || sqlResult.sanitized?.includes('DROP TABLE')) {
+    if (sqlResult.isValid || (typeof sqlResult.sanitized === 'string' && sqlResult.sanitized.includes('DROP TABLE'))) {
       throw new Error('SQL injection prevention failed');
     }
 
@@ -274,7 +274,13 @@ export class SecurityTestSuite {
     }> = [];
 
     // Test for common vulnerabilities
-    const testCases = [
+    const testCases: Array<{
+      input: string;
+      type: 'email' | 'phone' | 'text' | 'number' | 'json' | 'array' | 'file';
+      vulnerability: string;
+      severity: 'low' | 'medium' | 'high';
+      description: string;
+    }> = [
       {
         input: '<script>alert("xss")</script>',
         type: 'text',

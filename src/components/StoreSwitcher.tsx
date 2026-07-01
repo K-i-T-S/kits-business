@@ -37,7 +37,7 @@ export default function StoreSwitcher() {
 
       // Set default store if none selected
       if (storeList && storeList.length > 0 && !currentStore) {
-        setCurrentStore(storeList[0]);
+        setCurrentStore(storeList[0] as Store);
       }
     } catch (error) {
       console.error('Failed to load stores:', error);

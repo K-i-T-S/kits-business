@@ -168,7 +168,7 @@ export function useRestaurantOrder(
   // ── Add item ─────────────────────────────────────────────────────────────
   const addItem = useCallback(async (params: AddItemParams) => {
     if (!orderId || !tenantId) return;
-    const { data, error } = await supabase
+    const result = await supabase
       .from('restaurant_order_items')
       .insert({
         tenant_id: tenantId,
@@ -184,8 +184,8 @@ export function useRestaurantOrder(
       })
       .select()
       .single();
-    if (error) { toast.error(error.message); return; }
-    if (data) setItems((prev) => [...prev, data as RestaurantOrderItem]);
+    if (result.error) { toast.error(result.error.message); return; }
+    if (result.data) setItems((prev) => [...prev, result.data as RestaurantOrderItem]);
   }, [orderId, tenantId]);
 
   // ── Remove item ──────────────────────────────────────────────────────────
@@ -272,12 +272,12 @@ export function useRestaurantOrder(
     if (!orderId) return;
     // fn_close_restaurant_bill closes the order, sets table to cleaning,
     // and writes a sales + sale_items record into the main platform ledger.
-    const { data: saleId, error } = await supabase.rpc('fn_close_restaurant_bill', {
+    const closeResult = await supabase.rpc('fn_close_restaurant_bill', {
       p_order_id: orderId,
       p_payment_method: paymentMethod,
     });
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Bill closed · Sale #${String(saleId).slice(-6).toUpperCase()} recorded`);
+    if (closeResult.error) { toast.error(closeResult.error.message); return; }
+    toast.success(`Bill closed · Sale #${String(closeResult.data as string | null).slice(-6).toUpperCase()} recorded`);
   }, [orderId]);
 
   // ── Confirm pending order ────────────────────────────────────────────────

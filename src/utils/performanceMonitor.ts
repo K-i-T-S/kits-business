@@ -18,7 +18,7 @@ export class PerformanceMonitor {
   private static setupWebVitalsMonitoring(): void {
     // Largest Contentful Paint (LCP)
     this.observePerformanceEntry('largest-contentful-paint', (entries) => {
-      const lcp = entries[entries.length - 1] as any;
+      const lcp = entries[entries.length - 1];
       if (lcp) {
         this.recordMetric('LCP', lcp.startTime);
         sentryService.capturePerformanceMetric('LCP', lcp.startTime, 'ms');
@@ -27,7 +27,7 @@ export class PerformanceMonitor {
 
     // First Input Delay (FID)
     this.observePerformanceEntry('first-input', (entries) => {
-      const fid = entries[entries.length - 1] as any;
+      const fid = entries[entries.length - 1] as (PerformanceEntry & { processingStart: number }) | undefined;
       if (fid && fid.processingStart) {
         this.recordMetric('FID', fid.processingStart - fid.startTime);
         sentryService.capturePerformanceMetric('FID', fid.processingStart - fid.startTime, 'ms');
@@ -38,7 +38,7 @@ export class PerformanceMonitor {
     let clsValue = 0;
     this.observePerformanceEntry('layout-shift', (entries) => {
       entries.forEach((entry) => {
-        const layoutShift = entry as any;
+        const layoutShift = entry as PerformanceEntry & { hadRecentInput: boolean; value: number };
         if (!layoutShift.hadRecentInput && layoutShift.value) {
           clsValue += layoutShift.value;
         }
@@ -224,7 +224,7 @@ export class PerformanceMonitor {
   // Memory monitoring
   static checkMemoryUsage(): void {
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
+      const memory = (performance as Performance & { memory: { usedJSHeapSize: number; totalJSHeapSize: number } }).memory;
       const usedMemory = memory.usedJSHeapSize / 1024 / 1024; // MB
       const totalMemory = memory.totalJSHeapSize / 1024 / 1024; // MB
 
@@ -272,8 +272,8 @@ export class PerformanceMonitor {
   }
 
   // Get performance report
-  static getPerformanceReport(): Record<string, any> {
-    const report: Record<string, any> = {};
+  static getPerformanceReport(): Record<string, { avg: number; min: number; max: number; count: number }> {
+    const report: Record<string, { avg: number; min: number; max: number; count: number }> = {};
 
     for (const [name, _values] of this.metrics.entries()) {
       const stats = this.getMetricStats(name);

@@ -1,7 +1,7 @@
 // Mock Supabase client for testing
 export const supabase = {
   auth: {
-    onAuthStateChange: (_callback: any) => ({
+    onAuthStateChange: (_callback: unknown) => ({
       data: { subscription: { unsubscribe: () => {} } },
     }),
     getSession: () => Promise.resolve({

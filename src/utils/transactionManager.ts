@@ -2,28 +2,34 @@ import type { Product } from '../context/AppContext';
 
 import { api } from './supabaseClient';
 
+export interface SaleTransactionData {
+  items: Array<{ productId: string; variantId: string; quantity: number }>;
+  customerId?: string;
+  total: number;
+}
+
 export interface TransactionOperation {
   type: 'create' | 'update' | 'delete';
   entity: 'product' | 'sale' | 'customer' | 'employee' | 'stock';
-  data: any;
+  data: unknown;
   id?: string;
 }
 
 export interface TransactionResult {
   success: boolean;
-  results: any[];
-  rollbackData?: any[];
+  results: unknown[];
+  rollbackData?: unknown[];
   error?: string;
 }
 
 export class TransactionManager {
   private static operations: TransactionOperation[] = [];
-  private static rollbackData: any[] = [];
+  private static rollbackData: unknown[] = [];
 
   static async executeTransaction(operations: TransactionOperation[]): Promise<TransactionResult> {
     this.operations = [...operations];
     this.rollbackData = [];
-    const results: any[] = [];
+    const results: unknown[] = [];
 
     try {
       for (let i = 0; i < operations.length; i++) {
@@ -31,13 +37,14 @@ export class TransactionManager {
         if (!operation) continue;
 
         const result = await this.executeOperation(operation);
+        const apiResult = result as { id?: string };
 
         if (operation.type !== 'delete') {
           this.rollbackData.push({
             operation: operation.type === 'create' ? 'delete' : 'update',
             entity: operation.entity,
             data: result,
-            id: result.id,
+            id: apiResult.id,
           });
         } else {
           this.rollbackData.push({
@@ -66,7 +73,7 @@ export class TransactionManager {
     }
   }
 
-  private static async executeOperation(operation: TransactionOperation): Promise<any> {
+  private static async executeOperation(operation: TransactionOperation): Promise<unknown> {
     switch (operation.entity) {
       case 'product':
         return this.executeProductOperation(operation);
@@ -83,7 +90,7 @@ export class TransactionManager {
     }
   }
 
-  private static async executeProductOperation(operation: TransactionOperation): Promise<any> {
+  private static async executeProductOperation(operation: TransactionOperation): Promise<unknown> {
     switch (operation.type) {
       case 'create':
         return api.post('/products', operation.data);
@@ -96,7 +103,7 @@ export class TransactionManager {
     }
   }
 
-  private static async executeSaleOperation(operation: TransactionOperation): Promise<any> {
+  private static async executeSaleOperation(operation: TransactionOperation): Promise<unknown> {
     switch (operation.type) {
       case 'create':
         return api.post('/sales', operation.data);
@@ -105,7 +112,7 @@ export class TransactionManager {
     }
   }
 
-  private static async executeCustomerOperation(operation: TransactionOperation): Promise<any> {
+  private static async executeCustomerOperation(operation: TransactionOperation): Promise<unknown> {
     switch (operation.type) {
       case 'create':
         return api.post('/customers', operation.data);
@@ -118,7 +125,7 @@ export class TransactionManager {
     }
   }
 
-  private static async executeEmployeeOperation(operation: TransactionOperation): Promise<any> {
+  private static async executeEmployeeOperation(operation: TransactionOperation): Promise<unknown> {
     switch (operation.type) {
       case 'create':
         return api.post('/employees', operation.data);
@@ -131,11 +138,12 @@ export class TransactionManager {
     }
   }
 
-  private static async executeStockOperation(operation: TransactionOperation): Promise<any> {
+  private static async executeStockOperation(operation: TransactionOperation): Promise<unknown> {
+    const data = operation.data as { productId: string; variantId: string; quantity: number };
     switch (operation.type) {
       case 'update':
-        return api.post(`/products/${operation.data.productId}/variants/${operation.data.variantId}/stock`, {
-          quantity: operation.data.quantity,
+        return api.post(`/products/${data.productId}/variants/${data.variantId}/stock`, {
+          quantity: data.quantity,
         });
       default:
         throw new Error(`Unknown operation type: ${operation.type}`);
@@ -147,18 +155,19 @@ export class TransactionManager {
 
     for (const rollbackOp of rollbackOperations) {
       try {
-        if (!rollbackOp || !rollbackOp.type || !rollbackOp.entity) {
+        if (!rollbackOp || typeof rollbackOp !== 'object' ||
+            !('type' in rollbackOp) || !('entity' in rollbackOp)) {
           console.warn('Skipping invalid rollback operation:', rollbackOp);
           continue;
         }
-        await this.executeOperation(rollbackOp);
+        await this.executeOperation(rollbackOp as TransactionOperation);
       } catch (rollbackError) {
         console.error('Rollback operation failed:', rollbackError, rollbackOp);
       }
     }
   }
 
-  static async executeSaleTransaction(saleData: any, products: Product[]): Promise<TransactionResult> {
+  static async executeSaleTransaction(saleData: SaleTransactionData, products: Product[]): Promise<TransactionResult> {
     const operations: TransactionOperation[] = [
       {
         type: 'create',

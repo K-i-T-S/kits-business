@@ -129,7 +129,7 @@ export class InputSanitizer {
     return result.trim();
   }
 
-  static sanitizeNumber(input: any, min: number = -Infinity, max: number = Infinity): number {
+  static sanitizeNumber(input: unknown, min: number = -Infinity, max: number = Infinity): number {
     const num = Number(input);
     if (isNaN(num) || !isFinite(num)) return 0;
     return Math.max(min, Math.min(max, num));
@@ -165,7 +165,7 @@ export class InputSanitizer {
     return phone.substring(0, 20);
   }
 
-  static sanitizeObject(obj: any, maxDepth: number = 10): any {
+  static sanitizeObject(obj: unknown, maxDepth: number = 10): unknown {
     if (maxDepth <= 0) return null;
     if (obj === null || obj === undefined) return obj;
     if (typeof obj !== 'object') return obj;
@@ -174,8 +174,8 @@ export class InputSanitizer {
       return obj.map(item => this.sanitizeObject(item, maxDepth - 1));
     }
 
-    const sanitized: any = {};
-    for (const [key, value] of Object.entries(obj)) {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       // Sanitize keys
       const sanitizedKey = String(key).replace(/[<>'"&]/g, '').substring(0, 100);
 

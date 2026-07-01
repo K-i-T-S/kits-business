@@ -23,20 +23,19 @@ export function useQRMenu(tenantSlug: string): UseQRMenuResult {
       try {
         const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_menu', {
           p_tenant_slug: tenantSlug,
-        });
+        }) as { data: ({ error?: string } & QRMenuData) | null; error: { message: string } | null };
 
         if (rpcError) {
           setError(rpcError.message);
           return;
         }
 
-        const result = rpcData as { error?: string } & QRMenuData;
-        if (result?.error === 'not_found') {
+        if (rpcData?.error === 'not_found') {
           setError('Menu not found');
           return;
         }
 
-        setData(result as QRMenuData);
+        setData(rpcData as QRMenuData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load menu');
       } finally {

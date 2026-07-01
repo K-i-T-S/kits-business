@@ -86,7 +86,7 @@ export default function TipsManagement() {
     toast.success('Tips configuration saved');
   };
 
-  const roleSplitTotal = Object.values(config.roleSplit).reduce((s, v) => s + v, 0);
+  const roleSplitTotal = (Object.values(config.roleSplit) as number[]).reduce((s, v) => s + v, 0);
 
   const loadTodayTips = useCallback(async () => {
     if (!tenantId) return;

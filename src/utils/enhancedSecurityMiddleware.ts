@@ -139,7 +139,7 @@ export interface ValidationResult {
   isValid: boolean;
   errors: string[];
   warnings: string[];
-  sanitized?: any;
+  sanitized?: unknown;
 }
 
 export class EnhancedSecurityMiddleware {
@@ -232,7 +232,7 @@ export class EnhancedSecurityMiddleware {
   }
 
   // Enhanced input validation with deep sanitization
-  validateInput(input: any, type: 'email' | 'phone' | 'text' | 'number' | 'json' | 'array' | 'file'): ValidationResult {
+  validateInput(input: unknown, type: 'email' | 'phone' | 'text' | 'number' | 'json' | 'array' | 'file'): ValidationResult {
     const _errors: string[] = [];
     const _warnings: string[] = [];
 
@@ -271,7 +271,7 @@ export class EnhancedSecurityMiddleware {
     }
   }
 
-  private validateEmail(input: any): ValidationResult {
+  private validateEmail(input: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -306,7 +306,7 @@ export class EnhancedSecurityMiddleware {
     };
   }
 
-  private validatePhone(input: any): ValidationResult {
+  private validatePhone(input: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -336,7 +336,7 @@ export class EnhancedSecurityMiddleware {
     };
   }
 
-  private validateText(input: any): ValidationResult {
+  private validateText(input: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -376,7 +376,7 @@ export class EnhancedSecurityMiddleware {
     };
   }
 
-  private validateNumber(input: any): ValidationResult {
+  private validateNumber(input: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -404,7 +404,7 @@ export class EnhancedSecurityMiddleware {
     };
   }
 
-  private validateJson(input: any): ValidationResult {
+  private validateJson(input: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -438,7 +438,7 @@ export class EnhancedSecurityMiddleware {
     }
   }
 
-  private validateArray(input: any): ValidationResult {
+  private validateArray(input: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -473,7 +473,7 @@ export class EnhancedSecurityMiddleware {
     };
   }
 
-  private validateFile(input: File): ValidationResult {
+  private validateFile(input: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -506,7 +506,7 @@ export class EnhancedSecurityMiddleware {
     };
   }
 
-  private sanitizeObject(obj: any): any {
+  private sanitizeObject(obj: unknown): unknown {
     if (obj === null || obj === undefined) return obj;
     if (typeof obj !== 'object') return obj;
 
@@ -514,8 +514,8 @@ export class EnhancedSecurityMiddleware {
       return obj.map(item => this.sanitizeObject(item));
     }
 
-    const sanitized: any = {};
-    for (const [key, value] of Object.entries(obj)) {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       // Sanitize key names
       const sanitizedKey = key.replace(/[<>'"&;'"\\]/g, '').trim();
 
@@ -591,7 +591,7 @@ export class EnhancedSecurityMiddleware {
   async executeSecurityCheck(
     operation: keyof SecurityConfig['rateLimiting'],
     context: SecurityContext,
-    inputs?: Array<{ value: any; type: string }>,
+    inputs?: Array<{ value: unknown; type: 'email' | 'phone' | 'text' | 'number' | 'json' | 'array' | 'file' }>,
     requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer',
   ): Promise<{ authorized: boolean; error?: string; validations?: ValidationResult[] }> {
     const validations: ValidationResult[] = [];
@@ -617,7 +617,7 @@ export class EnhancedSecurityMiddleware {
       // 3. Input validation
       if (inputs) {
         for (const input of inputs) {
-          const validation = this.validateInput(input.value, input.type as any);
+          const validation = this.validateInput(input.value, input.type);
           validations.push(validation);
 
           if (!validation.isValid) {

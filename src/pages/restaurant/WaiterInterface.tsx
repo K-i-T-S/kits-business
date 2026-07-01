@@ -1159,7 +1159,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
                         payment_mode: rsSettings?.default_payment_mode ?? 'waiter_only',
                         service_charge_pct: rsSettings?.service_charge_pct ?? 10,
                         vat_pct: rsSettings?.vat_pct ?? 11,
-                      }).select().single();
+                      }).select().single() as { data: TableOrder | null; error: { message: string } | null };
                       if (error) { toast.error(error.message); return; }
                       if (data) {
                         await supabase.from('restaurant_tables').update({ status: 'occupied' }).eq('id', table.id);

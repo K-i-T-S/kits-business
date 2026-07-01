@@ -22,7 +22,7 @@ export class SecurityMonitor {
     eventType: string,
     userId?: string,
     tenantId?: string,
-    details?: any,
+    details?: Record<string, unknown>,
   ): Promise<void> {
     const _eventKey = `${eventType}_${userId || 'anonymous'}_${Date.now()}`;
 
@@ -42,7 +42,7 @@ export class SecurityMonitor {
     eventType: string,
     userId?: string,
     tenantId?: string,
-    details?: any,
+    details?: Record<string, unknown>,
   ): Promise<void> {
     switch (eventType) {
       case 'failed_login':
@@ -60,7 +60,7 @@ export class SecurityMonitor {
     }
   }
 
-  private async handleFailedLogin(userId?: string, tenantId?: string, details?: any): Promise<void> {
+  private async handleFailedLogin(userId?: string, tenantId?: string, details?: Record<string, unknown>): Promise<void> {
     // Check if this exceeds threshold
     const recentFailures = await this.getRecentEventCount('failed_login', 15 * 60 * 1000, userId); // 15 minutes
 
@@ -76,7 +76,7 @@ export class SecurityMonitor {
     }
   }
 
-  private async handleSuspiciousActivity(userId?: string, tenantId?: string, details?: any): Promise<void> {
+  private async handleSuspiciousActivity(userId?: string, tenantId?: string, details?: Record<string, unknown>): Promise<void> {
     const recentSuspicious = await this.getRecentEventCount('suspicious_activity', 60 * 60 * 1000, userId); // 1 hour
 
     if (recentSuspicious >= this.alertThresholds.suspiciousOperations) {
@@ -89,7 +89,7 @@ export class SecurityMonitor {
     }
   }
 
-  private async handleDataExportAttempt(userId?: string, tenantId?: string, details?: any): Promise<void> {
+  private async handleDataExportAttempt(userId?: string, tenantId?: string, details?: Record<string, unknown>): Promise<void> {
     const recentExports = await this.getRecentEventCount('data_export_attempt', 60 * 60 * 1000, userId); // 1 hour
 
     if (recentExports >= this.alertThresholds.dataExportAttempts) {
@@ -102,7 +102,7 @@ export class SecurityMonitor {
     }
   }
 
-  private async handleRoleChangeAttempt(userId?: string, tenantId?: string, details?: any): Promise<void> {
+  private async handleRoleChangeAttempt(userId?: string, tenantId?: string, details?: Record<string, unknown>): Promise<void> {
     const recentRoleChanges = await this.getRecentEventCount('role_change_attempt', 24 * 60 * 60 * 1000, userId); // 24 hours
 
     if (recentRoleChanges >= this.alertThresholds.roleChangeAttempts) {

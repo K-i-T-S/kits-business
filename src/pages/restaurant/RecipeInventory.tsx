@@ -583,7 +583,7 @@ export default function RecipeInventory() {
       return;
     }
 
-    const { data: recipeData, error: recipeError } = await supabase.from('restaurant_recipes').insert({
+    const recipeResult = await supabase.from('restaurant_recipes').insert({
       tenant_id: tenantId,
       name: recipeForm.name,
       yield_quantity: parseFloat(recipeForm.yield_quantity) || 1,
@@ -591,9 +591,9 @@ export default function RecipeInventory() {
       notes: recipeForm.notes || null,
     }).select().single();
 
-    if (recipeError || !recipeData) { toast.error(recipeError?.message ?? 'Failed to create recipe'); return; }
+    if (recipeResult.error || !recipeResult.data) { toast.error(recipeResult.error?.message ?? 'Failed to create recipe'); return; }
 
-    const recipe = recipeData as RestaurantRecipe;
+    const recipe = recipeResult.data as RestaurantRecipe;
 
     // Insert recipe lines
     if (recipeLines2.length > 0) {

@@ -201,7 +201,7 @@ export default function TableManagement() {
       x: 10 + (tables.length % 5) * 18,
       y: 10 + Math.floor(tables.length / 5) * 22,
       status: 'available',
-    }).select().single();
+    }).select().single() as { data: RestaurantTable | null; error: { message: string } | null };
     if (error) { toast.error(error.message); return; }
     if (data) setTables((prev) => [...prev, data as RestaurantTable]);
     setAddTableOpen(false);
@@ -228,7 +228,7 @@ export default function TableManagement() {
       table_id: selectedTableId,
       status: 'open',
       current_course: 'mains',
-    }).select().single();
+    }).select().single() as { data: TableOrder | null; error: { message: string } | null };
     if (error) { toast.error(error.message); return; }
     if (data) {
       setOrders((prev) => [...prev, data as TableOrder]);
@@ -249,7 +249,7 @@ export default function TableManagement() {
       notes: itemForm.notes || null,
       modifiers: [],
       status: 'pending',
-    }).select().single();
+    }).select().single() as { data: RestaurantOrderItem | null; error: { message: string } | null };
     if (error) { toast.error(error.message); return; }
     if (data) setOrderItems((prev) => [...prev, data as RestaurantOrderItem]);
     setItemForm(DEFAULT_FORM);

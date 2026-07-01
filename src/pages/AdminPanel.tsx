@@ -127,7 +127,7 @@ export default function AdminPanel() {
     setGateError('');
     try {
       // Verification is server-side via pgcrypto — password never compared in browser
-      const { data: valid, error: rpcError } = await supabase.rpc('verify_admin_pin', { attempt: gatePassword });
+      const { data: valid, error: rpcError } = await supabase.rpc('verify_admin_pin', { attempt: gatePassword }) as { data: boolean | null; error: { message: string } | null };
       if (rpcError) throw rpcError;
       if (valid === true) {
         setGateUnlocked(true);

@@ -1,8 +1,12 @@
 import { FocusManager } from './accessibility';
 
+type KeyboardHandler = (e: KeyboardEvent) => void;
+
 export class ModalAccessibility {
   private static activeModal: HTMLElement | null = null;
   private static previousFocus: HTMLElement | null = null;
+  private static tabKeyListeners = new WeakMap<HTMLElement, KeyboardHandler>();
+  private static escapeListeners = new WeakMap<HTMLElement, KeyboardHandler>();
 
   /**
    * Initialize modal with proper accessibility
@@ -70,7 +74,7 @@ export class ModalAccessibility {
       modal.addEventListener('keydown', handleTabKey);
 
       // Store listener for cleanup
-      (modal as any)._tabKeyListener = handleTabKey;
+      ModalAccessibility.tabKeyListeners.set(modal, handleTabKey);
     }
   }
 
@@ -78,9 +82,12 @@ export class ModalAccessibility {
    * Release focus trap
    */
   private static releaseFocus(): void {
-    if (this.activeModal && (this.activeModal as any)._tabKeyListener) {
-      this.activeModal.removeEventListener('keydown', (this.activeModal as any)._tabKeyListener);
-      delete (this.activeModal as any)._tabKeyListener;
+    if (this.activeModal) {
+      const listener = ModalAccessibility.tabKeyListeners.get(this.activeModal);
+      if (listener) {
+        this.activeModal.removeEventListener('keydown', listener);
+        ModalAccessibility.tabKeyListeners.delete(this.activeModal);
+      }
     }
   }
 
@@ -101,7 +108,7 @@ export class ModalAccessibility {
     modal.addEventListener('keydown', handleEscape);
 
     // Store listener for cleanup
-    (modal as any)._escapeListener = handleEscape;
+    ModalAccessibility.escapeListeners.set(modal, handleEscape);
   }
 
   /**

@@ -258,7 +258,7 @@ export class KeyboardNavigation {
       'PageUp',
       'PageDown',
     ];
-    return navigationKeys.includes(key as any);
+    return navigationKeys.includes(key);
   }
 
   /**

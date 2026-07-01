@@ -6,8 +6,8 @@ export interface MockUser {
   email: string;
   name?: string;
   role?: string;
-  user_metadata?: Record<string, any>;
-  app_metadata?: Record<string, any>;
+  user_metadata?: Record<string, unknown>;
+  app_metadata?: Record<string, unknown>;
 }
 
 export interface MockTenant {
@@ -92,8 +92,8 @@ export const createSupabaseMock = () => {
 
 // Authentication state management for tests
 export class AuthMockManager {
-  private mockAuth: any;
-  private mockTenant: any;
+  private mockAuth: ReturnType<typeof createSupabaseMock>['auth'];
+  private mockTenant: typeof tenantManagerMock;
 
   constructor() {
     const { supabase: _supabase, auth } = createSupabaseMock();
@@ -164,9 +164,11 @@ export class AuthMockManager {
   }
 
   // Trigger auth state change (for testing auth state listeners)
-  triggerAuthStateChange(session: MockSession | null, callback?: any) {
-    const mockCallback = callback || vi.fn();
-    const subscription = this.mockAuth.onAuthStateChange(mockCallback);
+  triggerAuthStateChange(session: MockSession | null, callback?: (event: string, session: MockSession | null) => void) {
+    const mockCallback = callback ?? vi.fn();
+    const subscription = this.mockAuth.onAuthStateChange(mockCallback) as unknown as {
+      data: { subscription: { unsubscribe: () => void } };
+    };
 
     // Simulate the callback being called with the new session
     if (session) {

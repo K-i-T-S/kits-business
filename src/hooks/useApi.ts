@@ -42,9 +42,9 @@ export function useProduct(id: string, options?: Partial<UseQueryOptions<Product
   return useQuery({
     queryKey: queryKeys.product(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data as Product;
+      const result = await supabase.from('products').select('*').eq('id', id).single();
+      if (result.error) throw result.error;
+      return result.data as Product;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single product
@@ -164,9 +164,9 @@ export function useCustomer(id: string, options?: Partial<UseQueryOptions<Custom
   return useQuery({
     queryKey: queryKeys.customer(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from('customers').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data as Customer;
+      const result = await supabase.from('customers').select('*').eq('id', id).single();
+      if (result.error) throw result.error;
+      return result.data as Customer;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single customer
@@ -231,9 +231,9 @@ export function useEmployee(id: string, options?: Partial<UseQueryOptions<Employ
   return useQuery({
     queryKey: queryKeys.employee(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from('employees').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data as Employee;
+      const result = await supabase.from('employees').select('*').eq('id', id).single();
+      if (result.error) throw result.error;
+      return result.data as Employee;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes for single employee

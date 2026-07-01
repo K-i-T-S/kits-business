@@ -9,13 +9,21 @@ export interface MonitoringAlert {
   acknowledged: boolean;
   severity: 'low' | 'medium' | 'high' | 'critical';
   source: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MonitoringMetrics {
+  errorRate: number;
+  averageResponseTime: number;
+  memoryUsage: number;
+  databaseConnected: boolean;
+  uptime: number;
 }
 
 export interface AlertRule {
   id: string;
   name: string;
-  condition: (metrics: any) => boolean;
+  condition: (metrics: MonitoringMetrics) => boolean;
   severity: MonitoringAlert['severity'];
   enabled: boolean;
   cooldown: number; // minutes
@@ -84,7 +92,7 @@ export class MonitoringAlerts {
     ];
   }
 
-  public checkRules(metrics: any): void {
+  public checkRules(metrics: MonitoringMetrics): void {
     const now = Date.now();
 
     this.rules.forEach(rule => {
@@ -111,7 +119,7 @@ export class MonitoringAlerts {
     });
   }
 
-  private generateAlertMessage(rule: AlertRule, metrics: any): string {
+  private generateAlertMessage(rule: AlertRule, metrics: MonitoringMetrics): string {
     switch (rule.id) {
       case 'high-error-rate':
         return `Error rate is ${(metrics.errorRate * 100).toFixed(2)}%, exceeding 5% threshold`;

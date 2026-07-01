@@ -49,7 +49,7 @@ export class ApiSecurityWrapper {
       filter?: Record<string, unknown>;
       data?: Record<string, unknown>;
       upsert?: boolean;
-      inputs?: Array<{ value: unknown; type: string }>;
+      inputs?: Array<{ value: unknown; type: 'email' | 'phone' | 'text' | 'number' | 'json' | 'array' | 'file' }>;
       requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer';
     } = {},
   ): Promise<{ data: T[] | null; error: string | null }> {
@@ -154,7 +154,7 @@ export class ApiSecurityWrapper {
     functionName: string,
     params: Record<string, unknown>,
     options: {
-      inputs?: Array<{ value: unknown; type: string }>;
+      inputs?: Array<{ value: unknown; type: 'email' | 'phone' | 'text' | 'number' | 'json' | 'array' | 'file' }>;
       requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer';
     } = {},
   ): Promise<{ data: T | null; error: string | null }> {
@@ -306,7 +306,7 @@ export class ApiSecurityWrapper {
     const context = await this.getContext();
 
     // Validate inputs
-    const inputs: Array<{ value: unknown; type: string }> = [];
+    const inputs: Array<{ value: unknown; type: 'email' | 'phone' | 'text' | 'number' | 'json' | 'array' | 'file' }> = [];
     if (credentials.email) inputs.push({ value: credentials.email, type: 'email' });
     if (credentials.password) inputs.push({ value: credentials.password, type: 'text' });
     if (credentials.newPassword) inputs.push({ value: credentials.newPassword, type: 'text' });

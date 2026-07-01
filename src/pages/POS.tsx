@@ -99,8 +99,8 @@ export default function POS() {
             .from('sales')
             .insert(salePayload)
             .select()
-            .single();
-          if (error) throw error;
+            .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+          if (error) throw new Error(error.message);
           if (
             Array.isArray(_items) &&
             _items.length > 0 &&
@@ -161,7 +161,7 @@ export default function POS() {
           paymentMethod: lastSale.paymentMethod,
           businessName: currentTenant?.name ?? 'KiTS Business',
         },
-      });
+      }) as { data: unknown; error: unknown };
       if (error) {
         toast.error('Failed to send receipt via WhatsApp');
       } else {

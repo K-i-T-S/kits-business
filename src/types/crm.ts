@@ -29,7 +29,7 @@ export interface Customer {
   loyaltyInfo?: CustomerLoyalty;
   communicationHistory?: Communication[];
   segments?: string[];
-  customFields?: Record<string, any>;
+  customFields?: Record<string, unknown>;
 }
 
 export interface CustomerAddress {
@@ -60,7 +60,7 @@ export interface Communication {
     email: string;
   };
   attachments?: CommunicationAttachment[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -124,7 +124,7 @@ export interface SegmentCriteria {
   customField?: {
     field: string;
     operator: 'gt' | 'gte' | 'lt' | 'lte' | 'eq' | 'ne' | 'includes' | 'excludes' | 'equals';
-    value: any;
+    value: unknown;
   };
 }
 
@@ -180,7 +180,7 @@ export interface CustomerActivity {
   customerId: string;
   type: 'purchase' | 'website_visit' | 'email_open' | 'email_click' | 'sms_reply' | 'phone_call' | 'social_interaction' | 'form_submit' | 'other';
   description: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   createdAt: string;
@@ -258,12 +258,12 @@ export interface AutomatedWorkflow {
 
 export interface WorkflowTrigger {
   type: 'customer_join' | 'purchase' | 'birthday' | 'inactivity' | 'segment_change' | 'custom';
-  conditions: Record<string, any>;
+  conditions: Record<string, unknown>;
 }
 
 export interface WorkflowAction {
   type: 'send_email' | 'send_sms' | 'add_tag' | 'remove_tag' | 'assign_task' | 'delay' | 'custom';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   delay?: number; // in minutes
 }
 
@@ -271,7 +271,7 @@ export interface CRMIntegration {
   id: string;
   type: 'email_provider' | 'sms_provider' | 'social_media' | 'analytics' | 'ecommerce' | 'custom';
   name: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   isActive: boolean;
   lastSync?: string;
 }

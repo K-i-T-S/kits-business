@@ -63,7 +63,7 @@ export class OperationQueue {
     this.processing.set(queueKey, false);
   }
 
-  private static async executeOperation(operation: PendingOperation): Promise<any> {
+  private static async executeOperation(operation: PendingOperation): Promise<unknown> {
     const timeout = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Operation timeout')), 30000);
     });
@@ -75,7 +75,7 @@ export class OperationQueue {
     }
   }
 
-  private static async performOperation(operation: PendingOperation): Promise<any> {
+  private static async performOperation(operation: PendingOperation): Promise<unknown> {
     await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
     return { success: true, operationId: operation.id };
   }

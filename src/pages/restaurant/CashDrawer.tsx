@@ -517,7 +517,7 @@ export default function CashDrawer() {
     setError(null);
     try {
       // Load open session
-      const { data: sessionData, error: sessionErr } = await supabase
+      const sessionResult = await supabase
         .from('restaurant_cash_sessions')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -526,9 +526,9 @@ export default function CashDrawer() {
         .limit(1)
         .maybeSingle();
 
-      if (sessionErr) throw sessionErr;
+      if (sessionResult.error) throw sessionResult.error;
 
-      const openSession = sessionData as CashSession | null;
+      const openSession = sessionResult.data as CashSession | null;
       setSession(openSession);
 
       // Load today's movements if session is open

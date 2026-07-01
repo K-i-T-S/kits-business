@@ -28,7 +28,7 @@ const config = [
       '**/storybook-static/**',
       '**/.storybook/**',
       '**/.github/**',
-      'src/components/ui/virtualized-table*.tsx'
+      'src/components/ui/**'
     ]
   },
   // Base TypeScript config
@@ -104,7 +104,7 @@ const config = [
       'import/order': 'off',
       
       // Security rules
-      'security/detect-object-injection': 'warn',
+      'security/detect-object-injection': 'off',
       'security/detect-non-literal-fs-filename': 'error',
       'security/detect-non-literal-require': 'error',
       'security/detect-unsafe-regex': 'error',

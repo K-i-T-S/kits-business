@@ -1,6 +1,6 @@
 import { Calendar, UserPlus, Clock, CheckCircle, LogIn, LogOut, X, Plus, Trash2, DollarSign, Link, FileDown, ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
-import toast from 'react-hot-toast';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 import Layout from '@/components/Layout';
@@ -196,7 +196,7 @@ export default function ShiftManager() {
 
   const deleteFee = (id: string) => saveFees(fees.filter(f => f.id !== id));
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => getDayOfWeek(i));
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => getDayOfWeek(i)), []);
 
   const loadShifts = useCallback(async () => {
     if (!tenantId) return;

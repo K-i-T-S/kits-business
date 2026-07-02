@@ -18,6 +18,7 @@ interface TableOrderRow {
   status: string;
   opened_at: string | null;
   paid_at: string | null;
+  covers: number | null;
 }
 
 interface OrderItemRow {
@@ -133,7 +134,7 @@ export default function EODReport() {
       const [ordersRes, itemsRes, argileRes, shiftRes] = await Promise.all([
         supabase
           .from('table_orders')
-          .select('id, status, opened_at, paid_at')
+          .select('id, status, opened_at, paid_at, covers')
           .eq('tenant_id', tid)
           .gte('opened_at', dayStart)
           .eq('status', 'paid'),
@@ -176,7 +177,7 @@ export default function EODReport() {
       const grossMarginPct = grossTotal > 0 ? (estGrossProfit / grossTotal) * 100 : 0;
 
       const totalOrders = orders.length;
-      const covers = totalOrders;
+      const covers = orders.reduce((sum, o) => sum + (o.covers ?? 1), 0);
       const avgTicket = covers > 0 ? foodRevenue / covers : 0;
 
       const serviceTimes = orders

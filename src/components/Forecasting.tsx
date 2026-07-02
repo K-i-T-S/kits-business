@@ -211,7 +211,9 @@ export default function Forecasting({ data }: ForecastingProps) {
 
       const mean = values.reduce((a, b) => a + b, 0) / values.length;
       const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
-      const confidence = Math.max(0, Math.min(100, 100 - (Math.sqrt(variance) / mean) * 100));
+      const confidence = mean > 0
+        ? Math.max(0, Math.min(100, 100 - (Math.sqrt(variance) / mean) * 100))
+        : 0;
 
       // Seasonality detection (simplified)
       const weeklyPattern = Array.from({ length: 7 }, () => 0);

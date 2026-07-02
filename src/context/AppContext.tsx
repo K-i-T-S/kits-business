@@ -453,6 +453,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         void (async () => {
           try {
             const tenantData = await getCurrentUserTenant() as TenantRpcRow | null;
+            if (!isMounted) return;
             if (tenantData) {
               const tenant: Tenant = {
                 id: tenantData.tenant_id,

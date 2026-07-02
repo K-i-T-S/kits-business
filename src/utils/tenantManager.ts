@@ -71,7 +71,23 @@ export async function removeUserFromTenant(tenantId: string, userId: string) {
 
 export async function getCurrentUserTenant() {
   if (useLocalMode) {
-    return { id: 'local-tenant', name: 'Local Business', slug: 'local' };
+    return {
+      tenant_id: 'local-tenant',
+      tenant_name: 'Local Business',
+      tenant_slug: 'local',
+      user_role: 'owner',
+      settings: {},
+      subscription_plan: 'business',
+      subscription_status: 'active',
+      loyalty_enabled: false,
+      loyalty_points_per_dollar: 1,
+      loyalty_points_redeem_rate: 0.01,
+      exchange_rate: 89500,
+      tax_rate: 0.11,
+      show_dual_currency: true,
+      secondary_currency: 'LBP',
+      industry: 'retail',
+    };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

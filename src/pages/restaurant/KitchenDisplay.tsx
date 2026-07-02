@@ -389,9 +389,9 @@ function TicketCard({
                         <span className={`text-sm font-medium ${itemColor}`}>
                           {item.quantity}× {item.product_name}
                         </span>
-                        {item.modifiers.length > 0 && (
+                        {(item.modifiers ?? []).length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {item.modifiers.map((mod, i) => (
+                            {(item.modifiers ?? []).map((mod, i) => (
                               <span
                                 key={i}
                                 className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60"

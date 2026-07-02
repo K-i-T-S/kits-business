@@ -153,6 +153,23 @@ Run in this order in Supabase Dashboard → SQL Editor:
 30. *(gap — 000029 was skipped by automation; next sequential file is 000030)*
 31. `20260620_000030_industry_column.sql` — backfills industry from business_type; extends get_current_user_tenant() to expose industry field
 32. `20260620_000031_restaurant_schema.sql` — restaurant_tables, table_orders, kitchen_display_items, restaurant_reservations tables with RLS
+33. `20260620_000032_pharmacy_schema.sql` — pharmacy vertical: medications, prescriptions, dispensing, narcotics register, insurance
+34. `20260620_000033_supermarket_schema.sql` — supermarket vertical: expiry tracking, bulk pricing, loyalty multipliers
+35. `20260621_000034_restaurant_menu_system.sql` — restaurant_menu_categories, restaurant_menu_items, modifier groups/modifiers, menu_item_modifier_groups
+36. `20260621_000035_restaurant_order_flow.sql` — order flow: restaurant_shifts, restaurant_shift_assignments, restaurant_kds_stations, restaurant_settings
+37. `20260621_000036_restaurant_argile.sql` — argile (shisha) sessions: restaurant_argile_sessions, argile_items
+38. `20260621_000037_restaurant_recipes.sql` — recipe costing: restaurant_ingredients, restaurant_recipes, restaurant_recipe_ingredients, restaurant_menu_item_recipes, ingredient_suppliers, waste_log, ingredient_movements, restaurant_purchase_orders/items
+39. `20260621_000038_restaurant_intelligence.sql` — analytics views: restaurant_item_velocity, table_feedback, slow_alerts; restaurant_eod_reports
+40. `20260621_000039_restaurant_multi_branch.sql` — multi-branch: restaurant_branches, restaurant_branch_metrics
+41. `20260621_000040_restaurant_bridge.sql` — bridge: links restaurant_tables → locations; delivery integrations stub
+42. `20260621_000041_restaurant_views.sql` — consolidated views for analytics and reporting
+43. `20260622_000042_restaurant_ai.sql` — restaurant_ai_queries (chat history for AI assistant)
+44. `20260623_000043_cash_management.sql` — cash management foundation (superseded by 000047)
+45. `20260623_000044_branch_menu_overrides.sql` — restaurant_menu_items_branch_overrides (per-branch availability)
+46. `20260623_000045_fn_close_bill_patch.sql` — patch fn_close_bill to handle argile + modifiers
+47. `20260623_000046_restaurant_events.sql` — restaurant_events table (events/banquets management)
+48. `20260623_000047_cash_management.sql` — cash drawer management: restaurant_cash_drawers, restaurant_cash_transactions (replaces 000043)
+49. `20260624_000049_restaurant_purchase_orders.sql` — restaurant_purchase_orders RLS + supplier link fixes *(000048 was skipped)*
 
 ## Edge Functions
 

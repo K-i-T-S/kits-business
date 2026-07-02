@@ -1,35 +1,11 @@
-import { test as base, expect, type Page, type BrowserContext } from '@playwright/test';
+import { mergeTests, expect, type Page } from '@playwright/test';
 import { test as authTest } from './auth.setup';
 import { test as dataTest } from './test-data.setup';
 import { test as isolationTest } from './isolation.setup';
 import { isolationUtils } from './isolation.setup';
 
-// Combined fixtures with all functionality
-type CombinedFixtures = {
-  page: Page;
-  context: BrowserContext;
-  authenticatedPage: Page;
-  unauthenticatedPage: Page;
-  adminPage: Page;
-  employeePage: Page;
-  viewerPage: Page;
-  multiTenantPage: Page;
-  isolatedPage: Page;
-  cleanContext: BrowserContext;
-  testProducts: any[];
-  testSales: any[];
-  testCustomers: any[];
-  testEmployees: any[];
-  testScenario: any;
-};
-
-// Create unified test setup
-export const test = base.extend<CombinedFixtures>({
-  // Inherit all fixtures from individual setups
-  ...authTest.fixtures,
-  ...dataTest.fixtures,
-  ...isolationTest.fixtures,
-});
+// Create unified test setup by merging all fixture sets
+export const test = mergeTests(authTest, dataTest, isolationTest);
 
 // Global test configuration
 export const setupGlobalTestConfig = () => {

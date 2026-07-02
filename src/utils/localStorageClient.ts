@@ -33,6 +33,7 @@ interface LocalRecord {
   [key: string]: unknown;
 }
 
+// BUG 3 FIX: Add explicit table fields + index signature so dynamic table access works
 interface LocalStorageData {
   users: LocalUser[];
   sessions: LocalSession[];
@@ -41,20 +42,55 @@ interface LocalStorageData {
   customers: LocalRecord[];
   employees: LocalRecord[];
   tenant_user_details: TenantUserDetail[];
+  expenses: LocalRecord[];
+  expense_categories: LocalRecord[];
+  expense_budgets: LocalRecord[];
+  payroll_entries: LocalRecord[];
+  restaurant_tables: LocalRecord[];
+  table_orders: LocalRecord[];
+  customer_points: LocalRecord[];
+  activity_log: LocalRecord[];
+  [key: string]: unknown;
 }
 
-interface FilterEntry { column: string; value: unknown }
+// BUG 2 FIX: FilterEntry now carries optional op for comparison operators
+interface FilterEntry { column: string; value: unknown; op?: string }
 interface OrderOptions { ascending?: boolean }
 interface QueryResult { data: LocalRecord[]; error: null | { message: string } }
 interface SingleQueryResult { data: LocalRecord | null; error: null | { message: string } }
-interface QueryBuilder {
-  eq: (column: string, value: unknown) => QueryBuilder;
-  order: (orderColumn: string, options: OrderOptions) => {
-    limit: (limit: number) => Promise<QueryResult>;
-    single: () => Promise<SingleQueryResult>;
-  };
+
+// BUG 1 FIX: OrderedResult is now thenable so `await query.order('col')` resolves correctly
+interface OrderedResult {
   limit: (limit: number) => Promise<QueryResult>;
   single: () => Promise<SingleQueryResult>;
+  then: (
+    resolve: (r: QueryResult) => void,
+    _reject: (reason: unknown) => void,
+  ) => OrderedResult;
+}
+
+// Chainable update object with .then() so `await update().eq()` works
+interface UpdateChain {
+  eq: (column: string, value: unknown) => UpdateChain;
+  then: (
+    resolve: (r: QueryResult) => void,
+    _reject: (reason: unknown) => void,
+  ) => UpdateChain;
+}
+
+interface QueryBuilder {
+  eq: (column: string, value: unknown) => QueryBuilder;
+  gte: (column: string, value: unknown) => QueryBuilder;
+  lte: (column: string, value: unknown) => QueryBuilder;
+  gt: (column: string, value: unknown) => QueryBuilder;
+  lt: (column: string, value: unknown) => QueryBuilder;
+  neq: (column: string, value: unknown) => QueryBuilder;
+  in: (column: string, values: unknown[]) => QueryBuilder;
+  is: (column: string, value: null | boolean) => QueryBuilder;
+  order: (orderColumn: string, options?: OrderOptions) => OrderedResult;
+  limit: (limit: number) => Promise<QueryResult>;
+  single: () => Promise<SingleQueryResult>;
+  maybeSingle: () => Promise<SingleQueryResult>;
   filters: FilterEntry[];
   then: (resolve: (result: QueryResult) => void, reject: (reason: unknown) => void) => QueryBuilder;
 }
@@ -63,19 +99,31 @@ const STORAGE_KEY = 'business_terminal_local_data';
 
 const getStorageData = (): LocalStorageData => {
   if (typeof window === 'undefined') {
-    return { users: [], sessions: [], products: [], sales: [], customers: [], employees: [], tenant_user_details: [] };
+    return {
+      users: [], sessions: [], products: [], sales: [], customers: [],
+      employees: [], tenant_user_details: [], expenses: [], expense_categories: [],
+      expense_budgets: [], payroll_entries: [], restaurant_tables: [], table_orders: [],
+      customer_points: [], activity_log: [],
+    };
   }
 
   const rawData = localStorage.getItem(STORAGE_KEY);
   if (rawData) {
     const parsed = JSON.parse(rawData) as LocalStorageData;
-    // Ensure tenant_user_details exists for backwards compatibility
-    if (!parsed.tenant_user_details) {
-      parsed.tenant_user_details = [];
-    }
+    // Ensure all expected tables exist for backwards compatibility
+    if (!parsed.tenant_user_details) parsed.tenant_user_details = [];
+    if (!parsed.expenses) parsed.expenses = [];
+    if (!parsed.expense_categories) parsed.expense_categories = [];
+    if (!parsed.expense_budgets) parsed.expense_budgets = [];
+    if (!parsed.payroll_entries) parsed.payroll_entries = [];
+    if (!parsed.restaurant_tables) parsed.restaurant_tables = [];
+    if (!parsed.table_orders) parsed.table_orders = [];
+    if (!parsed.customer_points) parsed.customer_points = [];
+    if (!parsed.activity_log) parsed.activity_log = [];
     return parsed;
   }
 
+  // BUG 3 FIX: initialData now includes all known tables
   const initialData: LocalStorageData = {
     users: [],
     sessions: [],
@@ -84,6 +132,14 @@ const getStorageData = (): LocalStorageData => {
     customers: [],
     employees: [],
     tenant_user_details: [],
+    expenses: [],
+    expense_categories: [],
+    expense_budgets: [],
+    payroll_entries: [],
+    restaurant_tables: [],
+    table_orders: [],
+    customer_points: [],
+    activity_log: [],
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
   return initialData;
@@ -255,44 +311,73 @@ export const localStorageClient = {
 
   from: (table: string) => {
     const data = getStorageData();
-    const tableData = (data[table as keyof LocalStorageData] ?? []) as LocalRecord[];
+    const tableData = (data[table] ?? []) as LocalRecord[];
 
     // Helper to create chainable query builder
     const createQueryBuilder = (filters: FilterEntry[] = []): QueryBuilder => {
+      // BUG 2 FIX: applyFilters now handles comparison operators
       const applyFilters = (rows: LocalRecord[]): LocalRecord[] => {
         if (filters.length === 0) return rows;
         return rows.filter((item) =>
-          filters.every(({ column, value }) => item[column] === value),
+          filters.every(({ column, value, op }) => {
+            const v = item[column];
+            switch (op) {
+              case 'gte': return (v as number) >= (value as number);
+              case 'lte': return (v as number) <= (value as number);
+              case 'gt': return (v as number) > (value as number);
+              case 'lt': return (v as number) < (value as number);
+              case 'neq': return v !== value;
+              case 'in': return (value as unknown[]).includes(v);
+              case 'is': return value === null ? v === null || v === undefined : v === value;
+              default: return v === value;
+            }
+          }),
         );
+      };
+
+      // BUG 1 FIX: sort helper with corrected direction (ascending = A→Z)
+      const sortRows = (rows: LocalRecord[], orderColumn: string, options?: OrderOptions): LocalRecord[] => {
+        const sorted = [...rows];
+        sorted.sort((a, b) => {
+          const av = String(a[orderColumn] ?? '' as unknown);
+          const bv = String(b[orderColumn] ?? '' as unknown);
+          return options?.ascending === false ? bv.localeCompare(av) : av.localeCompare(bv);
+        });
+        return sorted;
       };
 
       const builder: QueryBuilder = {
         eq: (column, value) => createQueryBuilder([...filters, { column, value }]),
+        gte: (column, value) => createQueryBuilder([...filters, { column, value, op: 'gte' }]),
+        lte: (column, value) => createQueryBuilder([...filters, { column, value, op: 'lte' }]),
+        gt: (column, value) => createQueryBuilder([...filters, { column, value, op: 'gt' }]),
+        lt: (column, value) => createQueryBuilder([...filters, { column, value, op: 'lt' }]),
+        neq: (column, value) => createQueryBuilder([...filters, { column, value, op: 'neq' }]),
+        in: (column, values) => createQueryBuilder([...filters, { column, value: values, op: 'in' }]),
+        is: (column, value) => createQueryBuilder([...filters, { column, value, op: 'is' }]),
 
-        order: (orderColumn, options) => ({
-          limit: (limit) => {
-            let filtered = applyFilters(tableData);
-            if (limit) filtered = filtered.slice(0, limit);
-            const sorted = [...filtered];
-            if (options.ascending === false) {
-              sorted.sort((a, b) => ((a[orderColumn] as string) > (b[orderColumn] as string) ? 1 : -1));
-            } else {
-              sorted.sort((a, b) => ((a[orderColumn] as string) < (b[orderColumn] as string) ? 1 : -1));
-            }
-            return Promise.resolve({ data: sorted, error: null });
-          },
-          single: () => {
-            const filtered = applyFilters(tableData);
-            const sorted = [...filtered];
-            if (options.ascending === false) {
-              sorted.sort((a, b) => ((a[orderColumn] as string) > (b[orderColumn] as string) ? 1 : -1));
-            } else {
-              sorted.sort((a, b) => ((a[orderColumn] as string) < (b[orderColumn] as string) ? 1 : -1));
-            }
-            const result = sorted[0] ?? null;
-            return Promise.resolve({ data: result, error: result ? null : { message: 'Not found' } });
-          },
-        }),
+        // BUG 1 FIX: order() now returns a thenable OrderedResult
+        order: (orderColumn, options): OrderedResult => {
+          const orderedResult: OrderedResult = {
+            limit: (limit) => {
+              let rows = sortRows(applyFilters(tableData), orderColumn, options);
+              if (limit) rows = rows.slice(0, limit);
+              return Promise.resolve({ data: rows, error: null });
+            },
+            single: () => {
+              const rows = sortRows(applyFilters(tableData), orderColumn, options);
+              const result = rows[0] ?? null;
+              return Promise.resolve({ data: result, error: result ? null : { message: 'Not found' } });
+            },
+            // .then() makes the OrderedResult directly awaitable
+            then: (resolve, _reject) => {
+              const rows = sortRows(applyFilters(tableData), orderColumn, options);
+              resolve({ data: rows, error: null });
+              return orderedResult;
+            },
+          };
+          return orderedResult;
+        },
 
         limit: (limit) => {
           let filtered = applyFilters(tableData);
@@ -306,13 +391,17 @@ export const localStorageClient = {
           return Promise.resolve({ data: result, error: result ? null : { message: 'Not found' } });
         },
 
+        // BUG 2 FIX: maybeSingle returns null (not error) when no row found
+        maybeSingle: (): Promise<SingleQueryResult> => {
+          const row = applyFilters(tableData)[0] ?? null;
+          return Promise.resolve({ data: row, error: null });
+        },
+
         filters,
 
+        // BUG 1 FIX: then() now delegates to applyFilters so operators work
         then: (resolve, _reject) => {
-          const filtered = tableData.filter((item) =>
-            filters.every(({ column, value }) => item[column] === value),
-          );
-          resolve({ data: filtered, error: null });
+          resolve({ data: applyFilters(tableData), error: null });
           return createQueryBuilder(filters);
         },
       };
@@ -336,18 +425,57 @@ export const localStorageClient = {
         return Promise.resolve({ data: rows, error: null });
       },
 
-      update: (updates: Record<string, unknown>) => ({
-        eq: (column: string, value: unknown) => {
-          const updatedData = tableData.map((item) =>
-            item[column] === value ? { ...item, ...updates } : item,
-          );
-          (data as unknown as Record<string, LocalRecord[]>)[table] = updatedData;
-          setStorageData(data);
+      // BUG 2 FIX: upsert added as a top-level method on from()
+      upsert: (
+        items: Record<string, unknown> | Record<string, unknown>[],
+        _opts?: Record<string, unknown>,
+      ) => {
+        const rows = Array.isArray(items) ? items : [items];
+        const tableRows = [...tableData];
+        for (const row of rows) {
+          const id = row['id'] as string | undefined;
+          const idx = tableRows.findIndex(t => t['id'] === id);
+          const newRow: LocalRecord = { ...row, id: id ?? generateId() };
+          if (idx >= 0) tableRows[idx] = { ...tableRows[idx], ...newRow };
+          else tableRows.push(newRow);
+        }
+        (data as unknown as Record<string, LocalRecord[]>)[table] = tableRows;
+        setStorageData(data);
+        return Promise.resolve({ data: tableRows, error: null });
+      },
 
-          const updated = updatedData.filter((item) => item[column] === value);
-          return Promise.resolve({ data: updated, error: null });
-        },
-      }),
+      // BUG 2 FIX: update() now returns a chainable UpdateChain with .then()
+      // so `await supabase.from(t).update(x).eq(col, val)` resolves correctly
+      // and multiple .eq() calls are supported
+      update: (updates: Record<string, unknown>): UpdateChain => {
+        const updateFilters: FilterEntry[] = [];
+
+        const applyAndResolve = (): Promise<QueryResult> => {
+          const updated = tableData.map(item =>
+            updateFilters.every(f => item[f.column] === f.value)
+              ? { ...item, ...updates }
+              : item,
+          );
+          (data as unknown as Record<string, LocalRecord[]>)[table] = updated;
+          setStorageData(data);
+          const affected = updated.filter(item =>
+            updateFilters.every(f => item[f.column] === f.value),
+          );
+          return Promise.resolve({ data: affected, error: null });
+        };
+
+        const chain: UpdateChain = {
+          eq: (column, value) => {
+            updateFilters.push({ column, value });
+            return chain;
+          },
+          then: (resolve, _reject) => {
+            void applyAndResolve().then(resolve);
+            return chain;
+          },
+        };
+        return chain;
+      },
 
       delete: () => ({
         eq: (column: string, value: unknown) => {

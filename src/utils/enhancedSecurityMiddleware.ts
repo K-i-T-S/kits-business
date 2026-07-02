@@ -451,8 +451,9 @@ export class EnhancedSecurityMiddleware {
       errors.push(`Array exceeds maximum length of ${SECURITY_CONFIG.validation.maxArrayLength}`);
     }
 
-    // Sanitize each element
-    const sanitized = input.map((item, index) => {
+    // Sanitize each element (cast to unknown[] after Array.isArray narrows to any[])
+    const items = input as unknown[];
+    const sanitized = items.map((item, index) => {
       if (typeof item === 'string') {
         const result = this.validateText(item);
         if (!result.isValid) {
@@ -647,7 +648,7 @@ export class EnhancedSecurityMiddleware {
         try {
           const { data, error } = await supabase.rpc('verify_role_permission', {
             required_role: requiredRole,
-          });
+          }) as { data: unknown; error: Error | null };
 
           if (error || !data) {
             await logSecurityEvent(

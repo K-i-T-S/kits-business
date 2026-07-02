@@ -43,4 +43,5 @@ export function QueryProvider({ children }: QueryProviderProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { queryClient };

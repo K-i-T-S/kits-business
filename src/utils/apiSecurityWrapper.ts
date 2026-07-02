@@ -3,6 +3,20 @@ import type { SecurityContext } from './enhancedSecurityMiddleware';
 import { enhancedSecurityMiddleware } from './enhancedSecurityMiddleware';
 import { supabase } from './supabaseClient';
 
+// Internal interface for the Supabase fluent query builder chain.
+// Avoids `any` while handling the dynamic builder pattern without generated DB types.
+interface SupabaseQueryChain extends PromiseLike<{ data: unknown; error: { message: string } | null }> {
+  select(columns?: string): SupabaseQueryChain;
+  eq(column: string, value: unknown): SupabaseQueryChain;
+  insert(values: Record<string, unknown>): SupabaseQueryChain;
+  update(values: Record<string, unknown>): SupabaseQueryChain;
+}
+
+// Minimal shape of a Supabase auth result's data payload
+interface SupabaseAuthData {
+  user?: { id: string; email?: string } | null;
+}
+
 // API Security Wrapper for all database operations
 export class ApiSecurityWrapper {
   private static instance: ApiSecurityWrapper;
@@ -20,13 +34,14 @@ export class ApiSecurityWrapper {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: { session } } = await supabase.auth.getSession();
 
+    const meta = session?.user?.user_metadata as Record<string, string> | undefined;
     return {
       userId: user?.id,
       sessionId: session?.access_token,
       ipAddress: this.getClientIP(),
       userAgent: navigator.userAgent,
-      tenantId: session?.user?.user_metadata?.tenant_id,
-      userRole: session?.user?.user_metadata?.role,
+      tenantId: meta?.tenant_id,
+      userRole: meta?.role,
     };
   }
 
@@ -68,7 +83,7 @@ export class ApiSecurityWrapper {
     }
 
     try {
-      let query: any = supabase.from(table);
+      let query = supabase.from(table) as unknown as SupabaseQueryChain;
 
       switch (operation) {
         case 'select':
@@ -113,7 +128,7 @@ export class ApiSecurityWrapper {
           return { data: null, error: 'Invalid operation' };
       }
 
-      const { data, error } = await (query as any);
+      const { data, error } = await query;
 
       if (error) {
         await logSecurityEvent(
@@ -131,7 +146,7 @@ export class ApiSecurityWrapper {
         return { data: null, error: error.message };
       }
 
-      return { data, error: null };
+      return { data: data as T[] | null, error: null };
     } catch (error) {
       await logSecurityEvent(
         'database_exception',
@@ -173,7 +188,7 @@ export class ApiSecurityWrapper {
     }
 
     try {
-      const { data, error } = await supabase.rpc(functionName, params);
+      const { data, error } = await supabase.rpc(functionName, params) as unknown as { data: T | null; error: { message: string } | null };
 
       if (error) {
         await logSecurityEvent(
@@ -371,20 +386,21 @@ export class ApiSecurityWrapper {
       }
 
       // Log successful authentication
-      if (operation === 'signIn' && (result as any).data?.user) {
+      const authData = (result as unknown as { data: SupabaseAuthData | null }).data;
+      if (operation === 'signIn' && authData?.user) {
         await logSecurityEvent(
           'auth_success',
           'User signed in successfully',
           'low',
           {
-            userId: (result as any).data.user.id,
-            email: (result as any).data.user.email,
+            userId: authData.user.id,
+            email: authData.user.email,
             tenantId: context.tenantId,
           },
         );
       }
 
-      return { data: (result as any).data || null, error: null };
+      return { data: authData ?? null, error: null };
     } catch (error) {
       await logSecurityEvent(
         'auth_exception',

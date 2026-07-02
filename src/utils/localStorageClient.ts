@@ -1,14 +1,62 @@
 // Local storage client for development without Supabase
 // This mimics Supabase client functionality using browser localStorage
 
+interface LocalUser {
+  id: string;
+  email: string;
+  password: string;
+  aud: string;
+  role: string;
+  app_metadata: Record<string, unknown>;
+  user_metadata: Record<string, unknown>;
+}
+
+interface LocalSession {
+  user: LocalUser;
+  access_token: string;
+  refresh_token: string;
+}
+
+interface TenantUserDetail {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_slug: string;
+  user_id: string;
+  user_role: string;
+  user_active: boolean;
+  tenant_active: boolean;
+  settings: Record<string, unknown>;
+}
+
+interface LocalRecord {
+  id: string;
+  [key: string]: unknown;
+}
+
 interface LocalStorageData {
-  users: any[];
-  sessions: any[];
-  products: any[];
-  sales: any[];
-  customers: any[];
-  employees: any[];
-  tenant_user_details: any[];
+  users: LocalUser[];
+  sessions: LocalSession[];
+  products: LocalRecord[];
+  sales: LocalRecord[];
+  customers: LocalRecord[];
+  employees: LocalRecord[];
+  tenant_user_details: TenantUserDetail[];
+}
+
+interface FilterEntry { column: string; value: unknown }
+interface OrderOptions { ascending?: boolean }
+interface QueryResult { data: LocalRecord[]; error: null | { message: string } }
+interface SingleQueryResult { data: LocalRecord | null; error: null | { message: string } }
+interface QueryBuilder {
+  eq: (column: string, value: unknown) => QueryBuilder;
+  order: (orderColumn: string, options: OrderOptions) => {
+    limit: (limit: number) => Promise<QueryResult>;
+    single: () => Promise<SingleQueryResult>;
+  };
+  limit: (limit: number) => Promise<QueryResult>;
+  single: () => Promise<SingleQueryResult>;
+  filters: FilterEntry[];
+  then: (resolve: (result: QueryResult) => void, reject: (reason: unknown) => void) => QueryBuilder;
 }
 
 const STORAGE_KEY = 'business_terminal_local_data';
@@ -18,9 +66,9 @@ const getStorageData = (): LocalStorageData => {
     return { users: [], sessions: [], products: [], sales: [], customers: [], employees: [], tenant_user_details: [] };
   }
 
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (data) {
-    const parsed = JSON.parse(data);
+  const rawData = localStorage.getItem(STORAGE_KEY);
+  if (rawData) {
+    const parsed = JSON.parse(rawData) as LocalStorageData;
     // Ensure tenant_user_details exists for backwards compatibility
     if (!parsed.tenant_user_details) {
       parsed.tenant_user_details = [];
@@ -50,12 +98,12 @@ const setStorageData = (data: LocalStorageData) => {
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
 // Mock auth functionality
-let currentUser: any = null;
-let authStateChangeCallbacks: Array<(event: string, session: any) => void> = [];
+let currentUser: LocalSession | null = null;
+let authStateChangeCallbacks: Array<(event: string, session: LocalSession | null) => void> = [];
 
 export const localStorageClient = {
   auth: {
-    onAuthStateChange: (callback: (event: string, session: any) => void) => {
+    onAuthStateChange: (callback: (event: string, session: LocalSession | null) => void) => {
       authStateChangeCallbacks.push(callback);
       // Immediately call with current state
       callback(currentUser ? 'SIGNED_IN' : 'SIGNED_IN', currentUser);
@@ -79,7 +127,7 @@ export const localStorageClient = {
 
     signInWithPassword: ({ email, password }: { email: string; password: string }) => {
       const data = getStorageData();
-      const user = data.users.find((u: any) => u.email === email && u.password === password);
+      const user = data.users.find((u) => u.email === email && u.password === password);
 
       if (user) {
         currentUser = {
@@ -89,7 +137,7 @@ export const localStorageClient = {
         };
 
         // Ensure user has a tenant in local mode
-        const existingTenant = data.tenant_user_details.find((t: any) => t.user_id === user.id);
+        const existingTenant = data.tenant_user_details.find((t) => t.user_id === user.id);
         if (!existingTenant) {
           const tenantId = generateId();
           data.tenant_user_details.push({
@@ -108,11 +156,11 @@ export const localStorageClient = {
         // Notify callbacks
         authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
 
-        return { data: { user: user }, error: null };
+        return { data: { user }, error: null };
       }
 
       // Create user if doesn't exist (for development convenience)
-      const newUser = {
+      const newUser: LocalUser = {
         id: generateId(),
         email,
         password, // In production, never store plain text passwords
@@ -153,11 +201,11 @@ export const localStorageClient = {
     signUp: ({ email, password }: { email: string; password: string }) => {
       const data = getStorageData();
 
-      if (data.users.find((u: any) => u.email === email)) {
+      if (data.users.find((u) => u.email === email)) {
         return { data: null, error: { message: 'User already exists' } };
       }
 
-      const newUser = {
+      const newUser: LocalUser = {
         id: generateId(),
         email,
         password,
@@ -201,128 +249,114 @@ export const localStorageClient = {
       return { error: null };
     },
     getUser: () => {
-      return { data: { user: currentUser?.user || null }, error: null };
+      return { data: { user: currentUser?.user ?? null }, error: null };
     },
   },
 
   from: (table: string) => {
     const data = getStorageData();
-    const tableData = data[table as keyof LocalStorageData] || [];
+    const tableData = (data[table as keyof LocalStorageData] ?? []) as LocalRecord[];
 
     // Helper to create chainable query builder
-    const createQueryBuilder = (filters: Array<{column: string, value: any}> = []) => {
-      const applyFilters = (data: any[]) => {
-        if (filters.length === 0) return data;
-        const filtered = data.filter((item: any) => {
-          return filters.every(({ column, value }) => item[column] === value);
-        });
-        return filtered;
+    const createQueryBuilder = (filters: FilterEntry[] = []): QueryBuilder => {
+      const applyFilters = (rows: LocalRecord[]): LocalRecord[] => {
+        if (filters.length === 0) return rows;
+        return rows.filter((item) =>
+          filters.every(({ column, value }) => item[column] === value),
+        );
       };
 
-      const builder: any = {
-        eq: (column: string, value: any) => {
-          return createQueryBuilder([...filters, { column, value }]);
-        },
-        order: (orderColumn: string, options: any) => {
-          return {
-            limit: (limit: number) => {
-              let filtered = applyFilters(tableData);
-              if (limit) filtered = filtered.slice(0, limit);
+      const builder: QueryBuilder = {
+        eq: (column, value) => createQueryBuilder([...filters, { column, value }]),
 
-              const sorted = [...filtered];
-              if (options.ascending === false) {
-                sorted.sort((a, b) => a[orderColumn] > b[orderColumn] ? 1 : -1);
-              } else {
-                sorted.sort((a, b) => a[orderColumn] < b[orderColumn] ? 1 : -1);
-              }
+        order: (orderColumn, options) => ({
+          limit: (limit) => {
+            let filtered = applyFilters(tableData);
+            if (limit) filtered = filtered.slice(0, limit);
+            const sorted = [...filtered];
+            if (options.ascending === false) {
+              sorted.sort((a, b) => ((a[orderColumn] as string) > (b[orderColumn] as string) ? 1 : -1));
+            } else {
+              sorted.sort((a, b) => ((a[orderColumn] as string) < (b[orderColumn] as string) ? 1 : -1));
+            }
+            return Promise.resolve({ data: sorted, error: null });
+          },
+          single: () => {
+            const filtered = applyFilters(tableData);
+            const sorted = [...filtered];
+            if (options.ascending === false) {
+              sorted.sort((a, b) => ((a[orderColumn] as string) > (b[orderColumn] as string) ? 1 : -1));
+            } else {
+              sorted.sort((a, b) => ((a[orderColumn] as string) < (b[orderColumn] as string) ? 1 : -1));
+            }
+            const result = sorted[0] ?? null;
+            return Promise.resolve({ data: result, error: result ? null : { message: 'Not found' } });
+          },
+        }),
 
-              return Promise.resolve({ data: sorted, error: null });
-            },
-            single: () => {
-              const filtered = applyFilters(tableData);
-
-              const sorted = [...filtered];
-              if (options.ascending === false) {
-                sorted.sort((a, b) => a[orderColumn] > b[orderColumn] ? 1 : -1);
-              } else {
-                sorted.sort((a, b) => a[orderColumn] < b[orderColumn] ? 1 : -1);
-              }
-
-              const result = sorted[0] || null;
-              return Promise.resolve({ data: result, error: result ? null : { message: 'Not found' } });
-            },
-          };
-        },
-        limit: (limit: number) => {
+        limit: (limit) => {
           let filtered = applyFilters(tableData);
           if (limit) filtered = filtered.slice(0, limit);
           return Promise.resolve({ data: filtered, error: null });
         },
+
         single: () => {
           const filtered = applyFilters(tableData);
-          const result = filtered[0] || null;
+          const result = filtered[0] ?? null;
           return Promise.resolve({ data: result, error: result ? null : { message: 'Not found' } });
         },
-      };
 
-      // Store filters on the builder for execution
-      builder.filters = filters;
+        filters,
 
-      // Make the builder thenable so it executes when awaited
-      builder.then = (resolve: any, _reject: any) => {
-        const filtered = tableData.filter((item: any) => {
-          return filters.every(({ column, value }: any) => item[column] === value);
-        });
-        resolve({ data: filtered, error: null });
-        return builder;
+        then: (resolve, _reject) => {
+          const filtered = tableData.filter((item) =>
+            filters.every(({ column, value }) => item[column] === value),
+          );
+          resolve({ data: filtered, error: null });
+          return createQueryBuilder(filters);
+        },
       };
 
       return builder;
     };
 
     return {
-      select: (_columns = '*') => {
-        return createQueryBuilder();
-      },
+      select: (_columns = '*') => createQueryBuilder(),
 
-      insert: (item: any) => {
+      insert: (item: Record<string, unknown> | Record<string, unknown>[]) => {
         const newItem = Array.isArray(item)
-          ? item.map(i => ({ ...i, id: i.id || generateId() }))
-          : { ...item, id: item.id || generateId() };
+          ? item.map(i => ({ ...i, id: (i['id'] as string | undefined) ?? generateId() }))
+          : { ...item, id: (item['id'] as string | undefined) ?? generateId() };
 
-        const updatedData = [...tableData, ...(Array.isArray(newItem) ? newItem : [newItem])];
-        data[table as keyof LocalStorageData] = updatedData;
+        const rows = Array.isArray(newItem) ? newItem : [newItem];
+        const updatedData = [...tableData, ...rows];
+        (data as unknown as Record<string, LocalRecord[]>)[table] = updatedData;
         setStorageData(data);
 
-        return Promise.resolve({ data: Array.isArray(newItem) ? newItem : [newItem], error: null });
+        return Promise.resolve({ data: rows, error: null });
       },
 
-      update: (updates: any) => {
-        return {
-          eq: (column: string, value: any) => {
-            const updatedData = tableData.map((item: any) =>
-              item[column] === value ? { ...item, ...updates } : item,
-            );
-            data[table as keyof LocalStorageData] = updatedData;
-            setStorageData(data);
+      update: (updates: Record<string, unknown>) => ({
+        eq: (column: string, value: unknown) => {
+          const updatedData = tableData.map((item) =>
+            item[column] === value ? { ...item, ...updates } : item,
+          );
+          (data as unknown as Record<string, LocalRecord[]>)[table] = updatedData;
+          setStorageData(data);
 
-            const updated = updatedData.filter((item: any) => item[column] === value);
-            return Promise.resolve({ data: updated, error: null });
-          },
-        };
-      },
+          const updated = updatedData.filter((item) => item[column] === value);
+          return Promise.resolve({ data: updated, error: null });
+        },
+      }),
 
-      delete: () => {
-        return {
-          eq: (column: string, value: any) => {
-            const updatedData = tableData.filter((item: any) => item[column] !== value);
-            data[table as keyof LocalStorageData] = updatedData;
-            setStorageData(data);
-
-            return Promise.resolve({ data: null, error: null });
-          },
-        };
-      },
+      delete: () => ({
+        eq: (column: string, value: unknown) => {
+          const updatedData = tableData.filter((item) => item[column] !== value);
+          (data as unknown as Record<string, LocalRecord[]>)[table] = updatedData;
+          setStorageData(data);
+          return Promise.resolve({ data: null, error: null });
+        },
+      }),
     };
   },
 
@@ -348,15 +382,15 @@ export const localApi = {
     return { data: [] };
   },
 
-  async post(endpoint: string, item: any) {
+  async post(endpoint: string, item: Record<string, unknown>) {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     const data = getStorageData();
     const resource = endpoint.split('/')[1];
-    const newItem = { ...item, id: generateId() };
+    const newItem: LocalRecord = { ...item, id: (item['id'] as string | undefined) ?? generateId() };
 
-    if (resource && data[resource as keyof LocalStorageData]) {
-      data[resource as keyof LocalStorageData].push(newItem);
+    if (resource && (resource in data)) {
+      (data as unknown as Record<string, LocalRecord[]>)[resource]!.push(newItem);
       setStorageData(data);
       return { [resource.slice(0, -1)]: newItem }; // products -> product
     }
@@ -364,7 +398,7 @@ export const localApi = {
     return { data: newItem };
   },
 
-  async put(endpoint: string, updates: any) {
+  async put(endpoint: string, updates: Record<string, unknown>) {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     const data = getStorageData();
@@ -372,14 +406,15 @@ export const localApi = {
     const resource = parts[1];
     const id = parts[2];
 
-    if (resource && data[resource as keyof LocalStorageData]) {
-      const updated = data[resource as keyof LocalStorageData].map((item: any) =>
+    if (resource && (resource in data)) {
+      const tableItems = (data as unknown as Record<string, LocalRecord[]>)[resource]!;
+      const updated = tableItems.map((item) =>
         item.id === id ? { ...item, ...updates } : item,
       );
-      data[resource as keyof LocalStorageData] = updated;
+      (data as unknown as Record<string, LocalRecord[]>)[resource] = updated;
       setStorageData(data);
 
-      const updatedItem = updated.find((item: any) => item.id === id);
+      const updatedItem = updated.find((item) => item.id === id);
       return { [resource.slice(0, -1)]: updatedItem };
     }
 
@@ -394,9 +429,10 @@ export const localApi = {
     const resource = parts[1];
     const id = parts[2];
 
-    if (resource && data[resource as keyof LocalStorageData]) {
-      const filtered = data[resource as keyof LocalStorageData].filter((item: any) => item.id !== id);
-      data[resource as keyof LocalStorageData] = filtered;
+    if (resource && (resource in data)) {
+      const tableItems = (data as unknown as Record<string, LocalRecord[]>)[resource]!;
+      const filtered = tableItems.filter((item) => item.id !== id);
+      (data as unknown as Record<string, LocalRecord[]>)[resource] = filtered;
       setStorageData(data);
     }
 
@@ -407,6 +443,6 @@ export const localApi = {
 export const getAuthHeaders = () => {
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${currentUser?.access_token || 'local-token'}`,
+    'Authorization': `Bearer ${currentUser?.access_token ?? 'local-token'}`,
   };
 };

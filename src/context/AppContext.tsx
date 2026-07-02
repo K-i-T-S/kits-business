@@ -380,9 +380,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCustomers(frontendCustomers);
       setEmployees(frontendEmployees);
 
-      if (frontendEmployees.length > 0 && !currentEmployee) {
-        setCurrentEmployee(frontendEmployees[0] ?? null);
-      }
+      setCurrentEmployee(prev => (prev === null && frontendEmployees.length > 0) ? (frontendEmployees[0] ?? null) : prev);
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       log.error('Failed to load data', errorObj);
@@ -1009,6 +1007,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useApp() {
   const context = useContext(AppContext);
   if (!context) {

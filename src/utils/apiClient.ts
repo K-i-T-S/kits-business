@@ -1,17 +1,48 @@
 // API client for backend database
 // This mimics Supabase client functionality using the backend API
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
-// Mock auth functionality
-// TODO S23: type this properly — session shape mirrors Supabase AuthSession
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let currentUser: any = null;
-let authStateChangeCallbacks: Array<(event: string, session: unknown) => void> = [];
+interface ApiUser {
+  id: string;
+  [key: string]: unknown;
+}
 
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+interface ApiSession {
+  user: ApiUser;
+  access_token: string;
+  refresh_token: string;
+}
+
+interface ApiResponse {
+  data?: unknown;
+  [key: string]: unknown;
+}
+
+type ApiRecord = Record<string, unknown>;
+
+interface FilterEntry { column: string; value: unknown }
+interface OrderOptions { ascending?: boolean }
+interface QueryResult { data: ApiRecord[]; error: null | { message: string } }
+interface SingleQueryResult { data: ApiRecord | null; error: null | { message: string } }
+interface QueryBuilder {
+  eq: (column: string, value: unknown) => QueryBuilder;
+  order: (orderColumn: string, options: OrderOptions) => {
+    limit: (limit: number) => Promise<QueryResult>;
+    single: () => Promise<SingleQueryResult>;
+  };
+  limit: (limit: number) => Promise<QueryResult>;
+  single: () => Promise<SingleQueryResult>;
+  then: (resolve: (result: QueryResult) => void, reject: (reason: unknown) => void) => QueryBuilder;
+}
+
+// Mock auth functionality
+let currentUser: ApiSession | null = null;
+let authStateChangeCallbacks: Array<(event: string, session: ApiSession | null) => void> = [];
+
+const apiRequest = async (endpoint: string, options: RequestInit = {}): Promise<ApiResponse> => {
   const url = `${API_URL}${endpoint}`;
   const response = await fetch(url, {
     ...options,
@@ -22,16 +53,16 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new Error(error.message || 'Request failed');
+    const error = await response.json().catch(() => ({ message: 'Request failed' })) as { message?: string };
+    throw new Error(error.message ?? 'Request failed');
   }
 
-  return response.json();
+  return response.json() as Promise<ApiResponse>;
 };
 
 export const apiClient = {
   auth: {
-    onAuthStateChange: (callback: (event: string, session: unknown) => void) => {
+    onAuthStateChange: (callback: (event: string, session: ApiSession | null) => void) => {
       authStateChangeCallbacks.push(callback);
       // Immediately call with current state
       callback(currentUser ? 'SIGNED_IN' : 'SIGNED_IN', currentUser);
@@ -61,7 +92,7 @@ export const apiClient = {
         });
 
         currentUser = {
-          user: response.data,
+          user: response['data'] as ApiUser,
           access_token: 'api-token-' + generateId(),
           refresh_token: 'api-refresh-' + generateId(),
         };
@@ -69,7 +100,7 @@ export const apiClient = {
         // Notify callbacks
         authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
 
-        return { data: { user: response.data }, error: null };
+        return { data: { user: response['data'] as ApiUser }, error: null };
       } catch (error: unknown) {
         return { data: null, error: { message: error instanceof Error ? error.message : 'Request failed' } };
       }
@@ -83,14 +114,14 @@ export const apiClient = {
         });
 
         currentUser = {
-          user: response.data,
+          user: response['data'] as ApiUser,
           access_token: 'api-token-' + generateId(),
           refresh_token: 'api-refresh-' + generateId(),
         };
 
         authStateChangeCallbacks.forEach(cb => cb('SIGNED_IN', currentUser));
 
-        return { data: { user: response.data }, error: null };
+        return { data: { user: response['data'] as ApiUser }, error: null };
       } catch (error: unknown) {
         return { data: null, error: { message: error instanceof Error ? error.message : 'Request failed' } };
       }
@@ -102,151 +133,132 @@ export const apiClient = {
       return { error: null };
     },
     getUser: () => {
-      return { data: { user: currentUser?.user || null }, error: null };
+      return { data: { user: currentUser?.user ?? null }, error: null };
     },
   },
 
   from: (table: string) => {
     // Helper to create chainable query builder
-    const createQueryBuilder = (filters: Array<{column: string, value: any}> = []) => {
-      const applyFilters = (data: any[]) => {
-        if (filters.length === 0) return data;
-        return data.filter((item: any) => {
-          return filters.every(({ column, value }) => item[column] === value);
-        });
+    const createQueryBuilder = (filters: FilterEntry[] = []): QueryBuilder => {
+      const applyFilters = (rows: ApiRecord[]): ApiRecord[] => {
+        if (filters.length === 0) return rows;
+        return rows.filter((item) =>
+          filters.every(({ column, value }) => item[column] === value),
+        );
       };
 
-      const builder: any = {
-        eq: (column: string, value: any) => {
-          return createQueryBuilder([...filters, { column, value }]);
-        },
-        order: (orderColumn: string, options: any) => {
-          return {
-            limit: (limit: number) => {
-              return apiRequest(`/api/${table}?limit=${limit}&order=${orderColumn}`)
-                .then(response => {
-                  let filtered = applyFilters(response.data);
-                  if (limit) filtered = filtered.slice(0, limit);
+      const builder: QueryBuilder = {
+        eq: (column, value) => createQueryBuilder([...filters, { column, value }]),
 
-                  const sorted = [...filtered];
-                  if (options.ascending === false) {
-                    sorted.sort((a, b) => a[orderColumn] > b[orderColumn] ? 1 : -1);
-                  } else {
-                    sorted.sort((a, b) => a[orderColumn] < b[orderColumn] ? 1 : -1);
-                  }
+        order: (orderColumn, options) => ({
+          limit: (limit) =>
+            apiRequest(`/api/${table}?limit=${limit}&order=${orderColumn}`)
+              .then(response => {
+                let filtered = applyFilters(response['data'] as ApiRecord[]);
+                if (limit) filtered = filtered.slice(0, limit);
+                const sorted = [...filtered];
+                if (options.ascending === false) {
+                  sorted.sort((a, b) => ((a[orderColumn] as string) > (b[orderColumn] as string) ? 1 : -1));
+                } else {
+                  sorted.sort((a, b) => ((a[orderColumn] as string) < (b[orderColumn] as string) ? 1 : -1));
+                }
+                return { data: sorted, error: null } satisfies QueryResult;
+              })
+              .catch((err: unknown) => ({ data: [], error: { message: err instanceof Error ? err.message : 'Request failed' } })),
 
-                  return { data: sorted, error: null };
-                })
-                .catch(error => ({ data: [], error: { message: error.message } }));
-            },
-            single: () => {
-              return apiRequest(`/api/${table}?order=${orderColumn}`)
-                .then(response => {
-                  const filtered = applyFilters(response.data);
+          single: () =>
+            apiRequest(`/api/${table}?order=${orderColumn}`)
+              .then(response => {
+                const filtered = applyFilters(response['data'] as ApiRecord[]);
+                const sorted = [...filtered];
+                if (options.ascending === false) {
+                  sorted.sort((a, b) => ((a[orderColumn] as string) > (b[orderColumn] as string) ? 1 : -1));
+                } else {
+                  sorted.sort((a, b) => ((a[orderColumn] as string) < (b[orderColumn] as string) ? 1 : -1));
+                }
+                const result = sorted[0] ?? null;
+                return { data: result, error: result ? null : { message: 'Not found' } } satisfies SingleQueryResult;
+              })
+              .catch((err: unknown) => ({ data: null, error: { message: err instanceof Error ? err.message : 'Request failed' } })),
+        }),
 
-                  const sorted = [...filtered];
-                  if (options.ascending === false) {
-                    sorted.sort((a, b) => a[orderColumn] > b[orderColumn] ? 1 : -1);
-                  } else {
-                    sorted.sort((a, b) => a[orderColumn] < b[orderColumn] ? 1 : -1);
-                  }
-
-                  const result = sorted[0] || null;
-                  return { data: result, error: result ? null : { message: 'Not found' } };
-                })
-                .catch(error => ({ data: null, error: { message: error.message } }));
-            },
-          };
-        },
-        limit: (limit: number) => {
-          return apiRequest(`/api/${table}?limit=${limit}`)
+        limit: (limit) =>
+          apiRequest(`/api/${table}?limit=${limit}`)
             .then(response => {
-              let filtered = applyFilters(response.data);
+              let filtered = applyFilters(response['data'] as ApiRecord[]);
               if (limit) filtered = filtered.slice(0, limit);
-              return { data: filtered, error: null };
+              return { data: filtered, error: null } satisfies QueryResult;
             })
-            .catch(error => ({ data: [], error: { message: error.message } }));
-        },
-        single: () => {
-          return apiRequest(`/api/${table}`)
-            .then(response => {
-              const filtered = applyFilters(response.data);
-              const result = filtered[0] || null;
-              return { data: result, error: result ? null : { message: 'Not found' } };
-            })
-            .catch(error => ({ data: null, error: { message: error.message } }));
-        },
-      };
+            .catch((err: unknown) => ({ data: [], error: { message: err instanceof Error ? err.message : 'Request failed' } })),
 
-      // Make the builder thenable so it executes when awaited
-      builder.then = (resolve: any, reject: any) => {
-        apiRequest(`/api/${table}`)
-          .then(response => {
-            const filtered = applyFilters(response.data);
-            resolve({ data: filtered, error: null });
-          })
-          .catch(error => {
-            reject({ data: [], error: { message: error.message } });
-          });
-        return builder;
+        single: () =>
+          apiRequest(`/api/${table}`)
+            .then(response => {
+              const filtered = applyFilters(response['data'] as ApiRecord[]);
+              const result = filtered[0] ?? null;
+              return { data: result, error: result ? null : { message: 'Not found' } } satisfies SingleQueryResult;
+            })
+            .catch((err: unknown) => ({ data: null, error: { message: err instanceof Error ? err.message : 'Request failed' } })),
+
+        then: (resolve, reject) => {
+          void apiRequest(`/api/${table}`)
+            .then(response => {
+              const filtered = applyFilters(response['data'] as ApiRecord[]);
+              resolve({ data: filtered, error: null });
+            })
+            .catch((err: unknown) => {
+              reject({ data: [], error: { message: err instanceof Error ? err.message : 'Request failed' } });
+            });
+          return createQueryBuilder(filters);
+        },
       };
 
       return builder;
     };
 
     return {
-      select: (_columns = '*') => {
-        return createQueryBuilder();
-      },
+      select: (_columns = '*') => createQueryBuilder(),
 
-      insert: (item: any) => {
-        return apiRequest(`/api/${table}`, {
+      insert: (item: ApiRecord | ApiRecord[]) =>
+        apiRequest(`/api/${table}`, {
           method: 'POST',
           body: JSON.stringify(item),
         })
-          .then(response => ({ data: [response.data], error: null }))
-          .catch(error => ({ data: null, error: { message: error.message } }));
-      },
+          .then(response => ({ data: [response['data'] as ApiRecord], error: null }))
+          .catch((err: unknown) => ({ data: null, error: { message: err instanceof Error ? err.message : 'Request failed' } })),
 
-      update: (updates: any) => {
-        return {
-          eq: (column: string, value: any) => {
-            // First get the item by filter, then update it
-            return apiRequest(`/api/${table}`)
-              .then(response => {
-                const item = response.data.find((i: any) => i[column] === value);
-                if (!item) {
-                  return { data: [], error: { message: 'Not found' } };
-                }
-                return apiRequest(`/api/${table}/${item.id}`, {
-                  method: 'PUT',
-                  body: JSON.stringify(updates),
-                });
-              })
-              .then(response => ({ data: [response.data], error: null }))
-              .catch(error => ({ data: [], error: { message: error.message } }));
-          },
-        };
-      },
+      update: (updates: ApiRecord) => ({
+        eq: (column: string, value: unknown) =>
+          apiRequest(`/api/${table}`)
+            .then(response => {
+              const item = (response['data'] as ApiRecord[]).find((i) => i[column] === value);
+              if (!item) {
+                return Promise.resolve({ data: [] as ApiRecord[], error: { message: 'Not found' } });
+              }
+              return apiRequest(`/api/${table}/${item['id'] as string}`, {
+                method: 'PUT',
+                body: JSON.stringify(updates),
+              });
+            })
+            .then(response => ({ data: [response['data'] as ApiRecord], error: null }))
+            .catch((err: unknown) => ({ data: [] as ApiRecord[], error: { message: err instanceof Error ? err.message : 'Request failed' } })),
+      }),
 
-      delete: () => {
-        return {
-          eq: (column: string, value: any) => {
-            return apiRequest(`/api/${table}`)
-              .then(response => {
-                const item = response.data.find((i: any) => i[column] === value);
-                if (!item) {
-                  return { data: null, error: { message: 'Not found' } };
-                }
-                return apiRequest(`/api/${table}/${item.id}`, {
-                  method: 'DELETE',
-                });
-              })
-              .then(() => ({ data: null, error: null }))
-              .catch(error => ({ data: null, error: { message: error.message } }));
-          },
-        };
-      },
+      delete: () => ({
+        eq: (column: string, value: unknown) =>
+          apiRequest(`/api/${table}`)
+            .then(response => {
+              const item = (response['data'] as ApiRecord[]).find((i) => i[column] === value);
+              if (!item) {
+                return Promise.resolve({ data: null, error: { message: 'Not found' } });
+              }
+              return apiRequest(`/api/${table}/${item['id'] as string}`, {
+                method: 'DELETE',
+              });
+            })
+            .then(() => ({ data: null, error: null }))
+            .catch((err: unknown) => ({ data: null, error: { message: err instanceof Error ? err.message : 'Request failed' } })),
+      }),
     };
   },
 
@@ -256,6 +268,6 @@ export const apiClient = {
 export const getAuthHeaders = () => {
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${currentUser?.access_token || 'api-token'}`,
+    'Authorization': `Bearer ${currentUser?.access_token ?? 'api-token'}`,
   };
 };

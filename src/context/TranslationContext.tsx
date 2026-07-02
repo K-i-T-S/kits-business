@@ -56,6 +56,7 @@ interface TranslationContextType {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTranslationManager = () => {
   const context = useContext(TranslationContext);
   if (!context) {

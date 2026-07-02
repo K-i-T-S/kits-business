@@ -165,7 +165,7 @@ const ROLE_ACTIONS: Record<UserRole, RoleAction[]> = {
 };
 
 export function roleCanPerform(role: UserRole, action: RoleAction): boolean {
-  // eslint-disable-next-line security/detect-object-injection
+
   return ROLE_ACTIONS[role].includes(action);
 }
 
@@ -307,6 +307,6 @@ export const ALL_PERMISSIONS: Array<{
 
 /** Returns the minimum plan that includes a given feature. */
 export function minimumPlanForFeature(feature: Feature): SubscriptionPlan {
-  // eslint-disable-next-line security/detect-object-injection
+
   return FEATURE_DISPLAY[feature].requiredPlan;
 }

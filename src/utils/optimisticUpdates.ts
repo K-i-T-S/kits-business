@@ -122,7 +122,7 @@ export function useOptimisticStockUpdates(
       if (product.id === productId) {
         return {
           ...product,
-          variants: product.variants.map((variant: any) =>
+          variants: product.variants.map((variant) =>
             variant.id === variantId
               ? { ...variant, stock: newStock }
               : variant,
@@ -156,7 +156,7 @@ export function useOptimisticStockUpdates(
       if (product.id === productId) {
         return {
           ...product,
-          variants: product.variants.map((variant: any) =>
+          variants: product.variants.map((variant) =>
             variant.id === variantId
               ? { ...variant, stock: originalStock }
               : variant,

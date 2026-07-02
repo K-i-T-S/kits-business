@@ -312,7 +312,7 @@ export class SecurityTestSuite {
     ];
 
     for (const testCase of testCases) {
-      const result = enhancedSecurityMiddleware.validateInput(testCase.input, testCase.type as any);
+      const result = enhancedSecurityMiddleware.validateInput(testCase.input, testCase.type);
 
       if (result.isValid || (result.sanitized && result.sanitized === testCase.input)) {
         vulnerabilities.push(testCase);

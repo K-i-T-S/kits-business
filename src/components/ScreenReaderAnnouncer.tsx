@@ -34,6 +34,7 @@ export function ScreenReaderAnnouncer({ message, politeness = 'polite' }: Screen
 }
 
 // Hook for announcing screen reader messages
+// eslint-disable-next-line react-refresh/only-export-components
 export function useScreenReaderAnnouncer() {
   const announcerRef = useRef<{ announce:(message: string, politeness?: 'polite' | 'assertive') => void }>();
 

@@ -32,7 +32,7 @@ export const cacheConfig = {
 // Prefetching strategy for common data patterns
 export const prefetchStrategy = {
   // Prefetch related data when user is likely to need it
-  onHover: (queryClient: QueryClient, queryKey: string[], prefetchFn: () => Promise<any>) => {
+  onHover: (queryClient: QueryClient, queryKey: string[], prefetchFn: () => Promise<unknown>) => {
     let timeoutId: number;
 
     return {
@@ -52,7 +52,7 @@ export const prefetchStrategy = {
   },
 
   // Prefetch data on focus
-  onFocus: (queryClient: QueryClient, queryKey: string[], prefetchFn: () => Promise<any>) => {
+  onFocus: (queryClient: QueryClient, queryKey: string[], prefetchFn: () => Promise<unknown>) => {
     void queryClient.prefetchQuery({
       queryKey,
       queryFn: prefetchFn,
@@ -129,7 +129,7 @@ export const memoryManagement = {
   cleanup: (queryClient: QueryClient) => {
     // Remove queries older than 30 minutes
     const now = Date.now();
-    queryClient.getQueryCache().getAll().forEach((query: any) => {
+    queryClient.getQueryCache().getAll().forEach((query) => {
       if (query.state.dataUpdatedAt && (now - query.state.dataUpdatedAt) > 1000 * 60 * 30) {
         queryClient.removeQueries({ queryKey: query.queryKey });
       }
@@ -143,17 +143,22 @@ export const memoryManagement = {
 
     if (queries.length > maxQueries) {
       // Sort by last updated time and remove oldest
-      const sortedQueries = queries.sort((a: any, b: any) =>
+      const sortedQueries = queries.sort((a, b) =>
         (a.state.dataUpdatedAt || 0) - (b.state.dataUpdatedAt || 0),
       );
 
       const toRemove = sortedQueries.slice(0, queries.length - maxQueries);
-      toRemove.forEach((query: any) => {
+      toRemove.forEach((query) => {
         queryClient.removeQueries({ queryKey: query.queryKey });
       });
     }
   },
 };
+
+// Window interface for optional gtag analytics
+interface WindowWithGtag extends Window {
+  gtag?: (command: string, event: string, params: Record<string, unknown>) => void;
+}
 
 // Performance monitoring
 export const performanceMonitor = {
@@ -164,8 +169,8 @@ export const performanceMonitor = {
     }
 
     // In production, you could send this to analytics
-    if (import.meta.env.PROD && (window as any).gtag) {
-      (window as any).gtag('event', 'query_performance', {
+    if (import.meta.env.PROD && (window as WindowWithGtag).gtag) {
+      (window as WindowWithGtag).gtag?.('event', 'query_performance', {
         query_key: queryKey.join('/'),
         duration,
         success,
@@ -189,8 +194,9 @@ export const createOptimizedQueryClient = () => {
       queries: {
         staleTime: 5 * 60 * 1000, // 5 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes
-        retry: (failureCount, error: any) => {
-          if (error?.status >= 400 && error?.status < 500) return false;
+        retry: (failureCount, error: unknown) => {
+          const httpError = error as { status?: number } | null | undefined;
+          if (httpError?.status !== undefined && httpError.status >= 400 && httpError.status < 500) return false;
           return failureCount < 3;
         },
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -227,10 +233,10 @@ export const useQueryPerformance = () => {
 
       return {
         totalQueries: queries.length,
-        activeQueries: queries.filter((q: any) => q.state.fetchStatus === 'fetching').length,
-        staleQueries: queries.filter((q: any) => q.isStale()).length,
-        inactiveQueries: queries.filter((q: any) => q.state.fetchStatus === 'idle').length,
-        totalDataSize: JSON.stringify(queries.map((q: any) => q.state.data)).length,
+        activeQueries: queries.filter((q) => q.state.fetchStatus === 'fetching').length,
+        staleQueries: queries.filter((q) => q.isStale()).length,
+        inactiveQueries: queries.filter((q) => q.state.fetchStatus === 'idle').length,
+        totalDataSize: JSON.stringify(queries.map((q) => q.state.data)).length,
       };
     },
 

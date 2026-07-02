@@ -85,7 +85,7 @@ export default function HealthCheckDashboard() {
 
   const getOverallStatus = (): HealthStatus => {
     if (!healthData) return 'warning';
-    const statuses = Object.values(healthData).map(s => s.status);
+    const statuses = (Object.values(healthData) as ServiceHealth[]).map(s => s.status);
     if (statuses.includes('critical')) return 'critical';
     if (statuses.includes('warning')) return 'warning';
     return 'healthy';

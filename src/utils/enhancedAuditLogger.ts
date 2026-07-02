@@ -64,7 +64,7 @@ export class EnhancedAuditLogger {
         p_old_values: sanitizedOldValues,
         p_new_values: sanitizedNewValues,
         p_metadata: enhancedMetadata,
-      });
+      }) as { data: unknown; error: Error | null };
 
       if (error) {
         console.error('Audit logging failed:', error);

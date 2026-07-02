@@ -5,7 +5,7 @@ import { localStorageClient, localApi, getAuthHeaders as localGetAuthHeaders } f
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
 const useLocalMode = import.meta.env.VITE_USE_LOCAL_MODE === 'true';
 const useApiMode = !!apiUrl;
 
@@ -17,7 +17,7 @@ export const supabase = (
   useLocalMode ? localStorageClient : (useApiMode ? apiClient : createSupabaseClient(supabaseUrl, supabaseAnonKey))
 ) as unknown as SupabaseClient;
 
-const API_URL = useLocalMode ? '/api/local' : (useApiMode ? apiUrl : new URL('/functions/v1/make-server-210e7672', supabaseUrl).toString());
+const API_URL: string = useLocalMode ? '/api/local' : (useApiMode ? (apiUrl as string) : new URL('/functions/v1/make-server-210e7672', supabaseUrl).toString());
 
 // Helper to get auth headers
 export const getAuthHeaders = async () => {
@@ -35,18 +35,18 @@ export const getAuthHeaders = async () => {
   };
 };
 
-async function handleResponse(response: Response) {
+async function handleResponse(response: Response): Promise<unknown> {
   if (!response.ok) {
     let message = 'Request failed';
     try {
-      const error = await response.json();
-      message = error.error || message;
+      const body = (await response.json()) as unknown as Record<string, unknown>;
+      message = typeof body.error === 'string' ? body.error : message;
     } catch {
       // ignore body parsing errors
     }
     throw new Error(message);
   }
-  return response.json();
+  return response.json() as Promise<unknown>;
 }
 
 // API helper functions
@@ -74,7 +74,7 @@ export const api = {
 
   async post(endpoint: string, data: unknown) {
     if (useLocalMode) {
-      return localApi.post(endpoint, data);
+      return localApi.post(endpoint, data as Record<string, unknown>);
     }
     if (useApiMode) {
       const response = await fetch(`${API_URL}${endpoint}`, {
@@ -95,7 +95,7 @@ export const api = {
 
   async put(endpoint: string, data: unknown) {
     if (useLocalMode) {
-      return localApi.put(endpoint, data);
+      return localApi.put(endpoint, data as Record<string, unknown>);
     }
     if (useApiMode) {
       const response = await fetch(`${API_URL}${endpoint}`, {

@@ -154,6 +154,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSubscription(): SubscriptionContextValue {
   const ctx = useContext(SubscriptionContext);
   if (!ctx) {

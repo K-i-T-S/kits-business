@@ -70,7 +70,8 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
       customers: data.customers,
       employees: data.employees,
     };
-  }, [data, selectedPeriod]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, selectedPeriod]); // getDateRange only depends on selectedPeriod, already in deps
 
   // Calculate KPIs
   const kpis = useMemo(() => {
@@ -198,16 +199,26 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
     }
 
     return data;
-  }, [filteredData, selectedPeriod]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredData, selectedPeriod]); // getDateRange only depends on selectedPeriod, already in deps
 
   // Product performance data
   const productPerformance = useMemo(() => {
     const { sales } = filteredData;
-    const productMap = new Map();
+
+    interface ProductSummary {
+      name: string;
+      revenue: number;
+      quantity: number;
+      profit: number;
+      orders: number;
+    }
+
+    const productMap = new Map<string, ProductSummary>();
 
     sales.forEach(sale => {
       (sale.items || []).forEach((item) => {
-        const existing = productMap.get(item.productId) || {
+        const existing: ProductSummary = productMap.get(item.productId) ?? {
           name: item.productName,
           revenue: 0,
           quantity: 0,
@@ -232,11 +243,11 @@ export default function AdvancedAnalytics({ data }: AdvancedAnalyticsProps) {
   // Customer segmentation
   const customerSegmentation = useMemo(() => {
     const { sales, customers } = filteredData;
-    const customerSpending = new Map();
+    const customerSpending = new Map<string, number>();
 
     sales.forEach(sale => {
       if (sale.customerId) {
-        const current = customerSpending.get(sale.customerId) || 0;
+        const current = customerSpending.get(sale.customerId) ?? 0;
         customerSpending.set(sale.customerId, current + (sale.total || 0));
       }
     });

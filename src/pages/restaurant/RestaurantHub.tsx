@@ -1011,7 +1011,7 @@ export default function RestaurantHub() {
                     <div key={key} className="flex items-center gap-1.5">
                       <span
                         className="h-2 w-2 rounded-full shrink-0"
-                        // eslint-disable-next-line security/detect-object-injection
+
                         style={{ background: RESTAURANT_COLORS[key].fill }}
                       />
                       <span className="text-[10px]" style={{ color: RESTAURANT_COLORS.textMuted }}>
@@ -1194,7 +1194,7 @@ export default function RestaurantHub() {
                 <div key={key} className="flex items-center gap-2">
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
-                    // eslint-disable-next-line security/detect-object-injection
+
                     style={{ background: RESTAURANT_COLORS[key].fill }}
                   />
                   <span className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>

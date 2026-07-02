@@ -3,18 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
-import { getStoresByTenant, setStoreContext } from '../utils/storeManager';
-
-interface Store {
-  id: string;
-  name: string;
-  code: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  is_active: boolean;
-  created_at: string;
-}
+import { getStoresByTenant, setStoreContext, type Store } from '../utils/storeManager';
 
 export default function StoreSwitcher() {
   const { currentTenant } = useApp();
@@ -27,7 +16,8 @@ export default function StoreSwitcher() {
     if (currentTenant) {
       void loadStores();
     }
-  }, [currentTenant]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTenant]); // loadStores only depends on currentTenant, already in deps
 
   const loadStores = async () => {
     try {

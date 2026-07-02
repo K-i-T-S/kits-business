@@ -312,7 +312,7 @@ function SevenDayForecastPanel({ forecast, loading }: SevenDayForecastPanelProps
     const isWeekend = dow === 4 || dow === 5 || dow === 6;
     const isHoliday = isLebanesHoliday(d);
     return {
-      // eslint-disable-next-line security/detect-object-injection -- dow is 0-6 from Date.getDay(), not user input
+
       label: `${DOW_FULL_LABELS[dow] ?? '?'}\n${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
       predicted: f.predicted,
       lower: f.lower,
@@ -781,9 +781,9 @@ function medianOf(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 !== 0
-    // eslint-disable-next-line security/detect-object-injection -- mid is derived from array.length, not user input
+
     ? (sorted[mid] ?? 0)
-    // eslint-disable-next-line security/detect-object-injection -- mid is derived from array.length, not user input
+
     : ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
 }
 
@@ -885,7 +885,7 @@ function MenuEngineeringMatrix({ profits, velocities }: MenuEngineeringMatrixPro
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {(['star', 'puzzle', 'plowhorse', 'dog'] as const).map((q) => {
                   const items = matrixItems.filter((i) => i.quadrant === q);
-                  // eslint-disable-next-line security/detect-object-injection -- q is from a typed const tuple, not user input
+
                   const { label, color, desc, icon } = QUADRANTS[q];
                   return (
                     <div
@@ -926,7 +926,7 @@ function MenuEngineeringMatrix({ profits, velocities }: MenuEngineeringMatrixPro
                   ] as const
                 ).map(({ key, label, sub, textClass }) => (
                   <div key={key} className="text-center">
-                    {/* eslint-disable-next-line security/detect-object-injection -- key is from a typed const tuple, not user input */}
+                    { }
                     <p className={`text-lg font-bold ${textClass}`}>{counts[key]}</p>
                     <p className="text-white/50 text-xs">{label}</p>
                     <p className="text-white/25 text-[10px]">{sub}</p>

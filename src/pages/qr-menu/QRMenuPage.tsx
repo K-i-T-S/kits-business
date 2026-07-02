@@ -293,4 +293,5 @@ export default function QRMenuPage() {
 }
 
 // Re-export for the lazy-loaded route
+// eslint-disable-next-line react-refresh/only-export-components
 export { getModifierKey };

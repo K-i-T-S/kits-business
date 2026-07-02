@@ -157,7 +157,7 @@ function linearRegression(ys: number[]): { slope: number; intercept: number } {
   let sumXY = 0;
   let sumX2 = 0;
   for (let i = 0; i < n; i++) {
-    // eslint-disable-next-line security/detect-object-injection
+
     sumXY += i * (ys[i] ?? 0);
     sumX2 += i * i;
   }
@@ -197,7 +197,7 @@ function buildChartData(sales: Sale[], avgDailyExpense = 0): ChartPoint[] {
     const holiday = getHolidayForDate(d);
     points.push({
       dateLabel: format(d, 'MMM dd'),
-      // eslint-disable-next-line security/detect-object-injection
+
       actual: historyRevenues[i] ?? 0,
       forecast: null,
       ciMin: null,

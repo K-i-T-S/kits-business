@@ -1,13 +1,13 @@
-interface PendingOperation {
+interface PendingOperation<T = unknown> {
   id: string;
   type: string;
   timestamp: number;
-  resolve: (value: any) => void;
-  reject: (reason: any) => void;
+  resolve: (value: T | PromiseLike<T>) => void;
+  reject: (reason: unknown) => void;
 }
 
 export class OperationQueue {
-  private static queues = new Map<string, PendingOperation[]>();
+  private static queues = new Map<string, PendingOperation<unknown>[]>();
   private static processing = new Map<string, boolean>();
 
   static async enqueue<T>(
@@ -16,7 +16,7 @@ export class OperationQueue {
     operationType: string = 'default',
   ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      const pendingOp: PendingOperation = {
+      const pendingOp: PendingOperation<T> = {
         id: Math.random().toString(36).substr(2, 9),
         type: operationType,
         timestamp: Date.now(),
@@ -29,7 +29,7 @@ export class OperationQueue {
       }
 
       const queue = this.queues.get(queueKey)!;
-      queue.push(pendingOp);
+      queue.push(pendingOp as unknown as PendingOperation<unknown>);
 
       void this.processQueue(queueKey);
     });
@@ -63,7 +63,7 @@ export class OperationQueue {
     this.processing.set(queueKey, false);
   }
 
-  private static async executeOperation(operation: PendingOperation): Promise<unknown> {
+  private static async executeOperation(operation: PendingOperation<unknown>): Promise<unknown> {
     const timeout = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Operation timeout')), 30000);
     });
@@ -75,7 +75,7 @@ export class OperationQueue {
     }
   }
 
-  private static async performOperation(operation: PendingOperation): Promise<unknown> {
+  private static async performOperation(operation: PendingOperation<unknown>): Promise<unknown> {
     await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
     return { success: true, operationId: operation.id };
   }

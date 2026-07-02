@@ -1,6 +1,11 @@
 import { securityMiddleware } from './securityMiddleware';
 import { api } from './supabaseClient';
 
+interface SessionResponse {
+  user?: { id?: string };
+  tenant?: { id?: string; userRole?: string };
+}
+
 // Enhanced API security wrapper
 export class ApiSecurityWrapper {
   private static instance: ApiSecurityWrapper;
@@ -20,7 +25,8 @@ export class ApiSecurityWrapper {
     requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer',
   ): Promise<T> {
     // Get current session for context
-    const session = await api.get('/auth/session').catch(() => null);
+    const rawSession = await api.get('/auth/session').catch(() => null);
+    const session = rawSession as SessionResponse | null;
     const context = {
       userId: session?.user?.id,
       tenantId: session?.tenant?.id,
@@ -54,16 +60,16 @@ export class ApiSecurityWrapper {
       let result: T;
       switch (method) {
         case 'GET':
-          result = await api.get(endpoint);
+          result = (await api.get(endpoint)) as unknown as T;
           break;
         case 'POST':
-          result = await api.post(endpoint, data);
+          result = (await api.post(endpoint, data)) as unknown as T;
           break;
         case 'PUT':
-          result = await api.put(endpoint, data);
+          result = (await api.put(endpoint, data)) as unknown as T;
           break;
         case 'DELETE':
-          result = await api.delete(endpoint);
+          result = (await api.delete(endpoint)) as unknown as T;
           break;
         default:
           throw new Error('Unsupported HTTP method');

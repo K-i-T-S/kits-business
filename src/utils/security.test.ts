@@ -189,7 +189,7 @@ describe('Security Hardening Tests', () => {
       const result = FrontendSecurity.validateFormInput(maliciousFormData, 'customer');
       // The validation should sanitize the input, so it becomes valid
       expect(result.isValid).toBe(true);
-      expect(result.validatedData?.name).not.toContain('<script>');
+      expect((result.validatedData as Record<string, unknown>)?.['name']).not.toContain('<script>');
     });
   });
 

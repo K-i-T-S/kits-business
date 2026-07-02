@@ -129,12 +129,12 @@ export default function ShiftManager() {
         if (!a.clocked_out_at || !a.clocked_in_at) continue;
         const hours = (new Date(a.clocked_out_at).getTime() - new Date(a.clocked_in_at).getTime()) / 3_600_000;
         const empId: string = a.employee_id;
-        // eslint-disable-next-line security/detect-object-injection -- empId is a UUID from DB, not user input
+
         const existing = byEmployee[empId];
         if (existing) {
           existing.hours += hours;
         } else {
-          // eslint-disable-next-line security/detect-object-injection -- empId is a UUID from DB, not user input
+
           byEmployee[empId] = { hours, role: a.role };
         }
       }

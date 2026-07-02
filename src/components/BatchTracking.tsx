@@ -7,6 +7,15 @@ import { supabase } from '../utils/supabaseClient';
 
 type StockStatus = 'out_of_stock' | 'low_stock' | 'ok';
 
+interface ProductRow {
+  id: string;
+  name: string;
+  sku: string | null;
+  category: string | null;
+  stock_quantity: number;
+  min_stock_level: number;
+}
+
 interface TrackedProduct {
   id: string;
   name: string;
@@ -65,7 +74,7 @@ export default function BatchTracking() {
       if (dbError) throw dbError;
 
       setProducts(
-        (data ?? []).map(p => ({
+        ((data ?? []) as ProductRow[]).map(p => ({
           id: p.id,
           name: p.name,
           sku: p.sku,

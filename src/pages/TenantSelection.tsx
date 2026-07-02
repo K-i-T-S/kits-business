@@ -35,9 +35,11 @@ export default function TenantSelection() {
   const [onboardingTenantId, setOnboardingTenantId] = useState('');
   const [onboardingTenantName, setOnboardingTenantName] = useState('');
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     void checkAuthAndLoadTenants();
-  }, []);
+  }, []); // intentionally run once on mount
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const checkAuthAndLoadTenants = async () => {
     setLoadingTenants(true);
@@ -115,7 +117,7 @@ export default function TenantSelection() {
 
     try {
       // create_tenant RPC returns the new tenant UUID directly (not an object)
-      const newTenantId = await createTenant(tenantName.trim(), tenantSlug, currentUser.id) as string;
+      const newTenantId = await createTenant(tenantName.trim(), tenantSlug, currentUser.id) as unknown as string;
       toast.success('Business created!');
 
       // Fire-and-forget welcome email — never block the user flow

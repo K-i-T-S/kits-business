@@ -65,7 +65,7 @@ export function Table3D({ table, orderInfo, onSelect, isSelected }: Table3DProps
 
   const isAlert = orderInfo !== undefined && orderInfo.minutesSince > 15;
   const colorKey: keyof typeof RESTAURANT_COLORS = isAlert ? 'alert' : table.status;
-  // eslint-disable-next-line security/detect-object-injection
+
   const colorEntry = RESTAURANT_COLORS[colorKey] as { fill: string; emissive: string; glow: string };
   const fillColor = colorEntry.fill;
   const emissiveColor = colorEntry.emissive;

@@ -6,15 +6,14 @@ export function useModalAccessibility(isOpen: boolean) {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen && modalRef.current) {
+    const el = modalRef.current;
+    if (isOpen && el) {
       // Initialize modal accessibility
-      ModalAccessibility.initializeModal(modalRef.current);
+      ModalAccessibility.initializeModal(el);
 
       return () => {
         // Cleanup on unmount or close
-        if (modalRef.current) {
-          ModalAccessibility.closeModal(modalRef.current);
-        }
+        ModalAccessibility.closeModal(el);
       };
     }
   }, [isOpen]);
@@ -26,12 +25,13 @@ export function useFocusTrap(isActive: boolean) {
   const containerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (isActive && containerRef.current) {
+    const container = containerRef.current;
+    if (isActive && container) {
       // Store current focus
       const previousFocus = document.activeElement as HTMLElement;
 
       // Get focusable elements
-      const focusableElements = containerRef.current.querySelectorAll(
+      const focusableElements = container.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       ) as NodeListOf<HTMLElement>;
 
@@ -63,10 +63,10 @@ export function useFocusTrap(isActive: boolean) {
           }
         };
 
-        containerRef.current.addEventListener('keydown', handleTabKey);
+        container.addEventListener('keydown', handleTabKey);
 
         return () => {
-          containerRef.current?.removeEventListener('keydown', handleTabKey);
+          container.removeEventListener('keydown', handleTabKey);
           // Restore focus
           previousFocus?.focus();
         };

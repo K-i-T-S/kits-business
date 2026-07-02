@@ -38,6 +38,7 @@ export function IndustryProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useIndustry(): IndustryContextType {
   const ctx = useContext(IndustryContext);
   if (!ctx) throw new Error('useIndustry must be used within IndustryProvider');

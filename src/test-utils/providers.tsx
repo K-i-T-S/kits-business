@@ -32,9 +32,11 @@ export const TestWrapper = ({ children }: { children: ReactNode }) => (
 );
 
 // Custom render function that includes the wrapper
+// eslint-disable-next-line react-refresh/only-export-components
 export const renderWithProviders = (ui: ReactNode, options = {}) => {
   return render(ui, { wrapper: TestWrapper, ...options });
 };
 
 // Helper for async operations in tests
+// eslint-disable-next-line react-refresh/only-export-components
 export const waitForAsyncOperations = () => new Promise(resolve => setTimeout(resolve, 0));

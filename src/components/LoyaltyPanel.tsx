@@ -312,14 +312,16 @@ function AdjustPointsModal({ customerId, customerName, currentBalance, tenantId,
 
       if (fetchErr) throw fetchErr;
 
-      const prevBalance = existing?.points_balance ?? 0;
-      const prevLifetime = existing?.lifetime_points ?? 0;
+      interface CustomerPointsRow { id: string; points_balance: number; lifetime_points: number }
+      const typedExisting = existing as CustomerPointsRow | null;
+      const prevBalance = typedExisting?.points_balance ?? 0;
+      const prevLifetime = typedExisting?.lifetime_points ?? 0;
       const balanceAfter = Math.max(0, prevBalance + parsedDelta);
       const newLifetime = parsedDelta > 0 ? prevLifetime + parsedDelta : prevLifetime;
 
       const tier = balanceAfter >= 2000 ? 'gold' : balanceAfter >= 500 ? 'silver' : 'bronze';
 
-      if (existing) {
+      if (typedExisting) {
         const { error: updateErr } = await supabase
           .from('customer_points')
           .update({
@@ -328,7 +330,7 @@ function AdjustPointsModal({ customerId, customerName, currentBalance, tenantId,
             tier,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', existing.id);
+          .eq('id', typedExisting.id);
         if (updateErr) throw updateErr;
       } else {
         const { error: insertErr } = await supabase

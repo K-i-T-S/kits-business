@@ -5,9 +5,9 @@ import { securityMonitor } from './securityMonitor';
 // Enhanced security utilities for frontend components
 export class FrontendSecurity {
   // Secure form validation
-  static validateFormInput(input: any, type: 'product' | 'customer' | 'employee' | 'sale'): {
+  static validateFormInput(input: unknown, type: 'product' | 'customer' | 'employee' | 'sale'): {
     isValid: boolean;
-    validatedData?: any;
+    validatedData?: unknown;
     errors: string[];
   } {
     try {
@@ -47,9 +47,9 @@ export class FrontendSecurity {
   }
 
   // Safe JSON parsing with validation
-  static safeJsonParse(jsonString: string, _schema?: any): any {
+  static safeJsonParse(jsonString: string, _schema?: unknown): unknown {
     try {
-      const parsed = JSON.parse(jsonString);
+      const parsed: unknown = JSON.parse(jsonString) as unknown;
 
       // Basic validation to prevent prototype pollution
       if (parsed && typeof parsed === 'object') {
@@ -62,20 +62,20 @@ export class FrontendSecurity {
     }
   }
 
-  private static preventPrototypePollution(obj: any): any {
+  private static preventPrototypePollution(obj: unknown): unknown {
     if (typeof obj !== 'object' || obj === null) return obj;
 
     // Check for dangerous keys
     const dangerousKeys = ['__proto__', 'prototype', 'constructor'];
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.preventPrototypePollution(item));
+      return (obj as unknown[]).map(item => FrontendSecurity.preventPrototypePollution(item));
     }
 
-    const safe: any = {};
-    for (const [key, value] of Object.entries(obj)) {
+    const safe: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       if (!dangerousKeys.includes(key)) {
-        safe[key] = this.preventPrototypePollution(value);
+        safe[key] = FrontendSecurity.preventPrototypePollution(value);
       }
     }
 
@@ -84,7 +84,7 @@ export class FrontendSecurity {
 
   // Secure local storage with encryption
   static secureStorage = {
-    set: (key: string, value: any): void => {
+    set: (key: string, value: unknown): void => {
       try {
         const encrypted = btoa(JSON.stringify(value));
         localStorage.setItem(`secure_${key}`, encrypted);
@@ -98,7 +98,7 @@ export class FrontendSecurity {
         const encrypted = localStorage.getItem(`secure_${key}`);
         if (!encrypted) return null;
 
-        const decrypted = JSON.parse(atob(encrypted));
+        const decrypted = JSON.parse(atob(encrypted)) as unknown;
         return decrypted as T;
       } catch (error) {
         console.error('Failed to retrieve secure data:', error);
@@ -165,7 +165,7 @@ export class FrontendSecurity {
   // Security event reporting
   static reportSecurityEvent(
     eventType: string,
-    details?: any,
+    details?: unknown,
     severity: 'low' | 'medium' | 'high' | 'critical' = 'medium',
   ): void {
     // Log to console in development
@@ -174,7 +174,8 @@ export class FrontendSecurity {
     }
 
     // Report to security monitor
-    void securityMonitor.monitorSecurityEvent(eventType, details?.userId, details?.tenantId, details);
+    const detailsObj = details as { userId?: string; tenantId?: string } | undefined;
+    void securityMonitor.monitorSecurityEvent(eventType, detailsObj?.userId, detailsObj?.tenantId, details as Record<string, unknown> | undefined);
   }
 
   // Input sanitization for user inputs

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string | undefined;
 const useLocalMode = import.meta.env.VITE_USE_LOCAL_MODE === 'true';
 
 // Service role client for admin operations
@@ -29,14 +29,14 @@ export async function logAudit(
     throw new Error('Service role key not configured');
   }
 
-  const { data, error } = await supabaseAdmin.rpc('log_audit', {
+  const { data, error }: { data: unknown; error: Error | null } = await supabaseAdmin.rpc('log_audit', {
     p_action: action,
     p_entity_type: entityType,
     p_entity_id: entityId,
     p_old_values: oldValues,
     p_new_values: newValues,
     p_metadata: metadata || {},
-  });
+  }) as { data: unknown; error: Error | null };
 
   if (error) throw error;
   return data;
@@ -57,13 +57,13 @@ export async function logActivity(
     throw new Error('Service role key not configured');
   }
 
-  const { data, error } = await supabaseAdmin.rpc('log_activity', {
+  const { data, error }: { data: unknown; error: Error | null } = await supabaseAdmin.rpc('log_activity', {
     p_action: action,
     p_description: description,
     p_entity_type: entityType,
     p_entity_id: entityId,
     p_metadata: metadata || {},
-  });
+  }) as { data: unknown; error: Error | null };
 
   if (error) throw error;
   return data;
@@ -149,12 +149,12 @@ export async function logSecurityEvent(
     throw new Error('Service role key not configured');
   }
 
-  const { data, error } = await supabaseAdmin.rpc('log_security_event', {
+  const { data, error }: { data: unknown; error: Error | null } = await supabaseAdmin.rpc('log_security_event', {
     event_type: eventType,
     description: description,
     severity: severity,
     metadata: metadata || {},
-  });
+  }) as { data: unknown; error: Error | null };
 
   if (error) throw error;
   return data;
@@ -272,11 +272,11 @@ export async function getSecurityEvents(
     query = query.contains('metadata', { severity });
   }
 
-  const { data, error } = await query
-    .order('created_at', { ascending: false });
+  const rawResult = await query.order('created_at', { ascending: false });
+  const { data, error } = rawResult as { data: unknown[] | null; error: Error | null };
 
   if (error) throw error;
-  return data;
+  return data ?? [];
 }
 
 // User activity summary

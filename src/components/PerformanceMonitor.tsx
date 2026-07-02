@@ -167,6 +167,7 @@ export function PerformanceMonitor({
 }
 
 // Hook for performance monitoring
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePerformanceMonitor(componentName?: string) {
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
 
@@ -178,6 +179,7 @@ export function usePerformanceMonitor(componentName?: string) {
 }
 
 // Higher-order component for automatic performance monitoring
+// eslint-disable-next-line react-refresh/only-export-components
 export function withPerformanceMonitoring<P extends object>(
   Component: React.ComponentType<P>,
   componentName?: string,

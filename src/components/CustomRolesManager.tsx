@@ -163,7 +163,7 @@ export default function CustomRolesManager() {
 
   function togglePermission(action: RoleAction) {
     setForm((prev) => {
-      // eslint-disable-next-line security/detect-object-injection
+
       const current = prev.permissions[action];
       return {
         ...prev,
@@ -467,7 +467,7 @@ export default function CustomRolesManager() {
                 </div>
                 <div className="space-y-2">
                   {ALL_PERMISSIONS.map(({ action, label, description }) => {
-                    // eslint-disable-next-line security/detect-object-injection
+
                     const enabled = Boolean(form.permissions[action]);
                     return (
                       <button

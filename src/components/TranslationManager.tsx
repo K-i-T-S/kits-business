@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useTranslationManager } from '../context/TranslationContext';
+import type { TranslationStats, TranslationKey } from '../context/TranslationContext';
 import { supportedLanguages } from '../i18n';
 
 import { Badge } from './ui/badge';
@@ -45,9 +46,9 @@ export const TranslationManager: React.FC = () => {
   const [newValue, setNewValue] = useState('');
   const [editingKey, setEditingKey] = useState('');
   const [editingValue, setEditingValue] = useState('');
-  const [stats, setStats] = useState<any[]>([]);
+  const [stats, setStats] = useState<TranslationStats[]>([]);
   const [validation, setValidation] = useState<{ valid: boolean; errors: string[] }>({ valid: true, errors: [] });
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<TranslationKey[]>([]);
 
   useEffect(() => {
     setStats(getTranslationStats());
@@ -94,7 +95,7 @@ export const TranslationManager: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const data = JSON.parse(e.target?.result as string);
+          const data = JSON.parse(e.target?.result as string) as Record<string, unknown>;
           importTranslations(data, selectedLanguage);
           setStats(getTranslationStats());
         } catch (error) {

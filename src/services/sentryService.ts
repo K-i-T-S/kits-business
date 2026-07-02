@@ -190,11 +190,13 @@ export const PerformanceMonitor = {
   },
 };
 
+// Minimal Express-like interfaces (avoids @types/express dependency)
+interface ReqLike { method: string; url: string; headers: Record<string, string> }
+interface ResLike { statusCode: number; send: (data: unknown) => ResLike }
+
 // API monitoring middleware
-// TODO S23: type req/res/next properly with Express types if @types/express is added
 export const createApiMonitoringMiddleware = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (req: any, res: any, next: () => void) => {
+  return (req: ReqLike, res: ResLike, next: () => void) => {
     const start = Date.now();
 
     // Capture request start
@@ -210,7 +212,7 @@ export const createApiMonitoringMiddleware = () => {
     });
 
     const originalSend = res.send;
-    res.send = function (data: any) {
+    res.send = function (this: ResLike, data: unknown): ResLike {
       const duration = Date.now() - start;
 
       // Capture API call completion

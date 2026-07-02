@@ -37,6 +37,7 @@ export default function RoleGuard({ children, allowedRoles, fallback }: RoleGuar
 }
 
 // Permission constants for easy reference
+// eslint-disable-next-line react-refresh/only-export-components
 export const PERMISSIONS = {
   // Owner permissions - full access
   OWNER: ['owner'] as string[],
@@ -59,6 +60,7 @@ export const PERMISSIONS = {
 };
 
 // Hook for checking permissions
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePermissions() {
   const { currentTenant } = useApp();
 

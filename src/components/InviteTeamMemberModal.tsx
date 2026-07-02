@@ -286,11 +286,11 @@ export default function InviteTeamMemberModal({
                   <Icon className={`h-5 w-5 mt-0.5 ${color}`} />
                   <div className="flex-1">
                     <div className="font-medium text-white text-sm">
-                      {/* eslint-disable-next-line security/detect-object-injection */}
+                      { }
                       {ROLE_LABELS[value] ?? value}
                     </div>
                     <div className="text-xs text-white/60">
-                      {/* eslint-disable-next-line security/detect-object-injection */}
+                      { }
                       {ROLE_DESCRIPTIONS[value] ?? ''}
                     </div>
                   </div>

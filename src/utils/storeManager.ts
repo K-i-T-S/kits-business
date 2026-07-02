@@ -1,7 +1,33 @@
 import { createClient } from '@supabase/supabase-js';
 
+export interface Store {
+  id: string;
+  name: string;
+  code: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  is_active?: boolean;
+  tenant_id?: string;
+  manager_id?: string;
+  settings?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface StoreUser {
+  id?: string;
+  store_id: string;
+  user_id: string;
+  role: 'manager' | 'cashier' | 'viewer';
+  created_at?: string;
+  updated_at?: string;
+  user?: Record<string, unknown>;
+  store?: Store;
+}
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string | undefined;
 const useLocalMode = import.meta.env.VITE_USE_LOCAL_MODE === 'true';
 
 // Service role client for admin operations
@@ -20,6 +46,7 @@ export async function createStore(name: string, code: string, address?: string, 
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabaseAdmin.rpc('create_store', {
     store_name: name,
     store_code: code,
@@ -29,7 +56,7 @@ export async function createStore(name: string, code: string, address?: string, 
   });
 
   if (error) throw error;
-  return data;
+  return data as unknown as Store;
 }
 
 export async function getStoresByTenant(tenantId: string) {
@@ -47,7 +74,7 @@ export async function getStoresByTenant(tenantId: string) {
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return data;
+  return (data ?? []) as unknown as Store[];
 }
 
 export async function updateStore(storeId: string, updates: {
@@ -65,6 +92,7 @@ export async function updateStore(storeId: string, updates: {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabaseAdmin
     .from('stores')
     .update({
@@ -76,7 +104,7 @@ export async function updateStore(storeId: string, updates: {
     .single();
 
   if (error) throw error;
-  return data;
+  return data as unknown as Store;
 }
 
 export async function deleteStore(storeId: string) {
@@ -101,6 +129,7 @@ export async function assignUserToStore(storeId: string, userId: string, role: '
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabaseAdmin
     .from('store_users')
     .upsert({
@@ -112,7 +141,7 @@ export async function assignUserToStore(storeId: string, userId: string, role: '
     .single();
 
   if (error) throw error;
-  return data;
+  return data as unknown as StoreUser;
 }
 
 export async function removeUserFromStore(storeId: string, userId: string) {
@@ -148,7 +177,7 @@ export async function getStoreUsers(storeId: string) {
     .eq('store_id', storeId);
 
   if (error) throw error;
-  return data;
+  return (data ?? []) as unknown as StoreUser[];
 }
 
 export async function getUserStores(userId: string) {
@@ -168,7 +197,7 @@ export async function getUserStores(userId: string) {
     .eq('store.is_active', true);
 
   if (error) throw error;
-  return data;
+  return (data ?? []) as unknown as StoreUser[];
 }
 
 // Store context functions for API
@@ -193,8 +222,9 @@ export async function getCurrentStore() {
   if (!supabaseAdmin) {
     throw new Error('Service role key not configured');
   }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabaseAdmin.rpc('get_current_store');
 
   if (error) throw error;
-  return data;
+  return data as unknown as Store;
 }

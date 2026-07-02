@@ -601,13 +601,14 @@ function TransferTab({ locations }: TransferTabProps) {
       if (fromRes.error) throw fromRes.error;
       if (toRes.error) throw toRes.error;
 
-      const fromQty = fromRes.data?.quantity ?? 0;
+      interface LocationStockRow { id: string; quantity: number }
+      const fromQty = (fromRes.data as LocationStockRow | null)?.quantity ?? 0;
       if (fromQty < qty) {
         toast.error(`Insufficient stock at source (available: ${fromQty})`);
         return;
       }
 
-      const toQty = toRes.data?.quantity ?? 0;
+      const toQty = (toRes.data as LocationStockRow | null)?.quantity ?? 0;
 
       // Decrement source
       const { error: fromErr } = await supabase.from('location_stock').upsert(

@@ -19,7 +19,9 @@ export const LazyWrapper: React.FC<LazyWrapperProps> = ({
 };
 
 // Higher-order component for lazy loading with custom fallback
+// eslint-disable-next-line react-refresh/only-export-components
 export const withLazyLoading = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Component: React.ComponentType<any>,
   fallback?: React.ReactNode,
 ) => {
@@ -27,6 +29,7 @@ export const withLazyLoading = (
     Promise.resolve({ default: Component }),
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (props: any) => (
     <LazyWrapper fallback={fallback}>
       <LazyComponent {...props} />
@@ -35,6 +38,7 @@ export const withLazyLoading = (
 };
 
 // Preloading utility for critical components
+// eslint-disable-next-line react-refresh/only-export-components, @typescript-eslint/no-explicit-any
 export const preloadComponent = (componentImport: () => Promise<any>) => {
   const componentLoader = componentImport;
   void componentLoader();

@@ -116,7 +116,7 @@ export class SecurityMiddleware {
     try {
       const { data, error } = await supabase.rpc('verify_role_permission', {
         required_role: requiredRole,
-      });
+      }) as unknown as { data: boolean | null; error: { message: string } | null };
 
       if (error) {
         await logSecurityEvent(
@@ -159,26 +159,30 @@ export class SecurityMiddleware {
   }
 
   // Input validation and sanitization
-  validateInput(input: any, type: 'email' | 'phone' | 'text' | 'number' | 'json'): { valid: boolean; sanitized?: any; error?: string } {
+  validateInput(input: unknown, type: 'email' | 'phone' | 'text' | 'number' | 'json'): { valid: boolean; sanitized?: unknown; error?: string } {
     if (input === null || input === undefined) {
       return { valid: true, sanitized: null };
     }
 
     try {
       switch (type) {
-        case 'email':
+        case 'email': {
+          if (typeof input !== 'string') return { valid: false, error: 'Invalid email format' };
           const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
           if (!emailRegex.test(input)) {
             return { valid: false, error: 'Invalid email format' };
           }
           return { valid: true, sanitized: input.toLowerCase().trim() };
+        }
 
-        case 'phone':
+        case 'phone': {
+          if (typeof input !== 'string') return { valid: false, error: 'Invalid phone format' };
           const phoneRegex = /^\+?[0-9\s\-\(\)]{10,}$/;
           if (!phoneRegex.test(input)) {
             return { valid: false, error: 'Invalid phone format' };
           }
           return { valid: true, sanitized: input.replace(/\s+/g, ' ').trim() };
+        }
 
         case 'text':
           if (typeof input !== 'string') {
@@ -213,16 +217,16 @@ export class SecurityMiddleware {
     }
   }
 
-  private sanitizeObject(obj: any): any {
+  private sanitizeObject(obj: unknown): unknown {
     if (obj === null || obj === undefined) return obj;
     if (typeof obj !== 'object') return obj;
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitizeObject(item));
+      return (obj as unknown[]).map(item => this.sanitizeObject(item));
     }
 
-    const sanitized: any = {};
-    for (const [key, value] of Object.entries(obj)) {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       if (typeof value === 'string') {
         sanitized[key] = value.replace(/[<>'"&;'"\\]/g, '').trim();
       } else if (typeof value === 'object' && value !== null) {
@@ -238,7 +242,7 @@ export class SecurityMiddleware {
   async auditSensitiveOperation(
     operation: string,
     context: SecurityContext,
-    details: any,
+    details: Record<string, unknown>,
   ): Promise<void> {
     const sensitiveOperations = [
       'role_change',
@@ -315,7 +319,7 @@ export class SecurityMiddleware {
     operation: string,
     context: SecurityContext,
     requiredRole?: 'owner' | 'manager' | 'cashier' | 'viewer',
-  ): Promise<{ authorized: boolean; error?: string; rateLimit?: any }> {
+  ): Promise<{ authorized: boolean; error?: string; rateLimit?: { allowed: boolean; remaining: number; resetTime: number } }> {
     // 1. Rate limiting check
     const rateLimitResult = await this.checkRateLimit('api_call', context);
     if (!rateLimitResult.allowed) {

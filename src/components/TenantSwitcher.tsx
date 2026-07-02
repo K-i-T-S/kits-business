@@ -4,22 +4,13 @@ import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
-import { getTenantsByUser } from '../utils/tenantManager';
-
-interface Tenant {
-  id: string;
-  name: string;
-  slug: string;
-  user_role: 'owner' | 'manager' | 'cashier' | 'viewer';
-  tenant_active: boolean;
-  user_active: boolean;
-}
+import { getTenantsByUser, type TenantListItem } from '../utils/tenantManager';
 
 export default function TenantSwitcher() {
   const { currentTenant, switchTenant: switchTenantContext } = useApp();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [userTenants, setUserTenants] = useState<Tenant[]>([]);
+  const [userTenants, setUserTenants] = useState<TenantListItem[]>([]);
 
   useEffect(() => {
     void loadUserTenants();
@@ -37,7 +28,7 @@ export default function TenantSwitcher() {
     }
   };
 
-  const handleTenantSwitch = (tenant: Tenant) => {
+  const handleTenantSwitch = (tenant: TenantListItem) => {
     if (tenant.id === currentTenant?.id) {
       setIsOpen(false);
       return;

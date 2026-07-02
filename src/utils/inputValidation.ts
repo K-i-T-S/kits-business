@@ -21,12 +21,12 @@ export interface ValidationError {
 
 export interface ValidationResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   errors?: ValidationError[];
 }
 
 export class InputValidator {
-  private static sanitizeInput(input: any): any {
+  private static sanitizeInput(input: unknown): unknown {
     if (typeof input === 'string') {
       return input
         .trim()
@@ -37,12 +37,12 @@ export class InputValidator {
     }
 
     if (Array.isArray(input)) {
-      return input.map(item => InputValidator.sanitizeInput(item));
+      return (input as unknown[]).map(item => InputValidator.sanitizeInput(item));
     }
 
-    if (input && typeof input === 'object') {
-      const sanitized: any = {};
-      for (const [key, value] of Object.entries(input)) {
+    if (input !== null && typeof input === 'object') {
+      const sanitized: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
         sanitized[key] = InputValidator.sanitizeInput(value);
       }
       return sanitized;
@@ -60,19 +60,19 @@ export class InputValidator {
     }));
   }
 
-  public static validate(schema: ZodSchema, data: any, options: { sanitize?: boolean } = {}): ValidationResult {
+  public static validate<T = unknown>(schema: ZodSchema<T>, data: unknown, options: { sanitize?: boolean } = {}): ValidationResult {
     try {
-      let processedData = data;
+      let processedData: unknown = data;
 
       if (options.sanitize) {
         processedData = InputValidator.sanitizeInput(data);
       }
 
-      const result = schema.parse(processedData);
+      const result: T = schema.parse(processedData);
 
       return {
         success: true,
-        data: result,
+        data: result as unknown,
       };
     } catch (error) {
       if (error instanceof ZodError) {
@@ -95,13 +95,35 @@ export class InputValidator {
   }
 }
 
+// Express-style interfaces (no @types/express dependency)
+interface RequestLike {
+  body?: unknown;
+  query?: unknown;
+  params?: unknown;
+  headers?: unknown;
+  user?: { id: string; [key: string]: unknown };
+  url?: string;
+  method?: string;
+  ip?: string;
+}
+
+interface ResponseStatusLike {
+  json(body: unknown): void;
+}
+
+interface ResponseLike {
+  status(code: number): ResponseStatusLike;
+}
+
+type NextFunction = () => void;
+
 export const createValidationMiddleware = (config: ValidationMiddlewareConfig) => {
-  return (req: any, res: any, next: Function) => {
+  return (req: RequestLike, res: ResponseLike, next: NextFunction) => {
     const validationResults: ValidationResult[] = [];
     let hasErrors = false;
 
     // Validate body
-    if (config.body && req.body) {
+    if (config.body && req.body !== undefined) {
       const result = InputValidator.validate(config.body, req.body, { sanitize: config.sanitize });
       validationResults.push({ ...result });
       if (!result.success) hasErrors = true;
@@ -109,7 +131,7 @@ export const createValidationMiddleware = (config: ValidationMiddlewareConfig) =
     }
 
     // Validate query parameters
-    if (config.query && req.query) {
+    if (config.query && req.query !== undefined) {
       const result = InputValidator.validate(config.query, req.query, { sanitize: config.sanitize });
       validationResults.push({ ...result });
       if (!result.success) hasErrors = true;
@@ -117,7 +139,7 @@ export const createValidationMiddleware = (config: ValidationMiddlewareConfig) =
     }
 
     // Validate route parameters
-    if (config.params && req.params) {
+    if (config.params && req.params !== undefined) {
       const result = InputValidator.validate(config.params, req.params, { sanitize: config.sanitize });
       validationResults.push({ ...result });
       if (!result.success) hasErrors = true;
@@ -125,7 +147,7 @@ export const createValidationMiddleware = (config: ValidationMiddlewareConfig) =
     }
 
     // Validate headers
-    if (config.headers && req.headers) {
+    if (config.headers && req.headers !== undefined) {
       const result = InputValidator.validate(config.headers, req.headers, { sanitize: config.sanitize });
       validationResults.push({ ...result });
       if (!result.success) hasErrors = true;
@@ -152,11 +174,12 @@ export const createValidationMiddleware = (config: ValidationMiddlewareConfig) =
         ).catch(console.error);
       }
 
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Validation failed',
         message: 'Invalid input data provided',
         errors: allErrors,
       });
+      return;
     }
 
     next();

@@ -292,6 +292,7 @@ export default function EODReport() {
     window.open(`https://wa.me/?text=${encodeURIComponent(lines)}`, '_blank');
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void generate(); }, []);
 
   return (

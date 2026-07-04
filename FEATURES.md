@@ -1,7 +1,7 @@
 # KiTS Business Terminal — Feature Reference
 
 > Developer reference. Covers every feature, its architecture, data flow, plan gate, and key files.
-> Last updated: 2026-06-20.
+> Last updated: 2026-07-03.
 
 ---
 
@@ -26,6 +26,7 @@
 17. [Database Schema Overview](#17-database-schema-overview)
 18. [Key Utilities](#18-key-utilities)
 19. [Finance Module](#19-finance-module)
+20. [Restaurant Vertical (F&B)](#20-restaurant-vertical-fb)
 
 ---
 
@@ -629,6 +630,12 @@ All functions in `supabase/functions/`. Deployed to `pytndxjeznhhyycjasep`.
 **Plan gate:** Business only (checked client-side; function itself has no plan check)  
 **Setup:** `docs/setup-whatsapp-receipts.md`
 
+### `groq-proxy`
+
+**Trigger:** AI features in `RestaurantAnalytics.tsx`, `RestaurantHub.tsx`, `AIAssistant.tsx`  
+**Env:** `GROQ_API_KEY`  
+**Action:** Proxies requests to the Groq API (model: `llama-3.3-70b-versatile`); keeps the API key server-side and out of the frontend bundle. Chat history stored in `restaurant_ai_queries`.
+
 ---
 
 ## 14. Internationalization & RTL
@@ -943,3 +950,207 @@ interface PayrollEntry {
   currency: 'USD' | 'LBP'
 }
 ```
+
+---
+
+## 20. Restaurant Vertical (F&B)
+
+**Plan gate:** Growth ($29/mo) and Business ($79/mo). Starter cannot access.  
+**Industry gate:** Only shown when `currentTenant.industry === 'restaurant'` (set during onboarding or via System Settings).  
+**Hub file:** `src/pages/restaurant/RestaurantHub.tsx`
+
+### Overview
+
+A full-stack F&B management vertical covering every operational layer of a Lebanese/MENA restaurant: table management, kitchen display, ordering, menu engineering, recipe costing, reservations, shift management, EOD reporting, multi-branch, AI assistant, events, and cash management.
+
+### Features
+
+#### Table Management
+
+Floor plan with two view modes:
+- **2D drag-drop** — `FloorPlan.tsx` — positioned table cards, drag to reposition, status colour-coded (available/occupied/reserved/cleaning)
+- **3D WebGL view** — `FloorPlan3D.tsx` (lazy-loaded, `~25 kB` chunk + shared `three-d` chunk) — Three.js scene rendered by `Table3D.tsx` per table
+
+Tables stored in `restaurant_tables`. Status transitions driven by order lifecycle events.
+
+#### Kitchen Display System (KDS)
+
+**File:** `src/pages/restaurant/KitchenDisplay.tsx`
+
+Live order ticket board. Sources from `table_orders` + `kitchen_display_items`. Polling interval configurable via `restaurant_settings`. Stations defined in `restaurant_kds_stations` — each station filters to its assigned item categories.
+
+#### Waiter Interface
+
+**File:** `src/pages/restaurant/WaiterInterface.tsx`
+
+Full order-taking flow:
+```
+Seat guest → select table → build order → add modifiers → open argile session (optional) → send to KDS → split/close bill → apply loyalty points
+```
+
+- **Argile (shisha) sessions** — `restaurant_argile_sessions` + `restaurant_argile_items`; tracked as a separate session alongside the food order
+- **Bill splitting** — `BillSplitter.tsx` component; split by seat, item, or custom amount
+- **Loyalty points** — earned on close bill; applies tenant's `loyalty_points_per_dollar` rate
+
+#### Menu Management
+
+**File:** `src/pages/restaurant/MenuManagement.tsx`
+
+- Categories: `restaurant_menu_categories` (display order, icon)
+- Items: `restaurant_menu_items` (price, cost, prep time, allergens, image, active flag)
+- Modifier groups: `restaurant_menu_item_modifier_groups` → `restaurant_modifiers` (name, price delta, min/max select)
+- Per-branch availability: `restaurant_menu_items_branch_overrides` (migration 000044) — override availability per `restaurant_branches` row
+
+#### Recipe & Inventory
+
+**File:** `src/pages/restaurant/RecipeInventory.tsx`
+
+- **Ingredients** — `restaurant_ingredients` (unit, cost_per_unit, par_level, supplier link via `ingredient_suppliers`)
+- **Recipes** — `restaurant_recipes` + `restaurant_recipe_ingredients`; links to `restaurant_menu_item_recipes` for costed menu items
+- **Cost per dish** — automatically calculated: `SUM(ingredient_quantity × cost_per_unit)`
+- **Auto purchase-order generation** — when stock falls below par level, `restaurant_purchase_orders` / `restaurant_purchase_order_items` are created
+- **Waste log** — `waste_log` table; records spoilage with reason code
+- **Ingredient movements** — `ingredient_movements` tracks all stock changes (purchase, waste, usage)
+
+#### Reservations
+
+**File:** `src/pages/restaurant/Reservations.tsx`
+
+CRUD against `restaurant_reservations`. Status lifecycle: `pending → confirmed → seated → cancelled | no-show`. Fields: party size, date/time, notes, contact phone.
+
+#### Shift Manager
+
+**File:** `src/pages/restaurant/ShiftManager.tsx`
+
+- Shift open/close: `restaurant_shifts` (opened_by, opened_at, closed_at, opening_float, closing_float)
+- Staff assignment: `restaurant_shift_assignments` (employee per shift with role)
+- One active shift per branch at a time; KDS and waiter interface check for open shift before allowing orders
+
+#### EOD Report
+
+**File:** `src/pages/restaurant/EODReport.tsx`
+
+Daily end-of-day summary stored in `restaurant_eod_reports`. Contents:
+- Total revenue, covers (guests served), average spend per cover
+- Peak hour (derived from `table_orders.created_at` distribution)
+- Top-selling items by revenue and by units
+- Tips collected, discounts applied
+- **jsPDF export** — formatted PDF with tenant logo header and period label
+
+#### Multi-Branch
+
+**File:** `src/pages/restaurant/MultibranchManager.tsx`
+
+- Branch registry: `restaurant_branches` (name, address, phone, manager)
+- Metrics per branch: `restaurant_branch_metrics` (daily snapshot: revenue, covers, avg ticket)
+- Per-branch menu overrides: `restaurant_menu_items_branch_overrides`
+- Bridge table `restaurant_bridge` links `restaurant_tables` to `locations` (migration 000040)
+
+#### AI Assistant
+
+**File:** `src/pages/restaurant/AIAssistant.tsx`
+
+Conversational interface for natural language queries over restaurant data.
+
+```
+User question
+  → groq-proxy Edge Function
+  → Groq API (llama-3.3-70b-versatile)
+  → structured answer + suggested follow-ups
+  → saved to restaurant_ai_queries (tenant-scoped chat history)
+```
+
+Also surfaced in `RestaurantAnalytics.tsx` for AI-generated menu suggestions and in `RestaurantHub.tsx` for quick-access prompts. AI provider: Groq (free tier). See `src/utils/groqClient.ts`.
+
+#### Events / Banquets
+
+**File:** `src/pages/restaurant/Events.tsx`
+
+CRUD against `restaurant_events`. Fields: event name, date/time, guest count, venue section, catering notes, deposit amount, status (`inquiry | confirmed | completed | cancelled`).
+
+#### Cash Management
+
+**File:** `src/pages/restaurant/CashManagement.tsx`
+
+- Drawer registry: `restaurant_cash_drawers` (terminal name, branch)
+- Transactions: `restaurant_cash_transactions` (type: open/close/sale/refund/payout/deposit, amount, shift reference)
+- Drawer opens at shift start with float; closes at shift end with count and variance calculation
+
+#### Analytics
+
+**File:** `src/pages/restaurant/RestaurantAnalytics.tsx`
+
+- **Menu engineering matrix** — plots items on Star / Plowhorse / Puzzle / Dog quadrants based on popularity × margin. Data from `restaurant_item_velocity` view (migration 000038).
+- **Item velocity** — units sold per hour, peak vs. off-peak comparison
+- **Slow-movers alert** — `slow_alerts` view surfaces items with declining velocity
+- **AI-generated suggestions** — calls `groq-proxy` with aggregated menu metrics; returns plain-language recommendations (promote Stars, reprice Dogs, bundle Puzzles)
+- **Table feedback** — `table_feedback` view: avg score, coverage rate
+
+### Data Flow
+
+```
+WaiterInterface.tsx
+  → supabase.from('table_orders').insert(...)
+  → supabase.from('kitchen_display_items').insert(...)  // fan-out per item
+
+KitchenDisplay.tsx
+  → supabase.from('kitchen_display_items').select('*').eq('status', 'pending')  // polled
+
+fn_close_bill() (DB function, migration 000045)
+  → marks table_orders as closed
+  → aggregates argile + modifiers
+  → writes to sales + sale_items (bridges into core POS ledger)
+  → updates customer loyalty balance
+
+AIAssistant.tsx / RestaurantAnalytics.tsx
+  → supabase.functions.invoke('groq-proxy', { body: { messages } })
+  → supabase.from('restaurant_ai_queries').insert(...)  // persist chat
+```
+
+### Key Files
+
+```
+src/pages/restaurant/
+  TableManagement.tsx       — floor plan + table status grid
+  KitchenDisplay.tsx        — KDS ticket board
+  WaiterInterface.tsx       — order-taking + split bill
+  MenuManagement.tsx        — menu CRUD
+  RecipeInventory.tsx       — ingredient costing
+  Reservations.tsx          — reservation CRUD
+  ShiftManager.tsx          — shift management
+  EODReport.tsx             — end-of-day report + PDF
+  RestaurantAnalytics.tsx   — menu engineering + AI suggestions
+  AIAssistant.tsx           — conversational AI interface
+  Events.tsx                — events/banquets
+  CashManagement.tsx        — drawer management
+  MultibranchManager.tsx    — branch overview
+
+src/components/restaurant/
+  FloorPlan.tsx             — 2D drag-drop floor plan
+  FloorPlan3D.tsx           — Three.js 3D view (lazy-loaded, ~25 kB chunk + shared three-d chunk)
+  Table3D.tsx               — individual 3D table component
+  BillSplitter.tsx          — split bill UI
+
+src/utils/
+  groqClient.ts             — Groq API client wrapper (used by AI features)
+```
+
+### Database Migrations
+
+| Migration | Tables / Changes |
+|---|---|
+| `000031` | `restaurant_tables`, `table_orders`, `kitchen_display_items`, `restaurant_reservations` |
+| `000034` | `restaurant_menu_categories`, `restaurant_menu_items`, modifier groups, modifiers |
+| `000035` | `restaurant_shifts`, `restaurant_shift_assignments`, `restaurant_kds_stations`, `restaurant_settings` |
+| `000036` | `restaurant_argile_sessions`, `restaurant_argile_items` |
+| `000037` | `restaurant_ingredients`, `restaurant_recipes`, `restaurant_recipe_ingredients`, `restaurant_menu_item_recipes`, `ingredient_suppliers`, `waste_log`, `ingredient_movements`, `restaurant_purchase_orders`, `restaurant_purchase_order_items` |
+| `000038` | Analytics views: `restaurant_item_velocity`, `table_feedback`, `slow_alerts`; `restaurant_eod_reports` |
+| `000039` | `restaurant_branches`, `restaurant_branch_metrics` |
+| `000040` | `restaurant_bridge` (links `restaurant_tables` → `locations`); delivery integrations stub |
+| `000041` | Consolidated analytics + reporting views |
+| `000042` | `restaurant_ai_queries` (AI chat history, tenant-scoped) |
+| `000043` / `000047` | `restaurant_cash_drawers`, `restaurant_cash_transactions` (000047 supersedes 000043) |
+| `000044` | `restaurant_menu_items_branch_overrides` (per-branch availability) |
+| `000045` | `fn_close_bill` patch — handles argile + modifiers in bill close |
+| `000046` | `restaurant_events` (events/banquets management) |
+| `000049` | `restaurant_purchase_orders` RLS + supplier link fixes |

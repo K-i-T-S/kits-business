@@ -30,7 +30,7 @@ Build output directory is `build/` (configured in `vite.config.ts`). Vercel dete
 
 ## Database — Supabase Migrations
 
-Run migrations **in order** via **Supabase Dashboard → SQL Editor**. All 29 migrations are in `supabase/migrations/`. Do not skip or reorder.
+Run migrations **in order** via **Supabase Dashboard → SQL Editor**. All 49 migrations (000000–000049) are in `supabase/migrations/`. Do not skip or reorder. Note: 000048 was skipped (gap in sequence).
 
 | Order | File | Notes |
 |---|---|---|
@@ -63,6 +63,26 @@ Run migrations **in order** via **Supabase Dashboard → SQL Editor**. All 29 mi
 | 27 | `20260619_000026_crm.sql` | Customer segments, communication history, CRM analytics helpers |
 | 28 | `20260619_000027_campaigns.sql` | campaigns and automated_workflows tables |
 | 29 | `20260619_000028_finance.sql` | expense_categories (34 Lebanese defaults), expenses, expense_budgets, payroll_entries |
+| 30 | `20260620_000030_industry_column.sql` | Backfills industry from business_type; extends get_current_user_tenant() to expose industry field *(000029 skipped)* |
+| 31 | `20260620_000031_restaurant_schema.sql` | restaurant_tables, table_orders, kitchen_display_items, restaurant_reservations |
+| 32 | `20260620_000032_pharmacy_schema.sql` | Pharmacy vertical: medications, prescriptions, dispensing, narcotics register, insurance |
+| 33 | `20260620_000033_supermarket_schema.sql` | Supermarket vertical: expiry tracking, bulk pricing, loyalty multipliers |
+| 34 | `20260621_000034_restaurant_menu_system.sql` | restaurant_menu_categories, restaurant_menu_items, modifier groups/modifiers, menu_item_modifier_groups |
+| 35 | `20260621_000035_restaurant_order_flow.sql` | restaurant_shifts, restaurant_shift_assignments, restaurant_kds_stations, restaurant_settings |
+| 36 | `20260621_000036_restaurant_argile.sql` | Argile (shisha) sessions: restaurant_argile_sessions, argile_items |
+| 37 | `20260621_000037_restaurant_recipes.sql` | Recipe costing: restaurant_ingredients, restaurant_recipes, restaurant_recipe_ingredients, ingredient_suppliers, waste_log, ingredient_movements, restaurant_purchase_orders/items |
+| 38 | `20260621_000038_restaurant_intelligence.sql` | Analytics views: restaurant_item_velocity, table_feedback, slow_alerts; restaurant_eod_reports |
+| 39 | `20260621_000039_restaurant_multi_branch.sql` | Multi-branch: restaurant_branches, restaurant_branch_metrics |
+| 40 | `20260621_000040_restaurant_bridge.sql` | Bridge: links restaurant_tables → locations; delivery integrations stub |
+| 41 | `20260621_000041_restaurant_views.sql` | Consolidated views for analytics and reporting |
+| 42 | `20260622_000042_restaurant_ai.sql` | restaurant_ai_queries (chat history for AI assistant) |
+| 43 | `20260623_000043_cash_management.sql` | Cash management foundation (superseded by 000047) |
+| 44 | `20260623_000044_branch_menu_overrides.sql` | restaurant_menu_items_branch_overrides (per-branch item availability) |
+| 45 | `20260623_000045_fn_close_bill_patch.sql` | Patch fn_close_bill to handle argile + modifiers |
+| 46 | `20260623_000046_restaurant_events.sql` | restaurant_events table (events/banquets management) |
+| 47 | `20260623_000047_cash_management.sql` | Cash drawer management: restaurant_cash_drawers, restaurant_cash_transactions (replaces 000043) |
+| 48 | *(skipped)* | 000048 was not created — gap in sequence |
+| 49 | `20260624_000049_restaurant_purchase_orders.sql` | restaurant_purchase_orders RLS + supplier link fixes |
 
 If you need to reset to a clean state, run migration 4 (`000003`) again — it drops and recreates all domain-table RLS policies safely.
 
@@ -80,6 +100,7 @@ npx supabase functions deploy welcome-email --project-ref pytndxjeznhhyycjasep
 npx supabase functions deploy send-invitation --project-ref pytndxjeznhhyycjasep
 npx supabase functions deploy whatsapp-receipt --project-ref pytndxjeznhhyycjasep
 npx supabase functions deploy trigger-workflows --project-ref pytndxjeznhhyycjasep
+npx supabase functions deploy groq-proxy --project-ref pytndxjeznhhyycjasep
 ```
 
 ### Set Secrets
@@ -91,6 +112,9 @@ npx supabase secrets set RESEND_API_KEY=re_xxx --project-ref pytndxjeznhhyycjase
 # WhatsApp (Meta Cloud API)
 npx supabase secrets set WHATSAPP_TOKEN=EAAxxxx --project-ref pytndxjeznhhyycjasep
 npx supabase secrets set WHATSAPP_PHONE_ID=1234567890 --project-ref pytndxjeznhhyycjasep
+
+# Groq AI (server-side — never exposed to browser)
+npx supabase secrets set GROQ_API_KEY=gsk_xxx --project-ref pytndxjeznhhyycjasep
 ```
 
 Secrets can also be set via Dashboard → Functions → Secrets.
@@ -103,6 +127,7 @@ Secrets can also be set via Dashboard → Functions → Secrets.
 | `send-invitation` | `supabase/functions/send-invitation/` | InviteTeamMemberModal | `RESEND_API_KEY` |
 | `whatsapp-receipt` | `supabase/functions/whatsapp-receipt/` | POS WhatsApp button (Business plan) | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
 | `trigger-workflows` | `supabase/functions/trigger-workflows/` | WorkflowAutomation "Run Now" | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
+| `groq-proxy` | `supabase/functions/groq-proxy/` | AI features in RestaurantAnalytics, RestaurantHub | `GROQ_API_KEY` |
 
 See `docs/setup-whatsapp-receipts.md` for the full WhatsApp setup guide.
 

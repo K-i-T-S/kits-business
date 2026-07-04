@@ -33,7 +33,7 @@ Key differentiators:
 ```bash
 npm install
 # .env.local already sets VITE_USE_LOCAL_MODE=true
-npm run dev        # → http://localhost:5173
+npm run dev        # → http://localhost:3000
 ```
 
 Data lives in browser `localStorage`. No credentials needed. Use this for UI development.
@@ -52,7 +52,7 @@ npm run dev
 ## Commands
 
 ```bash
-npm run dev           # Dev server on http://localhost:5173
+npm run dev           # Dev server on http://localhost:3000
 npm run typecheck     # TypeScript strict check — run before every edit
 npm run lint          # ESLint, zero warnings
 npm run lint:fix      # Auto-fix ESLint errors
@@ -68,7 +68,7 @@ npm run storybook     # Component explorer on :6006
 
 ## Database Setup
 
-Run migrations in order in **Supabase Dashboard → SQL Editor**. All 29 migrations are in `supabase/migrations/` and must be applied in filename order (000000 → 000028).
+Run migrations in order in **Supabase Dashboard → SQL Editor**. All 49 migrations (000000–000049) are in `supabase/migrations/` and must be applied in filename order. Note: 000048 was skipped (gap in sequence).
 
 See `CLAUDE.md` for the full ordered list with descriptions.
 
@@ -89,6 +89,7 @@ See `CLAUDE.md` for the full ordered list with descriptions.
 | `RESEND_API_KEY` | `welcome-email` | Transactional email |
 | `WHATSAPP_TOKEN` | `whatsapp-receipt` | Meta Cloud API bearer token |
 | `WHATSAPP_PHONE_ID` | `whatsapp-receipt` | Meta sender phone number ID |
+| `GROQ_API_KEY` | `groq-proxy` | AI features (server-side Groq key) |
 
 ---
 
@@ -182,6 +183,8 @@ ErrorBoundary → ThemeProvider → Router → AppProvider → SubscriptionProvi
 supabase functions deploy welcome-email --project-ref pytndxjeznhhyycjasep
 supabase functions deploy send-invitation --project-ref pytndxjeznhhyycjasep
 supabase functions deploy whatsapp-receipt --project-ref pytndxjeznhhyycjasep
+supabase functions deploy trigger-workflows --project-ref pytndxjeznhhyycjasep
+supabase functions deploy groq-proxy --project-ref pytndxjeznhhyycjasep
 ```
 
 **CI** — GitHub Actions (`.github/workflows/ci.yml`): typecheck + build on every push/PR.

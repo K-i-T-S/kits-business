@@ -44,3 +44,7 @@ logs/watchdog*.log
 
 # Claude Code internal worktrees — never commit these
 .claude/worktrees/
+
+# Session/tool artifacts
+.playwright-mcp/
+.superpowers/

@@ -41,7 +41,7 @@ For Supabase: copy `.env.example` → `.env`, fill in `VITE_SUPABASE_URL` and `V
 
 All application data uses **direct PostgREST calls** via `supabase.from('table')` — there is no intermediary Edge Function for CRUD. The `supabase` client is exported from `src/utils/supabaseClient.ts` and switches automatically between the real client and localStorage mock.
 
-The Edge Function at `supabase/functions/make-server-210e7672/` exists in the repo but is **not wired to any active data flow**. The `api` object in `supabaseClient.ts` also exists but is unused by the application — do not add new calls to it.
+The `api` object in `supabaseClient.ts` exists but is unused — do not add new calls to it.
 
 **When adding any data operation**: use `supabase.from('table_name').select/insert/update/delete()` directly. RLS handles all tenant isolation server-side — no `tenant_id` filter is needed in queries.
 
@@ -179,10 +179,11 @@ Run in this order in Supabase Dashboard → SQL Editor:
 | `send-invitation` | Called from InviteTeamMemberModal | `RESEND_API_KEY` |
 | `whatsapp-receipt` | Called from POS after sale (Business plan) | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
 | `trigger-workflows` | Called from WorkflowAutomation "Run Now" | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
+| `groq-proxy` | AI features in RestaurantAnalytics, RestaurantHub, AIAssistant | `GROQ_API_KEY` |
 
 Deploy all: `npx supabase functions deploy <function-name> --project-ref pytndxjeznhhyycjasep`
 
-Set WhatsApp secrets: `npx supabase secrets set WHATSAPP_TOKEN=... WHATSAPP_PHONE_ID=... --project-ref pytndxjeznhhyycjasep`
+Set secrets: `npx supabase secrets set GROQ_API_KEY=... WHATSAPP_TOKEN=... WHATSAPP_PHONE_ID=... --project-ref pytndxjeznhhyycjasep`
 
 ## TypeScript
 

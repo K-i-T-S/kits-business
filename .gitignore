@@ -48,3 +48,4 @@ logs/watchdog*.log
 # Session/tool artifacts
 .playwright-mcp/
 .superpowers/
+.worktrees/

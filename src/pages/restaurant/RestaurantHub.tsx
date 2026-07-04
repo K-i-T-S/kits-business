@@ -518,10 +518,6 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
 
 // ── Groq AI helper ────────────────────────────────────────────────────────────
 
-interface GroqResponse {
-  choices: Array<{ message: { content: string } }>;
-}
-
 interface BriefingCache {
   briefing: string;
   yesterdayRevenue: number;
@@ -530,22 +526,17 @@ interface BriefingCache {
 }
 
 async function callGroq(systemPrompt: string, userPrompt: string): Promise<string> {
-  const k = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
-  if (!k) return 'Configure VITE_GROQ_API_KEY to enable AI briefings.';
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${k}` },
-    body: JSON.stringify({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data, error } = await supabase.functions.invoke<{ text: string }>('groq-proxy', {
+    body: {
+      systemPrompt,
+      prompt: userPrompt,
       model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      max_tokens: 300,
-    }),
+      maxTokens: 300,
+    },
   });
-  const d = await r.json() as GroqResponse;
-  return d.choices[0]?.message.content ?? '';
+  if (error || !data?.text) return 'AI briefing unavailable. Please try again.';
+  return data.text;
 }
 
 // ── Main component ────────────────────────────────────────────────────────────

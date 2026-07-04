@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, Trash2, ArrowLeft, Terminal } from 'lucide-react';
+import { Send, Sparkles, Trash2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import Layout from '@/components/Layout';
@@ -67,41 +67,6 @@ function saveHistory(tenantId: string, messages: ChatMessage[]): void {
   } catch {
     // storage may be full — ignore
   }
-}
-
-// ── Setup Instructions Panel ───────────────────────────────────────────────────
-
-function SetupPanel() {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 px-6 py-12">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10">
-        <Terminal className="h-8 w-8 text-amber-400" />
-      </div>
-      <div className="max-w-sm text-center">
-        <h2 className="mb-2 text-xl font-bold text-white">Configure Groq API Key</h2>
-        <p className="mb-6 text-sm text-white/60">
-          AI Assistant requires a Groq API key to function. Add it to your environment:
-        </p>
-        <div className="rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-left">
-          <p className="font-mono text-xs text-amber-400">
-            VITE_GROQ_API_KEY=gsk_...
-          </p>
-        </div>
-        <p className="mt-4 text-xs text-white/40">
-          Add to <span className="font-mono text-white/60">.env.local</span> then restart{' '}
-          <span className="font-mono text-white/60">npm run dev</span>
-        </p>
-        <a
-          href="https://console.groq.com/keys"
-          target="_blank"
-          rel="noreferrer"
-          className="mt-4 inline-block rounded-lg bg-indigo-600/20 px-4 py-2 text-sm text-indigo-300 transition-colors hover:bg-indigo-600/30"
-        >
-          Get API Key at console.groq.com
-        </a>
-      </div>
-    </div>
-  );
 }
 
 // ── Typing Indicator ───────────────────────────────────────────────────────────
@@ -201,8 +166,6 @@ export default function AIAssistant() {
   const { currentTenant } = useApp();
   const navigate = useNavigate();
   const tenantId = currentTenant?.id;
-
-  const hasApiKey = Boolean(import.meta.env.VITE_GROQ_API_KEY as string | undefined);
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -341,79 +304,75 @@ export default function AIAssistant() {
           </button>
         </div>
 
-        {!hasApiKey ? (
-          <SetupPanel />
-        ) : (
-          <>
-            {/* Quick Prompts */}
-            <QuickPrompts onSelect={handleSend} disabled={streaming} />
+        <>
+          {/* Quick Prompts */}
+          <QuickPrompts onSelect={handleSend} disabled={streaming} />
 
-            {/* Messages */}
-            <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
-              {messages.length === 0 ? (
-                <motion.div
-                  className="flex h-full flex-col items-center justify-center gap-4 text-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/10">
-                    <Sparkles className="h-7 w-7 text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="mb-1 text-lg font-semibold text-white">
+          {/* Messages */}
+          <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
+            {messages.length === 0 ? (
+              <motion.div
+                className="flex h-full flex-col items-center justify-center gap-4 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/10">
+                  <Sparkles className="h-7 w-7 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="mb-1 text-lg font-semibold text-white">
                       Welcome to KiTS AI
-                    </h2>
-                    <p className="text-sm text-white/50">
+                  </h2>
+                  <p className="text-sm text-white/50">
                       Ask anything about your restaurant operations
-                    </p>
-                  </div>
-                </motion.div>
-              ) : (
-                <AnimatePresence initial={false}>
-                  {messages.map((msg) => (
-                    <MessageBubble key={msg.id} message={msg} />
-                  ))}
-                </AnimatePresence>
-              )}
+                  </p>
+                </div>
+              </motion.div>
+            ) : (
+              <AnimatePresence initial={false}>
+                {messages.map((msg) => (
+                  <MessageBubble key={msg.id} message={msg} />
+                ))}
+              </AnimatePresence>
+            )}
 
-              {streaming && messages[messages.length - 1]?.content === '' && (
-                <TypingIndicator />
-              )}
+            {streaming && messages[messages.length - 1]?.content === '' && (
+              <TypingIndicator />
+            )}
 
-              <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-white/10 bg-slate-900/80 px-5 py-3 backdrop-blur-sm">
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Ask me anything..."
+                value={input}
+                onChange={(e) => { setInput(e.target.value); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !streaming) {
+                    handleSend(input);
+                  }
+                }}
+                disabled={streaming}
+                className="bg-slate-800 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white flex-1 placeholder:text-white/30 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
+              />
+
+              <button
+                onClick={() => { handleSend(input); }}
+                disabled={!input.trim() || streaming}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Send message"
+              >
+                <Send className="h-4 w-4" />
+              </button>
             </div>
-
-            {/* Input */}
-            <div className="border-t border-white/10 bg-slate-900/80 px-5 py-3 backdrop-blur-sm">
-              <div className="flex gap-2">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Ask me anything..."
-                  value={input}
-                  onChange={(e) => { setInput(e.target.value); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && !streaming) {
-                      handleSend(input);
-                    }
-                  }}
-                  disabled={streaming}
-                  className="bg-slate-800 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white flex-1 placeholder:text-white/30 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
-                />
-
-                <button
-                  onClick={() => { handleSend(input); }}
-                  disabled={!input.trim() || streaming}
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                  aria-label="Send message"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="mt-1.5 text-xs text-white/30">Press Enter to send</p>
-            </div>
-          </>
-        )}
+            <p className="mt-1.5 text-xs text-white/30">Press Enter to send</p>
+          </div>
+        </>
       </div>
     </Layout>
   );

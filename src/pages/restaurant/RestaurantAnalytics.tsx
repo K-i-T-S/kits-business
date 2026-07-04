@@ -949,27 +949,18 @@ interface AISuggestion {
   detail: string;
 }
 
-interface GroqAPIResponse {
-  choices: Array<{ message: { content: string } }>;
-}
-
 async function callGroq(prompt: string): Promise<string> {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
-  if (!apiKey) return 'AI features require VITE_GROQ_API_KEY to be configured.';
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data, error } = await supabase.functions.invoke<{ text: string }>('groq-proxy', {
+    body: {
+      prompt,
+      systemPrompt: 'You are a restaurant menu engineering expert for Lebanese/MENA restaurants. Be concise and actionable.',
       model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: 'You are a restaurant menu engineering expert for Lebanese/MENA restaurants. Be concise and actionable.' },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 800,
-    }),
+      maxTokens: 800,
+    },
   });
-  const data = await res.json() as GroqAPIResponse;
-  return data.choices[0]?.message.content ?? '';
+  if (error || !data?.text) return 'AI suggestions unavailable. Please try again.';
+  return data.text;
 }
 
 function parseSuggestions(raw: string): AISuggestion[] {
@@ -1055,7 +1046,7 @@ Focus on Lebanese/MENA dining context.
       );
     } catch (err) {
       console.error('[AIMenuSuggestionsPanel] error:', err);
-      setSuggestions([{ emoji: '⚠️', title: 'Error generating suggestions', detail: 'Check your VITE_GROQ_API_KEY and console for details.' }]);
+      setSuggestions([{ emoji: '⚠️', title: 'Error generating suggestions', detail: 'AI service unavailable. Please try again.' }]);
     } finally {
       setLoading(false);
     }

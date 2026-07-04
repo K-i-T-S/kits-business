@@ -1,75 +1,45 @@
-/**
- * groqClient — Thin fetch wrapper for the Groq OpenAI-compatible API.
- *
- * Model: llama-3.3-70b-versatile
- * Endpoint: https://api.groq.com/openai/v1/chat/completions
- *
- * Usage:
- *   import { groqChat, groqChatStream } from '@/utils/groqClient';
- */
+import { supabase, getAuthHeaders } from '@/utils/supabaseClient';
 
 export interface GroqMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-interface GroqAPIResponse {
-  choices: Array<{ message: { role: string; content: string }; finish_reason: string }>;
-  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
-}
+const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL as string}/functions/v1`;
 
-interface GroqStreamChunk {
-  choices: Array<{ delta: { content?: string } }>;
-}
-
-/**
- * Single-shot chat completion. Returns the assistant's reply as a string.
- */
 export async function groqChat(
   messages: GroqMessage[],
   opts?: { maxTokens?: number; temperature?: number },
 ): Promise<string> {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
-  if (!apiKey) throw new Error('VITE_GROQ_API_KEY not configured');
-
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data, error } = await supabase.functions.invoke<{ text: string }>('groq-proxy', {
+    body: {
       messages,
-      max_tokens: opts?.maxTokens ?? 1024,
-      temperature: opts?.temperature ?? 0.7,
-    }),
+      model: 'llama-3.3-70b-versatile',
+      maxTokens: opts?.maxTokens ?? 1024,
+    },
   });
 
-  if (!res.ok) {
-    const e = await res.text();
-    throw new Error(`Groq error ${res.status}: ${e}`);
+  if (error instanceof Error) throw error;
+  if (error || !data?.text) {
+    throw new Error('AI service unavailable');
   }
-
-  const data = (await res.json()) as GroqAPIResponse;
-  return data.choices[0]?.message.content ?? '';
+  return data.text;
 }
 
-/**
- * Streaming chat completion. Calls `onToken` for each incremental token.
- */
 export async function groqChatStream(
   messages: GroqMessage[],
   onToken: (token: string) => void,
   opts?: { maxTokens?: number },
 ): Promise<void> {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
-  if (!apiKey) throw new Error('VITE_GROQ_API_KEY not configured');
-
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/groq-proxy`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    headers,
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
       messages,
-      max_tokens: opts?.maxTokens ?? 1024,
+      model: 'llama-3.3-70b-versatile',
+      maxTokens: opts?.maxTokens ?? 1024,
       stream: true,
     }),
   });
@@ -92,7 +62,7 @@ export async function groqChatStream(
       if (raw === '[DONE]') return;
 
       try {
-        const chunk = JSON.parse(raw) as GroqStreamChunk;
+        const chunk = JSON.parse(raw) as { choices: Array<{ delta: { content?: string } }> };
         const tok = chunk.choices[0]?.delta.content;
         if (tok) onToken(tok);
       } catch {

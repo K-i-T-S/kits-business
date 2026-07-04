@@ -226,7 +226,8 @@ export default defineConfig({
           dnd: ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
           virtualization: ['react-window', 'react-window-infinite-loader', 'react-virtualized-auto-sizer'],
           i18n: ['react-i18next', 'i18next', 'i18next-browser-languagedetector', 'i18next-http-backend'],
-          export: ['exceljs', 'jspdf', 'html2canvas']
+          export: ['exceljs', 'jspdf', 'html2canvas'],
+          'three-d': ['three', '@react-three/fiber', '@react-three/drei']
         }
       }
     },

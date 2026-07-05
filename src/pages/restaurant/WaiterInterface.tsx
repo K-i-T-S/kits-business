@@ -35,15 +35,19 @@ import {
   Sparkles,
   UserCircle,
   WifiOff,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import RoleGate from '@/components/RoleGate';
 import BillSplitter from '@/components/restaurant/BillSplitter';
 import { BillSplitModal } from '@/components/restaurant/BillSplitModal';
 import CloseBillModal from '@/components/restaurant/CloseBillModal';
+import TableTransferModal from '@/components/restaurant/TableTransferModal';
+import type { Employee } from '@/context/AppContext';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
 import { useUpsellRules } from '@/hooks/useUpsellRules';
@@ -840,9 +844,12 @@ interface TableDetailProps {
   onClose: () => void;
   onOrderClosed: () => void;
   isOnline: boolean;
+  allTables: RestaurantTable[];
+  allOrders: TableOrder[];
+  employees: Employee[];
 }
 
-function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, onOrderClosed, isOnline }: TableDetailProps) {
+function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, onOrderClosed, isOnline, allTables, allOrders, employees }: TableDetailProps) {
   const { t } = useTranslation();
   const { currentTenant, customers } = useApp();
   const { table, order } = tableData;
@@ -927,6 +934,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   const [_closingBill, setClosingBill] = useState(false);
   const [showCloseBillModal, setShowCloseBillModal] = useState(false);
   const [splitBillOpen, setSplitBillOpen] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   // Split state
   const [splitType, setSplitType] = useState<SplitType>('equal');
@@ -1313,6 +1321,17 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
                     )}
                   </button>
                 )}
+
+                {/* Table & waiter transfer */}
+                <RoleGate action="make_sales">
+                  <button
+                    onClick={() => setShowTransferModal(true)}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-500/30 bg-sky-500/10 py-3 text-sm font-semibold text-sky-400 transition-all hover:bg-sky-500/20"
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                    {t('restaurant.transfer', 'Transfer Table / Waiter')}
+                  </button>
+                </RoleGate>
               </>
             )}
           </div>
@@ -1585,6 +1604,23 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
         />
       )}
 
+      {/* Table & waiter transfer */}
+      {showTransferModal && order && (
+        <TableTransferModal
+          isOpen={showTransferModal}
+          onClose={() => setShowTransferModal(false)}
+          onSuccess={() => { setShowTransferModal(false); onClose(); onOrderClosed(); }}
+          tenantId={tenantId ?? ''}
+          sourceTable={table}
+          sourceOrder={order}
+          sourceOrderItemCount={items.length}
+          currentWaiterId={hookOrder?.waiter_id ?? (order as { waiter_id?: string | null }).waiter_id ?? null}
+          tables={allTables}
+          orders={allOrders}
+          employees={employees}
+        />
+      )}
+
       {/* Split Bill Modal */}
       <BillSplitModal
         isOpen={splitBillOpen}
@@ -1698,7 +1734,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
 export default function WaiterInterface() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { currentTenant, currentEmployee } = useApp();
+  const { currentTenant, currentEmployee, employees } = useApp();
   const tenantId = currentTenant?.id;
   const now = useClock();
 
@@ -2463,6 +2499,9 @@ export default function WaiterInterface() {
           onClose={() => setSelectedTableId(null)}
           onOrderClosed={() => { void loadData(); }}
           isOnline={isOnline}
+          allTables={tables}
+          allOrders={orders}
+          employees={employees}
         />
       )}
 

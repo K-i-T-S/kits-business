@@ -21,7 +21,8 @@ ALTER TABLE table_orders
 CREATE OR REPLACE FUNCTION fn_transfer_table_order(
   p_order_id UUID,
   p_target_table_id UUID,
-  p_new_waiter_id UUID DEFAULT NULL
+  p_new_waiter_id UUID DEFAULT NULL,
+  p_allow_merge BOOLEAN DEFAULT FALSE
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -83,15 +84,32 @@ BEGIN
     UPDATE table_orders SET table_id = p_target_table_id WHERE id = p_order_id;
     UPDATE restaurant_tables SET status = 'available' WHERE id = v_source_table_id;
     UPDATE restaurant_tables SET status = 'occupied' WHERE id = p_target_table_id;
+
+    -- Any active argile session tied to this order must follow the party to
+    -- its new table, or subsequent refill/coal charges will look for an open
+    -- order at the freed source table (finding none, or worse, finding
+    -- whichever new party is later seated there).
+    UPDATE restaurant_argile_sessions
+      SET table_id = p_target_table_id
+      WHERE table_order_id = p_order_id AND tenant_id = v_tenant_id AND status = 'active';
+
     v_resulting_order_id := p_order_id;
   ELSE
-    -- Merge: target table already has an open order — combine into one bill
+    -- Merge: target table already has an open order — combine into one bill.
+    -- Refuse silently merging unless the caller has explicitly acknowledged
+    -- it (i.e. the user has seen and accepted the "cannot be undone" merge
+    -- warning). A stale frontend that believed this target was empty gets a
+    -- distinct exception here instead of performing an unacknowledged merge.
+    IF NOT p_allow_merge THEN
+      RAISE EXCEPTION 'target_occupied_merge_required';
+    END IF;
+
     UPDATE restaurant_order_items
       SET order_id = v_target_order_id
       WHERE order_id = p_order_id AND tenant_id = v_tenant_id;
 
     UPDATE restaurant_argile_sessions
-      SET table_order_id = v_target_order_id
+      SET table_order_id = v_target_order_id, table_id = p_target_table_id
       WHERE table_order_id = p_order_id AND tenant_id = v_tenant_id AND status = 'active';
 
     UPDATE table_orders

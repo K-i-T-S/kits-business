@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { X, ArrowLeftRight, AlertTriangle } from 'lucide-react';
@@ -8,6 +8,7 @@ import type { RestaurantTable, TableOrder } from '@/types/restaurant';
 import type { Employee } from '@/context/AppContext';
 
 const OPEN_STATUSES = ['open', 'sent', 'served'];
+const MERGE_REQUIRES_CONFIRMATION_ERROR = 'target_occupied_merge_required';
 
 interface TableTransferModalProps {
   isOpen: boolean;
@@ -41,8 +42,34 @@ export default function TableTransferModal({
   const [waiterId, setWaiterId] = useState(currentWaiterId ?? '');
   const [confirmingMerge, setConfirmingMerge] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [liveItemCount, setLiveItemCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { count, error } = await supabase
+          .from('restaurant_order_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('order_id', sourceOrder.id)
+          .eq('tenant_id', tenantId);
+        if (cancelled) return;
+        if (error) {
+          console.error('[TableTransferModal] item count fetch error:', error);
+          return;
+        }
+        setLiveItemCount(count ?? null);
+      } catch (err) {
+        if (!cancelled) console.error('[TableTransferModal] item count fetch error:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, sourceOrder.id, tenantId]);
 
   if (!isOpen) return null;
+
+  const displayItemCount = liveItemCount ?? sourceOrderItemCount;
 
   const candidateTables = tables.filter((tbl) => tbl.id !== sourceTable.id);
   const isTableMove = targetTableId !== '';
@@ -53,7 +80,7 @@ export default function TableTransferModal({
   const noChangeSelected = !isTableMove && waiterId === (currentWaiterId ?? '');
   const targetTableNumber = tables.find((tbl) => tbl.id === targetTableId)?.number ?? '';
 
-  const performTransfer = async () => {
+  const performTransfer = async (allowMerge: boolean) => {
     setSubmitting(true);
     try {
       if (isTableMove) {
@@ -61,8 +88,19 @@ export default function TableTransferModal({
           p_order_id: sourceOrder.id,
           p_target_table_id: targetTableId,
           p_new_waiter_id: waiterId || null,
+          p_allow_merge: allowMerge,
         });
-        if (error) throw error;
+        if (error) {
+          if (!allowMerge && error.message?.includes(MERGE_REQUIRES_CONFIRMATION_ERROR)) {
+            // The frontend believed this was a simple move, but the backend found
+            // the target table now occupied (stale local state). Surface the same
+            // merge-confirmation gate the user would have seen if we'd known upfront,
+            // rather than silently failing or silently merging.
+            setConfirmingMerge(true);
+            return;
+          }
+          throw error;
+        }
       } else {
         const { error } = await supabase
           .from('table_orders')
@@ -79,7 +117,6 @@ export default function TableTransferModal({
       toast.error(t('restaurant.transferError', 'Failed to transfer order'));
     } finally {
       setSubmitting(false);
-      setConfirmingMerge(false);
     }
   };
 
@@ -88,7 +125,7 @@ export default function TableTransferModal({
       setConfirmingMerge(true);
       return;
     }
-    void performTransfer();
+    void performTransfer(false);
   };
 
   return (
@@ -111,7 +148,7 @@ export default function TableTransferModal({
               <span>
                 {t(
                   'restaurant.mergeWarning',
-                  `This will combine ${sourceOrderItemCount} item${sourceOrderItemCount === 1 ? '' : 's'} from Table ${sourceTable.number} into Table ${targetTableNumber}'s bill. This cannot be undone.`,
+                  `This will combine ${displayItemCount} item${displayItemCount === 1 ? '' : 's'} from Table ${sourceTable.number} into Table ${targetTableNumber}'s bill. This cannot be undone.`,
                 )}
               </span>
             </div>
@@ -123,7 +160,7 @@ export default function TableTransferModal({
                 {t('common.cancel', 'Cancel')}
               </button>
               <button
-                onClick={() => { void performTransfer(); }}
+                onClick={() => { void performTransfer(true); }}
                 disabled={submitting}
                 className="flex-1 rounded-xl bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
               >
@@ -170,7 +207,7 @@ export default function TableTransferModal({
                 onChange={(e) => setWaiterId(e.target.value)}
                 className="w-full rounded-xl bg-slate-800 border border-white/20 text-white px-3 py-2"
               >
-                <option value="">{t('restaurant.noWaiterChange', 'No change')}</option>
+                <option value="">{t('restaurant.unassignWaiter', 'Unassign waiter')}</option>
                 {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>{emp.name}</option>
                 ))}

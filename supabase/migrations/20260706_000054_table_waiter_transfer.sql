@@ -7,6 +7,13 @@
 -- schema change of its own — only this comment documenting the convention:
 -- table_orders.status now also accepts 'merged', meaning this order's items were
 -- folded into another order (see merged_into_order_id) rather than closed/cancelled.
+--
+-- Note: concurrent mutual-swap transfers between two tables (order A moved to
+-- order B's table AND order B moved to order A's table, at the same time) may
+-- cause Postgres to detect a deadlock and abort one transaction with a generic
+-- deadlock_detected error rather than one of this function's RAISE EXCEPTION
+-- messages. This is self-resolving (one transaction aborts and can be safely
+-- retried) — not a correctness bug.
 
 ALTER TABLE table_orders
   ADD COLUMN IF NOT EXISTS merged_into_order_id UUID REFERENCES table_orders(id);
@@ -39,6 +46,10 @@ BEGIN
     RAISE EXCEPTION 'Order % not found', p_order_id;
   END IF;
 
+  IF v_tenant_id <> current_tenant_id() THEN
+    RAISE EXCEPTION 'permission_denied';
+  END IF;
+
   IF v_source_status NOT IN ('open', 'sent', 'served') THEN
     RAISE EXCEPTION 'Order % is not transferable (status = %)', p_order_id, v_source_status;
   END IF;
@@ -53,6 +64,11 @@ BEGIN
   IF p_target_table_id = v_source_table_id THEN
     RAISE EXCEPTION 'Target table is the same as the source table';
   END IF;
+
+  -- Lock the target table row first so concurrent transfers onto the same
+  -- target table serialize here rather than both racing past the "does it
+  -- have an open order" check below and both taking the simple-move branch.
+  PERFORM 1 FROM restaurant_tables WHERE id = p_target_table_id AND tenant_id = v_tenant_id FOR UPDATE;
 
   -- 3. Find and lock the target table's open order, if any
   SELECT id INTO v_target_order_id

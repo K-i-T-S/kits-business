@@ -250,6 +250,14 @@ WaiterInterface.tsx) still reads restaurant_upsell_rules, which has had
 no writer since. Cron wiring lands in a follow-up task."
 ```
 
+**Addendum: what actually happened.** The original brief above (Steps 1-5) turned out incomplete/incorrect in three ways, discovered and fixed during execution:
+
+1. **`deno.json` was missing from the brief.** The deletion commit (`0ba94338`) removed both `index.ts` and `deno.json`, but Step 1 above only restores `index.ts` — the same gap already caught and pre-fixed for Task 3's brief before dispatch. Corrected before the implementer ran: both files restored. This function's historical `deno.json` already used the correct `https://esm.sh/...` format (no `npm:` specifiers), so no BOOT_ERROR risk materialized.
+2. **Pre-existing read-path schema bug**, same class as Task 2's write-path bug: the function's 90-day lookback query does `.gte('created_at', sinceIso)` against `restaurant_order_items`, but that table (`20260620_000031_restaurant_schema.sql`) has no `created_at` column (only `sent_at`/`ready_at`). Never surfaced before because the function was marked "unwired" and never invoked end-to-end. User chose (over rewriting the function to join through `table_orders.opened_at`) to add the missing column directly: migration `20260705_000052_order_items_created_at.sql` — `ALTER TABLE restaurant_order_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();`. Table had only 7 rows at the time (verified), so the one-time backfill-to-now for existing rows was judged inconsequential; applied directly to the live project with explicit sign-off, same as Task 2's precedent.
+3. **The brief's own Step 4 smoke-test payload used the wrong key.** The function reads `body.tenantId` (`index.ts:182`), not `body.tenant_id` as Step 4 above sends — so the original smoke test silently fell through to the "no tenant filter → process all real restaurant tenants" branch instead of a clean single-tenant no-op, which is why the implementer's first (pre-fix) run touched two real tenants instead of the intended fake one. Corrected smoke test (`{"tenantId":"00000000-0000-0000-0000-000000000000"}`) confirmed a clean no-op after the `created_at` fix.
+
+Final commit for this task: `5d3a6494` (supersedes the single-file commit shown in Step 5 above — includes `index.ts`, `deno.json`, and the new migration together, since they form one working unit, matching Task 2's precedent).
+
 ---
 
 ### Task 5: Nightly `pg_cron` automation migration
@@ -392,11 +400,12 @@ In `CLAUDE.md`, find the "Edge Functions" table and add these rows (matching the
 
 - [ ] **Step 2: Add the new migrations to the numbered Database Migrations list**
 
-Append these two lines after entry 49 in `CLAUDE.md` (entry 50 was added mid-execution — see Task 2 Addendum above — and was already applied directly to the live project):
+Append these three lines after entry 49 in `CLAUDE.md` (entries 50 and 52 were added mid-execution — see Task 2 and Task 4 Addenda above — and were already applied directly to the live project):
 
 ```markdown
 50. `20260705_000050_demand_forecasts_unique_constraint.sql` — adds the missing UNIQUE(tenant_id, date) constraint restaurant_demand_forecasts needed for its upsert onConflict target (pre-existing migration bug, applied directly — table was empty)
 51. `20260705_000051_fnb_analytics_cron.sql` — pg_cron + pg_net automation for the three restored F&B analytics edge functions; requires manually setting the `service_role_key` Vault secret post-migration (see migration file header)
+52. `20260705_000052_order_items_created_at.sql` — adds missing created_at column to restaurant_order_items, needed by restaurant-upsell-compute's 90-day lookback query (pre-existing bug, applied directly — table had 7 rows)
 ```
 
 - [ ] **Step 3: Commit**

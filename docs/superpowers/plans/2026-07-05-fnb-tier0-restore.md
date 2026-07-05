@@ -14,7 +14,7 @@
 - None of the four functions call any LLM provider (verified: no Groq/Anthropic imports) — no conflict with the project's Groq-only AI convention.
 - Migrations are applied manually via Supabase Dashboard → SQL Editor per this project's established convention (see `CLAUDE.md` "Database Migrations" section) — this plan creates the migration file but does **not** run it against the live database automatically.
 - Never write the real service-role key value into any file committed to git. The Vault secret is set by the user, once, directly in the SQL Editor.
-- Next migration sequence number is `000050` (last existing is `20260624_000049_restaurant_purchase_orders.sql`).
+- Next migration sequence number was `000050` (last existing was `20260624_000049_restaurant_purchase_orders.sql`); `000050` was consumed mid-execution by an unplanned constraint fix discovered during Task 2 (see Task 2 Addendum below), so Task 5's cron migration is now `000051`.
 - `delivery-webhook` must deploy with `--no-verify-jwt` — it's called by third-party platforms (Toters/Talabat/Zomato/Careem) that will never have a Supabase JWT; its own `x-webhook-secret` header check (already in the restored code) is the real auth boundary. The three AI functions keep normal JWT verification (only `pg_cron`, using the service-role key, calls them).
 
 ---
@@ -127,6 +127,18 @@ useDemandForecast.ts and RestaurantAnalytics.tsx's ForecastTab still
 read from restaurant_demand_forecasts, which nothing has written to
 since. Cron wiring lands in a follow-up task."
 ```
+
+#### Addendum: what actually happened (deviations from the plan above, user-approved at each step)
+
+The historical restore was not a clean byte-for-byte success — it uncovered two real, pre-existing bugs that had never surfaced because the function was never successfully invoked end-to-end before deletion:
+
+1. **`deno.json` used Deno-native `npm:` specifiers** → `BOOT_ERROR` on Supabase's Edge Runtime. Pinning the `date-fns-tz`/`date-fns` peer via esm.sh's `?deps=` fixed the *bundler*-time error but the function still failed to *boot*. Resolution (user-approved): dropped `date-fns-tz` entirely, replaced with a small native `Intl.DateTimeFormat`-based `toZonedTime` helper — same contract, no external package.
+2. **`ForecastRow`'s write payload targeted columns that don't exist** on the real `restaurant_demand_forecasts` table (`forecast_date`, `predicted_revenue_usd`, `seasonality_factor`, `is_holiday`, `is_ramadan`, `is_summer_peak`, `generated_at`, `historical_days_used` — none of these are columns; the table only has `date`, `predicted_revenue`, `day_of_week` (TEXT), `factors`/`prep_recommendations`/`staff_recommendation` (JSONB)). Resolution (user-approved): remapped to the real schema, packing seasonality/holiday/Ramadan/summer-peak detail into `factors`.
+3. **Missing `UNIQUE(tenant_id, date)` constraint** — the function's `upsert(..., { onConflict: 'tenant_id,date' })` requires one and the table never had it (a pre-existing migration bug, unrelated to this restore). Table was empty, so adding it was zero-risk. Resolution (user-approved): added migration `20260705_000050_demand_forecasts_unique_constraint.sql` and applied it directly to the live project.
+
+Net effect: `20260705_000050` was consumed by the constraint fix instead of being available for Task 5's cron migration, which is renumbered to `20260705_000051` throughout this plan. Final commit for this task: `4780d6eb` (supersedes the single-file commit shown in Step 5 above — includes `index.ts`, `deno.json`, and the new migration together, since they form one working unit).
+
+Smoke test after all three fixes: a nonexistent `tenant_id` now correctly fails on the `tenant_id` foreign-key constraint (proves the full parse → query → compute → upsert pipeline runs) instead of `BOOT_ERROR` or a schema-cache error.
 
 ---
 
@@ -243,7 +255,7 @@ no writer since. Cron wiring lands in a follow-up task."
 ### Task 5: Nightly `pg_cron` automation migration
 
 **Files:**
-- Create: `supabase/migrations/20260705_000050_fnb_analytics_cron.sql`
+- Create: `supabase/migrations/20260705_000051_fnb_analytics_cron.sql`
 
 **Interfaces:**
 - Consumes: the three edge functions deployed in Tasks 2–4 (calls them by name via HTTPS).
@@ -252,7 +264,7 @@ no writer since. Cron wiring lands in a follow-up task."
 - [ ] **Step 1: Write the migration file**
 
 ```sql
--- 20260705_000050_fnb_analytics_cron.sql
+-- 20260705_000051_fnb_analytics_cron.sql
 -- Nightly automation for the three restored F&B analytics edge functions:
 -- restaurant-demand-forecast, restaurant-menu-engineering, restaurant-upsell-compute.
 --
@@ -315,7 +327,7 @@ select cron.schedule(
 - [ ] **Step 2: Confirm the file is syntactically well-formed (local static check — this does not run it against any database)**
 
 ```bash
-grep -c "cron.schedule" supabase/migrations/20260705_000050_fnb_analytics_cron.sql
+grep -c "cron.schedule" supabase/migrations/20260705_000051_fnb_analytics_cron.sql
 ```
 
 Expected: `3`
@@ -323,7 +335,7 @@ Expected: `3`
 - [ ] **Step 3: Commit the migration file**
 
 ```bash
-git add supabase/migrations/20260705_000050_fnb_analytics_cron.sql
+git add supabase/migrations/20260705_000051_fnb_analytics_cron.sql
 git commit -m "feat(f&b): add pg_cron migration for nightly analytics automation
 
 Schedules the three restored analytics edge functions nightly via
@@ -338,7 +350,7 @@ this project's migration convention."
 Provide this exact checklist (this step has no code to run locally — it documents what the user does in the Supabase Dashboard):
 
 1. Open Supabase Dashboard → SQL Editor for project `pytndxjeznhhyycjasep`.
-2. Paste and run the full contents of `supabase/migrations/20260705_000050_fnb_analytics_cron.sql`.
+2. Paste and run the full contents of `supabase/migrations/20260705_000051_fnb_analytics_cron.sql`.
 3. In the same SQL Editor, run (substituting the real key from Project Settings → API → service_role):
    ```sql
    select vault.create_secret('<your-service-role-key>', 'service_role_key');
@@ -373,17 +385,18 @@ In `CLAUDE.md`, find the "Edge Functions" table and add these rows (matching the
 
 ```markdown
 | `delivery-webhook` | Called by Toters/Talabat/Zomato/Careem when a delivery order is placed | none (per-integration secret stored in `restaurant_delivery_integrations.webhook_secret`) |
-| `restaurant-demand-forecast` | Nightly `pg_cron` job (`nightly-demand-forecast`, see migration `000050`) | none |
-| `restaurant-menu-engineering` | Nightly `pg_cron` job (`nightly-menu-engineering`, see migration `000050`) | none |
-| `restaurant-upsell-compute` | Nightly `pg_cron` job (`nightly-upsell-compute`, see migration `000050`) | none |
+| `restaurant-demand-forecast` | Nightly `pg_cron` job (`nightly-demand-forecast`, see migration `000051`) | none |
+| `restaurant-menu-engineering` | Nightly `pg_cron` job (`nightly-menu-engineering`, see migration `000051`) | none |
+| `restaurant-upsell-compute` | Nightly `pg_cron` job (`nightly-upsell-compute`, see migration `000051`) | none |
 ```
 
-- [ ] **Step 2: Add the new migration to the numbered Database Migrations list**
+- [ ] **Step 2: Add the new migrations to the numbered Database Migrations list**
 
-Append this line after entry 49 in `CLAUDE.md`:
+Append these two lines after entry 49 in `CLAUDE.md` (entry 50 was added mid-execution — see Task 2 Addendum above — and was already applied directly to the live project):
 
 ```markdown
-50. `20260705_000050_fnb_analytics_cron.sql` — pg_cron + pg_net automation for the three restored F&B analytics edge functions; requires manually setting the `service_role_key` Vault secret post-migration (see migration file header)
+50. `20260705_000050_demand_forecasts_unique_constraint.sql` — adds the missing UNIQUE(tenant_id, date) constraint restaurant_demand_forecasts needed for its upsert onConflict target (pre-existing migration bug, applied directly — table was empty)
+51. `20260705_000051_fnb_analytics_cron.sql` — pg_cron + pg_net automation for the three restored F&B analytics edge functions; requires manually setting the `service_role_key` Vault secret post-migration (see migration file header)
 ```
 
 - [ ] **Step 3: Commit**

@@ -18,6 +18,9 @@ create or replace function invoke_edge_function(function_name text)
 returns void language plpgsql security definer set search_path = public as $$
 declare
   v_key text;
+  -- Hardcodes the production project URL. If this migration is ever replayed
+  -- against a different Supabase project (e.g. a staging environment), this
+  -- value must be updated first, or the cron jobs will call the wrong project's functions.
   v_project_url text := 'https://pytndxjeznhhyycjasep.supabase.co';
 begin
   select decrypted_secret into v_key

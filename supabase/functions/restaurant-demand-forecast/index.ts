@@ -484,6 +484,7 @@ serve(async (req: Request) => {
       .from('tenants')
       .select('id, name, industry, subscription_plan')
       .eq('industry', 'restaurant')
+      .eq('onboarding_completed', true)
       .returns<TenantRow[]>();
 
     if (tenantsError) {

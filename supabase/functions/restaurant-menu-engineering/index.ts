@@ -184,12 +184,24 @@ async function computeForTenant(
     return { processed: 0, skipped: 1 };
   }
 
-  if (!menuItems || menuItems.length === 0) {
-    console.log(`[menu-engineering] tenant ${tenantId}: no active menu items — skipping`);
+  const activeMenuItems = menuItems ?? [];
+
+  if (activeMenuItems.length === 0) {
+    // No active menu items — still refresh the cache (clears any stale rows
+    // from before items were deactivated/deleted) rather than returning early.
+    console.log(`[menu-engineering] tenant ${tenantId}: no active menu items — clearing cache`);
+    const { error: refreshErr } = await db.rpc('refresh_menu_engineering_cache', {
+      p_tenant_id: tenantId,
+      p_rows: [],
+    });
+    if (refreshErr) {
+      console.error(`[menu-engineering] tenant ${tenantId}: cache refresh error:`, refreshErr.message);
+      return { processed: 0, skipped: 1 };
+    }
     return { processed: 0, skipped: 0 };
   }
 
-  const menuItemIds = menuItems.map((m) => m.id);
+  const menuItemIds = activeMenuItems.map((m) => m.id);
 
   // 2. Fetch 30-day order item sales for these menu items
   const { data: orderItems, error: ordErr } = await db
@@ -230,7 +242,7 @@ async function computeForTenant(
   }
 
   // 4. Build metrics array — include all active menu items even if zero sales
-  const metrics: ItemMetrics[] = menuItems.map((item) => {
+  const metrics: ItemMetrics[] = activeMenuItems.map((item) => {
     const agg = salesMap.get(item.id);
     return {
       itemId: item.id,
@@ -244,6 +256,17 @@ async function computeForTenant(
   });
 
   if (metrics.length === 0) {
+    // Defensively unreachable (metrics is mapped 1:1 from activeMenuItems,
+    // which is non-empty at this point) — but still refresh the cache rather
+    // than returning early, consistent with the no-active-items branch above.
+    const { error: refreshErr } = await db.rpc('refresh_menu_engineering_cache', {
+      p_tenant_id: tenantId,
+      p_rows: [],
+    });
+    if (refreshErr) {
+      console.error(`[menu-engineering] tenant ${tenantId}: cache refresh error:`, refreshErr.message);
+      return { processed: 0, skipped: 1 };
+    }
     return { processed: 0, skipped: 0 };
   }
 
@@ -284,18 +307,10 @@ async function computeForTenant(
     };
   });
 
-  // 8. Upsert to restaurant_menu_engineering_cache
-  // Delete existing rows for this tenant first (full refresh)
-  const { error: delErr } = await db
-    .from('restaurant_menu_engineering_cache')
-    .delete()
-    .eq('tenant_id', tenantId);
-
-  if (delErr) {
-    console.error(`[menu-engineering] tenant ${tenantId}: cache delete error:`, delErr.message);
-    return { processed: 0, skipped: 1 };
-  }
-
+  // 8. Refresh restaurant_menu_engineering_cache atomically via the
+  // refresh_menu_engineering_cache RPC (delete stale + insert fresh in a
+  // single transaction; see migration 000053). Delete always runs, even
+  // when insertRows is empty, so stale rows don't linger.
   const insertRows = engineered.map((e) => ({
     tenant_id: tenantId,
     menu_item_id: e.itemId,
@@ -306,12 +321,13 @@ async function computeForTenant(
     potential_revenue_impact: e.potentialRevenueImpact,
   }));
 
-  const { error: insErr } = await db
-    .from('restaurant_menu_engineering_cache')
-    .insert(insertRows);
+  const { error: refreshErr } = await db.rpc('refresh_menu_engineering_cache', {
+    p_tenant_id: tenantId,
+    p_rows: insertRows,
+  });
 
-  if (insErr) {
-    console.error(`[menu-engineering] tenant ${tenantId}: cache insert error:`, insErr.message);
+  if (refreshErr) {
+    console.error(`[menu-engineering] tenant ${tenantId}: cache refresh error:`, refreshErr.message);
     return { processed: 0, skipped: 1 };
   }
 
@@ -381,10 +397,11 @@ serve(async (req: Request) => {
     }
 
     // ── Nightly batch: all active restaurant tenants ───────────────────────
-    // Identify tenants that have at least one restaurant_menu_items row
     const { data: tenants, error: tenantErr } = await db
       .from('tenants')
       .select('id')
+      .eq('industry', 'restaurant')
+      .eq('onboarding_completed', true)
       .returns<TenantRow[]>();
 
     if (tenantErr) {

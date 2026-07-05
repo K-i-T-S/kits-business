@@ -173,6 +173,7 @@ Run in this order in Supabase Dashboard → SQL Editor:
 50. `20260705_000050_demand_forecasts_unique_constraint.sql` — adds the missing UNIQUE(tenant_id, date) constraint restaurant_demand_forecasts needed for its upsert onConflict target (pre-existing migration bug, applied directly — table was empty)
 51. `20260705_000051_fnb_analytics_cron.sql` — pg_cron + pg_net automation for the three restored F&B analytics edge functions; requires manually setting the `service_role_key` Vault secret post-migration (see migration file header)
 52. `20260705_000052_order_items_created_at.sql` — adds missing created_at column to restaurant_order_items, needed by restaurant-upsell-compute's 90-day lookback query (pre-existing bug, applied directly — table had 7 rows)
+53. `20260705_000053_atomic_cache_refresh_rpcs.sql` — `refresh_upsell_rules()` and `refresh_menu_engineering_cache()` RPCs, making each tenant's cache delete+insert one atomic transaction (fixes stale-rows-on-empty-result and partial-write-on-failure findings from whole-branch review; applied directly)
 
 ## Edge Functions
 
@@ -187,6 +188,8 @@ Run in this order in Supabase Dashboard → SQL Editor:
 | `restaurant-demand-forecast` | Nightly `pg_cron` job (`nightly-demand-forecast`, see migration `000051`) | none |
 | `restaurant-menu-engineering` | Nightly `pg_cron` job (`nightly-menu-engineering`, see migration `000051`) | none |
 | `restaurant-upsell-compute` | Nightly `pg_cron` job (`nightly-upsell-compute`, see migration `000051`) | none |
+
+Note: the nightly `pg_cron` jobs invoke these three analytics functions via `pg_net`'s fire-and-forget `net.http_post`, so `cron.job_run_details` will show a job as "succeeded" even if the underlying edge function itself errors or times out — there is no automatic alerting on a silently-failing nightly run; verify by checking that `restaurant_demand_forecasts`, `restaurant_menu_engineering_cache`, and `restaurant_upsell_rules` have fresh rows after the first few nights.
 
 Deploy all: `npx supabase functions deploy <function-name> --project-ref pytndxjeznhhyycjasep`
 

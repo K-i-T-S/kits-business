@@ -36,7 +36,8 @@ interface UpsellRule {
  *   4. Count all ordered pairs (A→B) per basket.
  *   5. confidence(A→B) = count(A∩B) / count(A)
  *   6. Filter by MIN_SUPPORT and MIN_CONFIDENCE.
- *   7. Upsert into restaurant_upsell_rules (delete stale + insert fresh).
+ *   7. Refresh restaurant_upsell_rules atomically via the refresh_upsell_rules
+ *      RPC (delete stale + insert fresh in one transaction; see migration 000053).
  */
 async function computeForTenant(
   supabase: ReturnType<typeof createClient>,
@@ -60,10 +61,6 @@ async function computeForTenant(
   }
 
   const items = (rawItems ?? []) as OrderItem[];
-
-  if (items.length === 0) {
-    return { rulesWritten: 0, ordersProcessed: 0 };
-  }
 
   // Group items into baskets (order_id → Set<menu_item_id>)
   const baskets = new Map<string, Set<string>>();
@@ -126,31 +123,16 @@ async function computeForTenant(
     });
   }
 
-  if (rules.length === 0) {
-    return { rulesWritten: 0, ordersProcessed };
-  }
+  // Atomic delete+insert in a single RPC transaction — delete always runs
+  // (clearing stale rows even when `rules` is empty), and a mid-insert
+  // failure rolls back the delete too. See migration 000053.
+  const { error: refreshErr } = await supabase.rpc('refresh_upsell_rules', {
+    p_tenant_id: tenantId,
+    p_rows: rules,
+  });
 
-  // Delete stale rules for this tenant and replace with fresh ones
-  const { error: deleteErr } = await supabase
-    .from('restaurant_upsell_rules')
-    .delete()
-    .eq('tenant_id', tenantId);
-
-  if (deleteErr) {
-    throw new Error(`Failed to delete old upsell rules for tenant ${tenantId}: ${deleteErr.message}`);
-  }
-
-  // Batch insert in chunks of 500 to avoid payload limits
-  const CHUNK_SIZE = 500;
-  for (let i = 0; i < rules.length; i += CHUNK_SIZE) {
-    const chunk = rules.slice(i, i + CHUNK_SIZE);
-    const { error: insertErr } = await supabase
-      .from('restaurant_upsell_rules')
-      .insert(chunk);
-
-    if (insertErr) {
-      throw new Error(`Failed to insert upsell rules for tenant ${tenantId}: ${insertErr.message}`);
-    }
+  if (refreshErr) {
+    throw new Error(`Failed to refresh upsell rules for tenant ${tenantId}: ${refreshErr.message}`);
   }
 
   return { rulesWritten: rules.length, ordersProcessed };
@@ -175,13 +157,13 @@ serve(async (req: Request) => {
     // Use service role to bypass RLS — this function runs as a system cron, not a user
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Optionally accept a single tenantId in the request body (for manual testing)
+    // Optionally accept a single tenant_id in the request body (for manual testing)
     let tenantIds: string[] = [];
 
     if (req.method === 'POST' && req.headers.get('content-type')?.includes('application/json')) {
-      const body = await req.json() as { tenantId?: string };
-      if (body.tenantId) {
-        tenantIds = [body.tenantId];
+      const body = await req.json() as { tenant_id?: string };
+      if (body.tenant_id) {
+        tenantIds = [body.tenant_id];
       }
     }
 
@@ -205,34 +187,34 @@ serve(async (req: Request) => {
 
     // Process each tenant sequentially (avoid overwhelming the DB)
     const results: Array<{
-      tenantId: string;
+      tenant_id: string;
       status: 'ok' | 'error';
-      rulesWritten?: number;
-      ordersProcessed?: number;
+      rules_written?: number;
+      orders_processed?: number;
       error?: string;
     }> = [];
 
     for (const tenantId of tenantIds) {
       try {
         const { rulesWritten, ordersProcessed } = await computeForTenant(supabase, tenantId);
-        results.push({ tenantId, status: 'ok', rulesWritten, ordersProcessed });
+        results.push({ tenant_id: tenantId, status: 'ok', rules_written: rulesWritten, orders_processed: ordersProcessed });
         console.log(`[upsell-compute] tenant=${tenantId} orders=${ordersProcessed} rules=${rulesWritten}`);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error(`[upsell-compute] tenant=${tenantId} error=${message}`);
-        results.push({ tenantId, status: 'error', error: message });
+        results.push({ tenant_id: tenantId, status: 'error', error: message });
       }
     }
 
-    const totalRules = results.reduce((sum, r) => sum + (r.rulesWritten ?? 0), 0);
-    const totalOrders = results.reduce((sum, r) => sum + (r.ordersProcessed ?? 0), 0);
+    const totalRules = results.reduce((sum, r) => sum + (r.rules_written ?? 0), 0);
+    const totalOrders = results.reduce((sum, r) => sum + (r.orders_processed ?? 0), 0);
 
     return new Response(
       JSON.stringify({
         success: true,
-        tenantsProcessed: tenantIds.length,
-        totalOrdersProcessed: totalOrders,
-        totalRulesWritten: totalRules,
+        tenants_processed: tenantIds.length,
+        total_orders_processed: totalOrders,
+        total_rules_written: totalRules,
         results,
       }),
       { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },

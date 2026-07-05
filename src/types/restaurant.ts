@@ -1,6 +1,6 @@
 export type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning';
 export type TableSection = 'indoor' | 'terrace' | 'bar';
-export type OrderStatus = 'open' | 'sent' | 'served' | 'paid' | 'cancelled';
+export type OrderStatus = 'open' | 'sent' | 'served' | 'paid' | 'cancelled' | 'merged';
 export type CourseType = 'appetizers' | 'mains' | 'desserts';
 export type ItemStatus = 'pending' | 'in_progress' | 'ready' | 'served';
 export type ReservationStatus = 'pending' | 'confirmed' | 'seated' | 'completed' | 'no_show' | 'cancelled';

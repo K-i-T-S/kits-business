@@ -170,6 +170,9 @@ Run in this order in Supabase Dashboard → SQL Editor:
 47. `20260623_000046_restaurant_events.sql` — restaurant_events table (events/banquets management)
 48. `20260623_000047_cash_management.sql` — cash drawer management: restaurant_cash_drawers, restaurant_cash_transactions (replaces 000043)
 49. `20260624_000049_restaurant_purchase_orders.sql` — restaurant_purchase_orders RLS + supplier link fixes *(000048 was skipped)*
+50. `20260705_000050_demand_forecasts_unique_constraint.sql` — adds the missing UNIQUE(tenant_id, date) constraint restaurant_demand_forecasts needed for its upsert onConflict target (pre-existing migration bug, applied directly — table was empty)
+51. `20260705_000051_fnb_analytics_cron.sql` — pg_cron + pg_net automation for the three restored F&B analytics edge functions; requires manually setting the `service_role_key` Vault secret post-migration (see migration file header)
+52. `20260705_000052_order_items_created_at.sql` — adds missing created_at column to restaurant_order_items, needed by restaurant-upsell-compute's 90-day lookback query (pre-existing bug, applied directly — table had 7 rows)
 
 ## Edge Functions
 
@@ -180,6 +183,10 @@ Run in this order in Supabase Dashboard → SQL Editor:
 | `whatsapp-receipt` | Called from POS after sale (Business plan) | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
 | `trigger-workflows` | Called from WorkflowAutomation "Run Now" | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
 | `groq-proxy` | AI features in RestaurantAnalytics, RestaurantHub, AIAssistant | `GROQ_API_KEY` |
+| `delivery-webhook` | Called by Toters/Talabat/Zomato/Careem when a delivery order is placed | none (per-integration secret stored in `restaurant_delivery_integrations.webhook_secret`) |
+| `restaurant-demand-forecast` | Nightly `pg_cron` job (`nightly-demand-forecast`, see migration `000051`) | none |
+| `restaurant-menu-engineering` | Nightly `pg_cron` job (`nightly-menu-engineering`, see migration `000051`) | none |
+| `restaurant-upsell-compute` | Nightly `pg_cron` job (`nightly-upsell-compute`, see migration `000051`) | none |
 
 Deploy all: `npx supabase functions deploy <function-name> --project-ref pytndxjeznhhyycjasep`
 

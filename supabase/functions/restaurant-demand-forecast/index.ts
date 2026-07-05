@@ -79,6 +79,7 @@ interface DayForecast {
   predicted_covers: number;
   predicted_revenue_usd: number;
   confidence: number;          // 0.0 – 1.0
+  days_used: number;           // distinct historical calendar days behind this forecast
   seasonality_factor: number;
   seasonality_labels: string[];
   is_holiday: boolean;
@@ -103,7 +104,7 @@ interface ForecastRow {
     is_holiday: boolean;
     is_ramadan: boolean;
     is_summer_peak: boolean;
-    historical_days_used: number;
+    historical_days_used: number; // distinct historical calendar days, not raw order-row count
   };
 }
 
@@ -279,7 +280,7 @@ function computeBaseline(
   return {
     baselineCovers: Math.max(1, Math.round(avgCovers)),
     baselineRevenue: parseFloat(Math.max(0, avgRevenue).toFixed(2)),
-    daysUsed: allDays.size ?? allDays.length,
+    daysUsed: allDays.length,
   };
 }
 
@@ -325,6 +326,7 @@ function buildForecasts(
       predicted_covers: Math.round(baselineCovers * factor),
       predicted_revenue_usd: parseFloat((baselineRevenue * factor).toFixed(2)),
       confidence,
+      days_used: daysUsed,
       seasonality_factor: factor,
       seasonality_labels: labels,
       is_holiday: isLebaneseHoliday(dateStr),
@@ -371,6 +373,8 @@ async function runForecastForTenant(
   const rows: ForecastRow[] = forecasts.map((f) => ({
     tenant_id: tenantId,
     date: f.forecast_date,
+    // dow is always dayOfWeek()'s getUTCDay() result (0-6), so the fallback
+    // below is unreachable defensive code required by noUncheckedIndexedAccess.
     day_of_week: WEEKDAY_NAMES[f.day_of_week] ?? String(f.day_of_week),
     predicted_covers: f.predicted_covers,
     predicted_revenue: f.predicted_revenue_usd,
@@ -381,7 +385,7 @@ async function runForecastForTenant(
       is_holiday: f.is_holiday,
       is_ramadan: f.is_ramadan,
       is_summer_peak: f.is_summer_peak,
-      historical_days_used: historicalOrders.length,
+      historical_days_used: f.days_used,
     },
   }));
 
@@ -445,17 +449,19 @@ serve(async (req: Request) => {
     );
   }
 
-  // Forecast starts from tomorrow 00:00 Beirut
+  // Forecast starts from tomorrow 00:00 Beirut. toZonedTime returns a
+  // "fake-UTC" Date whose UTC getters hold the Beirut wall-clock value —
+  // must use UTC accessors throughout (matches toBeirutDate's convention),
+  // not local accessors, which only happen to agree when the runtime's
+  // own local timezone is UTC.
   const now = new Date();
   const tomorrowBeirut = toZonedTime(now, BEIRUT_TZ);
-  tomorrowBeirut.setDate(tomorrowBeirut.getDate() + 1);
-  tomorrowBeirut.setHours(0, 0, 0, 0);
-  // Use UTC equivalent as anchor for date arithmetic
+  tomorrowBeirut.setUTCDate(tomorrowBeirut.getUTCDate() + 1);
   const startDate = new Date(
     Date.UTC(
-      tomorrowBeirut.getFullYear(),
-      tomorrowBeirut.getMonth(),
-      tomorrowBeirut.getDate(),
+      tomorrowBeirut.getUTCFullYear(),
+      tomorrowBeirut.getUTCMonth(),
+      tomorrowBeirut.getUTCDate(),
     ),
   );
 

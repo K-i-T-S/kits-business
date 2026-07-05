@@ -1,6 +1,6 @@
 import {
   Plus, X, Receipt, Send, Users, ChevronRight, Trash2, Utensils, SplitSquareVertical, Calculator,
-  Settings2, Check, Sparkles, CalendarClock, Copy, Link,
+  Settings2, Check, Sparkles, CalendarClock, Copy, Link, ArrowLeftRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 import Layout from '@/components/Layout';
 import FloorPlan from '@/components/restaurant/FloorPlan';
+import TableTransferModal from '@/components/restaurant/TableTransferModal';
 import RoleGate from '@/components/RoleGate';
 import { useApp } from '@/context/AppContext';
 import { containerVariants, itemVariants } from '@/utils/animationVariants';
@@ -96,7 +97,7 @@ const DEFAULT_FORM: NewItemForm = {
 
 export default function TableManagement() {
   const { t } = useTranslation();
-  const { currentTenant } = useApp();
+  const { currentTenant, employees } = useApp();
   const tenantId = currentTenant?.id;
   const { sections, save: saveSections } = useSections(tenantId);
 
@@ -105,6 +106,7 @@ export default function TableManagement() {
   const [orderItems, setOrderItems] = useState<RestaurantOrderItem[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   const [copiedFeedbackTableId, setCopiedFeedbackTableId] = useState<string | null>(null);
 
@@ -610,6 +612,15 @@ export default function TableManagement() {
                         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                           <h3 className="text-sm font-semibold text-white">{t('restaurant.activeOrder', 'Active Order')}</h3>
                           <div className="flex gap-1.5">
+                            <RoleGate action="make_sales">
+                              <button
+                                onClick={() => setShowTransferModal(true)}
+                                className="flex items-center gap-1.5 rounded-lg bg-sky-500/20 px-2.5 py-1.5 text-xs font-semibold text-sky-400 hover:bg-sky-500/30 transition-all"
+                              >
+                                <ArrowLeftRight className="h-3 w-3" />
+                                {t('restaurant.transfer', 'Transfer')}
+                              </button>
+                            </RoleGate>
                             <button
                               onClick={() => { void handleSendToKDS(); }}
                               className="flex items-center gap-1.5 rounded-lg bg-indigo-500/20 px-2.5 py-1.5 text-xs font-semibold text-indigo-400 hover:bg-indigo-500/30 transition-all"
@@ -907,6 +918,22 @@ export default function TableManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {showTransferModal && selectedTable && selectedOrder && (
+        <TableTransferModal
+          isOpen={showTransferModal}
+          onClose={() => setShowTransferModal(false)}
+          onSuccess={() => { void loadData(); }}
+          tenantId={tenantId ?? ''}
+          sourceTable={selectedTable}
+          sourceOrder={selectedOrder}
+          sourceOrderItemCount={selectedOrderItems.length}
+          currentWaiterId={(selectedOrder as { waiter_id?: string | null }).waiter_id ?? null}
+          tables={tables}
+          orders={orders}
+          employees={employees}
+        />
       )}
     </Layout>
   );

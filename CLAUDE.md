@@ -174,6 +174,7 @@ Run in this order in Supabase Dashboard → SQL Editor:
 51. `20260705_000051_fnb_analytics_cron.sql` — pg_cron + pg_net automation for the three restored F&B analytics edge functions; requires manually setting the `service_role_key` Vault secret post-migration (see migration file header)
 52. `20260705_000052_order_items_created_at.sql` — adds missing created_at column to restaurant_order_items, needed by restaurant-upsell-compute's 90-day lookback query (pre-existing bug, applied directly — table had 7 rows)
 53. `20260705_000053_atomic_cache_refresh_rpcs.sql` — `refresh_upsell_rules()` and `refresh_menu_engineering_cache()` RPCs, making each tenant's cache delete+insert one atomic transaction (fixes stale-rows-on-empty-result and partial-write-on-failure findings from whole-branch review; applied directly)
+54. `20260706_000054_table_waiter_transfer.sql` — adds table_orders.merged_into_order_id + fn_transfer_table_order() RPC for table/waiter transfer (Tier 1.1 + 1.2); introduces 'merged' as a valid table_orders.status value (no CHECK constraint exists on that column)
 
 ## Edge Functions
 

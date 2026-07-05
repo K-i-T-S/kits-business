@@ -1,0 +1,97 @@
+-- supabase/migrations/20260706_000054_table_waiter_transfer.sql
+-- Table & Waiter Transfer (Tier 1.1 + 1.2, docs/fnb-competitive-gap-analysis.md).
+-- See docs/superpowers/specs/2026-07-05-table-waiter-transfer-design.md for full design.
+--
+-- No CHECK constraint exists on table_orders.status (confirmed in
+-- 20260620_000031_restaurant_schema.sql), so the new 'merged' status value needs no
+-- schema change of its own — only this comment documenting the convention:
+-- table_orders.status now also accepts 'merged', meaning this order's items were
+-- folded into another order (see merged_into_order_id) rather than closed/cancelled.
+
+ALTER TABLE table_orders
+  ADD COLUMN IF NOT EXISTS merged_into_order_id UUID REFERENCES table_orders(id);
+
+CREATE OR REPLACE FUNCTION fn_transfer_table_order(
+  p_order_id UUID,
+  p_target_table_id UUID,
+  p_new_waiter_id UUID DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_tenant_id UUID;
+  v_source_table_id UUID;
+  v_source_status TEXT;
+  v_target_order_id UUID;
+  v_resulting_order_id UUID;
+BEGIN
+  -- 1. Validate and lock the source order
+  SELECT tenant_id, table_id, status
+    INTO v_tenant_id, v_source_table_id, v_source_status
+    FROM table_orders
+    WHERE id = p_order_id
+    FOR UPDATE;
+
+  IF v_tenant_id IS NULL THEN
+    RAISE EXCEPTION 'Order % not found', p_order_id;
+  END IF;
+
+  IF v_source_status NOT IN ('open', 'sent', 'served') THEN
+    RAISE EXCEPTION 'Order % is not transferable (status = %)', p_order_id, v_source_status;
+  END IF;
+
+  -- 2. Validate the target table belongs to the same tenant and isn't the source table
+  IF NOT EXISTS (
+    SELECT 1 FROM restaurant_tables WHERE id = p_target_table_id AND tenant_id = v_tenant_id
+  ) THEN
+    RAISE EXCEPTION 'Target table % not found for this tenant', p_target_table_id;
+  END IF;
+
+  IF p_target_table_id = v_source_table_id THEN
+    RAISE EXCEPTION 'Target table is the same as the source table';
+  END IF;
+
+  -- 3. Find and lock the target table's open order, if any
+  SELECT id INTO v_target_order_id
+    FROM table_orders
+    WHERE table_id = p_target_table_id
+      AND tenant_id = v_tenant_id
+      AND status IN ('open', 'sent', 'served')
+    FOR UPDATE;
+
+  IF v_target_order_id IS NULL THEN
+    -- Simple move: no order at the target table
+    UPDATE table_orders SET table_id = p_target_table_id WHERE id = p_order_id;
+    UPDATE restaurant_tables SET status = 'available' WHERE id = v_source_table_id;
+    UPDATE restaurant_tables SET status = 'occupied' WHERE id = p_target_table_id;
+    v_resulting_order_id := p_order_id;
+  ELSE
+    -- Merge: target table already has an open order — combine into one bill
+    UPDATE restaurant_order_items
+      SET order_id = v_target_order_id
+      WHERE order_id = p_order_id AND tenant_id = v_tenant_id;
+
+    UPDATE restaurant_argile_sessions
+      SET table_order_id = v_target_order_id
+      WHERE table_order_id = p_order_id AND tenant_id = v_tenant_id AND status = 'active';
+
+    UPDATE table_orders
+      SET status = 'merged', merged_into_order_id = v_target_order_id, closed_at = now()
+      WHERE id = p_order_id;
+
+    UPDATE restaurant_tables SET status = 'available' WHERE id = v_source_table_id;
+    -- Target table's status is already 'occupied' — no change needed.
+    v_resulting_order_id := v_target_order_id;
+  END IF;
+
+  -- 4. Optional waiter reassignment, applied to whichever order now represents the party
+  IF p_new_waiter_id IS NOT NULL THEN
+    UPDATE table_orders SET waiter_id = p_new_waiter_id WHERE id = v_resulting_order_id;
+  END IF;
+
+  RETURN v_resulting_order_id;
+END;
+$$;

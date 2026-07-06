@@ -24,6 +24,7 @@ Adds a walk-in waitlist queue — the last remaining Tier 1 gap, absent from thi
 - No wait-time *prediction* algorithm. The UI shows elapsed wait time (`now - created_at`), not an estimated/predicted wait — this codebase doesn't have the historical throughput data to back a real prediction, and a fake one would be worse than none.
 - No linkage to the `reservations` (or `restaurant_reservations` — see Note below) table. Advance bookings and a walk-in queue are different concepts; kept fully separate, matching this schema's existing convention of one table per concern (e.g. `restaurant_delivery_orders` was kept separate from `table_orders` rather than overloaded).
 - No history/archive view for `seated`/`no_show`/`cancelled` entries — they drop off the active queue, matching the same boundary already accepted for `DeliveryOrders.tsx`.
+- No dedicated "un-seat" action for a mis-seated party. Unlike delivery orders (where an accepted order had no cancellation path until that gap was fixed), a mis-seat here is already recoverable through the existing table system: staff cancel/close the `table_orders` row and free the table via `TableManagement`/`WaiterInterface`, exactly as they would for any table opened by mistake through the normal floor-plan flow. Confirmed as an acceptable boundary during the whole-branch review, not an oversight.
 
 **Note — pre-existing, unrelated anomaly discovered during research (not touched by this spec):** `Reservations.tsx` queries `restaurant_reservations`, but the only migration in this repo (`20260620_000031_restaurant_schema.sql`) creates a table named `reservations` (no prefix) — and two other files (`RestaurantHub.tsx`, `BookReservation.tsx`) correctly query `reservations`. This looks like the live Supabase table was renamed by hand outside of any migration file, similar to a few other "applied directly" fixes already noted in this repo's migration history (see CLAUDE.md entries 50/52/53). This is unrelated to waitlist management and is not addressed here — flagged for awareness only.
 
@@ -66,8 +67,9 @@ New RPC, `SECURITY DEFINER`, `set search_path = public`, tenant-checked immediat
 3. Creates the `table_orders` shell: `table_id = p_target_table_id`, `status='open'`, `notes='WAITLIST: ' || guest_name || ' (' || party_size || ')'`. Unlike the delivery-order shell (which has no physical table and leaves `table_id` null), a waitlist seating always assigns a real table — `table_id` must be set here.
 4. Sets `restaurant_tables.status='occupied'` for the target table.
 5. Updates the waitlist entry: `status='seated'`, `seated_at=now()`, `table_id=<target table id>`.
-6. Inserts one `activity_log` row describing the action (matches this codebase's existing tenant-scoped audit-trail convention).
-7. Returns the new `table_orders` id.
+6. Returns the new `table_orders` id.
+
+**Correction (post-implementation, whole-branch review):** this section originally also specified an `activity_log` insert here, claimed to match "this codebase's existing tenant-scoped audit-trail convention." That convention does not actually exist in a working form: no RPC anywhere in this codebase writes to `activity_log` (confirmed by grep across all migrations, including both RPCs added immediately before this feature), and the one frontend helper that does write to it (`src/utils/auditLogger.ts`) requires a Supabase service-role key that is never available in browser code, making it effectively dead infrastructure. `fn_seat_waitlist_party` correctly omits the insert; this was confirmed with the project owner after the whole-branch review flagged the discrepancy, rather than left as a silent deviation.
 
 Concurrency: the `FOR UPDATE` locks on both the waitlist entry and the table serialize concurrent seat attempts — a second caller (different staff, or a double-click) observes the already-updated state and fails a validation check cleanly, not a race condition.
 

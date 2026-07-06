@@ -235,6 +235,7 @@ export default function Layout({ children }: LayoutProps) {
       label: 'Back of House',
       items: [
         { name: t('nav.vertical.kds', 'Kitchen Display'), icon: Cpu, href: '/restaurant/kds' },
+        { name: t('nav.vertical.deliveryOrders', 'Delivery Orders'), icon: Truck, href: '/restaurant/delivery-orders' },
         { name: t('nav.vertical.argile', 'Argile Station'), icon: Flame, href: '/restaurant/argile' },
       ],
     },

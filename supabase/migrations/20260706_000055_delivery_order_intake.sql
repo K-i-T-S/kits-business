@@ -130,6 +130,7 @@ $$;
 
 -- 5. finalize_restaurant_order — add optional source parameter (default preserves
 --    existing dine-in behavior exactly).
+DROP FUNCTION IF EXISTS finalize_restaurant_order(UUID);
 CREATE OR REPLACE FUNCTION finalize_restaurant_order(p_order_id UUID, p_source TEXT DEFAULT 'restaurant')
 RETURNS UUID
 LANGUAGE plpgsql

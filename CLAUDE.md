@@ -176,6 +176,7 @@ Run in this order in Supabase Dashboard → SQL Editor:
 53. `20260705_000053_atomic_cache_refresh_rpcs.sql` — `refresh_upsell_rules()` and `refresh_menu_engineering_cache()` RPCs, making each tenant's cache delete+insert one atomic transaction (fixes stale-rows-on-empty-result and partial-write-on-failure findings from whole-branch review; applied directly)
 54. `20260706_000054_table_waiter_transfer.sql` — adds table_orders.merged_into_order_id + fn_transfer_table_order() RPC for table/waiter transfer (Tier 1.1 + 1.2); introduces 'merged' as a valid table_orders.status value (no CHECK constraint exists on that column)
 55. `20260706_000055_delivery_order_intake.sql` — simplifies inject_delivery_order (no longer creates a table_orders shell at webhook-receipt time), adds accept_delivery_order RPC, extends sales.source to allow 'delivery' and payment_method to allow 'platform'. complete_delivery_order records the sale directly from restaurant_delivery_orders.subtotal_usd/total_usd (does not call finalize_restaurant_order, which is left untouched). reject_delivery_order cancels from any pre-pickup status ('new'/'accepted'/'preparing'/'ready'), closing the linked table_orders shell if one exists (Tier 1.4)
+56. `20260706_000056_waitlist_management.sql` — adds restaurant_waitlist table (walk-in queue) + fn_seat_waitlist_party() RPC (Tier 1.3); seating atomically creates the table_orders shell with the real assigned table_id, marks the table occupied, and closes out the waitlist entry
 
 ## Edge Functions
 

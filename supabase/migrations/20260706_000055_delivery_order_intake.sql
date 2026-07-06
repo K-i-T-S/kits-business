@@ -14,10 +14,27 @@
 -- ACCEPTANCE time (accept_delivery_order), not at webhook-receipt time
 -- (inject_delivery_order). Kitchen should never see an order as active before
 -- someone (human, or the auto_accept setting) has committed to fulfilling it.
+--
+-- Revenue: complete_delivery_order records the sale directly from
+-- restaurant_delivery_orders' own subtotal_usd/total_usd -- it does NOT route
+-- through finalize_restaurant_order. That function's dine-in service-charge/VAT
+-- formula has no bearing on what a delivery customer paid the platform, and is
+-- left completely untouched by this migration (no redefinition, no new params).
+--
+-- Cancellation: reject_delivery_order accepts cancellation from any pre-pickup
+-- status ('new', 'accepted', 'preparing', 'ready'), not just 'new' -- closing
+-- the linked table_orders shell too, if accept_delivery_order already created
+-- one, so a bad order can be cancelled without booking phantom revenue or
+-- resorting to manual SQL.
 
--- 1. Allow 'delivery' as a sales source, alongside the existing 'pos'/'restaurant'.
+-- 1. Allow 'delivery' as a sales source and 'platform' as a payment method,
+--    alongside the existing 'pos'/'restaurant' sources and 'cash'/'card'/
+--    'transfer'/'other' payment methods.
 ALTER TABLE sales DROP CONSTRAINT IF EXISTS sales_source_check;
 ALTER TABLE sales ADD CONSTRAINT sales_source_check CHECK (source IN ('pos', 'restaurant', 'delivery'));
+
+ALTER TABLE sales DROP CONSTRAINT IF EXISTS sales_payment_method_check;
+ALTER TABLE sales ADD CONSTRAINT sales_payment_method_check CHECK (payment_method IN ('cash', 'card', 'transfer', 'other', 'platform'));
 
 -- 2. Simplify inject_delivery_order: only records the inbound order now.
 --    (Signature unchanged; only removes the table_orders-shell creation that used
@@ -100,14 +117,17 @@ BEGIN
 END;
 $$;
 
--- 4. reject_delivery_order — only valid from 'new' (no shell exists yet to clean up).
+-- 4. reject_delivery_order — cancellable from any pre-pickup status, not just
+--    'new'. Closes the linked table_orders shell too, if accept_delivery_order
+--    already created one (no shell exists yet for a still-'new' order).
 CREATE OR REPLACE FUNCTION reject_delivery_order(p_delivery_order_id UUID)
 RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_tenant_id UUID;
   v_status TEXT;
+  v_table_order_id UUID;
 BEGIN
-  SELECT tenant_id, status INTO v_tenant_id, v_status
+  SELECT tenant_id, status, table_order_id INTO v_tenant_id, v_status, v_table_order_id
     FROM restaurant_delivery_orders
     WHERE id = p_delivery_order_id
     FOR UPDATE;
@@ -120,84 +140,36 @@ BEGIN
     RAISE EXCEPTION 'permission_denied';
   END IF;
 
-  IF v_status <> 'new' THEN
+  IF v_status NOT IN ('new', 'accepted', 'preparing', 'ready') THEN
     RAISE EXCEPTION 'Delivery order % is not rejectable (status = %)', p_delivery_order_id, v_status;
   END IF;
 
   UPDATE restaurant_delivery_orders SET status = 'cancelled' WHERE id = p_delivery_order_id;
+
+  IF v_table_order_id IS NOT NULL THEN
+    UPDATE table_orders SET status = 'cancelled', closed_at = now() WHERE id = v_table_order_id;
+  END IF;
 END;
 $$;
 
--- 5. finalize_restaurant_order — add optional source parameter (default preserves
---    existing dine-in behavior exactly).
-DROP FUNCTION IF EXISTS finalize_restaurant_order(UUID);
-CREATE OR REPLACE FUNCTION finalize_restaurant_order(p_order_id UUID, p_source TEXT DEFAULT 'restaurant')
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-DECLARE
-  v_order     table_orders%ROWTYPE;
-  v_subtotal  NUMERIC(12,2);
-  v_discount  NUMERIC(12,2);
-  v_service   NUMERIC(12,2);
-  v_tax       NUMERIC(12,2);
-  v_tip       NUMERIC(12,2);
-  v_total     NUMERIC(12,2);
-  v_sale_id   UUID;
-BEGIN
-  SELECT * INTO v_order FROM table_orders WHERE id = p_order_id;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'order_not_found: %', p_order_id;
-  END IF;
-  IF v_order.tenant_id <> current_tenant_id() THEN
-    RAISE EXCEPTION 'permission_denied';
-  END IF;
-
-  SELECT id INTO v_sale_id FROM sales WHERE table_order_id = p_order_id LIMIT 1;
-  IF FOUND THEN RETURN v_sale_id; END IF;
-
-  SELECT COALESCE(SUM(unit_price * quantity), 0)
-  INTO v_subtotal FROM restaurant_order_items WHERE order_id = p_order_id;
-
-  v_discount := v_subtotal * COALESCE(v_order.discount_pct, 0) / 100.0;
-  v_service  := (v_subtotal - v_discount) * COALESCE(v_order.service_charge_pct, 10) / 100.0;
-  v_tax      := (v_subtotal - v_discount + v_service) * COALESCE(v_order.vat_pct, 11) / 100.0;
-  v_tip      := COALESCE(v_order.tip_amount_usd, 0);
-  v_total    := v_subtotal - v_discount + v_service + v_tax + v_tip;
-
-  INSERT INTO sales (
-    tenant_id, employee_id, subtotal, discount, tax_amount, total_amount,
-    payment_method, payment_status, notes, sale_date, table_order_id, source
-  ) VALUES (
-    v_order.tenant_id,
-    v_order.waiter_id,
-    v_subtotal, v_discount, v_service + v_tax, v_total,
-    COALESCE(v_order.payment_method, 'cash'),
-    'completed',
-    'Table ' || COALESCE(
-      (SELECT number::TEXT FROM restaurant_tables WHERE id = v_order.table_id), '?'
-    ),
-    COALESCE(v_order.paid_at, now()),
-    p_order_id, p_source
-  ) RETURNING id INTO v_sale_id;
-
-  RETURN v_sale_id;
-END;
-$$;
-
--- 6. complete_delivery_order — the "mark picked up" action.
+-- 5. complete_delivery_order — the "mark picked up" action. Records the sale
+--    directly from the delivery order's own subtotal_usd/total_usd (what the
+--    customer actually paid the platform, delivery fee included) — no dine-in
+--    service-charge/VAT math applies to a delivery sale.
 CREATE OR REPLACE FUNCTION complete_delivery_order(p_delivery_order_id UUID)
 RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_tenant_id UUID;
   v_status TEXT;
   v_table_order_id UUID;
+  v_platform TEXT;
+  v_external_order_id TEXT;
+  v_subtotal_usd NUMERIC;
+  v_total_usd NUMERIC;
   v_sale_id UUID;
 BEGIN
-  SELECT tenant_id, status, table_order_id
-    INTO v_tenant_id, v_status, v_table_order_id
+  SELECT tenant_id, status, table_order_id, platform, external_order_id, subtotal_usd, total_usd
+    INTO v_tenant_id, v_status, v_table_order_id, v_platform, v_external_order_id, v_subtotal_usd, v_total_usd
     FROM restaurant_delivery_orders
     WHERE id = p_delivery_order_id
     FOR UPDATE;
@@ -217,7 +189,16 @@ BEGIN
   UPDATE restaurant_delivery_orders SET status = 'picked_up' WHERE id = p_delivery_order_id;
   UPDATE table_orders SET status = 'paid', closed_at = now() WHERE id = v_table_order_id;
 
-  v_sale_id := finalize_restaurant_order(v_table_order_id, 'delivery');
+  INSERT INTO sales (
+    tenant_id, subtotal, discount, tax_amount, total_amount,
+    payment_method, payment_status, notes, sale_date, table_order_id, source
+  ) VALUES (
+    v_tenant_id,
+    COALESCE(v_subtotal_usd, 0), 0, 0, COALESCE(v_total_usd, 0),
+    'platform', 'completed',
+    v_platform || ' #' || v_external_order_id,
+    now(), v_table_order_id, 'delivery'
+  ) RETURNING id INTO v_sale_id;
 
   RETURN v_sale_id;
 END;

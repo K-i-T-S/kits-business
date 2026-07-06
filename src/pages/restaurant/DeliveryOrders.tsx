@@ -88,19 +88,34 @@ function OrderCard({ order, onAccept, onReject, onStartPrep, onMarkReady, onMark
           </>
         )}
         {order.status === 'accepted' && (
-          <button onClick={() => { void onStartPrep(order.id); }} className="flex-1 rounded-lg bg-amber-600 py-1.5 text-xs font-semibold text-white hover:bg-amber-500">
-            {t('deliveryOrders.startPrep', 'Start Prep')}
-          </button>
+          <>
+            <button onClick={() => { void onStartPrep(order.id); }} className="flex-1 rounded-lg bg-amber-600 py-1.5 text-xs font-semibold text-white hover:bg-amber-500">
+              {t('deliveryOrders.startPrep', 'Start Prep')}
+            </button>
+            <button onClick={() => { void onReject(order.id); }} className="flex-1 rounded-lg bg-red-600/80 py-1.5 text-xs font-semibold text-white hover:bg-red-600">
+              {t('deliveryOrders.cancel', 'Cancel')}
+            </button>
+          </>
         )}
         {order.status === 'preparing' && (
-          <button onClick={() => { void onMarkReady(order.id); }} className="flex-1 rounded-lg bg-sky-600 py-1.5 text-xs font-semibold text-white hover:bg-sky-500">
-            {t('deliveryOrders.markReady', 'Mark Ready')}
-          </button>
+          <>
+            <button onClick={() => { void onMarkReady(order.id); }} className="flex-1 rounded-lg bg-sky-600 py-1.5 text-xs font-semibold text-white hover:bg-sky-500">
+              {t('deliveryOrders.markReady', 'Mark Ready')}
+            </button>
+            <button onClick={() => { void onReject(order.id); }} className="flex-1 rounded-lg bg-red-600/80 py-1.5 text-xs font-semibold text-white hover:bg-red-600">
+              {t('deliveryOrders.cancel', 'Cancel')}
+            </button>
+          </>
         )}
         {order.status === 'ready' && (
-          <button onClick={() => { void onMarkPickedUp(order.id); }} className="flex-1 rounded-lg bg-indigo-600 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
-            {t('deliveryOrders.markPickedUp', 'Mark Picked Up')}
-          </button>
+          <>
+            <button onClick={() => { void onMarkPickedUp(order.id); }} className="flex-1 rounded-lg bg-indigo-600 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
+              {t('deliveryOrders.markPickedUp', 'Mark Picked Up')}
+            </button>
+            <button onClick={() => { void onReject(order.id); }} className="flex-1 rounded-lg bg-red-600/80 py-1.5 text-xs font-semibold text-white hover:bg-red-600">
+              {t('deliveryOrders.cancel', 'Cancel')}
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -126,8 +141,9 @@ export default function DeliveryOrders() {
       .from('restaurant_delivery_orders')
       .select('*')
       .eq('tenant_id', tenantId)
+      .in('status', ACTIVE_STATUSES)
       .order('received_at');
-    if (data) setOrders((data as DeliveryOrder[]).filter((o) => ACTIVE_STATUSES.includes(o.status)));
+    if (data) setOrders(data as DeliveryOrder[]);
   }, [tenantId]);
 
   useEffect(() => {

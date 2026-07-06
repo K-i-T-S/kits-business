@@ -12,7 +12,9 @@ vi.mock('@/utils/supabaseClient', () => ({
     from: () => ({
       select: () => ({
         eq: () => ({
-          order: () => Promise.resolve(mockSelectResult),
+          in: () => ({
+            order: () => Promise.resolve(mockSelectResult),
+          }),
         }),
       }),
       update: (...args: unknown[]) => {
@@ -94,6 +96,16 @@ describe('DeliveryOrders', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /reject/i })[0]!);
     await waitFor(() => {
       expect(mockRpc).toHaveBeenCalledWith('reject_delivery_order', { p_delivery_order_id: 'do-1' });
+    });
+  });
+
+  it('shows a Cancel button for a non-new order and calls reject_delivery_order when clicked', async () => {
+    render(<DeliveryOrders />);
+    await waitFor(() => { expect(screen.getAllByRole('button', { name: /cancel/i }).length).toBeGreaterThan(0); });
+    const cancelButtons = screen.getAllByRole('button', { name: /cancel/i });
+    fireEvent.click(cancelButtons[0]!);
+    await waitFor(() => {
+      expect(mockRpc).toHaveBeenCalledWith('reject_delivery_order', { p_delivery_order_id: 'do-2' });
     });
   });
 

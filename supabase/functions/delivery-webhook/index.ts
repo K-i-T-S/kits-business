@@ -196,13 +196,15 @@ serve(async (req: Request) => {
       );
     }
 
-    // ── If auto_accept, mark the delivery order as accepted immediately ─────
+    // ── If auto_accept, call accept_delivery_order to create the KDS shell +
+    // real order items immediately (previously this only flipped the delivery
+    // order's own status column, without ever creating the kitchen-visible
+    // table_orders/restaurant_order_items rows).
     if (autoAccept) {
-      await supabase
-        .from('restaurant_delivery_orders')
-        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-        .eq('id', deliveryOrderId as string)
-        .eq('tenant_id', tenantId);
+      const { error: acceptErr } = await supabase.rpc('accept_delivery_order', {
+        p_delivery_order_id: deliveryOrderId as string,
+      });
+      if (acceptErr) throw acceptErr;
     }
 
     return new Response(

@@ -78,9 +78,10 @@ export default function Waitlist() {
       supabase.from('restaurant_waitlist').select('*').eq('tenant_id', tenantId).in('status', ACTIVE_STATUSES).order('created_at'),
       supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId).eq('status', 'available').order('number'),
     ]);
+    if (waitlistRes.error || tablesRes.error) toast.error(t('waitlist.loadError', 'Failed to load waitlist'));
     if (waitlistRes.data) setEntries(waitlistRes.data as WaitlistEntry[]);
     if (tablesRes.data) setAvailableTables(tablesRes.data as AvailableTable[]);
-  }, [tenantId]);
+  }, [tenantId, t]);
 
   useEffect(() => {
     void loadData();

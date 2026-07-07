@@ -13,6 +13,9 @@
 -- already built and already has a public insert policy; 'direct' -> real
 -- restaurant_order_items rows with menu_item_id always set, unlike today's
 -- QRCart.tsx which omits it).
+CREATE UNIQUE INDEX IF NOT EXISTS table_orders_one_open_per_table
+  ON table_orders(table_id) WHERE status = 'open';
+
 CREATE OR REPLACE FUNCTION qr_place_order(p_table_id uuid, p_items jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -28,6 +31,7 @@ DECLARE
   v_menu_item_id   uuid;
   v_menu_item_name text;
   v_base_price     numeric;
+  v_quantity       integer;
   v_mod_id         text;
   v_mod_name       text;
   v_mod_price      numeric;
@@ -47,9 +51,15 @@ BEGIN
   IF v_order_id IS NULL THEN
     SELECT default_order_flow INTO v_default_flow FROM restaurant_settings WHERE tenant_id = v_tenant_id;
     v_order_flow := COALESCE(v_default_flow, 'waiter_confirm');
-    INSERT INTO table_orders (tenant_id, table_id, status, current_course, order_flow)
-    VALUES (v_tenant_id, p_table_id, 'open', 'appetizers', v_order_flow)
-    RETURNING id INTO v_order_id;
+    BEGIN
+      INSERT INTO table_orders (tenant_id, table_id, status, current_course, order_flow)
+      VALUES (v_tenant_id, p_table_id, 'open', 'appetizers', v_order_flow)
+      RETURNING id INTO v_order_id;
+    EXCEPTION WHEN unique_violation THEN
+      -- A concurrent call won the race and already created the open order for this table.
+      SELECT id, order_flow INTO v_order_id, v_order_flow
+        FROM table_orders WHERE table_id = p_table_id AND status = 'open' LIMIT 1;
+    END;
   END IF;
 
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
@@ -61,6 +71,11 @@ BEGIN
 
     IF v_menu_item_id IS NULL THEN
       CONTINUE; -- forged/stale/inactive menu_item_id — skip, don't trust client data
+    END IF;
+
+    v_quantity := (v_item->>'quantity')::int;
+    IF v_quantity IS NULL OR v_quantity <= 0 THEN
+      CONTINUE; -- non-positive/malformed quantity — skip, don't trust client data
     END IF;
 
     v_line_price := v_base_price;
@@ -86,7 +101,7 @@ BEGIN
       v_pending_items := v_pending_items || jsonb_build_object(
         'menu_item_id', v_menu_item_id,
         'name', v_menu_item_name,
-        'quantity', (v_item->>'quantity')::int,
+        'quantity', v_quantity,
         'unit_price', v_line_price,
         'modifiers', v_line_modifiers,
         'notes', COALESCE(v_item->>'notes', ''),
@@ -97,7 +112,7 @@ BEGIN
         tenant_id, order_id, menu_item_id, product_name, quantity, unit_price, modifiers, course, status, notes
       ) VALUES (
         v_tenant_id, v_order_id, v_menu_item_id, v_menu_item_name,
-        (v_item->>'quantity')::int, v_line_price, v_line_modifiers, 'mains', 'pending',
+        v_quantity, v_line_price, v_line_modifiers, 'mains', 'pending',
         NULLIF(v_item->>'notes', '')
       );
     END IF;

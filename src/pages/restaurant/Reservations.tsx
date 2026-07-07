@@ -134,7 +134,7 @@ export default function Reservations() {
     setLoading(true);
     try {
       const [resRes, tabRes] = await Promise.all([
-        supabase.from('restaurant_reservations').select('*').eq('tenant_id', tenantId).order('reserved_at', { ascending: true }),
+        supabase.from('reservations').select('*').eq('tenant_id', tenantId).order('reserved_at', { ascending: true }),
         supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId).order('number'),
       ]);
       if (resRes.data) setReservations(resRes.data as Reservation[]);
@@ -168,7 +168,7 @@ export default function Reservations() {
     setSaving(true);
     try {
       const reserved_at = new Date(`${form.reserved_date}T${form.reserved_time}`).toISOString();
-      const result = await supabase.from('restaurant_reservations').insert({
+      const result = await supabase.from('reservations').insert({
         tenant_id: tenantId,
         table_id: form.table_id || null,
         guest_name: form.guest_name.trim(),
@@ -229,7 +229,7 @@ export default function Reservations() {
     if (tableError) { toast.error(tableError.message); return false; }
 
     const { error: resError } = await supabase
-      .from('restaurant_reservations')
+      .from('reservations')
       .update({ status: 'seated' })
       .eq('id', reservation.id)
       .eq('tenant_id', tenantId);
@@ -253,7 +253,7 @@ export default function Reservations() {
       return;
     }
 
-    const { error } = await supabase.from('restaurant_reservations').update({ status }).eq('id', id).eq('tenant_id', tenantId);
+    const { error } = await supabase.from('reservations').update({ status }).eq('id', id).eq('tenant_id', tenantId);
     if (error) { toast.error(error.message); return; }
     setReservations((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
     setStatusMenuId(null);
@@ -261,7 +261,7 @@ export default function Reservations() {
 
   const handleDelete = async (id: string) => {
     if (!tenantId) return;
-    await supabase.from('restaurant_reservations').delete().eq('id', id).eq('tenant_id', tenantId);
+    await supabase.from('reservations').delete().eq('id', id).eq('tenant_id', tenantId);
     setReservations((prev) => prev.filter((r) => r.id !== id));
     toast.success(t('restaurant.reservation.deleted', 'Reservation deleted'));
   };

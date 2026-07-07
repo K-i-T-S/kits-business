@@ -1168,7 +1168,14 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
                         service_charge_pct: rsSettings?.service_charge_pct ?? 10,
                         vat_pct: rsSettings?.vat_pct ?? 11,
                       }).select().single() as { data: TableOrder | null; error: { message: string } | null };
-                      if (error) { toast.error(error.message); return; }
+                      if (error) {
+                        toast.error(
+                          error.message.includes('table_orders_one_open_per_table')
+                            ? t('restaurant.tableAlreadyOpen', 'This table already has an open order')
+                            : error.message,
+                        );
+                        return;
+                      }
                       if (data) {
                         await supabase.from('restaurant_tables').update({ status: 'occupied' }).eq('id', table.id);
                         toast.success(t('restaurant.orderOpened', 'Order opened'));

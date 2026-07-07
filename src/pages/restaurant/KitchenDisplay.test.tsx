@@ -172,4 +172,16 @@ describe('KitchenDisplay recipe deduction wiring', () => {
       expect(mockDeductForMenuItem).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('does not double-deduct when an individual bump and a bulk bump race for the same item', async () => {
+    mockItemsResult.data = [pendingItem()];
+    render(<KitchenDisplay />);
+    const itemButton = await screen.findByRole('button', { name: /mark hummus ready/i });
+    const bulkButton = await screen.findByRole('button', { name: /all ready \(1\)/i });
+    fireEvent.click(itemButton);
+    fireEvent.click(bulkButton);
+    await waitFor(() => {
+      expect(mockDeductForMenuItem).toHaveBeenCalledTimes(1);
+    });
+  });
 });

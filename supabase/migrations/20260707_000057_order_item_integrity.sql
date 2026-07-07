@@ -13,6 +13,18 @@
 -- already built and already has a public insert policy; 'direct' -> real
 -- restaurant_order_items rows with menu_item_id always set, unlike today's
 -- QRCart.tsx which omits it).
+-- PRE-FLIGHT CHECK before applying this migration: the index below is a new
+-- schema-wide invariant (no table may have more than one 'open' table_orders
+-- row) that this app never enforced before now. Run this first:
+--
+--   SELECT table_id, count(*) FROM table_orders
+--   WHERE status = 'open' AND table_id IS NOT NULL
+--   GROUP BY table_id HAVING count(*) > 1;
+--
+-- If any rows come back, dedupe them (close/cancel the extra open order(s)
+-- for that table) before applying this migration, or CREATE UNIQUE INDEX
+-- below will fail and abort the entire migration script, including the
+-- qr_place_order function defined after it.
 CREATE UNIQUE INDEX IF NOT EXISTS table_orders_one_open_per_table
   ON table_orders(table_id) WHERE status = 'open';
 

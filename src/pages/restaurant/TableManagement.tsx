@@ -231,7 +231,14 @@ export default function TableManagement() {
       status: 'open',
       current_course: 'mains',
     }).select().single() as { data: TableOrder | null; error: { message: string } | null };
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(
+        error.message.includes('table_orders_one_open_per_table')
+          ? t('restaurant.tableAlreadyOpen', 'This table already has an open order')
+          : error.message,
+      );
+      return;
+    }
     if (data) {
       setOrders((prev) => [...prev, data as TableOrder]);
       await handleStatusChange(selectedTableId, 'occupied');

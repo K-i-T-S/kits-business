@@ -535,7 +535,6 @@ export default function KitchenDisplay() {
   const tenantId = currentTenant?.id;
   const { deductForMenuItem } = useRecipeDeduction();
   const bumpingItemIds = useRef<Set<string>>(new Set());
-  const bumpingOrderIds = useRef<Set<string>>(new Set());
 
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -741,15 +740,16 @@ export default function KitchenDisplay() {
 
   const handleBumpAll = useCallback(
     async (orderId: string) => {
-      if (bumpingOrderIds.current.has(orderId)) return;
-      bumpingOrderIds.current.add(orderId);
+      const ticket = tickets.find((tk) => tk.order.id === orderId);
+      if (!ticket) return;
+      const itemsToBump = ticket.items
+        .filter((i) => i.status === 'pending' || i.status === 'in_progress')
+        .filter((i) => !bumpingItemIds.current.has(i.id));
+      if (itemsToBump.length === 0) return;
+      if (!tenantId) return;
+      const ids = itemsToBump.map((i) => i.id);
+      ids.forEach((id) => bumpingItemIds.current.add(id));
       try {
-        const ticket = tickets.find((tk) => tk.order.id === orderId);
-        if (!ticket) return;
-        const itemsToBump = ticket.items.filter((i) => i.status === 'pending' || i.status === 'in_progress');
-        if (itemsToBump.length === 0) return;
-        if (!tenantId) return;
-        const ids = itemsToBump.map((i) => i.id);
         const { error } = await supabase
           .from('restaurant_order_items')
           .update({ status: 'ready', ready_at: new Date().toISOString() })
@@ -777,7 +777,7 @@ export default function KitchenDisplay() {
           if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity);
         });
       } finally {
-        bumpingOrderIds.current.delete(orderId);
+        ids.forEach((id) => bumpingItemIds.current.delete(id));
       }
     },
     [tickets, tenantId, deductForMenuItem],
@@ -785,18 +785,19 @@ export default function KitchenDisplay() {
 
   const handleMarkAllReady = useCallback(
     async (orderId: string) => {
-      if (bumpingOrderIds.current.has(orderId)) return;
-      bumpingOrderIds.current.add(orderId);
+      if (!tenantId) return;
+      const ticket = tickets.find((tk) => tk.order.id === orderId);
+      const itemsToBump = (ticket ? ticket.items.filter((i) => i.status === 'in_progress') : [])
+        .filter((i) => !bumpingItemIds.current.has(i.id));
+      if (itemsToBump.length === 0) return;
+      const ids = itemsToBump.map((i) => i.id);
+      ids.forEach((id) => bumpingItemIds.current.add(id));
       try {
-        if (!tenantId) return;
-        const ticket = tickets.find((tk) => tk.order.id === orderId);
-        const itemsToBump = ticket ? ticket.items.filter((i) => i.status === 'in_progress') : [];
         const { error } = await supabase
           .from('restaurant_order_items')
           .update({ status: 'ready', ready_at: new Date().toISOString() })
-          .eq('order_id', orderId)
-          .eq('tenant_id', tenantId)
-          .eq('status', 'in_progress');
+          .in('id', ids)
+          .eq('tenant_id', tenantId);
         if (error) {
           toast.error(error.message);
           return;
@@ -807,7 +808,7 @@ export default function KitchenDisplay() {
               ? {
                 ...tk,
                 items: tk.items.map((i) =>
-                  i.status === 'in_progress'
+                  ids.includes(i.id)
                     ? { ...i, status: 'ready' as const, ready_at: new Date().toISOString() }
                     : i,
                 ),
@@ -819,7 +820,7 @@ export default function KitchenDisplay() {
           if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity);
         });
       } finally {
-        bumpingOrderIds.current.delete(orderId);
+        ids.forEach((id) => bumpingItemIds.current.delete(id));
       }
     },
     [tenantId, tickets, deductForMenuItem],

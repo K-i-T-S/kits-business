@@ -192,6 +192,35 @@ Full sourced research (per-platform breakdown, citations, comparison table) is p
 
 ---
 
+## Progress Tracker (Updated 2026-07-08)
+
+**Tier 0 — Fix Immediately: complete.**
+1. Delivery webhook receiver rebuilt (`delivery-webhook` edge function) — done.
+2. Three AI compute pipelines restored (`restaurant-demand-forecast`, `restaurant-menu-engineering`, `restaurant-upsell-compute`, nightly `pg_cron` automation) — done.
+
+**Tier 1 — Market Baseline: complete.**
+1. Customer table transfer — done (`fn_transfer_table_order` RPC, `TableTransferModal.tsx`).
+2. Waiter/staff table transfer — done (same RPC/modal, `p_new_waiter_id`).
+3. Waitlist management with guest notification — done (`restaurant_waitlist` table, `fn_seat_waitlist_party` RPC, `Waitlist.tsx`, `wa.me` deep-link notification).
+4. Real delivery aggregator integration — done (`qr_place_order`-adjacent flow: `accept_delivery_order`/`reject_delivery_order`/`complete_delivery_order` RPCs, `DeliveryOrders.tsx` queue page).
+
+**Bonus, not originally scoped — Order Item Integrity fixes: complete.**
+While scoping Tier 2 work, a full audit of every order-item creation site surfaced two further defects, now fixed:
+- Recipe-ingredient deduction (`deduct_recipe_ingredients` RPC, `useRecipeDeduction` hook) was fully built but never called from `KitchenDisplay.tsx` — now wired into all three "item became ready" handlers, with double-click guards.
+- The customer-facing QR self-ordering feature (`QRCart.tsx`) was confirmed non-functional for real anonymous customers (RLS silently rejected every write) — replaced with a new `qr_place_order` RPC that also respects the tenant's configured Order Flow setting (previously silently ignored) and resolves all pricing server-side (closing a price-tampering vector).
+
+**Tier 2 — Operational Elevators: in progress.**
+1. Preset order bundles — **design in progress** (see `docs/superpowers/specs/` for the spec once committed). Architecture already decided: per-course guest choice (not a fixed set), one shared choice × party size (not per-guest customization), managed from `MenuManagement.tsx`, priced via a zero-priced-component + single bundle-charge-line pattern tagged with a `bundle_id`, so both bundle-level sales analytics and per-dish inventory consumption are tracked correctly.
+2. Restore AI compute pipelines — done (see Tier 0 above; original roadmap doc double-listed this under both tiers).
+3. Table merge/split — not started. Note: the *merge* case (moving one order onto an occupied table) is already covered by Tier 1.1/1.2's table-transfer RPC; a standalone *split* (dividing one table's order into two) is not built.
+4. Verify/complete auto-generated purchase orders — not started (a verification task against existing `restaurant_purchase_orders` infrastructure, not a build from scratch).
+
+**Tier 3 — Disruptors: not started**, unchanged from original scope.
+
+**Separately identified during this work, not part of the original roadmap:** a live Supabase security/performance audit is in progress (Supabase's own Security Advisor already found 2 confirmed ERROR-level findings — cross-tenant-data-leaking `SECURITY DEFINER` views — plus several admin-privileged functions callable by fully anonymous requests that need function-body review). Findings and fixes will be tracked separately as they land.
+
+---
+
 ## Recommendations (Who / What / By When)
 
 1. **This sprint** — Engineering: fix the delivery-webhook 404 (Tier 0.1) and either restore or hide the three dead AI panels (Tier 0.2). These are live bugs a client could hit today.

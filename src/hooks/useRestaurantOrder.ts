@@ -292,6 +292,7 @@ export function useRestaurantOrder(
     const inserts = pendingItems.map((item) => ({
       tenant_id: tenantId,
       order_id: orderId,
+      menu_item_id: item.menu_item_id,
       product_name: item.name,
       quantity: item.quantity,
       unit_price: item.unit_price,

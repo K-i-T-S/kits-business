@@ -535,6 +535,7 @@ export default function KitchenDisplay() {
   const tenantId = currentTenant?.id;
   const { deductForMenuItem } = useRecipeDeduction();
   const bumpingItemIds = useRef<Set<string>>(new Set());
+  const bumpingOrderIds = useRef<Set<string>>(new Set());
 
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -740,74 +741,86 @@ export default function KitchenDisplay() {
 
   const handleBumpAll = useCallback(
     async (orderId: string) => {
-      const ticket = tickets.find((tk) => tk.order.id === orderId);
-      if (!ticket) return;
-      const itemsToBump = ticket.items.filter((i) => i.status === 'pending' || i.status === 'in_progress');
-      if (itemsToBump.length === 0) return;
-      if (!tenantId) return;
-      const ids = itemsToBump.map((i) => i.id);
-      const { error } = await supabase
-        .from('restaurant_order_items')
-        .update({ status: 'ready', ready_at: new Date().toISOString() })
-        .in('id', ids)
-        .eq('tenant_id', tenantId);
-      if (error) {
-        toast.error(error.message);
-        return;
+      if (bumpingOrderIds.current.has(orderId)) return;
+      bumpingOrderIds.current.add(orderId);
+      try {
+        const ticket = tickets.find((tk) => tk.order.id === orderId);
+        if (!ticket) return;
+        const itemsToBump = ticket.items.filter((i) => i.status === 'pending' || i.status === 'in_progress');
+        if (itemsToBump.length === 0) return;
+        if (!tenantId) return;
+        const ids = itemsToBump.map((i) => i.id);
+        const { error } = await supabase
+          .from('restaurant_order_items')
+          .update({ status: 'ready', ready_at: new Date().toISOString() })
+          .in('id', ids)
+          .eq('tenant_id', tenantId);
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        setTickets((prev) =>
+          prev.map((tk) =>
+            tk.order.id === orderId
+              ? {
+                ...tk,
+                items: tk.items.map((i) =>
+                  ids.includes(i.id)
+                    ? { ...i, status: 'ready' as const, ready_at: new Date().toISOString() }
+                    : i,
+                ),
+              }
+              : tk,
+          ),
+        );
+        itemsToBump.forEach((item) => {
+          if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity);
+        });
+      } finally {
+        bumpingOrderIds.current.delete(orderId);
       }
-      setTickets((prev) =>
-        prev.map((tk) =>
-          tk.order.id === orderId
-            ? {
-              ...tk,
-              items: tk.items.map((i) =>
-                ids.includes(i.id)
-                  ? { ...i, status: 'ready' as const, ready_at: new Date().toISOString() }
-                  : i,
-              ),
-            }
-            : tk,
-        ),
-      );
-      itemsToBump.forEach((item) => {
-        if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity);
-      });
     },
     [tickets, tenantId, deductForMenuItem],
   );
 
   const handleMarkAllReady = useCallback(
     async (orderId: string) => {
-      if (!tenantId) return;
-      const ticket = tickets.find((tk) => tk.order.id === orderId);
-      const itemsToBump = ticket ? ticket.items.filter((i) => i.status === 'in_progress') : [];
-      const { error } = await supabase
-        .from('restaurant_order_items')
-        .update({ status: 'ready', ready_at: new Date().toISOString() })
-        .eq('order_id', orderId)
-        .eq('tenant_id', tenantId)
-        .eq('status', 'in_progress');
-      if (error) {
-        toast.error(error.message);
-        return;
+      if (bumpingOrderIds.current.has(orderId)) return;
+      bumpingOrderIds.current.add(orderId);
+      try {
+        if (!tenantId) return;
+        const ticket = tickets.find((tk) => tk.order.id === orderId);
+        const itemsToBump = ticket ? ticket.items.filter((i) => i.status === 'in_progress') : [];
+        const { error } = await supabase
+          .from('restaurant_order_items')
+          .update({ status: 'ready', ready_at: new Date().toISOString() })
+          .eq('order_id', orderId)
+          .eq('tenant_id', tenantId)
+          .eq('status', 'in_progress');
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        setTickets((prev) =>
+          prev.map((tk) =>
+            tk.order.id === orderId
+              ? {
+                ...tk,
+                items: tk.items.map((i) =>
+                  i.status === 'in_progress'
+                    ? { ...i, status: 'ready' as const, ready_at: new Date().toISOString() }
+                    : i,
+                ),
+              }
+              : tk,
+          ),
+        );
+        itemsToBump.forEach((item) => {
+          if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity);
+        });
+      } finally {
+        bumpingOrderIds.current.delete(orderId);
       }
-      setTickets((prev) =>
-        prev.map((tk) =>
-          tk.order.id === orderId
-            ? {
-              ...tk,
-              items: tk.items.map((i) =>
-                i.status === 'in_progress'
-                  ? { ...i, status: 'ready' as const, ready_at: new Date().toISOString() }
-                  : i,
-              ),
-            }
-            : tk,
-        ),
-      );
-      itemsToBump.forEach((item) => {
-        if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity);
-      });
     },
     [tenantId, tickets, deductForMenuItem],
   );

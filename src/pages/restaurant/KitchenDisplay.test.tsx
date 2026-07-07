@@ -147,4 +147,29 @@ describe('KitchenDisplay recipe deduction wiring', () => {
       expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-1', 2);
     });
   });
+
+  it('does not double-deduct on a rapid double-click of "Bump All"', async () => {
+    mockItemsResult.data = [
+      pendingItem({ id: 'item-1', menu_item_id: 'mi-1', quantity: 2 }),
+      pendingItem({ id: 'item-3', menu_item_id: 'mi-3', product_name: 'Fries', quantity: 3 }),
+    ];
+    render(<KitchenDisplay />);
+    const button = await screen.findByRole('button', { name: /all ready \(2\)/i });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(mockDeductForMenuItem).toHaveBeenCalledTimes(2); // 2 items, each deducted exactly once
+    });
+  });
+
+  it('does not double-deduct on a rapid double-click of "Mark All Ready"', async () => {
+    mockItemsResult.data = [pendingItem({ status: 'in_progress' })];
+    render(<KitchenDisplay />);
+    const button = await screen.findByRole('button', { name: /all ready \(1\)/i });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(mockDeductForMenuItem).toHaveBeenCalledTimes(1);
+    });
+  });
 });

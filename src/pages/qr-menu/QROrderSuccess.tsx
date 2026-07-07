@@ -3,10 +3,11 @@ import { CheckCircle, ChefHat } from 'lucide-react';
 
 interface QROrderSuccessProps {
   orderNumber: string;
+  mode: 'direct' | 'pending';
   onDone: () => void;
 }
 
-export default function QROrderSuccess({ orderNumber, onDone }: QROrderSuccessProps) {
+export default function QROrderSuccess({ orderNumber, mode, onDone }: QROrderSuccessProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -52,10 +53,12 @@ export default function QROrderSuccess({ orderNumber, onDone }: QROrderSuccessPr
           className="text-3xl font-bold"
           style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}
         >
-          Your order has been received!
+          {mode === 'pending' ? 'Your order has been sent!' : 'Your order has been received!'}
         </h2>
         <p style={{ color: 'var(--qr-text-muted)' }} className="text-sm">
-          Our team is on it — sit back and relax 🎉
+          {mode === 'pending'
+            ? "Your waiter will confirm it shortly, then it's off to the kitchen 🎉"
+            : 'Our team is on it — sit back and relax 🎉'}
         </p>
         <div
           className="mt-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold"
@@ -73,15 +76,19 @@ export default function QROrderSuccess({ orderNumber, onDone }: QROrderSuccessPr
         className="space-y-3 text-center"
       >
         <p className="text-xs" style={{ color: 'var(--qr-text-muted)' }}>
-          Our team has received your order and is preparing it with care.
+          {mode === 'pending'
+            ? 'Your waiter has been notified and will confirm your order shortly.'
+            : 'Our team has received your order and is preparing it with care.'}
         </p>
-        <div
-          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm"
-          style={{ background: 'var(--qr-surface)', border: '1px solid var(--qr-border)', color: 'var(--qr-text-muted)' }}
-        >
-          <span className="text-base">⏱️</span>
-          <span>Estimated time: <strong style={{ color: 'var(--qr-text)' }}>15–20 minutes</strong></span>
-        </div>
+        {mode === 'direct' && (
+          <div
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm"
+            style={{ background: 'var(--qr-surface)', border: '1px solid var(--qr-border)', color: 'var(--qr-text-muted)' }}
+          >
+            <span className="text-base">⏱️</span>
+            <span>Estimated time: <strong style={{ color: 'var(--qr-text)' }}>15–20 minutes</strong></span>
+          </div>
+        )}
       </motion.div>
 
       <motion.button

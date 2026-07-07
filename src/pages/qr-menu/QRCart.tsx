@@ -14,7 +14,7 @@ interface QRCartProps {
   onUpdateQuantity: (menuItemId: string, modifierKey: string, quantity: number) => void;
   onRemoveItem: (menuItemId: string, modifierKey: string) => void;
   onClose: () => void;
-  onSuccess: (orderNumber: string) => void;
+  onSuccess: (orderNumber: string, mode: 'direct' | 'pending') => void;
 }
 
 function getModifierKey(item: QRCartItem): string {
@@ -25,62 +25,33 @@ function getModifierKey(item: QRCartItem): string {
   return `${item.menuItemId}__${modStr}`;
 }
 
-export default function QRCart({ items, tableId, tableDisplayLabel, tenantId, totalPrice, onUpdateQuantity, onRemoveItem, onClose, onSuccess }: QRCartProps) {
+export default function QRCart({ items, tableId, tableDisplayLabel, totalPrice, onUpdateQuantity, onRemoveItem, onClose, onSuccess }: QRCartProps) {
   const [placing, setPlacing] = useState(false);
+  const [placeError, setPlaceError] = useState<string | null>(null);
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;
     setPlacing(true);
+    setPlaceError(null);
     try {
-      // Check for existing open order for this table
-      const { data: existingOrders } = await supabase
-        .from('table_orders')
-        .select('id')
-        .eq('table_id', tableId)
-        .eq('status', 'open')
-        .limit(1);
-
-      let orderId: string;
-
-      if (existingOrders && existingOrders.length > 0) {
-        orderId = (existingOrders[0] as { id: string }).id;
-      } else {
-        const { data: newOrder, error: orderError } = await supabase
-          .from('table_orders')
-          .insert({
-            tenant_id: tenantId,
-            table_id: tableId,
-            status: 'open',
-            current_course: 'appetizers',
-          })
-          .select('id')
-          .single();
-
-        if (orderError || !newOrder) throw new Error(orderError?.message ?? 'Failed to create order');
-        orderId = (newOrder as { id: string }).id;
-      }
-
-      // Insert all order items
-      const orderItems = items.map((item) => ({
-        tenant_id: tenantId,
-        order_id: orderId,
-        product_name: item.menuItem.name,
+      const payload = items.map((item) => ({
+        menu_item_id: item.menuItemId,
         quantity: item.quantity,
-        unit_price: item.menuItem.base_price_usd,
-        modifiers: Object.entries(item.selectedModifiers).flatMap(([, modIds]) =>
-          modIds.map((modId) => ({ name: modId, price_delta: 0 })),
-        ),
-        course: 'mains',
-        status: 'pending',
-        notes: item.notes || null,
+        modifier_ids: Object.values(item.selectedModifiers).flat(),
+        notes: item.notes || undefined,
       }));
 
-      const { error: itemsError } = await supabase.from('restaurant_order_items').insert(orderItems);
-      if (itemsError) throw new Error(itemsError.message);
+      const { data, error } = (await supabase.rpc('qr_place_order', {
+        p_table_id: tableId,
+        p_items: payload,
+      })) as { data: { mode: 'direct' | 'pending'; order_id: string } | null; error: { message: string } | null };
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error('qr_place_order returned no data');
 
-      onSuccess(orderId.slice(-6).toUpperCase());
+      onSuccess(data.order_id.slice(-6).toUpperCase(), data.mode);
     } catch (err) {
       console.error('[QRCart] place order error:', err);
+      setPlaceError('Something went wrong placing your order — please try again or ask your server for help.');
     } finally {
       setPlacing(false);
     }
@@ -214,6 +185,15 @@ export default function QRCart({ items, tableId, tableDisplayLabel, tenantId, to
             </p>
           </div>
         </div>
+
+        {placeError && (
+          <p
+            className="mb-3 rounded-xl px-3 py-2 text-center text-xs"
+            style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--qr-text)' }}
+          >
+            {placeError}
+          </p>
+        )}
 
         <motion.button
           onClick={() => { void handlePlaceOrder(); }}

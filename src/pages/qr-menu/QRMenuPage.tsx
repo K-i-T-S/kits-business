@@ -37,6 +37,7 @@ export default function QRMenuPage() {
   const [view, setView] = useState<MenuView>('splash');
   const [selectedItem, setSelectedItem] = useState<RestaurantMenuItem | null>(null);
   const [orderNumber, setOrderNumber] = useState('');
+  const [orderMode, setOrderMode] = useState<'direct' | 'pending'>('direct');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [fa7emSent, setFa7emSent] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
@@ -95,8 +96,9 @@ export default function QRMenuPage() {
     setView('menu');
   };
 
-  const handleOrderSuccess = (num: string) => {
+  const handleOrderSuccess = (num: string, mode: 'direct' | 'pending') => {
     setOrderNumber(num);
+    setOrderMode(mode);
     clearCart();
     setView('success');
   };
@@ -240,6 +242,7 @@ export default function QRMenuPage() {
           <motion.div key="success" className="fixed inset-0 z-50">
             <QROrderSuccess
               orderNumber={orderNumber}
+              mode={orderMode}
               onDone={() => setView('menu')}
             />
           </motion.div>

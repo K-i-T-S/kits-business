@@ -160,6 +160,35 @@ REVOKE EXECUTE ON FUNCTION public.remove_user_from_tenant(uuid, uuid) FROM anon;
 
 REVOKE EXECUTE ON FUNCTION public.invoke_edge_function(text) FROM anon, authenticated;
 
+-- IMPORTANT: `REVOKE ... FROM anon` alone is NOT sufficient. Every one of
+-- these 9 functions retained an implicit PUBLIC grant (Postgres's default
+-- when a function is created — CREATE OR REPLACE FUNCTION resets to this
+-- default), and `anon` inherits through PUBLIC regardless of an explicit
+-- per-role REVOKE. Verified empirically post-apply via has_function_privilege
+-- that anon could still EXECUTE despite the REVOKEs above — PUBLIC must be
+-- revoked explicitly too, or the fix is cosmetic. authenticated is
+-- re-granted where the function should remain callable by any logged-in
+-- user (its internal check narrows further); invoke_edge_function and
+-- rls_auto_enable get no re-grant — only postgres/service_role (pg_cron)
+-- should ever call them.
+REVOKE EXECUTE ON FUNCTION public.verify_admin_pin(text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.admin_list_tenants() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.admin_provision_client(uuid, text, text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.admin_set_tenant_plan(uuid, text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.create_tenant(text, text, uuid, jsonb) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.add_user_to_tenant(uuid, uuid, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.remove_user_from_tenant(uuid, uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.invoke_edge_function(text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION public.verify_admin_pin(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_list_tenants() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_provision_client(uuid, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_set_tenant_plan(uuid, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_tenant(text, text, uuid, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.add_user_to_tenant(uuid, uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.remove_user_from_tenant(uuid, uuid) TO authenticated;
+
 -- ============================================================
 -- C2: restaurant_daily_revenue and restaurant_item_velocity were
 -- SECURITY DEFINER views (the Postgres default), bypassing base-table RLS —

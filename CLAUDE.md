@@ -188,6 +188,7 @@ Run in this order in Supabase Dashboard → SQL Editor:
 | `whatsapp-receipt` | Called from POS after sale (Business plan) | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
 | `trigger-workflows` | Called from WorkflowAutomation "Run Now" | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` |
 | `groq-proxy` | AI features in RestaurantAnalytics, RestaurantHub, AIAssistant | `GROQ_API_KEY` |
+| `restaurant-ai-assistant` | Called from `useAIAssistant.ts` (3 call sites); backs `restaurant_ai_queries` chat history (migration `000042`) | `GROQ_API_KEY` (likely, unconfirmed) |
 | `delivery-webhook` | Called by Toters/Talabat/Zomato/Careem when a delivery order is placed | none (per-integration secret stored in `restaurant_delivery_integrations.webhook_secret`) |
 | `restaurant-demand-forecast` | Nightly `pg_cron` job (`nightly-demand-forecast`, see migration `000051`) | none |
 | `restaurant-menu-engineering` | Nightly `pg_cron` job (`nightly-menu-engineering`, see migration `000051`) | none |

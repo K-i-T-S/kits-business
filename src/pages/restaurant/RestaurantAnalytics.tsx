@@ -481,8 +481,8 @@ function SevenDayForecastPanel({ forecast, loading }: SevenDayForecastPanelProps
 // ── Demand Forecast Panel ─────────────────────────────────────────────────────
 
 interface ItemVelocityRow {
-  item_name: string;
-  day_date: string;
+  product_name: string;
+  sale_day: string;
   qty_sold: number;
 }
 
@@ -514,21 +514,21 @@ function DemandForecastPanel({ tenantId }: DemandForecastPanelProps) {
 
         const { data, error } = await supabase
           .from('restaurant_item_velocity')
-          .select('item_name, day_date, qty_sold')
+          .select('product_name, sale_day, qty_sold')
           .eq('tenant_id', tenantId)
-          .gte('day_date', sevenDaysAgoISO)
-          .order('day_date', { ascending: true });
+          .gte('sale_day', sevenDaysAgoISO)
+          .order('sale_day', { ascending: true });
 
         if (error) throw new Error(error.message);
 
         const rows = (data as ItemVelocityRow[]) ?? [];
 
-        // Group by item_name → collect qty_sold per day
+        // Group by product_name → collect qty_sold per day
         const itemDayMap = new Map<string, number[]>();
         for (const row of rows) {
-          const existing = itemDayMap.get(row.item_name) ?? [];
+          const existing = itemDayMap.get(row.product_name) ?? [];
           existing.push(row.qty_sold);
-          itemDayMap.set(row.item_name, existing);
+          itemDayMap.set(row.product_name, existing);
         }
 
         // Compute 7-day moving average (= mean of all daily quantities) as predicted demand

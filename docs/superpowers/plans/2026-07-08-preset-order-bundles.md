@@ -22,16 +22,16 @@
 
 ### Migration numbering — correction to the spec
 
-The spec's Implementation Notes say the new migration should be `20260708_000058_preset_order_bundles.sql`, numbered after `20260707_000057_order_item_integrity.sql`. **This is stale.** Two migrations have since landed on `main`: `20260708_000058_security_performance_audit.sql` and `20260708_000059_fix_close_bill_overload_ambiguity.sql`. This worktree's branch (`worktree-preset-order-bundles`) currently contains `000058` but **not** `000059` — `git merge-base --is-ancestor HEAD main` confirms this worktree's HEAD is a clean ancestor of `main`, i.e. `main` has one additional commit (`2673509c`, which added `000059`) that landed *after* this worktree branched. `000059` is real and already merged to `main` — it is simply not yet in this branch's history.
+The spec's Implementation Notes say the new migration should be `20260708_000058_preset_order_bundles.sql`. **This is stale**, and stale twice over: three migrations have since landed on `main` — `20260708_000058_security_performance_audit.sql`, `20260708_000059_fix_close_bill_overload_ambiguity.sql`, and `20260708_000060_supabase_deep_clean.sql` (an unrelated follow-up Supabase audit, landed on `main` after this plan was first drafted with `000060`). This worktree branch has since merged latest `main` (commit `2673509c` and the deep-clean commit), so all three now exist on disk in this branch.
 
-**Resolution:** the new migration in this plan is `supabase/migrations/20260708_000060_preset_order_bundles.sql` — the correct next number relative to `main`, which is what matters once this branch merges. **Before running Task 1**, merge or rebase latest `main` into this branch (`git merge main` or `git rebase main`) so `20260708_000059_fix_close_bill_overload_ambiguity.sql` is actually present on disk — otherwise `000060` would not yet have a real `000059` predecessor in this branch, and a fresh sequential replay on a new client's Supabase project would silently skip a number. This merge is a prerequisite, not part of Task 1's steps (it's a one-time `git` operation, not a code change).
+**Resolution:** the new migration in this plan is `supabase/migrations/20260708_000061_preset_order_bundles.sql` — the correct next number. No further merge is needed before Task 1; `main` is already merged into this branch as of the numbering fix.
 
 ---
 
 ## Task 1: Migration — schema, `add_bundle_to_order`, `get_public_menu` extension, `qr_place_order` replacement
 
 **Files:**
-- Create: `supabase/migrations/20260708_000060_preset_order_bundles.sql`
+- Create: `supabase/migrations/20260708_000061_preset_order_bundles.sql`
 
 **Interfaces:**
 - Produces: tables `restaurant_bundles`, `restaurant_bundle_courses`, `restaurant_bundle_course_items`; column `restaurant_order_items.bundle_id UUID NULL`; RPC `add_bundle_to_order(p_table_order_id uuid, p_bundle_id uuid, p_party_size int, p_course_selections jsonb) RETURNS jsonb`; extended `get_public_menu(p_tenant_slug TEXT) RETURNS JSONB` (adds `bundles`/`bundle_courses`/`bundle_course_items` keys); replaced `qr_place_order(p_table_id uuid, p_items jsonb) RETURNS jsonb` (adds bundle-add branch alongside the unchanged regular-item branch).
@@ -42,7 +42,7 @@ This task has no Vitest cycle — it is pure SQL with no automated harness in th
 - [ ] **Step 1: Write the migration file**
 
 ```sql
--- Migration: 20260708_000060_preset_order_bundles.sql
+-- Migration: 20260708_000061_preset_order_bundles.sql
 -- Preset Order Bundles (Tier 2.1) — schema, staff RPC, QR ordering extension.
 -- See docs/superpowers/specs/2026-07-08-preset-order-bundles-design.md for full design.
 --
@@ -795,7 +795,7 @@ SELECT qr_place_order(
 - [ ] **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/20260708_000060_preset_order_bundles.sql
+git add supabase/migrations/20260708_000061_preset_order_bundles.sql
 git commit -m "$(cat <<'EOF'
 feat(db): add preset order bundles schema, add_bundle_to_order RPC, and QR bundle ordering
 

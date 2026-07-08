@@ -6,6 +6,7 @@ import {
   Edit2,
   GripVertical,
   Image,
+  Layers,
   Link,
   Loader2,
   Plus,
@@ -29,10 +30,15 @@ import { AIContentGeneratorModal } from '@/components/restaurant/AIContentGenera
 import { useApp } from '@/context/AppContext';
 import type {
   BranchMenuOverride,
+  CourseType,
+  RestaurantBundle,
+  RestaurantBundleCourse,
+  RestaurantBundleCourseItem,
   RestaurantMenuCategory,
   RestaurantMenuItem,
   RestaurantTable,
 } from '@/types/restaurant';
+import { COURSE_LABELS } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
 
 // ── Storage helpers ────────────────────────────────────────────────────────────
@@ -946,6 +952,485 @@ function MenuBuilder({ categories, items, onRefresh }: MenuBuilderProps) {
   );
 }
 
+// ── Tab: Bundles (Preset Order Bundles / Prix-Fixe Combos) ─────────────────────
+
+interface BundleFormState {
+  name: string;
+  name_ar: string;
+  description: string;
+  price_per_guest_usd: string;
+  is_active: boolean;
+  active_breakfast: boolean;
+  active_lunch: boolean;
+  active_dinner: boolean;
+}
+
+const EMPTY_BUNDLE_FORM: BundleFormState = {
+  name: '',
+  name_ar: '',
+  description: '',
+  price_per_guest_usd: '',
+  is_active: true,
+  active_breakfast: true,
+  active_lunch: true,
+  active_dinner: true,
+};
+
+interface CourseDraft {
+  localId: string;
+  course: CourseType;
+  label: string;
+  eligibleItemIds: string[];
+}
+
+interface BundleFormModalProps {
+  bundle: RestaurantBundle | null;
+  courses: RestaurantBundleCourse[];
+  courseItems: RestaurantBundleCourseItem[];
+  menuItems: RestaurantMenuItem[];
+  onClose: () => void;
+  onSave: () => void;
+}
+
+function BundleFormModal({ bundle, courses, courseItems, menuItems, onClose, onSave }: BundleFormModalProps) {
+  const { currentTenant } = useApp();
+  const [form, setForm] = useState<BundleFormState>(() => {
+    if (!bundle) return EMPTY_BUNDLE_FORM;
+    return {
+      name: bundle.name,
+      name_ar: bundle.name_ar ?? '',
+      description: bundle.description ?? '',
+      price_per_guest_usd: String(bundle.price_per_guest_usd),
+      is_active: bundle.is_active,
+      active_breakfast: bundle.active_breakfast,
+      active_lunch: bundle.active_lunch,
+      active_dinner: bundle.active_dinner,
+    };
+  });
+  const [courseDrafts, setCourseDrafts] = useState<CourseDraft[]>(() => {
+    if (!bundle) return [];
+    return courses
+      .filter(c => c.bundle_id === bundle.id)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(c => ({
+        localId: c.id,
+        course: c.course,
+        label: c.label,
+        eligibleItemIds: courseItems.filter(ci => ci.bundle_course_id === c.id).map(ci => ci.menu_item_id),
+      }));
+  });
+  const [itemSearch, setItemSearch] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const activeMenuItems = menuItems.filter(mi => mi.is_active);
+  const searchedMenuItems = itemSearch
+    ? activeMenuItems.filter(mi => mi.name.toLowerCase().includes(itemSearch.toLowerCase()))
+    : activeMenuItems;
+
+  const handleAddCourseSlot = () => {
+    setCourseDrafts(prev => [...prev, { localId: crypto.randomUUID(), course: 'mains', label: '', eligibleItemIds: [] }]);
+  };
+
+  const handleDeleteCourseSlot = (localId: string) => {
+    setCourseDrafts(prev => prev.filter(cd => cd.localId !== localId));
+  };
+
+  const handleUpdateCourseSlot = (localId: string, patch: Partial<Pick<CourseDraft, 'course' | 'label'>>) => {
+    setCourseDrafts(prev => prev.map(cd => (cd.localId === localId ? { ...cd, ...patch } : cd)));
+  };
+
+  const toggleEligibleItem = (localId: string, itemId: string) => {
+    setCourseDrafts(prev => prev.map(cd => {
+      if (cd.localId !== localId) return cd;
+      const has = cd.eligibleItemIds.includes(itemId);
+      return { ...cd, eligibleItemIds: has ? cd.eligibleItemIds.filter(id => id !== itemId) : [...cd.eligibleItemIds, itemId] };
+    }));
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.price_per_guest_usd || parseFloat(form.price_per_guest_usd) <= 0) {
+      toast.error('Name and a price greater than $0 are required');
+      return;
+    }
+    if (courseDrafts.length === 0) {
+      toast.error('Add at least one course slot');
+      return;
+    }
+    if (courseDrafts.some(cd => cd.eligibleItemIds.length === 0)) {
+      toast.error('Every course slot needs at least one eligible item');
+      return;
+    }
+    if (!currentTenant?.id) { toast.error('No active tenant'); return; }
+    setSaving(true);
+    try {
+      const payload = {
+        tenant_id: currentTenant.id,
+        name: form.name.trim(),
+        name_ar: form.name_ar.trim() || null,
+        description: form.description.trim() || null,
+        price_per_guest_usd: parseFloat(form.price_per_guest_usd) || 0,
+        is_active: form.is_active,
+        active_breakfast: form.active_breakfast,
+        active_lunch: form.active_lunch,
+        active_dinner: form.active_dinner,
+      };
+
+      let bundleId: string;
+      if (bundle) {
+        const { error } = await supabase.from('restaurant_bundles').update(payload).eq('id', bundle.id);
+        if (error) throw error;
+        bundleId = bundle.id;
+        const { error: delErr } = await supabase.from('restaurant_bundle_courses').delete().eq('bundle_id', bundleId);
+        if (delErr) throw delErr;
+      } else {
+        const bundleInsertRes = await supabase.from('restaurant_bundles').insert(payload).select().single();
+        if (bundleInsertRes.error) throw bundleInsertRes.error;
+        bundleId = (bundleInsertRes.data as RestaurantBundle).id;
+      }
+
+      for (let i = 0; i < courseDrafts.length; i++) {
+        const draft = courseDrafts[i]!;
+        const courseInsertRes = await supabase
+          .from('restaurant_bundle_courses')
+          .insert({
+            bundle_id: bundleId,
+            tenant_id: currentTenant.id,
+            course: draft.course,
+            label: draft.label.trim() || 'Choose one',
+            sort_order: i,
+          })
+          .select()
+          .single();
+        if (courseInsertRes.error) throw courseInsertRes.error;
+        const newCourseId = (courseInsertRes.data as RestaurantBundleCourse).id;
+        const { error: itemsErr } = await supabase
+          .from('restaurant_bundle_course_items')
+          .insert(draft.eligibleItemIds.map(itemId => ({ bundle_course_id: newCourseId, menu_item_id: itemId })));
+        if (itemsErr) throw itemsErr;
+      }
+
+      toast.success(bundle ? 'Bundle updated' : 'Bundle added');
+      onSave();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save bundle');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center p-0 sm:p-4">
+      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl border-t sm:border border-white/10 bg-slate-900 shadow-2xl max-h-[90dvh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 flex-shrink-0">
+          <h2 className="text-base font-bold text-white">{bundle ? 'Edit Bundle' : 'Add Bundle'}</h2>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-white/40 hover:bg-white/10 hover:text-white">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white/60">Name (EN) *</label>
+              <input
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                className="w-full rounded-xl border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
+                placeholder="e.g. Family Feast"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white/60">الاسم (AR)</label>
+              <input
+                dir="rtl"
+                value={form.name_ar}
+                onChange={e => setForm(f => ({ ...f, name_ar: e.target.value }))}
+                className="w-full rounded-xl border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
+                placeholder="وليمة العائلة"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-white/60">Description</label>
+            <textarea
+              rows={2}
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              className="w-full rounded-xl border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none resize-none"
+              placeholder="Brief description of the combo..."
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-white/60">Price per Guest (USD) *</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={form.price_per_guest_usd}
+              onChange={e => setForm(f => ({ ...f, price_per_guest_usd: e.target.value }))}
+              className="w-full rounded-xl border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-medium text-white/60">Served During</label>
+            <div className="flex flex-wrap gap-2">
+              {MEAL_TIMES.map(mt => {
+                const isAll = mt.key === 'all_day';
+                const checked = isAll
+                  ? form.active_breakfast && form.active_lunch && form.active_dinner
+                  : form[`active_${mt.key}` as keyof BundleFormState] as boolean;
+                return (
+                  <button
+                    key={mt.key}
+                    type="button"
+                    onClick={() => {
+                      if (isAll) {
+                        const all = form.active_breakfast && form.active_lunch && form.active_dinner;
+                        setForm(f => ({ ...f, active_breakfast: !all, active_lunch: !all, active_dinner: !all }));
+                      } else {
+                        const key = `active_${mt.key}` as 'active_breakfast' | 'active_lunch' | 'active_dinner';
+                        setForm(f => ({ ...f, [key]: !f[key] }));
+                      }
+                    }}
+                    className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition-all ${
+                      checked
+                        ? 'border-indigo-500/50 bg-indigo-500/20 text-indigo-300'
+                        : 'border-white/10 bg-white/5 text-white/50 hover:border-white/20'
+                    }`}
+                  >
+                    {mt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <div
+                onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
+                className={`h-5 w-9 rounded-full border transition-all cursor-pointer ${
+                  form.is_active ? 'border-indigo-500/50 bg-indigo-500/40' : 'border-white/20 bg-white/10'
+                }`}
+              >
+                <span className={`block h-3.5 w-3.5 rounded-full mt-[2px] transition-transform ${
+                  form.is_active ? 'translate-x-4 bg-indigo-400' : 'translate-x-0.5 bg-white/30'
+                }`} />
+              </div>
+              <span className="text-xs text-white/60">Active</span>
+            </label>
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="block text-xs font-medium text-white/60">Course Slots</label>
+              <button
+                type="button"
+                onClick={handleAddCourseSlot}
+                className="flex items-center gap-1 text-xs font-medium text-indigo-400 hover:text-indigo-300"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Course Slot
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {courseDrafts.map(cd => (
+                <div key={cd.localId} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <select
+                      value={cd.course}
+                      onChange={e => handleUpdateCourseSlot(cd.localId, { course: e.target.value as CourseType })}
+                      className="rounded-lg border border-white/20 bg-slate-800 px-2 py-1.5 text-xs text-white focus:border-indigo-500/50 focus:outline-none"
+                    >
+                      {(Object.keys(COURSE_LABELS) as CourseType[]).map(c => (
+                        <option key={c} value={c}>{COURSE_LABELS[c]}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={cd.label}
+                      onChange={e => handleUpdateCourseSlot(cd.localId, { label: e.target.value })}
+                      placeholder="Choose your appetizer"
+                      className="flex-1 rounded-lg border border-white/20 bg-slate-800 px-2 py-1.5 text-xs text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCourseSlot(cd.localId)}
+                      className="rounded-lg p-1.5 text-white/40 hover:bg-red-500/20 hover:text-red-400 transition-colors"
+                      aria-label="Delete course slot"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/40">
+                    Eligible Items
+                  </p>
+                  {activeMenuItems.length > 8 && (
+                    <input
+                      value={itemSearch}
+                      onChange={e => setItemSearch(e.target.value)}
+                      placeholder="Search menu items..."
+                      className="mb-2 w-full rounded-lg border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
+                    />
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {searchedMenuItems.map(mi => {
+                      const isSelected = cd.eligibleItemIds.includes(mi.id);
+                      return (
+                        <button
+                          key={mi.id}
+                          type="button"
+                          onClick={() => toggleEligibleItem(cd.localId, mi.id)}
+                          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${
+                            isSelected
+                              ? 'border-indigo-500/70 bg-indigo-600/30 text-white'
+                              : 'border-white/10 bg-white/5 text-white/50 hover:border-white/20'
+                          }`}
+                        >
+                          {mi.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {courseDrafts.length === 0 && (
+                <p className="text-xs text-white/30">No course slots yet — add at least one.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 px-5 py-4 flex-shrink-0">
+          <button
+            onClick={() => { void handleSave(); }}
+            disabled={saving}
+            className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-3 text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {bundle ? 'Save Changes' : 'Create Bundle'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface BundlesManagerProps {
+  bundles: RestaurantBundle[];
+  courses: RestaurantBundleCourse[];
+  courseItems: RestaurantBundleCourseItem[];
+  menuItems: RestaurantMenuItem[];
+  onRefresh: () => void;
+}
+
+function BundlesManager({ bundles, courses, courseItems, menuItems, onRefresh }: BundlesManagerProps) {
+  const [editingBundle, setEditingBundle] = useState<RestaurantBundle | null | undefined>(undefined);
+
+  const handleDeleteBundle = async (id: string) => {
+    if (!confirm('Delete this bundle?')) return;
+    const { error } = await supabase.from('restaurant_bundles').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    onRefresh();
+  };
+
+  const handleToggleActive = async (b: RestaurantBundle) => {
+    const { error } = await supabase.from('restaurant_bundles').update({ is_active: !b.is_active }).eq('id', b.id);
+    if (error) { toast.error(error.message); return; }
+    onRefresh();
+  };
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-end">
+        <button
+          onClick={() => setEditingBundle(null)}
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:opacity-90 transition-opacity"
+        >
+          <Plus className="h-4 w-4" />
+          Add Bundle
+        </button>
+      </div>
+
+      {bundles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 py-16 text-center">
+          <Layers className="mb-3 h-8 w-8 text-white/20" />
+          <p className="text-sm text-white/40">No bundles yet</p>
+          <p className="mt-1 text-xs text-white/25">Click "Add Bundle" to create a combo</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          {bundles.map(b => {
+            const courseCount = courses.filter(c => c.bundle_id === b.id).length;
+            return (
+              <div
+                key={b.id}
+                data-testid={`bundle-card-${b.id}`}
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-white/10 to-white/3 backdrop-blur-md shadow-xl p-3"
+              >
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">{b.name}</p>
+                    {b.name_ar && <p className="truncate text-xs text-white/40" dir="rtl">{b.name_ar}</p>}
+                  </div>
+                  <span className="shrink-0 text-sm font-bold text-emerald-400">${b.price_per_guest_usd.toFixed(2)}/guest</span>
+                </div>
+                <p className="mb-2 text-xs text-white/40">{courseCount} course{courseCount !== 1 ? 's' : ''}</p>
+                <div className="mt-auto flex items-center justify-between">
+                  <button
+                    onClick={() => void handleToggleActive(b)}
+                    className={`h-6 w-11 rounded-full border transition-all ${
+                      b.is_active ? 'border-emerald-500/50 bg-emerald-500/30' : 'border-white/20 bg-white/10'
+                    }`}
+                    aria-label={b.is_active ? 'Disable bundle' : 'Enable bundle'}
+                  >
+                    <span className={`block h-4 w-4 rounded-full transition-transform ${
+                      b.is_active ? 'translate-x-6 bg-emerald-400' : 'translate-x-1 bg-white/30'
+                    }`} />
+                  </button>
+                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      onClick={() => setEditingBundle(b)}
+                      className="rounded-lg p-1.5 text-white/40 hover:bg-white/10 hover:text-indigo-400 transition-colors"
+                      aria-label="Edit bundle"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => void handleDeleteBundle(b.id)}
+                      className="rounded-lg p-1.5 text-white/40 hover:bg-red-500/20 hover:text-red-400 transition-colors"
+                      aria-label="Delete bundle"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {editingBundle !== undefined && (
+        <BundleFormModal
+          bundle={editingBundle}
+          courses={courses}
+          courseItems={courseItems}
+          menuItems={menuItems}
+          onClose={() => setEditingBundle(undefined)}
+          onSave={onRefresh}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Tab 2: Waiter Order Panel ──────────────────────────────────────────────────
 
 interface WaiterOrderPanelProps {
@@ -1655,7 +2140,7 @@ function QRMenuSettings({ items, onRefresh }: QRMenuSettingsProps) {
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
-type Tab = 'builder' | 'waiter' | 'qr';
+type Tab = 'builder' | 'waiter' | 'bundles' | 'qr';
 
 export default function MenuManagement() {
   const navigate = useNavigate();
@@ -1663,17 +2148,28 @@ export default function MenuManagement() {
   const [activeTab, setActiveTab] = useState<Tab>('builder');
   const [categories, setCategories] = useState<RestaurantMenuCategory[]>([]);
   const [items, setItems] = useState<RestaurantMenuItem[]>([]);
+  const [bundles, setBundles] = useState<RestaurantBundle[]>([]);
+  const [bundleCourses, setBundleCourses] = useState<RestaurantBundleCourse[]>([]);
+  const [bundleCourseItems, setBundleCourseItems] = useState<RestaurantBundleCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     if (!currentTenant?.id) return;
     setLoading(true);
-    const [catRes, itemRes] = await Promise.all([
+    const [catRes, itemRes, bundleRes, bundleCourseRes, bundleCourseItemRes] = await Promise.all([
       supabase.from('restaurant_menu_categories').select('*').eq('tenant_id', currentTenant.id).order('sort_order'),
       supabase.from('restaurant_menu_items').select('*').eq('tenant_id', currentTenant.id).order('sort_order'),
+      supabase.from('restaurant_bundles').select('*').eq('tenant_id', currentTenant.id).order('sort_order'),
+      supabase.from('restaurant_bundle_courses').select('*').eq('tenant_id', currentTenant.id).order('sort_order'),
+      // No tenant_id column on restaurant_bundle_course_items — RLS scopes it via a join,
+      // matching restaurant_menu_item_modifiers's established convention.
+      supabase.from('restaurant_bundle_course_items').select('*'),
     ]);
     setCategories((catRes.data ?? []) as RestaurantMenuCategory[]);
     setItems((itemRes.data ?? []) as RestaurantMenuItem[]);
+    setBundles((bundleRes.data ?? []) as RestaurantBundle[]);
+    setBundleCourses((bundleCourseRes.data ?? []) as RestaurantBundleCourse[]);
+    setBundleCourseItems((bundleCourseItemRes.data ?? []) as RestaurantBundleCourseItem[]);
     setLoading(false);
   }, [currentTenant?.id]);
 
@@ -1682,6 +2178,7 @@ export default function MenuManagement() {
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'builder', label: 'Menu Builder', icon: <ChefHat className="h-4 w-4" /> },
     { key: 'waiter', label: 'Waiter Order', icon: <ShoppingCart className="h-4 w-4" /> },
+    { key: 'bundles', label: 'Bundles', icon: <Layers className="h-4 w-4" /> },
     { key: 'qr', label: 'QR Menu', icon: <QrCode className="h-4 w-4" /> },
   ];
 
@@ -1737,6 +2234,15 @@ export default function MenuManagement() {
               )}
               {activeTab === 'waiter' && (
                 <WaiterOrderPanel categories={categories} items={items} />
+              )}
+              {activeTab === 'bundles' && (
+                <BundlesManager
+                  bundles={bundles}
+                  courses={bundleCourses}
+                  courseItems={bundleCourseItems}
+                  menuItems={items}
+                  onRefresh={() => { void loadData(); }}
+                />
               )}
               {activeTab === 'qr' && (
                 <QRMenuSettings items={items} onRefresh={() => { void loadData(); }} />

@@ -120,7 +120,12 @@ BEGIN
     RAISE EXCEPTION 'order_not_found: %', p_table_order_id;
   END IF;
 
-  IF v_tenant_id <> current_tenant_id() THEN
+  -- NULL-safe comparison: current_tenant_id() returns NULL for callers with no
+  -- active tenant_users row (including the fully unauthenticated anon role).
+  -- `v_tenant_id <> NULL` evaluates to NULL, and `IF NULL THEN` is treated as
+  -- false in PL/pgSQL, so a plain `<>` check silently falls through instead of
+  -- raising for anon callers. `IS DISTINCT FROM` treats NULL correctly.
+  IF v_tenant_id IS DISTINCT FROM current_tenant_id() THEN
     RAISE EXCEPTION 'permission_denied';
   END IF;
 

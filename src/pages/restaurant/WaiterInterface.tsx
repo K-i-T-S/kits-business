@@ -1929,6 +1929,7 @@ export default function WaiterInterface() {
         modifiers: item.modifiers,
         status: 'pending' as const,
         sent_at: null,
+        bundle_id: item.bundle_id ?? null,
       }));
       // Offline — queue each item for later sync
       if (!isOnline) {

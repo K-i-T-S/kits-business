@@ -300,6 +300,7 @@ export function useRestaurantOrder(
       notes: item.notes || null,
       modifiers: item.modifiers,
       status: 'pending' as const,
+      bundle_id: item.bundle_id ?? null,
     }));
 
     const { data: inserted, error } = await supabase

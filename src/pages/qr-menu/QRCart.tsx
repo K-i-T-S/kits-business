@@ -2,17 +2,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
-import type { QRCartItem } from '@/types/restaurant';
+import type { QRCartBundleItem, QRCartItem } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
 
 interface QRCartProps {
   items: QRCartItem[];
+  bundleItems: QRCartBundleItem[];
   tableId: string;
   tableDisplayLabel?: string;
   tenantId: string;
   totalPrice: number;
   onUpdateQuantity: (menuItemId: string, modifierKey: string, quantity: number) => void;
   onRemoveItem: (menuItemId: string, modifierKey: string) => void;
+  onRemoveBundleItem: (cartKey: string) => void;
   onClose: () => void;
   onSuccess: (orderNumber: string, mode: 'direct' | 'pending') => void;
 }
@@ -25,21 +27,66 @@ function getModifierKey(item: QRCartItem): string {
   return `${item.menuItemId}__${modStr}`;
 }
 
-export default function QRCart({ items, tableId, tableDisplayLabel, totalPrice, onUpdateQuantity, onRemoveItem, onClose, onSuccess }: QRCartProps) {
+// Known bundle-related exception prefixes raised by qr_place_order's bundle
+// branch (see the migration in Task 1) — pattern-matched against the plain
+// exception-message string PostgREST returns, same convention this repo
+// already uses for no_valid_items/table_not_found etc.
+const BUNDLE_ERROR_PREFIXES = [
+  'bundle_not_found',
+  'bundle_inactive',
+  'bundle_has_no_courses',
+  'item_not_eligible_for_course',
+  'item_no_longer_available',
+  'incomplete_course_selection',
+  'invalid_party_size',
+  'malformed_bundle_item',
+  'duplicate_course_selection',
+  'course_not_in_bundle',
+];
+
+function mapPlaceOrderError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  if (BUNDLE_ERROR_PREFIXES.some((prefix) => message.startsWith(prefix))) {
+    return 'One of your combo selections is no longer available — please remove it from your cart and try again.';
+  }
+  return 'Something went wrong placing your order — please try again or ask your server for help.';
+}
+
+export default function QRCart({
+  items,
+  bundleItems,
+  tableId,
+  tableDisplayLabel,
+  totalPrice,
+  onUpdateQuantity,
+  onRemoveItem,
+  onRemoveBundleItem,
+  onClose,
+  onSuccess,
+}: QRCartProps) {
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState<string | null>(null);
 
   const handlePlaceOrder = async () => {
-    if (items.length === 0) return;
+    if (items.length === 0 && bundleItems.length === 0) return;
     setPlacing(true);
     setPlaceError(null);
     try {
-      const payload = items.map((item) => ({
+      const regularPayload = items.map((item) => ({
         menu_item_id: item.menuItemId,
         quantity: item.quantity,
         modifier_ids: Object.values(item.selectedModifiers).flat(),
         notes: item.notes || undefined,
       }));
+      const bundlePayload = bundleItems.map((b) => ({
+        bundle_id: b.bundleId,
+        party_size: b.partySize,
+        course_selections: b.courseSelections.map((cs) => ({
+          bundle_course_id: cs.bundleCourseId,
+          menu_item_id: cs.menuItemId,
+        })),
+      }));
+      const payload = [...regularPayload, ...bundlePayload];
 
       const { data, error } = (await supabase.rpc('qr_place_order', {
         p_table_id: tableId,
@@ -51,7 +98,7 @@ export default function QRCart({ items, tableId, tableDisplayLabel, totalPrice, 
       onSuccess(data.order_id.slice(-6).toUpperCase(), data.mode);
     } catch (err) {
       console.error('[QRCart] place order error:', err);
-      setPlaceError('Something went wrong placing your order — please try again or ask your server for help.');
+      setPlaceError(mapPlaceOrderError(err));
     } finally {
       setPlacing(false);
     }
@@ -168,13 +215,61 @@ export default function QRCart({ items, tableId, tableDisplayLabel, totalPrice, 
             );
           })}
         </AnimatePresence>
+
+        {/* Bundle cart lines — no quantity stepper; party size isn't adjustable
+            in-cart (see useCart.ts design note), remove is the only control. */}
+        <AnimatePresence>
+          {bundleItems.map((b) => {
+            const summary = b.courseSelections.map((cs) => cs.itemName).join(', ');
+            return (
+              <motion.div
+                key={b.cartKey}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, height: 0 }}
+                layout
+                className="mb-3 rounded-xl p-4"
+                style={{ background: 'var(--qr-surface-2)' }}
+              >
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--qr-text)' }}>
+                      🎁 {b.bundleName}
+                    </p>
+                    <p className="mt-0.5 text-xs" style={{ color: 'var(--qr-text-muted)' }}>
+                      for {b.partySize} guest{b.partySize !== 1 ? 's' : ''}
+                    </p>
+                    {summary && (
+                      <p className="mt-0.5 text-xs" style={{ color: 'var(--qr-text-muted)' }}>
+                        {summary}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onRemoveBundleItem(b.cartKey)}
+                    className="flex-shrink-0 p-1"
+                    style={{ color: 'var(--qr-text-muted)' }}
+                    aria-label={`Remove ${b.bundleName}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-end">
+                  <span className="text-sm font-bold" style={{ color: 'var(--qr-accent)' }}>
+                    ${b.totalPrice.toFixed(2)}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
 
       {/* Footer */}
       <div className="border-t px-5 py-4" style={{ borderColor: 'var(--qr-border)' }}>
         <div className="mb-4 flex items-center justify-between">
           <span className="text-sm" style={{ color: 'var(--qr-text-muted)' }}>
-            Total ({items.reduce((s, i) => s + i.quantity, 0)} items)
+            Total ({items.reduce((s, i) => s + i.quantity, 0) + bundleItems.length} items)
           </span>
           <div className="text-right">
             <span className="text-xl font-bold" style={{ color: 'var(--qr-text)' }}>
@@ -197,7 +292,7 @@ export default function QRCart({ items, tableId, tableDisplayLabel, totalPrice, 
 
         <motion.button
           onClick={() => { void handlePlaceOrder(); }}
-          disabled={placing || items.length === 0}
+          disabled={placing || (items.length === 0 && bundleItems.length === 0)}
           className="w-full rounded-2xl py-4 text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50"
           style={{
             background: 'var(--qr-accent)',

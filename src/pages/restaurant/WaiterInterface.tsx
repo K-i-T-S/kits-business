@@ -45,6 +45,7 @@ import { toast } from 'sonner';
 import RoleGate from '@/components/RoleGate';
 import BillSplitter from '@/components/restaurant/BillSplitter';
 import { BillSplitModal } from '@/components/restaurant/BillSplitModal';
+import BundleOrderModal from '@/components/restaurant/BundleOrderModal';
 import CloseBillModal from '@/components/restaurant/CloseBillModal';
 import TableTransferModal from '@/components/restaurant/TableTransferModal';
 import type { Employee } from '@/context/AppContext';
@@ -62,6 +63,9 @@ import type {
   RestaurantMenuItem,
   RestaurantModifierGroup,
   RestaurantModifier,
+  RestaurantBundle,
+  RestaurantBundleCourse,
+  RestaurantBundleCourseItem,
   CourseType,
   SplitType,
   BillSplitPart,
@@ -693,14 +697,20 @@ function QuickAddModal({
 interface MenuBrowserSheetProps {
   categories: RestaurantMenuCategory[];
   items: RestaurantMenuItem[];
+  bundles: RestaurantBundle[];
   onClose: () => void;
   onSelect: (item: RestaurantMenuItem) => void;
+  onSelectBundle: (bundle: RestaurantBundle) => void;
 }
 
-function MenuBrowserSheet({ categories, items, onClose, onSelect }: MenuBrowserSheetProps) {
+const BUNDLES_PSEUDO_CATEGORY = '__bundles__';
+
+function MenuBrowserSheet({ categories, items, bundles, onClose, onSelect, onSelectBundle }: MenuBrowserSheetProps) {
   const { t } = useTranslation();
   const [selectedCat, setSelectedCat] = useState<string>('all');
   const [search, setSearch] = useState('');
+
+  const showingBundles = selectedCat === BUNDLES_PSEUDO_CATEGORY;
 
   const displayed = items.filter((i) => {
     if (!i.is_active) return false;
@@ -708,6 +718,8 @@ function MenuBrowserSheet({ categories, items, onClose, onSelect }: MenuBrowserS
     if (search && !i.name.toLowerCase().includes(search.toLowerCase()) && !(i.name_ar ?? '').includes(search)) return false;
     return true;
   });
+
+  const displayedBundles = bundles.filter((b) => b.is_active);
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-slate-950">
@@ -722,7 +734,9 @@ function MenuBrowserSheet({ categories, items, onClose, onSelect }: MenuBrowserS
             <X className="h-4 w-4" />
           </button>
           <h2 className="text-base font-bold text-white">{t('restaurant.menu', 'Menu')}</h2>
-          <span className="ms-auto rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/50">{displayed.length}</span>
+          <span className="ms-auto rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/50">
+            {showingBundles ? displayedBundles.length : displayed.length}
+          </span>
         </div>
         {/* Search */}
         <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
@@ -770,12 +784,45 @@ function MenuBrowserSheet({ categories, items, onClose, onSelect }: MenuBrowserS
               <span>{cat.name}</span>
             </button>
           ))}
+          {bundles.length > 0 && (
+            <button
+              onClick={() => setSelectedCat(BUNDLES_PSEUDO_CATEGORY)}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
+                showingBundles
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white/10 text-white/60 hover:bg-white/15'
+              }`}
+            >
+              🎁 {t('restaurant.bundle.pillLabel', 'Bundles')}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Item grid */}
+      {/* Item / bundle grid */}
       <div className="flex-1 overflow-y-auto p-4">
-        {displayed.length === 0 ? (
+        {showingBundles ? (
+          displayedBundles.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <UtensilsCrossed className="mb-3 h-10 w-10 text-white/20" />
+              <p className="text-sm text-white/40">{t('restaurant.bundle.noneFound', 'No bundles found')}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {displayedBundles.map((bundle) => (
+                <button
+                  key={bundle.id}
+                  onClick={() => onSelectBundle(bundle)}
+                  className="relative flex flex-col rounded-2xl border border-white/10 bg-white/5 p-3 text-start transition-all active:scale-95 hover:border-amber-500/30 hover:bg-white/8"
+                >
+                  <span className="text-2xl">🎁</span>
+                  <p className="mt-1.5 text-xs font-semibold leading-tight text-white line-clamp-2">{bundle.name}</p>
+                  <p className="mt-1.5 text-sm font-black text-emerald-400">${bundle.price_per_guest_usd.toFixed(2)}/guest</p>
+                </button>
+              ))}
+            </div>
+          )
+        ) : displayed.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <UtensilsCrossed className="mb-3 h-10 w-10 text-white/20" />
             <p className="text-sm text-white/40">{t('restaurant.noItemsFound', 'No items found')}</p>
@@ -841,6 +888,9 @@ interface TableDetailProps {
   settings: RestaurantSettings | null;
   menuCategories: RestaurantMenuCategory[];
   menuItems: RestaurantMenuItem[];
+  bundles: RestaurantBundle[];
+  bundleCourses: RestaurantBundleCourse[];
+  bundleCourseItems: RestaurantBundleCourseItem[];
   onClose: () => void;
   onOrderClosed: () => void;
   isOnline: boolean;
@@ -849,7 +899,7 @@ interface TableDetailProps {
   employees: Employee[];
 }
 
-function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, onOrderClosed, isOnline, allTables, allOrders, employees }: TableDetailProps) {
+function TableDetail({ tableData, settings, menuCategories, menuItems, bundles, bundleCourses, bundleCourseItems, onClose, onOrderClosed, isOnline, allTables, allOrders, employees }: TableDetailProps) {
   const { t } = useTranslation();
   const { currentTenant, customers } = useApp();
   const { table, order } = tableData;
@@ -926,6 +976,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
   // Menu browser state
   const [showMenuBrowser, setShowMenuBrowser] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<RestaurantMenuItem | null>(null);
+  const [selectedBundle, setSelectedBundle] = useState<RestaurantBundle | null>(null);
 
   // Bill state
   const [tipInput, setTipInput] = useState('0');
@@ -1647,11 +1698,32 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, onClose, 
         <MenuBrowserSheet
           categories={menuCategories}
           items={menuItems}
+          bundles={bundles}
           onClose={() => setShowMenuBrowser(false)}
           onSelect={(item) => {
             setSelectedMenuItem(item);
             setShowMenuBrowser(false);
           }}
+          onSelectBundle={(bundle) => {
+            setSelectedBundle(bundle);
+            setShowMenuBrowser(false);
+          }}
+        />
+      )}
+
+      {/* Bundle order modal */}
+      {selectedBundle && order?.id && (
+        <BundleOrderModal
+          bundle={selectedBundle}
+          courses={bundleCourses.filter((c) => c.bundle_id === selectedBundle.id)}
+          courseItems={bundleCourseItems.filter((ci) =>
+            bundleCourses.filter((c) => c.bundle_id === selectedBundle.id).map((c) => c.id).includes(ci.bundle_course_id),
+          )}
+          menuItems={menuItems}
+          defaultPartySize={table.seats}
+          tableOrderId={order.id}
+          onClose={() => setSelectedBundle(null)}
+          onConfirm={() => setSelectedBundle(null)}
         />
       )}
 
@@ -1753,6 +1825,9 @@ export default function WaiterInterface() {
   const [settings, setSettings] = useState<RestaurantSettings | null>(null);
   const [menuCategories, setMenuCategories] = useState<RestaurantMenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<RestaurantMenuItem[]>([]);
+  const [bundles, setBundles] = useState<RestaurantBundle[]>([]);
+  const [bundleCourses, setBundleCourses] = useState<RestaurantBundleCourse[]>([]);
+  const [bundleCourseItems, setBundleCourseItems] = useState<RestaurantBundleCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -1776,7 +1851,7 @@ export default function WaiterInterface() {
   const loadData = useCallback(async () => {
     if (!tenantId) return;
     try {
-      const [tRes, oRes, oiRes, poRes, sRes, catRes, miRes] = await Promise.all([
+      const [tRes, oRes, oiRes, poRes, sRes, catRes, miRes, bRes, bcRes, bciRes] = await Promise.all([
         supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId).order('number'),
         supabase.from('table_orders').select('*').eq('tenant_id', tenantId).eq('status', 'open'),
         supabase.from('restaurant_order_items').select('*').eq('tenant_id', tenantId).neq('status', 'served'),
@@ -1784,6 +1859,10 @@ export default function WaiterInterface() {
         supabase.from('restaurant_settings').select('*').eq('tenant_id', tenantId).maybeSingle(),
         supabase.from('restaurant_menu_categories').select('*').eq('tenant_id', tenantId).order('sort_order'),
         supabase.from('restaurant_menu_items').select('*').eq('tenant_id', tenantId).eq('is_active', true).order('sort_order'),
+        supabase.from('restaurant_bundles').select('*').eq('tenant_id', tenantId).eq('is_active', true).order('sort_order'),
+        supabase.from('restaurant_bundle_courses').select('*').eq('tenant_id', tenantId).order('sort_order'),
+        // No tenant_id column on restaurant_bundle_course_items — RLS scopes it via a join.
+        supabase.from('restaurant_bundle_course_items').select('*'),
       ]);
       if (tRes.data) setTables(tRes.data as RestaurantTable[]);
       if (oRes.data) setOrders(oRes.data as TableOrder[]);
@@ -1800,6 +1879,9 @@ export default function WaiterInterface() {
       if (sRes.data) setSettings(sRes.data as RestaurantSettings);
       if (catRes.data) setMenuCategories(catRes.data as RestaurantMenuCategory[]);
       if (miRes.data) setMenuItems(miRes.data as RestaurantMenuItem[]);
+      if (bRes.data) setBundles(bRes.data as RestaurantBundle[]);
+      if (bcRes.data) setBundleCourses(bcRes.data as RestaurantBundleCourse[]);
+      if (bciRes.data) setBundleCourseItems(bciRes.data as RestaurantBundleCourseItem[]);
     } catch (err) {
       console.error('[WaiterInterface] load error:', err);
     } finally {
@@ -2504,6 +2586,9 @@ export default function WaiterInterface() {
           settings={settings}
           menuCategories={menuCategories}
           menuItems={menuItems}
+          bundles={bundles}
+          bundleCourses={bundleCourses}
+          bundleCourseItems={bundleCourseItems}
           onClose={() => setSelectedTableId(null)}
           onOrderClosed={() => { void loadData(); }}
           isOnline={isOnline}

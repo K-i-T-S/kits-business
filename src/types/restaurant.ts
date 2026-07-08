@@ -44,6 +44,7 @@ export interface RestaurantOrderItem {
   modifiers: OrderItemModifier[];
   course: CourseType;
   status: ItemStatus;
+  bundle_id: string | null;
   notes: string | null;
   sent_at: string | null;
   ready_at: string | null;
@@ -301,6 +302,34 @@ export interface RestaurantModifier {
   sort_order: number;
 }
 
+export interface RestaurantBundle {
+  id: string;
+  tenant_id: string;
+  name: string;
+  name_ar: string | null;
+  description: string | null;
+  price_per_guest_usd: number;
+  is_active: boolean;
+  active_breakfast: boolean;
+  active_lunch: boolean;
+  active_dinner: boolean;
+  sort_order: number;
+}
+
+export interface RestaurantBundleCourse {
+  id: string;
+  bundle_id: string;
+  tenant_id: string;
+  course: CourseType;
+  label: string;
+  sort_order: number;
+}
+
+export interface RestaurantBundleCourseItem {
+  bundle_course_id: string;
+  menu_item_id: string;
+}
+
 export interface QRMenuTenant {
   id: string;
   name: string;
@@ -310,6 +339,23 @@ export interface QRMenuTenant {
   qr_menu_promotional_banner: string | null;
 }
 
+export interface QRMenuBundle {
+  id: string;
+  name: string;
+  name_ar: string | null;
+  description: string | null;
+  price_per_guest_usd: number;
+  sort_order: number;
+}
+
+export interface QRMenuBundleCourse {
+  id: string;
+  bundle_id: string;
+  course: CourseType;
+  label: string;
+  sort_order: number;
+}
+
 export interface QRMenuData {
   tenant: QRMenuTenant;
   categories: RestaurantMenuCategory[];
@@ -317,6 +363,9 @@ export interface QRMenuData {
   modifier_groups: RestaurantModifierGroup[];
   modifiers: RestaurantModifier[];
   item_modifier_links: Array<{ menu_item_id: string; modifier_group_id: string }>;
+  bundles: QRMenuBundle[];
+  bundle_courses: QRMenuBundleCourse[];
+  bundle_course_items: RestaurantBundleCourseItem[];
 }
 
 export interface QRCartItem {
@@ -327,6 +376,23 @@ export interface QRCartItem {
   totalPrice: number;
   notes: string;
 }
+
+export interface QRCartBundleSelection {
+  bundleCourseId: string;
+  menuItemId: string;
+  itemName: string;
+}
+
+export interface QRCartBundleItem {
+  cartKey: string;
+  bundleId: string;
+  bundleName: string;
+  pricePerGuestUsd: number;
+  partySize: number;
+  courseSelections: QRCartBundleSelection[];
+  totalPrice: number;
+}
+
 // ── Order Flow Engine ─────────────────────────────────────────────────────────
 
 export type OrderFlow = 'direct' | 'waiter_confirm';
@@ -347,13 +413,14 @@ export interface RestaurantSettings {
 }
 
 export interface PendingOrderItem {
-  menu_item_id: string;
+  menu_item_id: string | null;
   name: string;
   quantity: number;
   unit_price: number;
   modifiers: Array<{ name: string; price_delta: number }>;
   notes: string;
   course: CourseType;
+  bundle_id: string | null;
 }
 
 export interface PendingOrder {

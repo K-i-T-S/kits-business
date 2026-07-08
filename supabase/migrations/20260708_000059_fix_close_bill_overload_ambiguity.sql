@@ -1,0 +1,46 @@
+-- ============================================================
+-- 20260708_000059_fix_close_bill_overload_ambiguity.sql
+-- Fixes a live PGRST203 error: "Could not choose the best candidate
+-- function between: fn_close_restaurant_bill(uuid, text) and
+-- fn_close_restaurant_bill(uuid, text, numeric, numeric, numeric, numeric)".
+--
+-- Root cause: 20260622_000048_fix_close_restaurant_bill.sql was originally
+-- committed to a mistakenly nested path
+-- (supabase/migrations/supabase/migrations/), so it never ran as part of
+-- the normal migration sequence — but its SQL was at some point run
+-- manually against the live kits-dev project (likely via the Supabase
+-- Dashboard SQL Editor). That migration's own header claims it "replaces
+-- the function with the correct signature", but CREATE OR REPLACE FUNCTION
+-- does not drop a differently-signatured overload — it only ADDS one. The
+-- result: two live overloads of fn_close_restaurant_bill, both callable
+-- with just (p_order_id, p_payment_method) since the second one's extra 4
+-- parameters all have defaults — an irreducible ambiguity PostgREST/Postgres
+-- refuses to resolve.
+--
+-- 20260623_000045_fn_close_bill_patch.sql (correctly placed, numbered
+-- lower but dated a day later — the misplaced 000048 broke normal
+-- sequencing) re-created ONLY the 2-parameter version, adding
+-- payment_currency handling. Both of this repo's real call sites
+-- (useRestaurantOrder.ts's closeBill, and CloseBillModal.tsx's documented
+-- contract — see its own header comment) only ever call the 2-parameter
+-- form, pre-persisting tip/discount onto table_orders first via separate
+-- updateTip/updateDiscount calls, then closing with just
+-- (p_order_id, p_payment_method). The 6-parameter version's tip/discount
+-- params are unused by any current call site, and have their own latent
+-- bug: DEFAULT 0 (not DEFAULT NULL) on p_tip_amount_usd/p_discount_pct
+-- means their COALESCE(param, order_row_value, 0) fallback to the
+-- already-persisted order-row value can never actually trigger — the
+-- default silently wins every time.
+--
+-- Fix: drop the 6-parameter overload entirely, consolidating on the
+-- 2-parameter version (identical to 20260623_000045's), which is the one
+-- actually relied upon and does not have the dead-fallback bug.
+--
+-- 000048 has been relocated to its correct path in the same batch as this
+-- migration, preserving the historical record of what was actually run
+-- against kits-dev — this migration is what makes a fresh sequential
+-- replay (a new client's own Supabase project) end up in the same
+-- unambiguous, correct state kits-dev is now in.
+-- ============================================================
+
+DROP FUNCTION IF EXISTS public.fn_close_restaurant_bill(uuid, text, numeric, numeric, numeric, numeric);

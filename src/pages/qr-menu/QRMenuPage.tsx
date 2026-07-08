@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 
 import '@/styles/qr-menu-themes.css';
 
+import QRBundleDetail from './QRBundleDetail';
 import QRCart from './QRCart';
 import QRItemDetail from './QRItemDetail';
 import QRMenuHome from './QRMenuHome';
@@ -12,10 +13,10 @@ import QRSplash from './QRSplash';
 import { useCart, getModifierKey } from './useCart';
 import { useQRMenu } from './useQRMenu';
 
-import type { RestaurantMenuItem } from '@/types/restaurant';
+import type { QRCartBundleSelection, QRMenuBundle, RestaurantMenuItem } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
 
-type MenuView = 'splash' | 'menu' | 'item-detail' | 'cart' | 'success';
+type MenuView = 'splash' | 'menu' | 'item-detail' | 'bundle-detail' | 'cart' | 'success';
 
 const PALETTE_CLASS: Record<string, string> = {
   'dark-luxury': 'qr-dark-luxury',
@@ -32,10 +33,15 @@ export default function QRMenuPage() {
   const tableParam = searchParams.get('table');
 
   const { data, loading, error } = useQRMenu(tenantSlug);
-  const { items, totalItems, totalPrice, addItem, updateQuantity, removeItem, clearCart } = useCart();
+  const {
+    items, bundleItems, totalItems, totalPrice,
+    addItem, updateQuantity, removeItem, clearCart,
+    addBundleItem, removeBundleItem,
+  } = useCart();
 
   const [view, setView] = useState<MenuView>('splash');
   const [selectedItem, setSelectedItem] = useState<RestaurantMenuItem | null>(null);
+  const [selectedBundle, setSelectedBundle] = useState<QRMenuBundle | null>(null);
   const [orderNumber, setOrderNumber] = useState('');
   const [orderMode, setOrderMode] = useState<'direct' | 'pending'>('direct');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
@@ -93,6 +99,16 @@ export default function QRMenuPage() {
     priceDelta: number,
   ) => {
     addItem(item, quantity, selectedModifiers, notes, priceDelta);
+    setView('menu');
+  };
+
+  const handleSelectBundle = (bundle: QRMenuBundle) => {
+    setSelectedBundle(bundle);
+    setView('bundle-detail');
+  };
+
+  const handleAddBundleToCart = (bundle: QRMenuBundle, partySize: number, selections: QRCartBundleSelection[]) => {
+    addBundleItem(bundle, partySize, selections);
     setView('menu');
   };
 
@@ -228,6 +244,7 @@ export default function QRMenuPage() {
               tableDisplayLabel={tableParam ?? undefined}
               totalCartItems={totalItems}
               onSelectItem={handleSelectItem}
+              onSelectBundle={handleSelectBundle}
               onOpenCart={() => setView('cart')}
               onCallWaiter={handleCallWaiter}
               onFa7em={handleFa7em}
@@ -263,6 +280,24 @@ export default function QRMenuPage() {
         )}
       </AnimatePresence>
 
+      {/* Bundle detail bottom sheet */}
+      <AnimatePresence>
+        {view === 'bundle-detail' && selectedBundle && (
+          <QRBundleDetail
+            key="bundle-detail"
+            bundle={selectedBundle}
+            courses={data.bundle_courses.filter((c) => c.bundle_id === selectedBundle.id)}
+            courseItems={data.bundle_course_items.filter((ci) =>
+              data.bundle_courses.filter((c) => c.bundle_id === selectedBundle.id).map((c) => c.id).includes(ci.bundle_course_id),
+            )}
+            menuItems={data.items}
+            lang={lang}
+            onClose={() => setView('menu')}
+            onAddToCart={handleAddBundleToCart}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Cart bottom sheet */}
       <AnimatePresence>
         {view === 'cart' && (
@@ -279,12 +314,14 @@ export default function QRMenuPage() {
             <QRCart
               key="cart"
               items={items}
+              bundleItems={bundleItems}
               tableId={effectiveTableId}
               tableDisplayLabel={tableParam ?? undefined}
               tenantId={data?.tenant.id ?? ''}
               totalPrice={totalPrice}
               onUpdateQuantity={(menuItemId, modKey, qty) => updateQuantity(menuItemId, modKey, qty)}
               onRemoveItem={(menuItemId, modKey) => removeItem(menuItemId, modKey)}
+              onRemoveBundleItem={(cartKey) => removeBundleItem(cartKey)}
               onClose={() => setView('menu')}
               onSuccess={handleOrderSuccess}
             />

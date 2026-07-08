@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, ShoppingCart, Wind } from 'lucide-react';
 import { useRef, useState, useCallback } from 'react';
 
-import type { QRMenuData, RestaurantMenuItem, QRMenuTenant } from '@/types/restaurant';
+import type { QRMenuBundle, QRMenuBundleCourse, QRMenuData, RestaurantMenuItem, QRMenuTenant } from '@/types/restaurant';
 
 interface QRMenuHomeProps {
   menuData: QRMenuData;
@@ -11,6 +11,7 @@ interface QRMenuHomeProps {
   tableDisplayLabel?: string;
   totalCartItems: number;
   onSelectItem: (item: RestaurantMenuItem) => void;
+  onSelectBundle: (bundle: QRMenuBundle) => void;
   onOpenCart: () => void;
   onCallWaiter: () => void;
   onFa7em: () => void;
@@ -198,6 +199,89 @@ function FeaturedSection({
   );
 }
 
+// Bundle card - simplified ItemCard variant, no photo (restaurant_bundles has no photo_url)
+function BundleCard({
+  bundle,
+  courseCount,
+  lang,
+  onClick,
+}: {
+  bundle: QRMenuBundle;
+  courseCount: number;
+  lang: 'en' | 'ar';
+  onClick: () => void;
+}) {
+  const name = lang === 'ar' && bundle.name_ar ? bundle.name_ar : bundle.name;
+
+  return (
+    <motion.div
+      onClick={onClick}
+      className="qr-item-card qr-glass cursor-pointer overflow-hidden rounded-2xl p-4"
+      whileTap={{ scale: 0.97 }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <span className="text-2xl">🎁</span>
+          <p
+            className="mt-2 truncate text-sm font-semibold"
+            style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}
+            dir={lang === 'ar' ? 'rtl' : 'ltr'}
+          >
+            {name}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: 'var(--qr-text-muted)' }}>
+            {courseCount} course{courseCount !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="flex-shrink-0 text-right">
+          <p className="text-sm font-bold" style={{ color: 'var(--qr-accent)' }}>
+            ${bundle.price_per_guest_usd.toFixed(2)}
+          </p>
+          <p className="text-[10px]" style={{ color: 'var(--qr-text-muted)' }}>/ guest</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Horizontal "Combos" scroll section - structurally parallel to FeaturedSection
+function BundlesSection({
+  bundles,
+  courses,
+  lang,
+  onSelectBundle,
+}: {
+  bundles: QRMenuBundle[];
+  courses: QRMenuBundleCourse[];
+  lang: 'en' | 'ar';
+  onSelectBundle: (bundle: QRMenuBundle) => void;
+}) {
+  if (bundles.length === 0) return null;
+
+  return (
+    <div className="mb-8">
+      <div className="mb-3 flex items-center gap-2 px-4">
+        <span className="text-lg">🎁</span>
+        <h3 className="text-base font-bold" style={{ fontFamily: 'var(--qr-heading-font)', color: 'var(--qr-text)' }}>
+          Combos
+        </h3>
+      </div>
+      <div className="flex gap-3 overflow-x-auto px-4 pb-2" style={{ scrollbarWidth: 'none' }}>
+        {bundles.map((bundle) => (
+          <div key={bundle.id} className="w-56 flex-shrink-0">
+            <BundleCard
+              bundle={bundle}
+              courseCount={courses.filter((c) => c.bundle_id === bundle.id).length}
+              lang={lang}
+              onClick={() => onSelectBundle(bundle)}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Category pills
 function CategoryPills({
   categories,
@@ -320,6 +404,7 @@ export default function QRMenuHome({
   tableDisplayLabel,
   totalCartItems,
   onSelectItem,
+  onSelectBundle,
   onOpenCart,
   onCallWaiter,
   onFa7em,
@@ -366,6 +451,7 @@ export default function QRMenuHome({
         <>
           <FeaturedSection items={featuredItems} lang={lang} onSelectItem={onSelectItem} title="Featured" emoji="⭐" />
           <FeaturedSection items={chefPicks} lang={lang} onSelectItem={onSelectItem} title="Chef's Picks" emoji="👨‍🍳" />
+          <BundlesSection bundles={menuData.bundles} courses={menuData.bundle_courses} lang={lang} onSelectBundle={onSelectBundle} />
         </>
       )}
 

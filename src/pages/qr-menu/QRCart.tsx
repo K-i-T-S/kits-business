@@ -10,7 +10,6 @@ interface QRCartProps {
   bundleItems: QRCartBundleItem[];
   tableId: string;
   tableDisplayLabel?: string;
-  tenantId: string;
   totalPrice: number;
   onUpdateQuantity: (menuItemId: string, modifierKey: string, quantity: number) => void;
   onRemoveItem: (menuItemId: string, modifierKey: string) => void;
@@ -40,6 +39,7 @@ const BUNDLE_ERROR_PREFIXES = [
   'incomplete_course_selection',
   'invalid_party_size',
   'malformed_bundle_item',
+  'malformed_course_selection',
   'duplicate_course_selection',
   'course_not_in_bundle',
 ];

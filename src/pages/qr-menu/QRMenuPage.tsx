@@ -317,7 +317,6 @@ export default function QRMenuPage() {
               bundleItems={bundleItems}
               tableId={effectiveTableId}
               tableDisplayLabel={tableParam ?? undefined}
-              tenantId={data?.tenant.id ?? ''}
               totalPrice={totalPrice}
               onUpdateQuantity={(menuItemId, modKey, qty) => updateQuantity(menuItemId, modKey, qty)}
               onRemoveItem={(menuItemId, modKey) => removeItem(menuItemId, modKey)}

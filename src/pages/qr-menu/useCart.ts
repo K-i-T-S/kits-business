@@ -1,15 +1,18 @@
 import { useState, useCallback } from 'react';
 
-import type { QRCartItem, RestaurantMenuItem } from '@/types/restaurant';
+import type { QRCartItem, QRCartBundleItem, QRCartBundleSelection, QRMenuBundle, RestaurantMenuItem } from '@/types/restaurant';
 
 interface UseCartResult {
   items: QRCartItem[];
+  bundleItems: QRCartBundleItem[];
   totalItems: number;
   totalPrice: number;
   addItem: (item: RestaurantMenuItem, quantity: number, selectedModifiers: Record<string, string[]>, notes: string, modifierPriceDelta: number) => void;
   updateQuantity: (menuItemId: string, modifierKey: string, quantity: number) => void;
   removeItem: (menuItemId: string, modifierKey: string) => void;
   clearCart: () => void;
+  addBundleItem: (bundle: QRMenuBundle, partySize: number, courseSelections: QRCartBundleSelection[]) => void;
+  removeBundleItem: (cartKey: string) => void;
 }
 
 function buildModifierKey(menuItemId: string, selectedModifiers: Record<string, string[]>): string {
@@ -22,6 +25,7 @@ function buildModifierKey(menuItemId: string, selectedModifiers: Record<string, 
 
 export function useCart(): UseCartResult {
   const [items, setItems] = useState<QRCartItem[]>([]);
+  const [bundleItems, setBundleItems] = useState<QRCartBundleItem[]>([]);
 
   const addItem = useCallback(
     (
@@ -90,12 +94,54 @@ export function useCart(): UseCartResult {
     );
   }, []);
 
-  const clearCart = useCallback(() => setItems([]), []);
+  // No dedup-and-merge — a customer adding the same bundle twice (even with
+  // identical course selections) gets two independently removable lines.
+  // Merging would require picking between two different course_selections,
+  // which has no sensible resolution.
+  const addBundleItem = useCallback(
+    (bundle: QRMenuBundle, partySize: number, courseSelections: QRCartBundleSelection[]) => {
+      const newBundleItem: QRCartBundleItem = {
+        cartKey: crypto.randomUUID(),
+        bundleId: bundle.id,
+        bundleName: bundle.name,
+        pricePerGuestUsd: bundle.price_per_guest_usd,
+        partySize,
+        courseSelections,
+        totalPrice: bundle.price_per_guest_usd * partySize,
+      };
+      setBundleItems((prev) => [...prev, newBundleItem]);
+    },
+    [],
+  );
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + i.totalPrice, 0);
+  const removeBundleItem = useCallback((cartKey: string) => {
+    setBundleItems((prev) => prev.filter((b) => b.cartKey !== cartKey));
+  }, []);
 
-  return { items, totalItems, totalPrice, addItem, updateQuantity, removeItem, clearCart };
+  const clearCart = useCallback(() => {
+    setItems([]);
+    setBundleItems([]);
+  }, []);
+
+  // totalItems counts each bundle line as 1 regardless of partySize — the cart
+  // badge reads as "N things you're ordering," and "Family Feast for 4" is one
+  // decision/one line, not four. totalPrice still fully sums the party-scaled amount.
+  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0) + bundleItems.length;
+  const totalPrice =
+    items.reduce((sum, i) => sum + i.totalPrice, 0) + bundleItems.reduce((sum, b) => sum + b.totalPrice, 0);
+
+  return {
+    items,
+    bundleItems,
+    totalItems,
+    totalPrice,
+    addItem,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    addBundleItem,
+    removeBundleItem,
+  };
 }
 
 export function getModifierKey(menuItemId: string, selectedModifiers: Record<string, string[]>): string {

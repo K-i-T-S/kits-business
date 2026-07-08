@@ -22,16 +22,16 @@
 
 ### Migration numbering — correction to the spec
 
-The spec's Implementation Notes say the new migration should be `20260708_000058_preset_order_bundles.sql`. **This is stale**, and stale twice over: three migrations have since landed on `main` — `20260708_000058_security_performance_audit.sql`, `20260708_000059_fix_close_bill_overload_ambiguity.sql`, and `20260708_000060_supabase_deep_clean.sql` (an unrelated follow-up Supabase audit, landed on `main` after this plan was first drafted with `000060`). This worktree branch has since merged latest `main` (commit `2673509c` and the deep-clean commit), so all three now exist on disk in this branch.
+The spec's Implementation Notes say the new migration should be `20260708_000058_preset_order_bundles.sql`. **This is stale, and stale twice over**: four migrations have since landed on `main` — `20260708_000058_security_performance_audit.sql`, `20260708_000059_fix_close_bill_overload_ambiguity.sql`, `20260708_000060_supabase_deep_clean.sql`, and `20260708_000061_fix_tenant_slug_duplicate_column.sql` (three unrelated follow-up Supabase audits/fixes). This worktree branch has merged latest `main` twice to pick each of these up as they landed, so all four now exist on disk in this branch.
 
-**Resolution:** the new migration in this plan is `supabase/migrations/20260708_000061_preset_order_bundles.sql` — the correct next number. No further merge is needed before Task 1; `main` is already merged into this branch as of the numbering fix.
+**Resolution:** the new migration in this plan is `supabase/migrations/20260708_000062_preset_order_bundles.sql` — the correct next number. No further merge is needed before Task 1; `main` is already merged into this branch as of this numbering fix.
 
 ---
 
 ## Task 1: Migration — schema, `add_bundle_to_order`, `get_public_menu` extension, `qr_place_order` replacement
 
 **Files:**
-- Create: `supabase/migrations/20260708_000061_preset_order_bundles.sql`
+- Create: `supabase/migrations/20260708_000062_preset_order_bundles.sql`
 
 **Interfaces:**
 - Produces: tables `restaurant_bundles`, `restaurant_bundle_courses`, `restaurant_bundle_course_items`; column `restaurant_order_items.bundle_id UUID NULL`; RPC `add_bundle_to_order(p_table_order_id uuid, p_bundle_id uuid, p_party_size int, p_course_selections jsonb) RETURNS jsonb`; extended `get_public_menu(p_tenant_slug TEXT) RETURNS JSONB` (adds `bundles`/`bundle_courses`/`bundle_course_items` keys); replaced `qr_place_order(p_table_id uuid, p_items jsonb) RETURNS jsonb` (adds bundle-add branch alongside the unchanged regular-item branch).
@@ -42,14 +42,16 @@ This task has no Vitest cycle — it is pure SQL with no automated harness in th
 - [ ] **Step 1: Write the migration file**
 
 ```sql
--- Migration: 20260708_000061_preset_order_bundles.sql
+-- Migration: 20260708_000062_preset_order_bundles.sql
 -- Preset Order Bundles (Tier 2.1) — schema, staff RPC, QR ordering extension.
 -- See docs/superpowers/specs/2026-07-08-preset-order-bundles-design.md for full design.
 --
--- Numbered 000060 (not 000058 as an earlier draft of the spec said) because
--- 20260708_000058_security_performance_audit.sql and
--- 20260708_000059_fix_close_bill_overload_ambiguity.sql landed on main after
--- this feature's spec was written. This file must be applied after 000059.
+-- Numbered 000062 (not 000058 as an earlier draft of the spec said) because
+-- 20260708_000058_security_performance_audit.sql,
+-- 20260708_000059_fix_close_bill_overload_ambiguity.sql,
+-- 20260708_000060_supabase_deep_clean.sql, and
+-- 20260708_000061_fix_tenant_slug_duplicate_column.sql all landed on main
+-- after this feature's spec was written. This file must be applied after 000061.
 
 -- ── Data Model ──────────────────────────────────────────────────────────────
 
@@ -795,7 +797,7 @@ SELECT qr_place_order(
 - [ ] **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/20260708_000061_preset_order_bundles.sql
+git add supabase/migrations/20260708_000062_preset_order_bundles.sql
 git commit -m "$(cat <<'EOF'
 feat(db): add preset order bundles schema, add_bundle_to_order RPC, and QR bundle ordering
 
@@ -803,7 +805,7 @@ Adds restaurant_bundles/restaurant_bundle_courses/restaurant_bundle_course_items
 tables + RLS, restaurant_order_items.bundle_id, the add_bundle_to_order staff
 RPC, a get_public_menu extension exposing bundles for QR browsing, and a full
 qr_place_order replacement that accepts bundle-adds alongside regular items in
-one atomic p_items array. Numbered 000060, not 000058 as the original spec
+one atomic p_items array. Numbered 000062, not 000058 as the original spec
 draft said, since 000058/000059 landed on main after the spec was written.
 
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
@@ -5295,7 +5297,7 @@ No mismatches found.
 
 ## Judgment calls made (not fully spelled out in the spec)
 
-1. **Migration renumbered `000060`, not `000058`** — see "Migration numbering — correction to the spec" in Global Constraints. This worktree branch is currently one commit behind `main` (missing `20260708_000059_fix_close_bill_overload_ambiguity.sql`, which landed on `main` after this branch was created) — a prerequisite merge/rebase is called out before Task 1.
+1. **Migration renumbered `000062`, not `000058`** — see "Migration numbering — correction to the spec" in Global Constraints. Four unrelated migrations (000058-000061) landed on `main` after this feature's spec was written; this worktree branch merged `main` twice to pick each up as it landed.
 2. **`BundlesManager`/`BundleFormModal` defined inline in `MenuManagement.tsx`**, not as separate files — matches every other tab's components in that exact file (`MenuBuilder`/`ItemFormModal`, `WaiterOrderPanel`, `QRMenuSettings` are all inline; none are split out).
 3. **`BundleOrderModal` is a separate file** (`src/components/restaurant/BundleOrderModal.tsx` + co-located test), not inline next to `QuickAddModal` in `WaiterInterface.tsx` — because the spec explicitly requires a standalone `BundleOrderModal.test.tsx`, and this codebase's convention for testable standalone modals wired into `WaiterInterface.tsx` is a separate file (`TableTransferModal.tsx`), while `QuickAddModal` (untested) stays inline. The "structural sibling" language in the spec is read as a UX-convention reference (stepper/pill visuals), not a file-location mandate.
 4. **Tasks 8's `QRMenuHome.tsx`/`QRMenuPage.tsx` wiring has no dedicated test file** — the spec's own "Testing (QR-specific additions)" section lists exactly three test surfaces for the Addendum (`QRBundleDetail.test.tsx`, `QRCart.test.tsx` extension, `useCart.test.ts`) and does not list these two files. Treated as a deliberate scope match, not a gap to fill in unilaterally — noted explicitly in Task 8 rather than silently adding tests the spec didn't ask for.

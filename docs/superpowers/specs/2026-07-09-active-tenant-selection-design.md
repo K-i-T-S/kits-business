@@ -135,7 +135,7 @@ This is what makes `OnboardingWizard` work immediately after tenant creation wit
 Both places that add a row to `tenant_users` on behalf of an invited user must also upsert `user_active_tenant` for that user → the tenant they just joined:
 
 - `handle_new_user_invite()` (auth trigger, `supabase/migrations/20260618_000017_fix_trigger_search_path.sql`) — fires when a user signs up with an email that has a pending invitation.
-- `accept_pending_invitation()` RPC (`supabase/migrations/20260618_000012_invite_accept_rpc.sql`) — fires when an already-authenticated user accepts a new invitation to another tenant.
+- `accept_pending_invitation()` RPC (`supabase/migrations/20260618_000011_invite_accept_rpc.sql`) — fires when an already-authenticated user accepts a new invitation to another tenant.
 
 **This is required, not a nice-to-have.** Unlike the old `LIMIT 1` design, the new table has no accidental fallback: an invited user who joins `tenant_users` without a corresponding `user_active_tenant` upsert would have `current_tenant_id()` = `NULL` and hit a hard, silent lockout (every RLS-scoped read/write empty) on first login, with no picker step in their flow to self-correct (invite acceptance routes straight past `TenantSelection.tsx`).
 

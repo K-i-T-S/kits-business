@@ -114,20 +114,27 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
     setError('');
     setLoading(true);
     try {
-      const { error: insertError } = await supabase.from('employees').insert({
-        tenant_id: tenantId,
-        name: memberName.trim(),
-        email: memberEmail.trim(),
-        role: memberRole,
-        commission_rate: 0,
-        is_active: true,
+      // Route through the same send-invitation edge function InviteTeamMemberModal
+      // uses: it creates the pending_invitations row and emails the invitee. A
+      // direct employees insert (the old behavior here) never notified anyone and
+      // left the invitee with no way to log in and claim access.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { error: fnError } = await supabase.functions.invoke('send-invitation', {
+        body: {
+          inviteeEmail: memberEmail.trim(),
+          inviteeName: memberName.trim(),
+          role: memberRole,
+          commission: 0,
+          tenantId,
+          tenantName: businessName.trim() || tenantName,
+        },
       });
-      if (insertError) throw insertError;
+      if (fnError) throw fnError;
       setMemberAdded(true);
-      toast.success('Team member added!');
+      toast.success('Invitation sent!');
       setStep(4);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to add team member.');
+      setError(err instanceof Error ? err.message : 'Failed to send invitation.');
     } finally {
       setLoading(false);
     }

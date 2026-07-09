@@ -38,6 +38,18 @@ export async function createTenant(
   return data as unknown as Record<string, unknown>;
 }
 
+export async function selectActiveTenant(tenantId: string) {
+  if (useLocalMode) return true;
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data, error } = await supabase.rpc('select_active_tenant', {
+    p_tenant_id: tenantId,
+  });
+
+  if (error) throw error;
+  return data as unknown as boolean;
+}
+
 export async function addUserToTenant(
   tenantId: string,
   userId: string,

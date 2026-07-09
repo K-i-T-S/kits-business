@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { useSubscription } from '../context/SubscriptionContext';
 import { supabase } from '../utils/supabaseClient';
-import { createTenant } from '../utils/tenantManager';
+import { createTenant, selectActiveTenant } from '../utils/tenantManager';
 
 interface Tenant {
   tenant_id: string;
@@ -138,11 +138,20 @@ export default function TenantSelection() {
     }
   };
 
-  const handleSelectTenant = async (_tenant: Tenant) => {
-    // Always navigate directly for existing tenants.
-    // The onboarding wizard only fires for tenants created in the current session
-    // (via handleCreateTenant). Checking onboarding_completed here caused an
-    // infinite loop for tenants where the flag was never set (pre-migration-000019 bug).
+  const handleSelectTenant = async (tenant: Tenant) => {
+    // Mark this tenant active server-side so current_tenant_id() (and every
+    // RLS policy that depends on it) resolves correctly for users who
+    // belong to more than one tenant.
+    try {
+      await selectActiveTenant(tenant.tenant_id);
+    } catch {
+      toast.error('Failed to switch business. Please try again.');
+      return;
+    }
+    // The onboarding wizard only fires for tenants created in the current
+    // session (via handleCreateTenant). Checking onboarding_completed here
+    // caused an infinite loop for tenants where the flag was never set
+    // (pre-migration-000019 bug).
     await reloadSubscription();
     void navigate('/dashboard');
   };

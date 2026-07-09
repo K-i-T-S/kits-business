@@ -219,4 +219,4 @@ supabase functions deploy groq-proxy --project-ref pytndxjeznhhyycjasep
 ## Built By
 
 **KiTS — Khoder's IT Solutions**  
-Tripoli, Lebanon · [kits.tech.co@gmail.com](mailto:kits.tech.co@gmail.com)
+Beirut, Lebanon · [kits.tech.co@gmail.com](mailto:kits.tech.co@gmail.com)

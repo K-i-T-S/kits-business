@@ -36,6 +36,7 @@ import {
   UserCircle,
   WifiOff,
   ArrowLeftRight,
+  Split,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +49,7 @@ import { BillSplitModal } from '@/components/restaurant/BillSplitModal';
 import BundleOrderModal from '@/components/restaurant/BundleOrderModal';
 import CloseBillModal from '@/components/restaurant/CloseBillModal';
 import TableTransferModal from '@/components/restaurant/TableTransferModal';
+import SplitTableModal from '@/components/restaurant/SplitTableModal';
 import type { Employee } from '@/context/AppContext';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
@@ -986,6 +988,7 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, bundles, 
   const [showCloseBillModal, setShowCloseBillModal] = useState(false);
   const [splitBillOpen, setSplitBillOpen] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showSplitModal, setShowSplitModal] = useState(false);
 
   // Split state
   const [splitType, setSplitType] = useState<SplitType>('equal');
@@ -1390,6 +1393,18 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, bundles, 
                     {t('restaurant.transfer', 'Transfer Table / Waiter')}
                   </button>
                 </RoleGate>
+
+                {items.length >= 2 && (
+                  <RoleGate action="make_sales">
+                    <button
+                      onClick={() => setShowSplitModal(true)}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-violet-500/30 bg-violet-500/10 py-3 text-sm font-semibold text-violet-400 transition-all hover:bg-violet-500/20"
+                    >
+                      <Split className="h-4 w-4" />
+                      {t('restaurant.split', 'Split Table')}
+                    </button>
+                  </RoleGate>
+                )}
               </>
             )}
           </div>
@@ -1676,6 +1691,19 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, bundles, 
           tables={allTables}
           orders={allOrders}
           employees={employees}
+        />
+      )}
+
+      {showSplitModal && order && (
+        <SplitTableModal
+          isOpen={showSplitModal}
+          onClose={() => setShowSplitModal(false)}
+          onSuccess={() => { setShowSplitModal(false); onClose(); onOrderClosed(); }}
+          tenantId={tenantId ?? ''}
+          sourceTable={table}
+          sourceOrder={order}
+          sourceOrderItems={items}
+          tables={allTables}
         />
       )}
 

@@ -1,6 +1,6 @@
 import {
   Plus, X, Receipt, Send, Users, ChevronRight, Trash2, Utensils, SplitSquareVertical, Calculator,
-  Settings2, Check, Sparkles, CalendarClock, Copy, Link, ArrowLeftRight,
+  Settings2, Check, Sparkles, CalendarClock, Copy, Link, ArrowLeftRight, Split,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import Layout from '@/components/Layout';
 import FloorPlan from '@/components/restaurant/FloorPlan';
 import TableTransferModal from '@/components/restaurant/TableTransferModal';
+import SplitTableModal from '@/components/restaurant/SplitTableModal';
 import RoleGate from '@/components/RoleGate';
 import { useApp } from '@/context/AppContext';
 import { containerVariants, itemVariants } from '@/utils/animationVariants';
@@ -107,6 +108,7 @@ export default function TableManagement() {
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showSplitModal, setShowSplitModal] = useState(false);
 
   const [copiedFeedbackTableId, setCopiedFeedbackTableId] = useState<string | null>(null);
 
@@ -628,6 +630,17 @@ export default function TableManagement() {
                                 {t('restaurant.transfer', 'Transfer')}
                               </button>
                             </RoleGate>
+                            {selectedOrderItems.length >= 2 && (
+                              <RoleGate action="make_sales">
+                                <button
+                                  onClick={() => setShowSplitModal(true)}
+                                  className="flex items-center gap-1.5 rounded-lg bg-violet-500/20 px-2.5 py-1.5 text-xs font-semibold text-violet-400 hover:bg-violet-500/30 transition-all"
+                                >
+                                  <Split className="h-3 w-3" />
+                                  {t('restaurant.split', 'Split')}
+                                </button>
+                              </RoleGate>
+                            )}
                             <button
                               onClick={() => { void handleSendToKDS(); }}
                               className="flex items-center gap-1.5 rounded-lg bg-indigo-500/20 px-2.5 py-1.5 text-xs font-semibold text-indigo-400 hover:bg-indigo-500/30 transition-all"
@@ -940,6 +953,19 @@ export default function TableManagement() {
           tables={tables}
           orders={orders}
           employees={employees}
+        />
+      )}
+
+      {showSplitModal && selectedTable && selectedOrder && (
+        <SplitTableModal
+          isOpen={showSplitModal}
+          onClose={() => setShowSplitModal(false)}
+          onSuccess={() => { void loadData(); }}
+          tenantId={tenantId ?? ''}
+          sourceTable={selectedTable}
+          sourceOrder={selectedOrder}
+          sourceOrderItems={selectedOrderItems}
+          tables={tables}
         />
       )}
     </Layout>

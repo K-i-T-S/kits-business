@@ -24,7 +24,6 @@ SET search_path = 'public'
 AS $$
 DECLARE
   v_tenant_id        UUID;
-  v_source_table_id  UUID;
   v_source_status    TEXT;
   v_waiter_id        UUID;
   v_new_order_id     UUID;
@@ -32,8 +31,8 @@ DECLARE
   v_selected_count   INT;
 BEGIN
   -- Validate and lock the source order
-  SELECT tenant_id, table_id, status, waiter_id
-    INTO v_tenant_id, v_source_table_id, v_source_status, v_waiter_id
+  SELECT tenant_id, status, waiter_id
+    INTO v_tenant_id, v_source_status, v_waiter_id
     FROM table_orders
     WHERE id = p_source_order_id
     FOR UPDATE;
@@ -54,10 +53,16 @@ BEGIN
     RAISE EXCEPTION 'No items selected to split';
   END IF;
 
-  -- All selected items must belong to this order and this tenant
-  SELECT count(*) INTO v_selected_count
-    FROM restaurant_order_items
-    WHERE id = ANY(p_item_ids) AND order_id = p_source_order_id AND tenant_id = v_tenant_id;
+  -- All selected items must belong to this order and this tenant.
+  -- Lock the matching rows now (via the CTE's FOR UPDATE) so a concurrent
+  -- operation can't reassign their order_id in the gap between this check
+  -- and the UPDATE that moves them below.
+  WITH locked_items AS (
+    SELECT id FROM restaurant_order_items
+    WHERE id = ANY(p_item_ids) AND order_id = p_source_order_id AND tenant_id = v_tenant_id
+    FOR UPDATE
+  )
+  SELECT count(*) INTO v_selected_count FROM locked_items;
 
   IF v_selected_count IS DISTINCT FROM array_length(p_item_ids, 1) THEN
     RAISE EXCEPTION 'One or more selected items do not belong to this order';
@@ -84,6 +89,11 @@ BEGIN
   IF v_selected_count = v_total_item_count THEN
     RAISE EXCEPTION 'split_would_empty_source_order';
   END IF;
+
+  -- Lock the target table row first so concurrent split/transfer/seat
+  -- attempts onto the same target table serialize here rather than both
+  -- racing past the availability check below.
+  PERFORM 1 FROM restaurant_tables WHERE id = p_target_table_id AND tenant_id = v_tenant_id FOR UPDATE;
 
   -- Target table must be same tenant and currently available
   IF NOT EXISTS (

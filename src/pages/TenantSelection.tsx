@@ -68,7 +68,15 @@ export default function TenantSelection() {
       }
 
       // Auto-select when the user belongs to exactly one tenant — skip the picker
-      if (tenantList.length === 1) {
+      const [soleTenant] = tenantList;
+      if (tenantList.length === 1 && soleTenant) {
+        try {
+          await selectActiveTenant(soleTenant.tenant_id);
+        } catch {
+          toast.error('Failed to load your business. Please try again.');
+          setLoadingTenants(false);
+          return;
+        }
         await reloadSubscription();
         void navigate('/dashboard');
         return;

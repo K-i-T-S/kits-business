@@ -73,6 +73,74 @@ function seedTwoTenants() {
   });
 }
 
+function seedOneTenant() {
+  mockGetSession.mockResolvedValue({
+    data: { session: { user: { id: 'u1', email: 'admin@kits.test' } } },
+  });
+  mockFrom.mockImplementation((table: string) => {
+    if (table === 'tenant_user_details') {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        then: (resolve: (v: unknown) => void) =>
+          resolve({
+            data: [
+              { tenant_id: 't1', tenant_name: 'Business One', tenant_slug: 'one', user_role: 'admin' },
+            ],
+            error: null,
+          }),
+      };
+    }
+    // pending_invitations
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue({ data: [] }),
+    };
+  });
+}
+
+describe('TenantSelection auto-select (single tenant)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls select_active_tenant with the sole tenant and navigates to /dashboard', async () => {
+    seedOneTenant();
+    mockRpc.mockResolvedValue({ data: true, error: null });
+
+    render(
+      <MemoryRouter>
+        <TenantSelection />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(mockRpc).toHaveBeenCalledWith('select_active_tenant', { p_tenant_id: 't1' });
+    });
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    });
+  });
+
+  it('shows an error toast and does not navigate when the RPC fails on the auto-select path', async () => {
+    seedOneTenant();
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'permission_denied' } });
+    const toastSpy = vi.spyOn(toast, 'error');
+
+    render(
+      <MemoryRouter>
+        <TenantSelection />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalled();
+    });
+    expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+  });
+});
+
 describe('TenantSelection handleSelectTenant', () => {
   beforeEach(() => {
     vi.clearAllMocks();

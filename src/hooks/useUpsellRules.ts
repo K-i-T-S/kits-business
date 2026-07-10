@@ -1,5 +1,5 @@
 /**
- * _useUpsellRules — Fetch AI upsell suggestions based on current order items
+ * useUpsellRules — Fetch AI upsell suggestions based on current order items
  *
  * Given a list of item IDs currently in the order, fetches association rules
  * (trigger_item_id matches current items, suggested_item_id is the upsell)
@@ -8,12 +8,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import type { UpsellRule, RestaurantMenuItem } from '@/types/restaurant';
+import { pickUpsellSuggestion, type UpsellSuggestion } from '@/utils/upsellSuggestion';
 
-export interface UpsellSuggestion {
-  rule: UpsellRule;
-  suggestedItem: RestaurantMenuItem | null;
-  confidence: number;
-}
+export type { UpsellSuggestion };
 
 export function useUpsellRules(
   tenantId: string | null | undefined,
@@ -32,7 +29,6 @@ export function useUpsellRules(
     const fetchUpsells = async () => {
       setLoading(true);
       try {
-        // Query upsell rules where trigger_item_id is one of the current order items
         const { data, error } = await supabase
           .from('restaurant_upsell_rules')
           .select('*')
@@ -44,39 +40,20 @@ export function useUpsellRules(
 
         if (error) throw error;
 
-        if (!data || data.length === 0) {
-          setSuggestion(null);
-          return;
-        }
+        const rawRows = (data ?? []) as unknown as Record<string, unknown>[];
+        const rules: UpsellRule[] = rawRows.map((r) => ({
+          id: r.id as string,
+          tenantId: r.tenant_id as string,
+          triggerItemId: r.trigger_item_id as string,
+          suggestedItemId: r.suggested_item_id as string,
+          confidence: r.confidence as number,
+          supportCount: r.support_count as number,
+          createdAt: r.created_at as string,
+        }));
 
-        // Find the first rule where the suggested_item is available and not in current order
-        for (const rule of data as UpsellRule[]) {
-          if (currentItemIds.includes(rule.suggestedItemId)) {
-            // Skip if already in order
-            continue;
-          }
-
-          const suggestedItem = allMenuItems.find((m) => m.id === rule.suggestedItemId);
-          if (suggestedItem && !suggestedItem.is_eighty_sixd) {
-            setSuggestion({
-              rule: rule as UpsellRule,
-              suggestedItem,
-              confidence: rule.confidence,
-            });
-            break;
-          }
-        }
-
-        if (data.length > 0 && !suggestion) {
-          // Fallback: if no non-86'd items, just show top rule info
-          setSuggestion({
-            rule: data[0] as UpsellRule,
-            suggestedItem: allMenuItems.find((m) => m.id === (data[0] as UpsellRule).suggestedItemId) || null,
-            confidence: (data[0] as UpsellRule).confidence,
-          });
-        }
+        setSuggestion(pickUpsellSuggestion(rules, currentItemIds, allMenuItems));
       } catch (err) {
-        console.error('[_useUpsellRules] error:', err);
+        console.error('[useUpsellRules] error:', err);
         setSuggestion(null);
       } finally {
         setLoading(false);
@@ -84,7 +61,7 @@ export function useUpsellRules(
     };
 
     void fetchUpsells();
-  }, [tenantId, currentItemIds, allMenuItems, suggestion]);
+  }, [tenantId, currentItemIds, allMenuItems]);
 
   return { suggestion, loading };
 }

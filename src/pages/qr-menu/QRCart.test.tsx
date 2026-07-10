@@ -39,9 +39,11 @@ describe('QRCart', () => {
         bundleItems={[]}
         tableId="tbl-1"
         totalPrice={10}
+        suggestion={null}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
         onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
         onClose={vi.fn()}
         onSuccess={onSuccess}
       />,
@@ -67,9 +69,11 @@ describe('QRCart', () => {
         bundleItems={[]}
         tableId="tbl-1"
         totalPrice={10}
+        suggestion={null}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
         onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
         onClose={vi.fn()}
         onSuccess={onSuccess}
       />,
@@ -88,9 +92,11 @@ describe('QRCart', () => {
         bundleItems={[]}
         tableId="tbl-1"
         totalPrice={10}
+        suggestion={null}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
         onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
         onClose={vi.fn()}
         onSuccess={vi.fn()}
       />,
@@ -121,9 +127,11 @@ describe('QRCart', () => {
         bundleItems={[bundleItem]}
         tableId="tbl-1"
         totalPrice={82}
+        suggestion={null}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
         onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
         onClose={vi.fn()}
         onSuccess={vi.fn()}
       />,
@@ -164,9 +172,11 @@ describe('QRCart', () => {
         bundleItems={[bundleItem]}
         tableId="tbl-1"
         totalPrice={36}
+        suggestion={null}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
         onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
         onClose={vi.fn()}
         onSuccess={vi.fn()}
       />,
@@ -201,9 +211,11 @@ describe('QRCart', () => {
         bundleItems={[bundleItem]}
         tableId="tbl-1"
         totalPrice={36}
+        suggestion={null}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
         onRemoveBundleItem={onRemoveBundleItem}
+        onAddSuggestion={vi.fn()}
         onClose={vi.fn()}
         onSuccess={vi.fn()}
       />,
@@ -220,9 +232,11 @@ describe('QRCart', () => {
         bundleItems={[]}
         tableId="tbl-1"
         totalPrice={10}
+        suggestion={null}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
         onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
         onClose={vi.fn()}
         onSuccess={vi.fn()}
       />,
@@ -241,9 +255,11 @@ describe('QRCart', () => {
         bundleItems={[]}
         tableId="tbl-1"
         totalPrice={10}
+        suggestion={null}
         onUpdateQuantity={vi.fn()}
         onRemoveItem={vi.fn()}
         onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
         onClose={vi.fn()}
         onSuccess={vi.fn()}
       />,
@@ -253,5 +269,70 @@ describe('QRCart', () => {
       expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
     });
     expect(screen.queryByText(/one of your combo selections/i)).not.toBeInTheDocument();
+  });
+
+  const suggestionFixture = {
+    rule: { id: 'rule-1', tenantId: 't1', triggerItemId: 'mi-1', suggestedItemId: 'mi-2', confidence: 0.7, supportCount: 5, createdAt: '2026-01-01T00:00:00Z' },
+    suggestedItem: { id: 'mi-2', name: 'Fries', name_ar: null, base_price_usd: 3, tenant_id: 't1', category_id: null, description: null, description_ar: null, photo_url: null, base_price_lbp: null, cost_price_usd: null, calories: null, allergens: [], is_featured: false, is_chef_pick: false, is_eighty_sixd: false, active_breakfast: true, active_lunch: true, active_dinner: true, sort_order: 0, is_active: true },
+    confidence: 0.7,
+  };
+
+  it('renders the upsell banner when a suggestion is present', () => {
+    render(
+      <QRCart
+        items={[cartItem]}
+        bundleItems={[]}
+        tableId="tbl-1"
+        totalPrice={10}
+        suggestion={suggestionFixture}
+        onUpdateQuantity={vi.fn()}
+        onRemoveItem={vi.fn()}
+        onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
+        onClose={vi.fn()}
+        onSuccess={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Frequently ordered together: Fries/i)).toBeInTheDocument();
+  });
+
+  it('does not render the upsell banner when suggestion is null', () => {
+    render(
+      <QRCart
+        items={[cartItem]}
+        bundleItems={[]}
+        tableId="tbl-1"
+        totalPrice={10}
+        suggestion={null}
+        onUpdateQuantity={vi.fn()}
+        onRemoveItem={vi.fn()}
+        onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={vi.fn()}
+        onClose={vi.fn()}
+        onSuccess={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText(/Frequently ordered together/i)).not.toBeInTheDocument();
+  });
+
+  it('calls onAddSuggestion with the suggested item when Add is tapped', () => {
+    const onAddSuggestion = vi.fn();
+    render(
+      <QRCart
+        items={[cartItem]}
+        bundleItems={[]}
+        tableId="tbl-1"
+        totalPrice={10}
+        suggestion={suggestionFixture}
+        onUpdateQuantity={vi.fn()}
+        onRemoveItem={vi.fn()}
+        onRemoveBundleItem={vi.fn()}
+        onAddSuggestion={onAddSuggestion}
+        onClose={vi.fn()}
+        onSuccess={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+    expect(onAddSuggestion).toHaveBeenCalledWith(suggestionFixture.suggestedItem);
   });
 });

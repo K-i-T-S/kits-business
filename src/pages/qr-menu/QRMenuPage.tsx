@@ -13,8 +13,9 @@ import QRSplash from './QRSplash';
 import { useCart, getModifierKey } from './useCart';
 import { useQRMenu } from './useQRMenu';
 
-import type { QRCartBundleSelection, QRMenuBundle, RestaurantMenuItem } from '@/types/restaurant';
+import type { QRCartBundleSelection, QRMenuBundle, RestaurantMenuItem, UpsellRule } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
+import { pickUpsellSuggestion } from '@/utils/upsellSuggestion';
 
 type MenuView = 'splash' | 'menu' | 'item-detail' | 'bundle-detail' | 'cart' | 'success';
 
@@ -177,6 +178,18 @@ export default function QRMenuPage() {
     );
   }
 
+  const currentCartItemIds = items.map((i) => i.menuItemId);
+  const mappedUpsellRules: UpsellRule[] = data.upsell_rules.map((r) => ({
+    id: r.id,
+    tenantId: data.tenant.id,
+    triggerItemId: r.trigger_item_id,
+    suggestedItemId: r.suggested_item_id,
+    confidence: r.confidence,
+    supportCount: 0,
+    createdAt: '',
+  }));
+  const upsellSuggestion = pickUpsellSuggestion(mappedUpsellRules, currentCartItemIds, data.items);
+
   return (
     <div className={`${paletteClass} qr-menu-root relative`}>
       {/* Table badge — shown when ?table=N is present in the URL */}
@@ -318,9 +331,11 @@ export default function QRMenuPage() {
               tableId={effectiveTableId}
               tableDisplayLabel={tableParam ?? undefined}
               totalPrice={totalPrice}
+              suggestion={upsellSuggestion}
               onUpdateQuantity={(menuItemId, modKey, qty) => updateQuantity(menuItemId, modKey, qty)}
               onRemoveItem={(menuItemId, modKey) => removeItem(menuItemId, modKey)}
               onRemoveBundleItem={(cartKey) => removeBundleItem(cartKey)}
+              onAddSuggestion={(item) => addItem(item, 1, {}, '', 0)}
               onClose={() => setView('menu')}
               onSuccess={handleOrderSuccess}
             />

@@ -2,8 +2,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
-import type { QRCartBundleItem, QRCartItem } from '@/types/restaurant';
+import type { QRCartBundleItem, QRCartItem, RestaurantMenuItem } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
+import type { UpsellSuggestion } from '@/utils/upsellSuggestion';
 
 interface QRCartProps {
   items: QRCartItem[];
@@ -11,9 +12,11 @@ interface QRCartProps {
   tableId: string;
   tableDisplayLabel?: string;
   totalPrice: number;
+  suggestion: UpsellSuggestion | null;
   onUpdateQuantity: (menuItemId: string, modifierKey: string, quantity: number) => void;
   onRemoveItem: (menuItemId: string, modifierKey: string) => void;
   onRemoveBundleItem: (cartKey: string) => void;
+  onAddSuggestion: (item: RestaurantMenuItem) => void;
   onClose: () => void;
   onSuccess: (orderNumber: string, mode: 'direct' | 'pending') => void;
 }
@@ -58,9 +61,11 @@ export default function QRCart({
   tableId,
   tableDisplayLabel,
   totalPrice,
+  suggestion,
   onUpdateQuantity,
   onRemoveItem,
   onRemoveBundleItem,
+  onAddSuggestion,
   onClose,
   onSuccess,
 }: QRCartProps) {
@@ -142,6 +147,31 @@ export default function QRCart({
 
       {/* Items */}
       <div className="flex-1 overflow-y-auto px-5 pb-2">
+        {suggestion && (
+          <div
+            className="mb-4 rounded-2xl p-3"
+            style={{ background: 'rgba(var(--qr-accent-rgb), 0.12)', border: '1px solid var(--qr-accent)' }}
+          >
+            <div className="flex items-start gap-2">
+              <span className="text-base">💡</span>
+              <div className="flex-1">
+                <p className="text-xs font-semibold" style={{ color: 'var(--qr-accent)' }}>
+                  Frequently ordered together: {suggestion.suggestedItem.name}
+                </p>
+                <p className="mt-1 text-xs" style={{ color: 'var(--qr-text-muted)' }}>
+                  ${suggestion.suggestedItem.base_price_usd.toFixed(2)}
+                </p>
+              </div>
+              <button
+                onClick={() => onAddSuggestion(suggestion.suggestedItem)}
+                className="flex-none rounded-lg px-2.5 py-1.5 text-[10px] font-bold"
+                style={{ background: 'var(--qr-accent)', color: 'var(--qr-bg)' }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        )}
         <AnimatePresence>
           {items.map((item) => {
             const modKey = getModifierKey(item);

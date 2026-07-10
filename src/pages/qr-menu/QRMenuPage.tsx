@@ -182,7 +182,7 @@ export default function QRMenuPage() {
   }
 
   const currentCartItemIds = items.map((i) => i.menuItemId);
-  const mappedUpsellRules: UpsellRule[] = data.upsell_rules.map((r) => ({
+  const mappedUpsellRules: UpsellRule[] = (data.upsell_rules ?? []).map((r) => ({
     id: r.id,
     tenantId: data.tenant.id,
     triggerItemId: r.trigger_item_id,

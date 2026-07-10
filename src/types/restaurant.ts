@@ -366,6 +366,7 @@ export interface QRMenuData {
   bundles: QRMenuBundle[];
   bundle_courses: QRMenuBundleCourse[];
   bundle_course_items: RestaurantBundleCourseItem[];
+  upsell_rules: Array<{ id: string; trigger_item_id: string; suggested_item_id: string; confidence: number }>;
 }
 
 export interface QRCartItem {

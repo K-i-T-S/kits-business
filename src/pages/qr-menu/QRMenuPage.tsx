@@ -75,6 +75,9 @@ export default function QRMenuPage() {
   // Effective table ID: path param takes priority, then resolved from ?table=N
   const effectiveTableId = tableId && tableId !== 'main' ? tableId : resolvedTableId;
 
+  // Self-service feedback link — independent of effectiveTableId, uses the human-facing table number/slug
+  const feedbackHref = tableParam ? `/feedback/${tenantSlug}/${tableParam}` : `/feedback/${tenantSlug}`;
+
   // Transition from splash after 1.4s once data load resolves (success or error)
   useEffect(() => {
     if (!loading) {
@@ -264,6 +267,7 @@ export default function QRMenuPage() {
               promotionalBanner={data.tenant.qr_menu_promotional_banner ?? 'While you wait — try our freshly made desserts 🍮'}
               showBanner={showBanner}
               onBannerTap={handleBannerTap}
+              feedbackHref={feedbackHref}
             />
           </motion.div>
         )}

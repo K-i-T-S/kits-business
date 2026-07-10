@@ -18,6 +18,7 @@ interface QRMenuHomeProps {
   promotionalBanner: string | null;
   showBanner: boolean;
   onBannerTap: () => void;
+  feedbackHref?: string;
 }
 
 // 3D tilt card
@@ -411,6 +412,7 @@ export default function QRMenuHome({
   promotionalBanner,
   showBanner,
   onBannerTap,
+  feedbackHref,
 }: QRMenuHomeProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -505,9 +507,16 @@ export default function QRMenuHome({
       </div>
 
       {/* KiTS fingerprint */}
-      <footer className="qr-kits-fingerprint mt-8">
-        <span>Digital menu by</span>
-        <span style={{ fontWeight: 700, letterSpacing: '0.1em' }}>KiTS</span>
+      <footer className="qr-kits-fingerprint mt-8 flex flex-col items-center gap-2">
+        {feedbackHref && (
+          <a href={feedbackHref} className="text-xs underline" style={{ color: 'var(--qr-text-muted)' }}>
+            Rate Your Visit ⭐
+          </a>
+        )}
+        <div>
+          <span>Digital menu by</span>
+          <span style={{ fontWeight: 700, letterSpacing: '0.1em' }}>KiTS</span>
+        </div>
       </footer>
 
       {/* Floating action buttons */}

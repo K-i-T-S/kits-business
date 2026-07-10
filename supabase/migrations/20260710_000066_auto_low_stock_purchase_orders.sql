@@ -118,7 +118,7 @@ AS $$
 DECLARE
   v_tenant RECORD;
 BEGIN
-  FOR v_tenant IN SELECT id FROM tenants LOOP
+  FOR v_tenant IN SELECT id FROM tenants WHERE is_active = true LOOP
     PERFORM fn_generate_low_stock_pos_for_tenant(v_tenant.id);
   END LOOP;
 END;

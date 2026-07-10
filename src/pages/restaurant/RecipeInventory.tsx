@@ -882,48 +882,18 @@ export default function RecipeInventory() {
     }
   }
 
-  async function handleAutoCreatePO(lowStockItems: RestaurantIngredient[]) {
-    if (!tenantId || lowStockItems.length === 0) return;
+  async function handleAutoCreatePO() {
     setPOSubmitting(true);
     try {
-      const itemRows = lowStockItems.map((ing) => ({
-        ingredient_id: ing.id,
-        quantity_ordered: Math.max(0, (ing.par_level ?? 0) - ing.current_stock),
-        quantity_received: 0,
-        unit_cost: ing.cost_per_unit,
-      }));
-      const totalEstimated = itemRows.reduce((s, l) => s + l.quantity_ordered * l.unit_cost, 0);
-
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const { data: poData, error: poError } = await supabase
-        .from('restaurant_purchase_orders')
-        .insert({
-          tenant_id: tenantId,
-          supplier_id: null,
-          order_number: generatePONumber(),
-          status: 'draft',
-          notes: 'Auto-generated from low stock alert',
-          total_estimated: totalEstimated,
-        })
-        .select()
-        .single();
-
-      if (poError || !poData) { toast.error(poError?.message ?? 'Failed to create PO'); return; }
-
-      const po = poData as RestaurantPurchaseOrder;
-
-      const poItemRows = itemRows.map((row) => ({
-        purchase_order_id: po.id,
-        ...row,
-      }));
-
-      const { error: itemError } = await supabase
-        .from('restaurant_purchase_order_items')
-        .insert(poItemRows);
-
-      if (itemError) toast.error(`PO created but items failed: ${itemError.message}`);
-
-      toast.success(`Auto-PO ${po.order_number} created with ${poItemRows.length} items`);
+      const { data, error } = await supabase.rpc('generate_low_stock_purchase_orders');
+      if (error) { toast.error(error.message); return; }
+      const count = (data as number) ?? 0;
+      if (count === 0) {
+        toast.info('No new purchase orders needed — all low-stock ingredients are already on an open PO.');
+      } else {
+        toast.success(`Auto-generated ${count} purchase order${count !== 1 ? 's' : ''} (grouped by supplier)`);
+      }
       setActiveTab('purchase-orders');
       void loadData();
     } finally {
@@ -1659,7 +1629,7 @@ export default function RecipeInventory() {
                   </span>
                 </div>
                 <button
-                  onClick={() => { void handleAutoCreatePO(lowStockIngredients); }}
+                  onClick={() => { void handleAutoCreatePO(); }}
                   disabled={poSubmitting}
                   className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg hover:bg-amber-500/30 disabled:opacity-50 transition-colors flex-shrink-0"
                 >

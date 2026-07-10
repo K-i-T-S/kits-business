@@ -131,7 +131,7 @@ interface QRCartProps {
 
 `onAddSuggestion` wired in `QRMenuPage.tsx` to `(item) => addItem(item, 1, {}, '', 0)` — the exact same `addItem` from `useCart()` already used by `handleAddToCart`, just called directly with defaults (quantity 1, no modifiers, no notes, no price delta) instead of routing through the item-detail sheet.
 
-`QRCart.tsx` renders the banner near the top of the cart list (above the line items), styled to match the existing QR palette system (`var(--qr-accent)` etc., not the staff-side amber literal colors) and the visual language already established by `QRItemDetail.tsx`'s own "AI Upsell Banner" block (same component family, same platform, staff-side reference at `WaiterInterface.tsx:646-676`) — adapted to QR's CSS custom-property theming instead of hardcoded Tailwind color classes:
+`QRCart.tsx` renders the banner near the top of the cart list (above the line items), styled to match the existing QR palette system (`var(--qr-accent)` etc., not the staff-side amber literal colors). No QR-side component currently has an equivalent banner to mirror — the only existing reference is the staff-side one at `WaiterInterface.tsx:646-676`, adapted here to QR's CSS custom-property theming instead of hardcoded Tailwind color classes:
 
 ```tsx
 {suggestion && (

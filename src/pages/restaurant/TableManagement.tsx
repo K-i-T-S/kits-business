@@ -109,6 +109,12 @@ export default function TableManagement() {
   const [loading, setLoading] = useState(true);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSplitModal, setShowSplitModal] = useState(false);
+  // Full (unfiltered-by-status) item set for the currently selected order, fetched
+  // only while the split modal is open. `orderItems` above excludes served rows
+  // (it drives the "active items" list elsewhere in this page), but SplitTableModal
+  // needs every row — including served bundle components — so its bundle-grouping
+  // and empty-remainder checks match what fn_split_table_order actually validates.
+  const [splitSourceItems, setSplitSourceItems] = useState<RestaurantOrderItem[]>([]);
 
   const [copiedFeedbackTableId, setCopiedFeedbackTableId] = useState<string | null>(null);
 
@@ -187,7 +193,41 @@ export default function TableManagement() {
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) ?? null;
   const selectedOrder = orders.find((o) => o.table_id === selectedTableId) ?? null;
+  const selectedOrderId = selectedOrder?.id ?? null;
   const selectedOrderItems = selectedOrder ? orderItems.filter((i) => i.order_id === selectedOrder.id) : [];
+
+  // ── Live, unfiltered item fetch for the split modal ──────────────────────────
+  // Mirrors the pattern TableTransferModal uses for its own live item-count
+  // fetch on open: query fresh from the DB (no `.neq('status', 'served')`)
+  // whenever the modal is opened, rather than reusing this page's
+  // served-filtered `orderItems` state, so bundle grouping and the
+  // empty-remainder guard both see the full row set the RPC validates against.
+  useEffect(() => {
+    if (!showSplitModal || !selectedOrderId || !tenantId) {
+      setSplitSourceItems([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('restaurant_order_items')
+          .select('*')
+          .eq('order_id', selectedOrderId)
+          .eq('tenant_id', tenantId)
+          .order('id');
+        if (cancelled) return;
+        if (error) {
+          console.error('[TableManagement] split items fetch error:', error);
+          return;
+        }
+        setSplitSourceItems((data ?? []) as RestaurantOrderItem[]);
+      } catch (err) {
+        if (!cancelled) console.error('[TableManagement] split items fetch error:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [showSplitModal, selectedOrderId, tenantId]);
 
   const activeOrdersByTable: Record<string, number> = orders.reduce<Record<string, number>>((acc, o) => {
     if (o.table_id) acc[o.table_id] = (acc[o.table_id] ?? 0) + 1;
@@ -964,7 +1004,7 @@ export default function TableManagement() {
           tenantId={tenantId ?? ''}
           sourceTable={selectedTable}
           sourceOrder={selectedOrder}
-          sourceOrderItems={selectedOrderItems}
+          sourceOrderItems={splitSourceItems}
           tables={tables}
         />
       )}

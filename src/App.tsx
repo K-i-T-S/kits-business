@@ -9,6 +9,7 @@ import FeatureRoute from './components/FeatureRoute';
 import KeyboardNavigationHelper from './components/KeyboardNavigationHelper';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { PinLockScreen } from './components/PinLockScreen';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import RoleRoute from './components/RoleRoute';
 import { TranslationManager } from './components/TranslationManager';
@@ -177,6 +178,7 @@ export default function App() {
                       <AccessibilityProvider>
                         <NotificationProvider>
                           <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
+                            <PinLockScreen isAuthenticated={isAuthenticated} />
                             <Suspense fallback={<LoadingSpinner />}>
                               <Routes>
                                 {/* ── Public routes ── */}

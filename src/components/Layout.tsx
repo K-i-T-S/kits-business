@@ -72,6 +72,7 @@ import {
   generateSystemNotification,
 } from '../utils/notificationEngine';
 import { supabase } from '../utils/supabaseClient';
+import { lockTerminal } from '../utils/terminalLock';
 
 import BrandIdentityModal from './BrandIdentityModal';
 import GlobalSearch from './GlobalSearch';
@@ -907,6 +908,16 @@ export default function Layout({ children }: LayoutProps) {
                     title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
                   >
                     {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  </button>
+
+                  {/* Switch User (Track 1c PIN lock screen) */}
+                  <button
+                    className="rounded-xl border border-white/20 bg-white/10 p-2.5 text-white transition-all hover:bg-white/20 hover:scale-105 header-button flex-shrink-0"
+                    onClick={lockTerminal}
+                    aria-label="Switch user"
+                    title="Switch user"
+                  >
+                    <Lock className="h-5 w-5" />
                   </button>
 
                   {/* Notifications */}

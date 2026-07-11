@@ -7,9 +7,11 @@ import {
   Sparkles,
   UserPlus,
   Users,
+  KeyRound,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import CreatePinEmployeeModal from '../components/CreatePinEmployeeModal';
 import CustomRolesManager from '../components/CustomRolesManager';
 import InviteTeamMemberModal from '../components/InviteTeamMemberModal';
 import Layout from '../components/Layout';
@@ -25,6 +27,7 @@ export default function Employees() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
@@ -134,6 +137,13 @@ export default function Employees() {
               </p>
             </div>
             <div className="flex gap-3">
+              <button
+                onClick={() => setShowPinModal(true)}
+                className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg"
+              >
+                <KeyRound className="h-5 w-5" />
+                Add PIN staff
+              </button>
               <button
                 onClick={() => setShowInviteModal(true)}
                 className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg"
@@ -445,6 +455,15 @@ export default function Employees() {
         onClose={() => setShowInviteModal(false)}
         onSuccess={() => {
           setShowInviteModal(false);
+        }}
+      />
+
+      {/* Add PIN Staff Modal (Track 1c) */}
+      <CreatePinEmployeeModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onSuccess={() => {
+          setShowPinModal(false);
         }}
       />
     </Layout>

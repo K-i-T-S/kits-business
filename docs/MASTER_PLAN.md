@@ -510,10 +510,11 @@ Build the pharmacy management module aligned with Lebanese MoPH regulations and 
 
 ---
 
-### Sprint 2.4 — Supermarket / Grocery Vertical [IN_PROGRESS]
+### Sprint 2.4 — Supermarket / Grocery Vertical [DEFERRED]
+> Relabeled 2026-07-11: pushed behind the F&B-focused roadmap (see `docs/superpowers/specs/2026-07-11-platform-roadmap-design.md`). The supermarket vertical's routing bug (fully coded, zero registered routes) is fixed as a Tier 0 item regardless — this deferral is about further investment, not reachability.
 
 **Track:** 2 · Vertical Intelligence
-**Priority:** High
+**Priority:** High (deferred behind F&B tracks)
 **Depends on:** Sprint 2.1
 **Estimated effort:** Very High
 
@@ -656,6 +657,7 @@ Enhance the existing POS (`EnhancedPOS.tsx`, `POS.tsx`) to support all new verti
 ---
 
 ### Sprint 2.9 — Employee System Overhaul [PENDING]
+> Superseded 2026-07-11: this stub predates a full research/planning session that found RBAC to be actively broken (privilege-escalation-class bug in `coerceRole()`), not just missing PIN login. See `docs/superpowers/specs/2026-07-11-platform-roadmap-design.md` (Track 1) for the actual phased scope (1a: fix coerceRole + RLS alias extension + RoleRoute component → 1b: role-based routing → 1c: PIN login + audit log → 1d: employee↔tenant_user reconciliation) — considerably more precise than the outline below, which is kept for historical context.
 
 **Track:** 2 · Vertical Intelligence
 **Priority:** High
@@ -1352,6 +1354,8 @@ Build an in-app view of the automation log so the owner can see what the agents 
 
 ## Progress Tracker
 
+> **2026-07-11 planning session**: a full research/interview session (6 parallel research agents, an Opus synthesis pass, an adversarial Opus stress-test, and a dedicated Omega competitive deep-dive) produced the current execution roadmap for the F&B-focused work below. See `docs/superpowers/specs/2026-07-11-platform-roadmap-design.md` for the full detail — Tier 0 immediate bug fixes, the Wave-sequenced Track structure (Identity/RBAC → Role HUBs → Inventory/Admin/QR-status → 3D/engagement/win-back), and open competitive-verification action items (Omega, MAPOS). Sprints 2.4–2.7 below are deferred behind that roadmap; 3.1 and 3.3 are folded into it; 2.9 is superseded by it.
+
 | Sprint | Track | Status | Completed |
 |--------|-------|--------|-----------|
 | 1.1 — Theme System | Polish | COMPLETED | 2026-06-20 |
@@ -1362,15 +1366,15 @@ Build an in-app view of the automation log so the owner can see what the agents 
 | 2.1 — Industry System | Verticals | COMPLETED | 2026-06-21 |
 | 2.2 — Restaurant | Verticals | COMPLETED | 2026-06-21 |
 | 2.3 — Pharmacy | Verticals | COMPLETED | 2026-06-21 |
-| 2.4 — Supermarket | Verticals | PENDING | — |
-| 2.5 — Fashion | Verticals | PENDING | — |
-| 2.6 — Electronics | Verticals | PENDING | — |
-| 2.7 — Mobile | Verticals | PENDING | — |
+| 2.4 — Supermarket | Verticals | DEFERRED (2026-07-11) | — |
+| 2.5 — Fashion | Verticals | PENDING (deferred behind F&B roadmap) | — |
+| 2.6 — Electronics | Verticals | PENDING (deferred behind F&B roadmap) | — |
+| 2.7 — Mobile | Verticals | PENDING (deferred behind F&B roadmap) | — |
 | 2.8 — POS Enhancements | Verticals | PENDING | — |
-| 2.9 — Employee Overhaul | Verticals | PENDING | — |
-| 3.1 — Currency Algorithms | Lebanon DNA | PENDING | — |
+| 2.9 — Employee Overhaul | Verticals | SUPERSEDED — see 2026-07-11 roadmap (Track 1) | — |
+| 3.1 — Currency Algorithms | Lebanon DNA | FOLDED into 2026-07-11 roadmap (Track 5) | — |
 | 3.2 — Whish Integration | Lebanon DNA | PENDING | — |
-| 3.3 — Offline-First POS | Lebanon DNA | PENDING | — |
+| 3.3 — Offline-First POS | Lebanon DNA | FOLDED into 2026-07-11 roadmap (Track 2) | — |
 | 3.4 — Arabic RTL Coverage | Lebanon DNA | PENDING | — |
 | 3.5 — Lebanese Business DNA | Lebanon DNA | PENDING | — |
 | 4.1 — Demand Forecasting ML | Intelligence | PENDING | — |

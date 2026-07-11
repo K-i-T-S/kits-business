@@ -1,0 +1,160 @@
+# KiTS Business Terminal — Platform Roadmap
+*Planning session 2026-07-11 · Founder + Claude live review, informed by 6 parallel research agents (3 codebase, 3 market/tech), an Opus synthesis pass, an adversarial Opus stress-test, and a dedicated Omega deep-dive*
+
+## Status
+This is the durable planning artifact for the multi-month work discussed in the 2026-07-11 session. `docs/MASTER_PLAN.md` points here rather than duplicating this content — see its Progress Tracker for the one-line pointer entries.
+
+---
+
+## Executive Summary
+
+The single biggest finding: RBAC/identity is not a missing convenience feature — it's **actively broken in a privilege-escalation-class way**, and it structurally blocks role-native HUBs and the admin command center. `coerceRole()` (`src/types/subscription.ts`) silently promotes four DB-valid roles (admin/supervisor/accountant/stockkeeper) to `'owner'` in every client-side permission check. A production check run during this session confirms the honest urgency framing: **zero real tenant_users today hold those three affected roles** (only `owner`×6 and `admin`×4 — the latter being the KiTS-staff auto-injection, already correctly aliased). This is a landmine to defuse before real customers hit it, not something bleeding today — which is why, on the founder's explicit call, it still ships strictly first (security discipline over live-impact ranking), but the fake Call-Waiter/Fa7em buttons (which *do* affect real diners today, if any restaurant tenant is active) follow immediately after, not weeks later.
+
+An adversarial second Opus pass materially reshaped the plan from its first draft — most importantly, it found that "Track 1" as one XL blocking unit was wrong-sized: only a narrow slice (`coerceRole` fix + a small `RoleRoute` component cloned from the existing `FeatureRoute.tsx` pattern + a single-function RLS alias extension) actually gates the role-HUB work; PIN login, the audit log, and employee↔tenant_user reconciliation have no technical dependency relationship to that and were needlessly blocking it. It also surfaced a live, already-shipped identity conflation (the "platform admin" hack) that the original draft would have folded into Track 1 by mistake, and found that the unit test suite currently *asserts the security bug as correct behavior* — a landmine for whoever does the fix.
+
+Most encouragingly: most of what the founder feared was missing already exists and is well-built (3D floor plan is genuine WebGL/PBR, the login page is already polished — contrary to the founder's "bland" impression, most likely a stale-deploy/cache issue not a code issue, worth a live check — WaiterInterface/ArgileStation/KitchenDisplay/MultiBranchHub are all substantial). Most tracks below are wiring and consolidation, not from-scratch construction.
+
+---
+
+## Tier 0 — Fix Now (final order, per founder decision: security discipline leads)
+
+| # | Fix | Why | Note |
+|---|-----|-----|------|
+| 0.1 | `coerceRole()` owner-fallback → fail-closed | Privilege-escalation-class bug. Confirmed zero real users affected today, but ships first regardless — security discipline, not live-impact ranking. | **Must also rewrite** `src/context/SubscriptionContext.test.tsx`'s `"coerces unknown role to owner"` test, which currently asserts the bug as correct behavior and will otherwise fight the fix. Stage via a Supabase preview branch with a synthetic multi-role tenant before touching production (`mcp__claude_ai_Supabase__create_branch` is available) — this touches live auth for a real product. |
+| 0.2 | Cosmetic Call-Waiter/Fa7em buttons | Real customers told help is coming; nobody is ever notified. Same severity class as the earlier dead delivery-webhook bug. | Wire to a real Supabase insert + a staff-facing signal (which HUB owns receiving it is a Track 2 decision — floor manager or waiter, TBD). |
+| 0.3 | Silent ingredient-deduction failures on KDS bump | Stock silently drifts from reality with zero signal anywhere. | Keep non-blocking to KDS workflow; make failures *observable* (log + visible alert/retry surface). |
+| 0.4 | Dropped `customRoleId` on invite — **downgraded** | Real bug, but narrower blast radius than 0.1–0.3 (compound, opt-in path: needs custom roles enabled + created + used at invite time). | Ship as a 10-minute stopgap now — hide the custom-role option in `InviteTeamMemberModal.tsx` until enforced. The real fix (propagate `custom_role_id` through `accept_pending_invitation`) is a Wave 1 fast-follow, not full Tier 0 weight. |
+| 0.5 | Unreachable supermarket vertical | Fully coded, zero registered routes in `App.tsx`, nav items with no `href`. | Routing fix only — register routes, add hrefs. Not further investment; supermarket stays secondary to F&B. |
+| 0.6 | Stale "multi-location coming soon" text (`EnterpriseDashboard.tsx`) | Feature (`MultiLocationSupport.tsx`) is fully built. | Copy fix. |
+
+**New, found by the adversarial pass — recommended as its own small Tier-0-adjacent item (founder-approved, "fix now"):**
+
+| # | Fix | Why |
+|---|-----|-----|
+| 0.7 | **Platform-admin identity separation** | A trigger (`add_kits_admin_to_tenant`, migration `000021`) auto-inserts `kits.tech.co@gmail.com` as `role='admin'` into *every* tenant's own `tenant_users` table on tenant creation, aliased to owner by `current_user_role()`. The string `'admin'` therefore means two different things — "this business's admin-tier employee" vs. "KiTS platform support staff" — distinguished only by which email holds the row. `AdminPanel.tsx` independently re-checks the same hardcoded email in 2 more places. Build a real `platform_admins` table (or `is_platform_admin` on `auth.users` metadata) + a dedicated `is_kits_staff()` function; retire the trigger hack; remove all 3 hardcoded-email occurrences. Small, contained, removes a real security/maintenance smell before more is built on top of it. |
+
+---
+
+## Wave Structure
+
+**Wave 0 (now):** All of Tier 0 above, including 0.7.
+
+**Wave 1 (foundation, hard gate — narrowed per adversarial review):**
+- **1a**: `coerceRole` fix (= 0.1, already Wave 0) + extend `current_user_role()` aliasing for supervisor/accountant/stockkeeper (single-function change, mirrors the existing admin→owner pattern — **not** a per-policy rewrite across ~40 migration files; that finer-grained access-tiering is explicitly deferred to a later, lower-urgency pass) + a `RoleRoute` component cloned from `src/components/FeatureRoute.tsx`'s proven pattern.
+- **1b**: Wire role-based routing through `RoleRoute` across `App.tsx` (which today has 51 `isAuthenticated ? X : <Navigate>` ternaries and zero role-based ones — the dead-code `ProtectedRoute.tsx` should be retired, not resurrected, in favor of `RoleRoute`).
+
+**Once 1a+1b land, Track 2 (Role HUBs) starts. In parallel with Track 2, and not blocked by it:**
+- **1c**: PIN fast-login + audit log.
+- **1d**: `employees`↔`tenant_users` reconciliation, all 8 roles exposed in onboarding, onboarding visual polish.
+- **Track 5**: F&B Inventory Command Center.
+- **Track 4**: Admin Command Center.
+- **Track 6 (status piece only)**: live order-status tracking.
+
+**Wave 3 (speculative / prove-it-first):**
+- Track 3 (3D hyper-realistic upgrade) — the 3D floor plan already renders live and already beats every named competitor, so this is polish, not a gap. An optional, bounded (~1 day) lighting/asset "morale anchor" touch can slot in anytime during Wave 1 if the founder wants a visible win on this specifically without derailing the identity-first sequencing — not required, offered.
+- Track 6 (dead-time engagement/games) — no evidence gamification improves outcomes; pilot-and-measure before investing further.
+- Track 7-lite (win-back automation).
+- MASTER_PLAN.md Sprints 2.4–2.7 (other verticals) — reopen only after F&B tracks land.
+
+---
+
+## Tracks
+
+### Track 1 — Identity & Accountability Foundation
+*Tier 0 (1a/1b) + Wave 2 (1c/1d) · Effort XL total, but only 1a/1b block anything*
+
+Full scope: consolidate the three parallel role systems (legacy 4-role `ROLE_ACTIONS`, the unused canonical 8-role `ROLE_PERMISSIONS`, and DB-level RLS aliasing) onto one source; fix `coerceRole`; extend RLS aliasing; unify `RoleGate`/`RoleGuard`; role-based routing; PIN fast-login (terminal-stays-authenticated model — the dominant global POS pattern: device stays logged in, staff punch a PIN to attribute actions, not full per-employee re-auth) with manager-PIN-override for sensitive actions; immutable audit log; reconcile `employees` (labor/commission, zero auth capability) vs. `tenant_users` (real Supabase Auth identity via invite) — no reconciliation UI exists today linking the same human across both; expose all 8 roles in onboarding (currently only 3 offered).
+
+**Open decisions:**
+- PIN-only v1 (recommended) vs. PIN+QR-badge together from day one? QR-code badge (camera-only, zero hardware cost — Lightspeed/Clover/TouchBistro pattern) is the safer default for Lebanon's uneven hardware ownership over NFC (Square's pattern, requires an existing contactless reader).
+- Custom roles: enforce now (Track 1) or ship the 8 canonical roles first, revisit `CustomRolesManager` later?
+- Clock-in ceremony bundled with PIN entry, or pure attribution without a clock-in step?
+
+### Track 2 — Role-Native Operational HUBs
+*Tier 1 · Effort L (mostly wiring) · depends on Track 1a/1b only*
+
+Role-conditional routing to screens that mostly already exist and are substantial: `WaiterInterface.tsx` (2771 lines), `ArgileStation.tsx` (896 lines), `KitchenDisplay.tsx` (1120 lines), `CashDrawer.tsx`/`CashManagement.tsx`, `ShiftManager.tsx`, `MultiBranchHub.tsx` (1223 lines), `Reservations.tsx`/`BookReservation.tsx`, `DeliveryOrders.tsx` — instead of the generic 1203-line `RestaurantHub.tsx`, which today has zero role-based conditional rendering (every employee sees identical revenue/KPIs). Kitchen-ready→waiter ping and per-visit table close-out log fold in here. Delivery driver-facing app is the one genuinely net-new build (`DeliveryOrders.tsx` is a staff-side queue today, not a driver app) — scope separately or defer. Absorbs MASTER_PLAN.md Sprint 3.3 (offline-first POS) — matters most exactly here.
+
+**Open decisions:**
+- Bespoke screens for high-divergence roles (waiter/argile/cashier/kitchen) + gated-template for the rest (owner/manager/supervisor) — recommended hybrid, since true bespoke per-role home screens are rare industry-wide (real differentiation, per research) but full bespoke-everywhere is high effort.
+- Argile HUB as a per-tenant optional module — shisha service is culturally mainstream but segment-specific (lounges/cafés/seaside terraces, not universal F&B), confirm it's configurable, not assumed for every tenant.
+- Delivery driver app: build now, defer, or PWA-only?
+- Offline-first scope: full POS offline, or read-only + queued writes?
+- **Which HUB owns receiving the Call-Waiter/Fa7em signal from Tier 0.2's fix** — waiter or floor manager?
+
+### Track 3 — 3D Floor Engine Upgrade
+*Tier 3 · Effort M–L · sequenced last by choice, no hard dependency*
+
+`FloorPlan3D.tsx`/`Table3D.tsx` is already genuine `@react-three/fiber` WebGL — real lighting (hemisphere/ambient/directional with shadows), primitive geometry (cylindrical legs, rounded-box tabletops, chair cylinders) with live status-driven emissive glow, `useFrame`-driven animations, a `WebGLErrorBoundary` with 2D fallback. No named Lebanese/MENA F&B competitor (Omega, BIM POS, Foodics) offers any 3D floor visualization at all — this is already confirmed differentiation, not catch-up. "Hyper-realistic" = primitive geometry → textured/detailed assets, a bounded jump given the pipeline (lighting, camera, shadows) is already in place.
+
+**Open decision:** a 1-day CSS-3D/isometric-SVG spike-and-compare before committing to full WebGL asset work — CSS-3D guarantees performance on genuinely weak/old Lebanese hardware at much lower build cost; WebGL wins only if true lighting/material realism is a hard requirement. Given it already beats every competitor as-is, the honest framing may be "polish, don't rebuild."
+
+### Track 4 — Admin Command Center
+*Tier 1 · Effort L · depends on Track 1 for admin identity (via 0.7's platform-admin fix); notifications independent*
+
+Current `AdminPanel.tsx`: gated by a hardcoded single email + a shared PIN re-verified every visit (no session caching); two tabs (Subscriptions table with inline plan editor; Provisioning tab with a static 5-step legend — not an interactive wizard — plus manual copy-paste Supabase-credential entry). Plan: turn provisioning into a real guided wizard with checklists/fallbacks; add a notification pipeline; add zero-cost remote support.
+
+**Zero-cost stack (researched, not guessed):**
+- **Notifications**: **Telegram Bot API** as primary (genuinely free, no per-message billing, reliable) — WhatsApp Business API's free internal-alert path ended July 2025 (Meta moved to per-template billing, no more free-conversation allowance for business-initiated messages). Resend email (already in stack, free tier 3,000/mo capped 100/day) as secondary/redundant channel. Both trigger from a Supabase Edge Function on the relevant DB event.
+- **Remote support**: thin `simple-peer` (WebRTC) component + **Supabase Realtime as the signaling channel** (avoids running any new signaling server — reuses existing infra) + Open Relay Project's free TURN tier (20GB/month) for NAT traversal. **Scope v1 as VIEW-ONLY screen share** (~1–2 days of work); full remote *control* (injecting mouse/keyboard) is meaningfully harder and explicitly deferred to a later phase. Commercial "free tier" remote-desktop products (Zoho Assist, AnyDesk, TeamViewer) are traps at real scale — capped device counts or explicit commercial-use bans.
+
+**Open decisions:**
+- View-only v1 (strongly recommended) vs. attempting full control now?
+- Provisioning wizard: fully automated Supabase project creation via the management API, or guided-manual with a copy-paste fallback (lower effort, lower risk)?
+
+### Track 5 — F&B Inventory Command Center
+*Tier 1 · Effort L · depends on Tier 0.3 fix first*
+
+`RecipeInventory.tsx` (2286 lines, 6 tabs: Ingredients/Recipes/Food Cost/Suppliers/Waste Log/Purchase Orders) is internally well-connected (low stock → PO tab badge → one-click supplier-grouped auto-PO) but is a **completely separate system** from the generic platform's Inventory/Supplier/PurchaseOrder/StockTransfer pages — entirely different Supabase tables, zero shared IDs, generic Inventory nav hidden entirely for restaurant tenants (routes remain technically reachable by direct URL). The split looks intentional-but-undocumented rather than accidental.
+
+Absorbs MASTER_PLAN.md Sprint 3.1 (USD/LBP dual-currency algorithms) — dual-currency and the still-operationally-real Lollar (frozen pre-2019 USD, informally haircut) vs. fresh-dollar distinction belong with cost/pricing. **Build VAT as a live-configurable rate**, never hardcoded — currently 11%, but a 12% hike was Cabinet-approved February 2026 and is pending Parliamentary ratification, so a change within the year is plausible. NSSF rates are in active flux (ceilings revised through May 2026, an EOSI→pension transition under Law 319 effective 2026) — reconfirm immediately before encoding any payroll logic; don't trust this snapshot beyond a few months.
+
+**Open decisions:**
+- **Bridge** the two inventory systems (shared IDs + cross-reference UI, keep both — recommended, lower migration risk) vs. fully **unify** onto one schema (cleaner long-term, heavier/riskier migration)?
+- Silent-deduction fix (0.3): alert-only, or alert + retry queue + reconciliation report?
+- Dual-currency model: display-layer conversion only, or ledger-level dual-currency? Real architectural fork.
+
+### Track 6 — QR Customer Experience 2.0
+*Tier 1 (order-status) / Tier 3 (games) · depends on Tier 0.2 fix*
+
+`QROrderSuccess.tsx` shows a hardcoded static "Estimated time: 15–20 minutes" that never updates and is discarded once the customer navigates back to the menu — no live order-status/timer exists anywhere in the QR flow today. Live order-status tracking, derived from existing KDS bump-state (not a parallel status model), is the Tier 1, evidence-backed priority — queueing psychology has real grounding here: informed waits feel shorter than uncertain ones. Upsell suggestions are already genuinely wired and rendering live (confidence-scored `upsell_rules` from `get_public_menu()`) — don't rebuild. "Rate Your Visit" feedback is real and functional — don't rebuild. Dead-time engagement (games/quizzes/ads) is Tier 3 — no evidence gamification improves outcomes beyond vendor marketing claims; recommend a small measured pilot before investing further. No Lebanese/MENA F&B vendor names "dead-time engagement" as a category at all — if built well and validated, this is potentially genuine global whitespace, not just local differentiation, but it's a bet, not a committed deliverable.
+
+### Track 7-lite — Win-Back Automation
+*Tier 2 · Effort M · independent, no hard dependency*
+
+Does not exist today. Worse than expected: of 4 hardcoded `automated_workflows` types (`daily_summary`, `low_stock_alert`, `customer_welcome`, `scheduled_reminder`), only 2 are actually implemented server-side — the other 2 are toggleable in the UI but would 400-error or silently no-op if triggered. No "hasn't returned in N days" trigger exists anywhere, though an archived (non-active) migration has a reusable `days_since_last_purchase > 90` segment-evaluator pattern to revive.
+
+**Open decision:** delivery channel for win-back messages — Telegram/email are free; SMS/WhatsApp cost money and, per the zero-cost mandate, would need to be billed to the end-customer, not absorbed by KiTS.
+
+---
+
+## Reconciliation with `docs/MASTER_PLAN.md`
+
+- Sprints 2.4–2.7 (supermarket/fashion/electronics/mobile verticals): push behind all tracks above — F&B is the explicit current focus. Sprint 2.4 relabeled from `IN_PROGRESS` to `DEFERRED` so it stops reading as active work.
+- Sprint 3.1 (currency algorithms) → folded into Track 5.
+- Sprint 3.3 (offline-first) → folded into Track 2.
+- Sprint 2.9 ("Employee System Overhaul") → superseded by Track 1 above; see this doc for the actual phased scope (1a–1d), which is considerably more precise than the original stub.
+
+## Naming note (avoids a real collision found during review)
+`MASTER_PLAN.md` already has its own `Track 1`–`Track 5`, plus `Track R` and `Track A`, with different meanings than the "Track 1–7" labels used earlier in this planning session. This document deliberately does **not** reuse those numbers as new top-level Tracks in `MASTER_PLAN.md` — the Tracks above are referenced by name only here, and any future translation into `MASTER_PLAN.md`'s native `### Sprint X.X — Title [PENDING]` format should slot into existing Tracks (e.g., Track 1 material under Track 2 as an expanded 2.9; HUBs/3D/Inventory/QR/win-back as new Track R sprints, since Track R is already the F&B-specific execution track; Admin Command Center as a new Sprint 5.x under Track 5/Enterprise) rather than inventing new colliding numbers.
+
+## Operational note: `kits-auto-sprint.yml`
+This unattended cron (every 4 hours, pulls the next `[PENDING]` `MASTER_PLAN.md` sprint, runs Claude Code with `--dangerously-skip-permissions`) was found during the adversarial review to be **silently a no-op** — it commits but never pushes, so all 400 recent commits are from manual sessions, not this automation. **Confirmed with the founder: this was intentionally abandoned, not a bug to fix.** Left dormant by design; noted here for the record so a future session doesn't rediscover and "fix" it without context. If it's ever revived, RBAC/RLS-touching work (Track 1) should be explicitly excluded from unattended `--dangerously-skip-permissions` execution given it touches live auth.
+
+## Competitive context
+
+**Omega (O-Live)** — see `docs/fnb-competitive-gap-analysis.md` for the full, dedicated deep-dive added this session. Headline: the "78–80% market share" figure is unverified Omega-authored marketing copy with zero independent corroboration — don't repeat it as fact internally or externally. Working hypothesis (circumstantial, not confirmed at the code level): Omega's core product is closer to legacy on-premise Windows POS with cloud features bolted on than to cloud-native SaaS — they sell branded touchscreen terminal hardware, every sales path is demo-only/quote-only, and one independent customer review unprompted called the system "old fashioned - not secure." The clearest, evidence-backed displacement wedge: multiple independent reviewers specifically flag Omega's multi-branch reliability breaking down ("works for 1 branch... does not work for more than 1 branch... database keeps crashing") plus consistently poor support. Real named clients skew toward large enterprise/hospitality accounts (Casino du Liban, Peninsula Lebanon, franchise logos) — the flagship names, not the long tail. Strategic read: the smart wedge is growing independent multi-location Lebanese restaurants currently on Omega hitting exactly the pain their own users describe, not a head-on assault on Omega's highest-switching-cost flagship accounts.
+
+**MAPOS** (Lebanese, I-MAD Technology) — action item, not yet resolved: their marketing claims "clock in/out with PIN codes" AND "role-based permissions," which is exactly the ground Track 1/2 assumes is whitespace. Unverified (marketing copy only, no live demo checked). **Verify hands-on before finalizing Track 1/2's competitive positioning** — the internal bugs and architecture work still need doing regardless of the answer, but it changes whether Track 1/2 is a whitespace play or an execution-quality play.
+
+**Other evidence caveats to carry forward, honestly:** gamification ROI (Track 6 engagement) is vendor marketing without disclosed data. Lebanon-specific restaurant payment-adoption stats (Whish/CMO) don't exist publicly — don't cite adoption percentages as fact.
+
+## Shape of the Commitment
+
+**Weeks:** Wave 0 (all Tier 0 fixes, including 0.7), Track 1a–1b, Track 4's notifications + view-only remote support, Track 6's order-status piece.
+
+**Months:** Track 1c–1d full, Track 2 (role HUBs), Track 5 (inventory), Track 4 (full guided wizard).
+
+**Open-ended / prove-it-first:** Track 3 (3D upgrade), Track 6 (engagement/games), Track 7-lite (win-back), MASTER_PLAN.md's deferred verticals (2.4–2.7).
+
+*One-sentence version: fix the broken identity layer and its attached bugs first (weeks), build the role-native operational experience on top of it (months), and treat the 3D flourish and QR games as optional differentiation flexes to prove-and-measure later — because most of what was feared missing is already built and mostly needs wiring to a trustworthy sense of who's logged in.*

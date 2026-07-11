@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 
 import type { Industry } from '../types/industry';
+import { ROLE_LABELS } from '../types/subscription';
 import { supabase } from '../utils/supabaseClient';
 
 import IndustrySelector from './industry/IndustrySelector';
@@ -325,9 +326,18 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
             <div>
               <label className={labelClass}>Role</label>
               <select value={memberRole} onChange={e => setMemberRole(e.target.value)} className={selectClass}>
-                <option value="manager">Manager</option>
-                <option value="cashier">Cashier</option>
-                <option value="viewer">Viewer</option>
+                {/* All 8 canonical roles except 'owner' — matches
+                    InviteTeamMemberModal.tsx's StandardInviteRole set for
+                    consistency across the two invite entry points
+                    (Track 1d, docs/superpowers/specs/2026-07-11-platform-roadmap-design.md).
+                    Previously only offered 3 of 8. */}
+                <option value="admin">{ROLE_LABELS.admin}</option>
+                <option value="manager">{ROLE_LABELS.manager}</option>
+                <option value="supervisor">{ROLE_LABELS.supervisor}</option>
+                <option value="cashier">{ROLE_LABELS.cashier}</option>
+                <option value="accountant">{ROLE_LABELS.accountant}</option>
+                <option value="stockkeeper">{ROLE_LABELS.stockkeeper}</option>
+                <option value="viewer">{ROLE_LABELS.viewer}</option>
               </select>
             </div>
 

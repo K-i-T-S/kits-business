@@ -87,10 +87,88 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
     setError('');
   };
 
+  // Clocks the employee into today's scheduled shift, if one exists and
+  // they haven't already clocked in — silently no-ops otherwise (no shift
+  // scheduled today, already clocked in, or a non-restaurant tenant with
+  // no restaurant_shifts data at all). PIN login always succeeds
+  // regardless of whether a shift match is found; clock-in is a bonus
+  // side effect of unlocking, never a blocker. Mirrors the exact update
+  // ShiftManager.tsx's own "clock in" button already performs.
+  const clockInIfScheduled = useCallback(async (employeeId: string, tenantId: string) => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: todaysShifts } = await supabase
+        .from('restaurant_shifts')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .eq('shift_date', today);
+      const shiftIds = (todaysShifts ?? []).map((s: { id: string }) => s.id);
+      if (shiftIds.length === 0) return;
+
+      const { data: assignments } = await supabase
+        .from('restaurant_shift_assignments')
+        .select('id')
+        .eq('employee_id', employeeId)
+        .in('shift_id', shiftIds)
+        .is('clocked_in_at', null)
+        .limit(1);
+      const assignment = assignments?.[0] as { id: string } | undefined;
+      if (!assignment) return;
+
+      await supabase
+        .from('restaurant_shift_assignments')
+        .update({ clocked_in_at: new Date().toISOString() })
+        .eq('id', assignment.id);
+    } catch {
+      // Clock-in is best-effort — never block or error out a PIN login over it.
+    }
+  }, []);
+
+  // Best-effort audit log write — activity_log (migration 000006) already
+  // exists platform-wide and is exactly the right shape for this (tenant_id,
+  // user_id, action, entity_type, entity_id, metadata). Reused rather than
+  // building a parallel table. 'employee_' prefix matches ActivityLog.tsx's
+  // existing getCategoryFromAction() convention so these entries surface
+  // under the "employee" category automatically, no display-code changes
+  // needed. Never blocks or errors out the login/logout flow it's attached to.
+  const logActivity = useCallback(async (
+    tenantId: string,
+    userId: string,
+    action: 'employee_pin_login' | 'employee_pin_logout',
+    employeeId: string,
+    employeeName: string,
+  ) => {
+    try {
+      await supabase.from('activity_log').insert({
+        tenant_id: tenantId,
+        user_id: userId,
+        action,
+        entity_type: 'employee',
+        entity_id: employeeId,
+        metadata: { name: employeeName },
+      });
+    } catch {
+      // Audit logging is best-effort — never block PIN login/logout over it.
+    }
+  }, []);
+
   const submitPin = useCallback(async (employee: PinEmployee, enteredPin: string) => {
     setSubmitting(true);
     setError('');
     try {
+      // Log the outgoing PIN employee's logout (if any) before the session
+      // swap replaces their auth context — after signInWithPassword succeeds
+      // there's no way to write an activity_log row "as" them anymore.
+      if (currentTenant) {
+        const { data: { user: outgoing } } = await supabase.auth.getUser();
+        if (outgoing?.email?.endsWith(PIN_SUFFIX)) {
+          const outgoingEmployee = employees.find((e) => e.email === outgoing.email);
+          if (outgoingEmployee) {
+            await logActivity(currentTenant.id, outgoing.id, 'employee_pin_logout', outgoingEmployee.id, outgoingEmployee.name);
+          }
+        }
+      }
+
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: employee.email,
         password: enteredPin,
@@ -105,10 +183,15 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
       setSelected(null);
       setPin('');
       resetInactivityTimer();
+      if (currentTenant) {
+        void clockInIfScheduled(employee.id, currentTenant.id);
+        const { data: { user: incoming } } = await supabase.auth.getUser();
+        if (incoming) void logActivity(currentTenant.id, incoming.id, 'employee_pin_login', employee.id, employee.name);
+      }
     } finally {
       setSubmitting(false);
     }
-  }, [resetInactivityTimer]);
+  }, [resetInactivityTimer, clockInIfScheduled, currentTenant, employees, logActivity]);
 
   useEffect(() => {
     if (selected && pin.length >= 4) {
@@ -216,7 +299,20 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
 
       <button
         type="button"
-        onClick={() => { void supabase.auth.signOut(); }}
+        onClick={() => {
+          void (async () => {
+            if (currentTenant) {
+              const { data: { user: outgoing } } = await supabase.auth.getUser();
+              if (outgoing?.email?.endsWith(PIN_SUFFIX)) {
+                const outgoingEmployee = employees.find((e) => e.email === outgoing.email);
+                if (outgoingEmployee) {
+                  await logActivity(currentTenant.id, outgoing.id, 'employee_pin_logout', outgoingEmployee.id, outgoingEmployee.name);
+                }
+              }
+            }
+            await supabase.auth.signOut();
+          })();
+        }}
         className="mt-10 flex items-center gap-2 text-xs text-white/30 hover:text-white/60"
       >
         <LogOut className="h-3.5 w-3.5" />

@@ -46,14 +46,19 @@ Most encouragingly: most of what the founder feared was missing already exists a
 **Once 1a+1b land, Track 2 (Role HUBs) starts. In parallel with Track 2, and not blocked by it:**
 - **1c**: PIN fast-login + audit log.
 - **1d**: `employees`↔`tenant_users` reconciliation, all 8 roles exposed in onboarding, onboarding visual polish.
-- **Track 5**: F&B Inventory Command Center.
+- **Track 5**: F&B Inventory Command Center (Track 8's ingredient/modifier work sequences inside this).
 - **Track 4**: Admin Command Center.
-- **Track 6 (status piece only)**: live order-status tracking.
+- **Track 6 (status piece only)**: live order-status tracking (Track 8's read-only ingredient display sequences inside this).
+- **Track 9**: Service Standards & SOPs (acknowledgment-tracking piece needs 1c specifically, not full Track 1).
+- **Track 10**: Customer Service & Complaint Resolution.
+- **Track 11**: Efficiency Analytics (part of Track 2's own work, not separately sequenced).
+- **Track 12**: Employee Salary Advances.
 
 **Wave 3 (speculative / prove-it-first):**
 - Track 3 (3D hyper-realistic upgrade) — the 3D floor plan already renders live and already beats every named competitor, so this is polish, not a gap. An optional, bounded (~1 day) lighting/asset "morale anchor" touch can slot in anytime during Wave 1 if the founder wants a visible win on this specifically without derailing the identity-first sequencing — not required, offered.
 - Track 6 (dead-time engagement/games) — no evidence gamification improves outcomes; pilot-and-measure before investing further.
 - Track 7-lite (win-back automation).
+- Track 13 (Music & Ambience Control) — deliberately sequenced here: a real hardware product with its own support burden, not comparable effort to the software-only tracks.
 - MASTER_PLAN.md Sprints 2.4–2.7 (other verticals) — reopen only after F&B tracks land.
 
 ---
@@ -128,6 +133,50 @@ Does not exist today. Worse than expected: of 4 hardcoded `automated_workflows` 
 
 ---
 
+### Track 8 — Ingredient Intelligence & Real Customization
+*Tier 1-2 · Effort S–M · extends Track 5 + Track 6, sequences inside their existing work*
+
+Two pieces, cleanly separable by effort. **(a) Read-only ingredient display**: `restaurant_menu_item_recipes` already links a recipe to a dish — surface that recipe's `restaurant_recipe_ingredients` list on the QR item-detail page. No schema change, purely additive.
+
+**(b) Real add/remove/substitute against inventory**: today `restaurant_modifiers` (the customer-facing "extra cheese"/"no onions" options) has zero link to `restaurant_ingredients` — confirmed via schema read, it's just a name + a manually-set `price_delta`, so selecting a modifier today doesn't affect real ingredient stock or cost tracking at all. Fix: add a nullable `ingredient_id` + `quantity_delta` to `restaurant_modifiers`. Opt-in per modifier (a staff member links a modifier to a real ingredient only when it makes sense — "add avocado" gets linked, "extra spicy" doesn't need to be). This is the same "bridge, don't fully unify" pattern already chosen for Track 5's two inventory systems — additive columns, not a breaking migration.
+
+### Track 9 — Service Standards & SOPs
+*Tier 2 · Effort M · acknowledgment-tracking piece depends on Track 1c (audit log)*
+
+Two audiences under one track. **Customer-facing rules** (no pets, dress code, etc.): owner/manager-configurable list, KiTS-suggested defaults, shown on the QR menu footer/info section and on the reservation confirmation / pre-arrival message (so customers know what to expect before they walk in, not just after). **Employee SOPs** (hairnets, shirt color, per-role checklists): KiTS-suggested defaults, owner/manager customizable, with explicit acknowledgment tracking — an employee confirms they've read/agreed, recorded in Track 1's audit log so there's a real record of who agreed to what. Ties into onboarding as a step for new hires. **Timing standards**: this already has a real foothold — `RestaurantSettings.tsx` has a configurable slow-service-alert threshold tied to `restaurant_slow_alerts` — extend that pattern rather than building parallel infrastructure.
+
+### Track 10 — Customer Service & Complaint Resolution
+*Tier 2 · Effort M · builds on existing `restaurant_table_feedback`, no hard dependency*
+
+`TableFeedback.tsx`/`restaurant_table_feedback` today is write-only from the customer's side — collects ratings/tags/comments with zero staff-facing follow-up. This track adds a staff inbox with a resolution workflow: a manager reads each complaint and can manually trigger a compensation (discount code, loyalty points, a flagged note for the customer's next visit).
+
+**Review-reward mechanism — redesigned from the original ask, founder-approved.** The original idea ("5-star Google review with photo → automatic free dessert") has two real problems, not one: Google's Business Profile API architecturally cannot identify *which specific customer* posted a given review — there's no workaround, it's a deliberate privacy boundary, not a missing feature. More importantly, **conditioning a reward on a review's rating/content is a direct violation of Google's Business Profile policies** (incentivized reviews are explicitly prohibited), with real enforcement risk — review removal or the whole listing getting suspended from Maps/Search. The rebuilt version, matching how every real platform in this category actually works: reward **any genuine review submission, rating-agnostic** — customer self-reports (submits the review link or a screenshot in-app), manager taps to approve, reward issues. Removes the policy violation entirely while still driving review volume. An optional later addition: free-tier OCR (Google Cloud Vision, 1,000 free units/month) as a spam pre-filter to reduce the manager's review burden — never as an auto-approval mechanism, the manager tap stays the real fraud control.
+
+### Track 11 — Efficiency Analytics
+*Tier 2 · Effort S · extends Track 2, not standalone*
+
+Adds efficiency KPIs to the existing `RestaurantAnalytics.tsx`, which already has a waiter-scoring algorithm (40% revenue + 30% tables served + 20% rating + 10% speed) to build on rather than replace. Proposed starting metric set: orders-per-labor-hour, kitchen ticket-to-ready time, table-turn time, and an expanded waiter-efficiency view. Lands as part of Track 2's owner/manager HUB work, not a separate build.
+
+### Track 12 — Employee Salary Advances
+*Tier 2 · Effort M · connects to Finance/cash-management/EOD infrastructure and Track 1's employee identity*
+
+Very Lebanon-specific: informal salary advances/loans against upcoming pay are common given the cash economy and banking-crisis context (see market research above). Schema: a new `restaurant_cash_movements.movement_type` value (`'salary_advance'`, extending the existing CHECK constraint which today only allows `sale/refund/expense/float_add/float_remove/tip_out`), a new EOD line item on `restaurant_eod_reports`, and a new advances table (request → manager approve/deny → paid out of the active cash-drawer session → tracked against that pay period).
+
+**Rule engine**: a per-employee cooldown (can't request again until N days/weeks since their last advance) AND a shared team-wide daily/weekly cap (only so many advances approved across the whole team in a period), both independently toggleable by the manager — plus a max-%-of-salary cap per request.
+
+**Deduction timing — build both, tenant-configurable**: auto-deduct from `payroll_entries` when payroll actually runs (default, less room for human error), or manual reconciliation each pay period (more manager control) — expose this as a per-tenant setting rather than picking one.
+
+### Track 13 — Music & Ambience Control
+*Tier 3 · Effort L (real hardware product, not pure software) · Wave 3, deliberately sequenced late*
+
+Real control of a venue's actual music/lighting from the app, not a manual checklist. Research ruled out the obvious paths: **consumer Spotify is a dead end regardless of licensing** — a Feb 2026 policy change caps unapproved third-party apps at 5 total authenticated users ever, with no realistic upgrade path for a company KiTS's size, and public playback of a personal Spotify/Apple Music account is a licensing violation independent of API access. **Sonos control is genuinely free to build against, but most Lebanese restaurants don't already own Sonos hardware** ($75–500+/speaker) — not a "control what they have" story for most of the target market.
+
+**Recommended build — genuinely $0 for KiTS, fits the existing architecture**: a local Pi/ESP32 box (Mopidy or Music Assistant for audio, WLED for addressable lighting) that KiTS's cloud app talks to via **Supabase Realtime** — the same signaling-channel pattern already recommended for Track 4's remote support, no new infra. This is also the same category as the original "Local Hardware Interfacing" architectural principle (ESP32 for receipt printing/cash-drawer triggers) — build one general-purpose local KiTS hardware agent rather than a separate one-off per use case, so printing, cash-drawer, and ambience control all ride the same local-agent channel. Local-first also means playback/lighting control survives Lebanon's frequent power/internet outages, since commands only need the LAN.
+
+**Honest framing**: this is effectively a small hardware product KiTS pre-builds and ships (a "KiTS Ambience Box"), not a pure software feature — real engineering + ongoing support burden (provisioning, offline resilience, hardware support), meaningfully different shape than every other track in this roadmap. That's why it's sequenced in Wave 3 alongside the 3D upgrade rather than with the rest — a deliberate founder decision, not a default. Hue (well-documented but requires real hardware spend most venues haven't made) and Sonos Pro/Soundtrack Your Brand (legitimate, licensed, API-accessible, but gated by partner approval and $29–54/zone/month) become optional premium integrations for the subset of venues that already run that gear, not the primary path.
+
+---
+
 ## Reconciliation with `docs/MASTER_PLAN.md`
 
 - Sprints 2.4–2.7 (supermarket/fashion/electronics/mobile verticals): push behind all tracks above — F&B is the explicit current focus. Sprint 2.4 relabeled from `IN_PROGRESS` to `DEFERRED` so it stops reading as active work.
@@ -153,8 +202,8 @@ This unattended cron (every 4 hours, pulls the next `[PENDING]` `MASTER_PLAN.md`
 
 **Weeks:** Wave 0 (all Tier 0 fixes, including 0.7), Track 1a–1b, Track 4's notifications + view-only remote support, Track 6's order-status piece.
 
-**Months:** Track 1c–1d full, Track 2 (role HUBs), Track 5 (inventory), Track 4 (full guided wizard).
+**Months:** Track 1c–1d full, Track 2 (role HUBs, including Track 11's efficiency analytics), Track 5 (inventory, including Track 8's ingredient/modifier work), Track 4 (full guided wizard), Track 9 (SOPs), Track 10 (complaint resolution), Track 12 (salary advances).
 
-**Open-ended / prove-it-first:** Track 3 (3D upgrade), Track 6 (engagement/games), Track 7-lite (win-back), MASTER_PLAN.md's deferred verticals (2.4–2.7).
+**Open-ended / prove-it-first:** Track 3 (3D upgrade), Track 6 (engagement/games), Track 7-lite (win-back), Track 13 (music/ambience — a real hardware product, not just software), MASTER_PLAN.md's deferred verticals (2.4–2.7).
 
 *One-sentence version: fix the broken identity layer and its attached bugs first (weeks), build the role-native operational experience on top of it (months), and treat the 3D flourish and QR games as optional differentiation flexes to prove-and-measure later — because most of what was feared missing is already built and mostly needs wiring to a trustworthy sense of who's logged in.*

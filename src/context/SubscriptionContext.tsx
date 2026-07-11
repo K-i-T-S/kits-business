@@ -46,8 +46,16 @@ function coerceStatus(raw: string | undefined | null): SubscriptionStatus {
 }
 
 function coerceRole(raw: string | undefined | null): UserRole {
+  // 'admin' is intentionally aliased to 'owner' — matches the DB-level
+  // current_user_role() aliasing used for KiTS platform-staff accounts.
+  if (raw === 'owner' || raw === 'admin') return 'owner';
   if (raw === 'manager' || raw === 'cashier' || raw === 'viewer') return raw;
-  return 'owner'; // default to owner for tenant creators
+  // Fail closed: supervisor/accountant/stockkeeper (real DB-valid roles not
+  // yet mapped by this legacy 4-role gate) and any unrecognized value get
+  // the least-privileged role, not 'owner'. Previously this function
+  // defaulted everything unmatched to 'owner', which silently granted
+  // owner-level UI permission checks to any of those three roles.
+  return 'viewer';
 }
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {

@@ -245,8 +245,43 @@ describe('SubscriptionContext', () => {
       expect(result.current.plan).toBe('starter');
     });
 
-    it('coerces unknown role to owner', async () => {
+    it('coerces admin to owner (intentional platform-staff alias, matches DB current_user_role())', async () => {
+      seedTenant('starter', 'active', 'admin');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.role).toBe('owner');
+    });
+
+    it('fails closed to viewer for supervisor (not yet supported by the legacy 4-role UI gate)', async () => {
+      seedTenant('starter', 'active', 'supervisor');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.role).toBe('viewer');
+    });
+
+    it('fails closed to viewer for accountant', async () => {
+      seedTenant('starter', 'active', 'accountant');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.role).toBe('viewer');
+    });
+
+    it('fails closed to viewer for stockkeeper', async () => {
+      seedTenant('starter', 'active', 'stockkeeper');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.role).toBe('viewer');
+    });
+
+    it('fails closed to viewer for a genuinely unrecognized role (was: silently coerced to owner)', async () => {
       seedTenant('starter', 'active', 'superadmin');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.role).toBe('viewer');
+    });
+
+    it('preserves owner for a real owner (regression guard — owner has no explicit branch, relies on correct fallback)', async () => {
+      seedTenant('starter', 'active', 'owner');
       const { result } = renderHook(() => useSubscription(), { wrapper });
       await act(async () => { await new Promise(r => setTimeout(r, 0)); });
       expect(result.current.role).toBe('owner');

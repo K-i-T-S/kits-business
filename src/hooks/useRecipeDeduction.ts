@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
@@ -13,17 +14,24 @@ import { supabase } from '@/utils/supabaseClient';
  * Example:
  *   const { deductForMenuItem } = useRecipeDeduction();
  *   // In handleBumpItem, after the supabase update succeeds:
- *   await deductForMenuItem(menuItemId, quantity);
+ *   await deductForMenuItem(menuItemId, quantity, item.product_name);
  *
- * If no recipe is mapped for the menu item, the RPC returns immediately with no effect.
- * All errors are silently caught — ingredient deduction should never block the KDS workflow.
+ * If no recipe is mapped for the menu item, the RPC returns immediately with no
+ * effect — that's intended (recipe costing is optional per menu item), not a
+ * failure, so it does not surface anything.
+ *
+ * A genuine RPC/network failure never blocks the KDS workflow (the caller
+ * already marked the item 'ready' before this runs), but it IS surfaced via a
+ * toast so stock drift is visible instead of only reaching the browser
+ * console — previously this warned to console.warn only, invisible in
+ * production (Tier 0.3, docs/superpowers/specs/2026-07-11-platform-roadmap-design.md).
  */
 export function useRecipeDeduction() {
   const { currentTenant } = useApp();
   const tenantId = currentTenant?.id;
 
   const deductForMenuItem = useCallback(
-    async (menuItemId: string, quantity: number = 1): Promise<void> => {
+    async (menuItemId: string, quantity: number = 1, itemName?: string): Promise<void> => {
       if (!tenantId) return;
       try {
         const { error } = await supabase.rpc('deduct_recipe_ingredients', {
@@ -32,11 +40,18 @@ export function useRecipeDeduction() {
           p_quantity: quantity,
         });
         if (error) {
-          // Log but do not throw — ingredient deduction is non-critical
-          console.warn('[useRecipeDeduction] deduction warning:', error.message);
+          console.error('[useRecipeDeduction] deduction failed:', error.message);
+          toast.warning(
+            `Inventory update failed for ${itemName ?? 'this item'} — check stock manually`,
+            { duration: 6000 },
+          );
         }
       } catch (err) {
-        console.warn('[useRecipeDeduction] unexpected error:', err);
+        console.error('[useRecipeDeduction] unexpected error:', err);
+        toast.warning(
+          `Inventory update failed for ${itemName ?? 'this item'} — check stock manually`,
+          { duration: 6000 },
+        );
       }
     },
     [tenantId],

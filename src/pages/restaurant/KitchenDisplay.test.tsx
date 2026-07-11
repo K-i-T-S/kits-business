@@ -98,7 +98,7 @@ describe('KitchenDisplay recipe deduction wiring', () => {
     const button = await screen.findByRole('button', { name: /mark hummus ready/i });
     fireEvent.click(button);
     await waitFor(() => {
-      expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-1', 2);
+      expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-1', 2, 'Hummus');
     });
   });
 
@@ -133,8 +133,8 @@ describe('KitchenDisplay recipe deduction wiring', () => {
     const button = await screen.findByRole('button', { name: /all ready \(2\)/i });
     fireEvent.click(button);
     await waitFor(() => {
-      expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-1', 2);
-      expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-3', 3);
+      expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-1', 2, 'Hummus');
+      expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-3', 3, 'Fries');
     });
   });
 
@@ -144,7 +144,7 @@ describe('KitchenDisplay recipe deduction wiring', () => {
     const button = await screen.findByRole('button', { name: /all ready \(1\)/i });
     fireEvent.click(button);
     await waitFor(() => {
-      expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-1', 2);
+      expect(mockDeductForMenuItem).toHaveBeenCalledWith('mi-1', 2, 'Hummus');
     });
   });
 

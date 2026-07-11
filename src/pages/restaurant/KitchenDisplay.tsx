@@ -731,7 +731,7 @@ export default function KitchenDisplay() {
         })),
       );
       if (!wasAlreadyReady && currentItem?.menu_item_id) {
-        void deductForMenuItem(currentItem.menu_item_id, currentItem.quantity);
+        void deductForMenuItem(currentItem.menu_item_id, currentItem.quantity, currentItem.product_name);
       }
     } finally {
       bumpingItemIds.current.delete(itemId);
@@ -774,7 +774,7 @@ export default function KitchenDisplay() {
           ),
         );
         itemsToBump.forEach((item) => {
-          if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity);
+          if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity, item.product_name);
         });
       } finally {
         ids.forEach((id) => bumpingItemIds.current.delete(id));
@@ -817,7 +817,7 @@ export default function KitchenDisplay() {
           ),
         );
         itemsToBump.forEach((item) => {
-          if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity);
+          if (item.menu_item_id) void deductForMenuItem(item.menu_item_id, item.quantity, item.product_name);
         });
       } finally {
         ids.forEach((id) => bumpingItemIds.current.delete(id));

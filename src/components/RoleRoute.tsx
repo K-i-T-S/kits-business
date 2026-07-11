@@ -1,10 +1,10 @@
 import { Navigate } from 'react-router-dom';
 
 import { useSubscription } from '@/context/SubscriptionContext';
-import type { UserRole } from '@/types/subscription';
+import type { RoleType } from '@/types/subscription';
 
 interface RoleRouteProps {
-  allowedRoles: UserRole[];
+  allowedRoles: RoleType[];
   children: React.ReactNode;
   /** Where to redirect when the current role isn't allowed. Defaults to /dashboard. */
   redirectTo?: string;

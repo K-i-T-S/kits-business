@@ -5,7 +5,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 import { useSubscription } from '../context/SubscriptionContext';
 import RoleRoute from './RoleRoute';
-import type { UserRole } from '../types/subscription';
+import type { RoleType } from '../types/subscription';
 
 vi.mock('../context/SubscriptionContext', () => ({
   useSubscription: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('../context/SubscriptionContext', () => ({
 
 const mockUseSubscription = vi.mocked(useSubscription);
 
-function mockSubscription(role: UserRole, isLoading = false) {
+function mockSubscription(role: RoleType, isLoading = false) {
   mockUseSubscription.mockReturnValue({
     plan: 'starter',
     status: 'active',
@@ -26,7 +26,7 @@ function mockSubscription(role: UserRole, isLoading = false) {
   });
 }
 
-function renderAtRoot(allowedRoles: UserRole[]) {
+function renderAtRoot(allowedRoles: RoleType[]) {
   return render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
@@ -70,9 +70,15 @@ describe('RoleRoute', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('excludes a role not present in allowedRoles even when it is a real, valid UserRole', () => {
+  it('excludes a role not present in allowedRoles even when it is a real, valid role', () => {
     mockSubscription('viewer');
     renderAtRoot(['owner', 'manager', 'cashier']);
     expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
+  });
+
+  it('allows one of the 8 canonical roles beyond the old legacy 4 (Track 1b-i widening)', () => {
+    mockSubscription('supervisor');
+    renderAtRoot(['owner', 'manager', 'supervisor']);
+    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
   });
 });

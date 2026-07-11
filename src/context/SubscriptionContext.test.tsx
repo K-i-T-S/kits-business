@@ -235,6 +235,45 @@ describe('SubscriptionContext', () => {
       await act(async () => { await new Promise(r => setTimeout(r, 0)); });
       expect(result.current.canPerform('make_sales')).toBe(false);
     });
+
+    it('admin has identical permissions to owner (matches DB-level current_user_role() aliasing)', async () => {
+      seedTenant('starter', 'active', 'admin');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.canPerform('access_settings')).toBe(true);
+      expect(result.current.canPerform('access_enterprise')).toBe(true);
+      expect(result.current.canPerform('edit_employees')).toBe(true);
+    });
+
+    it('supervisor can make_sales and manage_inventory but not edit_products or access_settings', async () => {
+      seedTenant('starter', 'active', 'supervisor');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.canPerform('make_sales')).toBe(true);
+      expect(result.current.canPerform('manage_inventory')).toBe(true);
+      expect(result.current.canPerform('edit_products')).toBe(false);
+      expect(result.current.canPerform('access_settings')).toBe(false);
+    });
+
+    it('accountant can view financial data but not make_sales or edit anything', async () => {
+      seedTenant('starter', 'active', 'accountant');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.canPerform('view_costs')).toBe(true);
+      expect(result.current.canPerform('view_analytics')).toBe(true);
+      expect(result.current.canPerform('make_sales')).toBe(false);
+      expect(result.current.canPerform('edit_products')).toBe(false);
+    });
+
+    it('stockkeeper can manage inventory/products but not make_sales or view_customers', async () => {
+      seedTenant('starter', 'active', 'stockkeeper');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.canPerform('manage_inventory')).toBe(true);
+      expect(result.current.canPerform('edit_products')).toBe(true);
+      expect(result.current.canPerform('make_sales')).toBe(false);
+      expect(result.current.canPerform('view_customers')).toBe(false);
+    });
   });
 
   describe('plan coercion for invalid values', () => {
@@ -245,35 +284,39 @@ describe('SubscriptionContext', () => {
       expect(result.current.plan).toBe('starter');
     });
 
-    it('coerces admin to owner (intentional platform-staff alias, matches DB current_user_role())', async () => {
+    // Track 1b-i (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+    // coerceRole now returns the real, distinct 8-role value instead of
+    // collapsing supervisor/accountant/stockkeeper to 'viewer' or admin to
+    // 'owner' — the whole point of widening past the legacy 4-role gate.
+    it('returns admin as its own distinct role (no longer aliased to owner in the UI layer)', async () => {
       seedTenant('starter', 'active', 'admin');
       const { result } = renderHook(() => useSubscription(), { wrapper });
       await act(async () => { await new Promise(r => setTimeout(r, 0)); });
-      expect(result.current.role).toBe('owner');
+      expect(result.current.role).toBe('admin');
     });
 
-    it('fails closed to viewer for supervisor (not yet supported by the legacy 4-role UI gate)', async () => {
+    it('returns supervisor as its own distinct role', async () => {
       seedTenant('starter', 'active', 'supervisor');
       const { result } = renderHook(() => useSubscription(), { wrapper });
       await act(async () => { await new Promise(r => setTimeout(r, 0)); });
-      expect(result.current.role).toBe('viewer');
+      expect(result.current.role).toBe('supervisor');
     });
 
-    it('fails closed to viewer for accountant', async () => {
+    it('returns accountant as its own distinct role', async () => {
       seedTenant('starter', 'active', 'accountant');
       const { result } = renderHook(() => useSubscription(), { wrapper });
       await act(async () => { await new Promise(r => setTimeout(r, 0)); });
-      expect(result.current.role).toBe('viewer');
+      expect(result.current.role).toBe('accountant');
     });
 
-    it('fails closed to viewer for stockkeeper', async () => {
+    it('returns stockkeeper as its own distinct role', async () => {
       seedTenant('starter', 'active', 'stockkeeper');
       const { result } = renderHook(() => useSubscription(), { wrapper });
       await act(async () => { await new Promise(r => setTimeout(r, 0)); });
-      expect(result.current.role).toBe('viewer');
+      expect(result.current.role).toBe('stockkeeper');
     });
 
-    it('fails closed to viewer for a genuinely unrecognized role (was: silently coerced to owner)', async () => {
+    it('still fails closed to viewer for a genuinely unrecognized role (Tier 0.1 property preserved)', async () => {
       seedTenant('starter', 'active', 'superadmin');
       const { result } = renderHook(() => useSubscription(), { wrapper });
       await act(async () => { await new Promise(r => setTimeout(r, 0)); });

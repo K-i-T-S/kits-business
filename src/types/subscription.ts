@@ -15,10 +15,11 @@ export type RoleType =
   | 'stockkeeper'
   | 'viewer';
 
-// Legacy action set (view_dashboard, make_sales, …) — kept so existing
-// RoleGate / canPerform calls compile without change.
-// New granular actions (create_sales, manage_products, …) are also part
-// of this union so CustomRolesManager and ROLE_PERMISSIONS can share the type.
+// All actions checkable via canPerform()/RoleGate/custom-role permission
+// overrides. Originally split into a "legacy" set and a "new granular"
+// set (with a 'create_sales' vs 'make_sales' naming collision between
+// them); consolidated into one list as part of Track 1b-i/ii — 'create_sales'
+// removed entirely since it had zero real call sites anywhere in the app.
 export type RoleAction =
   | 'view_dashboard'
   | 'make_sales'
@@ -31,8 +32,6 @@ export type RoleAction =
   | 'edit_employees'
   | 'access_settings'
   | 'access_enterprise'
-  // New granular actions — used by ROLE_PERMISSIONS and CustomRolesManager
-  | 'create_sales'
   | 'manage_customers'
   | 'manage_inventory'
   | 'manage_products'
@@ -126,28 +125,28 @@ export const FEATURE_DISPLAY: Record<Feature, { name: string; requiredPlan: Subs
   multi_location: { name: 'Multi-Location', requiredPlan: 'business' },
 };
 
-// ── Legacy role→action map (used by SubscriptionContext.canPerform) ────────────
-const ROLE_ACTIONS: Record<UserRole, RoleAction[]> = {
-  viewer: ['view_dashboard', 'view_customers', 'view_products', 'view_reports'],
-  cashier: [
-    'view_dashboard',
-    'make_sales',
-    'view_customers',
-    'edit_customers',
-    'view_products',
-    'view_reports',
-  ],
-  manager: [
-    'view_dashboard',
-    'make_sales',
-    'view_customers',
-    'edit_customers',
-    'view_products',
-    'edit_products',
-    'view_reports',
-    'view_employees',
-    'manage_settings',
-  ],
+export function roleCanPerform(role: RoleType, action: RoleAction): boolean {
+  return ROLE_PERMISSIONS[role].includes(action);
+}
+
+// ── New granular permissions matrix (canonical source of truth) ────────────────
+// Maps every RoleType to the fine-grained actions it can perform.
+// Used as defaults in CustomRolesManager and for any new permission checks.
+// Consolidated 8-role permission table (Track 1b-i/ii,
+// docs/superpowers/specs/2026-07-11-platform-roadmap-design.md) — replaces
+// the old split between a 4-role legacy ROLE_ACTIONS table (the only one
+// actually wired to runtime canPerform() checks) and this 8-role table
+// (defined but never consumed by anything). owner/manager/cashier/viewer
+// below are exact unions of what those 4 roles already had across both
+// tables — zero behavior change for the 3 real call sites that exist
+// today (canPerform('manage_customers')/('manage_settings')/('make_sales'),
+// grepped across the whole app, not assumed). admin is an explicit alias
+// of owner (matches the DB-level current_user_role() aliasing). 'create_sales'
+// was renamed to 'make_sales' — the former had zero real call sites
+// anywhere in the app; the latter is what's actually used. supervisor/
+// accountant/stockkeeper are fresh, deliberately conservative grants since
+// no live UI exercises their exact values yet.
+export const ROLE_PERMISSIONS: Record<RoleType, RoleAction[]> = {
   owner: [
     'view_dashboard',
     'make_sales',
@@ -161,69 +160,87 @@ const ROLE_ACTIONS: Record<UserRole, RoleAction[]> = {
     'access_settings',
     'access_enterprise',
     'manage_settings',
-  ],
-};
-
-export function roleCanPerform(role: UserRole, action: RoleAction): boolean {
-
-  return ROLE_ACTIONS[role].includes(action);
-}
-
-// ── New granular permissions matrix (canonical source of truth) ────────────────
-// Maps every RoleType to the fine-grained actions it can perform.
-// Used as defaults in CustomRolesManager and for any new permission checks.
-export const ROLE_PERMISSIONS: Record<RoleType, RoleAction[]> = {
-  owner: [
-    'create_sales',
     'manage_customers',
     'manage_inventory',
     'manage_products',
-    'view_reports',
     'view_costs',
     'view_analytics',
     'manage_employees',
-    'manage_settings',
   ],
   admin: [
-    'create_sales',
+    'view_dashboard',
+    'make_sales',
+    'view_customers',
+    'edit_customers',
+    'view_products',
+    'edit_products',
+    'view_reports',
+    'view_employees',
+    'edit_employees',
+    'access_settings',
+    'access_enterprise',
+    'manage_settings',
     'manage_customers',
     'manage_inventory',
     'manage_products',
-    'view_reports',
     'view_costs',
     'view_analytics',
     'manage_employees',
-    'manage_settings',
   ],
   manager: [
-    'create_sales',
+    'view_dashboard',
+    'make_sales',
+    'view_customers',
+    'edit_customers',
+    'view_products',
+    'edit_products',
+    'view_reports',
+    'view_employees',
+    'manage_settings',
     'manage_customers',
     'manage_inventory',
     'manage_products',
-    'view_reports',
     'view_costs',
     'view_analytics',
     'manage_employees',
   ],
   supervisor: [
-    'create_sales',
+    'view_dashboard',
+    'make_sales',
+    'view_customers',
+    'edit_customers',
+    'view_products',
     'manage_customers',
     'manage_inventory',
   ],
   cashier: [
-    'create_sales',
+    'view_dashboard',
+    'make_sales',
+    'view_customers',
+    'edit_customers',
+    'view_products',
+    'view_reports',
     'manage_customers',
   ],
   accountant: [
+    'view_dashboard',
+    'view_customers',
+    'view_products',
     'view_reports',
     'view_costs',
     'view_analytics',
   ],
   stockkeeper: [
+    'view_dashboard',
+    'view_products',
+    'edit_products',
     'manage_inventory',
     'manage_products',
   ],
   viewer: [
+    'view_dashboard',
+    'view_customers',
+    'view_products',
     'view_reports',
   ],
 };
@@ -259,7 +276,7 @@ export const ALL_PERMISSIONS: Array<{
   description: string;
 }> = [
   {
-    action: 'create_sales',
+    action: 'make_sales',
     label: 'Process Sales',
     description: 'Use the POS to create sales and refunds',
   },

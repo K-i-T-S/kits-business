@@ -3,9 +3,9 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import {
   type Feature,
   type RoleAction,
+  type RoleType,
   type SubscriptionPlan,
   type SubscriptionStatus,
-  type UserRole,
   PLAN_FEATURES,
   PLAN_LIMITS,
   roleCanPerform,
@@ -15,7 +15,7 @@ import { supabase } from '../utils/supabaseClient';
 interface SubscriptionContextValue {
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
-  role: UserRole;
+  role: RoleType;
   hasFeature: (feature: Feature) => boolean;
   isWithinLimit: (
     resource: 'products' | 'customers' | 'employees',
@@ -45,23 +45,32 @@ function coerceStatus(raw: string | undefined | null): SubscriptionStatus {
   return 'active';
 }
 
-function coerceRole(raw: string | undefined | null): UserRole {
-  // 'admin' is intentionally aliased to 'owner' — matches the DB-level
-  // current_user_role() aliasing used for KiTS platform-staff accounts.
-  if (raw === 'owner' || raw === 'admin') return 'owner';
-  if (raw === 'manager' || raw === 'cashier' || raw === 'viewer') return raw;
-  // Fail closed: supervisor/accountant/stockkeeper (real DB-valid roles not
-  // yet mapped by this legacy 4-role gate) and any unrecognized value get
-  // the least-privileged role, not 'owner'. Previously this function
-  // defaulted everything unmatched to 'owner', which silently granted
-  // owner-level UI permission checks to any of those three roles.
+const VALID_ROLES: readonly RoleType[] = [
+  'owner', 'admin', 'manager', 'supervisor', 'cashier', 'accountant', 'stockkeeper', 'viewer',
+];
+
+// Track 1b-i (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+// returns the real, distinct role instead of collapsing to a 4-value
+// legacy set. 'admin' is no longer aliased to 'owner' here — ROLE_PERMISSIONS
+// already grants admin the identical permission set to owner, so canPerform()
+// behavior is unchanged, but the UI can now legitimately distinguish a
+// KiTS platform-admin from an actual business owner for display purposes
+// (ROLE_LABELS already has separate 'Admin'/'Owner' labels). Still fails
+// closed to 'viewer' for anything not a real, valid role — the Tier 0.1
+// security property (never silently grant owner-level access to an
+// unrecognized value) is preserved, it just no longer needs to also
+// swallow supervisor/accountant/stockkeeper, which are real roles now.
+function coerceRole(raw: string | undefined | null): RoleType {
+  if (raw && (VALID_ROLES as readonly string[]).includes(raw)) {
+    return raw as RoleType;
+  }
   return 'viewer';
 }
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const [plan, setPlan] = useState<SubscriptionPlan>('starter');
   const [status, setStatus] = useState<SubscriptionStatus>('active');
-  const [role, setRole] = useState<UserRole>('viewer');
+  const [role, setRole] = useState<RoleType>('viewer');
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {

@@ -488,7 +488,16 @@ export const localStorageClient = {
     };
   },
 
-  rpc: () => Promise.resolve({ data: [], error: null }),
+  rpc: (fn: string) => {
+    // is_kits_staff() is boolean-returning; the generic `data: []` default
+    // below is truthy in JS and would silently unlock the admin gate for
+    // any local user. Fail closed instead — local mode has no
+    // platform_admins concept, so nobody is platform staff by default.
+    if (fn === 'is_kits_staff') {
+      return Promise.resolve({ data: false, error: null });
+    }
+    return Promise.resolve({ data: [], error: null });
+  },
 };
 
 // Local API mock to replace Supabase Edge Function

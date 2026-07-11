@@ -102,12 +102,13 @@ export default function AdminPanel() {
   useEffect(() => {
     void (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.email !== 'kits.tech.co@gmail.com') {
+        const { data: isStaff, error: rpcError } = await supabase.rpc('is_kits_staff') as { data: boolean | null; error: { message: string } | null };
+        if (rpcError) throw rpcError;
+        if (!isStaff) {
           void navigate('/dashboard');
           return;
         }
-        // Email confirmed — show the PIN form (never auto-unlock)
+        // Platform-staff identity confirmed — show the PIN form (never auto-unlock)
         setGateChecking(false);
       } catch {
         void navigate('/login');
@@ -175,9 +176,8 @@ export default function AdminPanel() {
   }, []);
 
   const verifyAdmin = useCallback(async (): Promise<boolean> => {
-    const { data } = await supabase.auth.getSession();
-    const session = (data as { session: { user: { email: string } } | null }).session;
-    if (session?.user?.email !== 'kits.tech.co@gmail.com') {
+    const { data: isStaff, error: rpcError } = await supabase.rpc('is_kits_staff') as { data: boolean | null; error: { message: string } | null };
+    if (rpcError || !isStaff) {
       void navigate('/dashboard');
       return false;
     }

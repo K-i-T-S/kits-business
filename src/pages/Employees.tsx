@@ -154,9 +154,10 @@ export default function Employees() {
               <button
                 onClick={() => setShowAddModal(true)}
                 className="tilt-hover inline-flex items-center justify-center gap-2 rounded-2xl border border-white/70 btn-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25"
+                title="For commission/payroll tracking only — no system login. Use 'Add PIN staff' or 'Invite by email' if they need to log in."
               >
                 <Plus className="h-5 w-5" />
-                Add teammate
+                Labor record (no login)
               </button>
             </div>
           </div>
@@ -329,9 +330,13 @@ export default function Employees() {
               backdropFilter: 'blur(28px)',
             }}
           >
-            <h2 className="text-lg sm:text-xl mb-4 font-semibold" style={{ color: '#f8faff' }}>
-              Add New Employee
+            <h2 className="text-lg sm:text-xl mb-1 font-semibold" style={{ color: '#f8faff' }}>
+              Add Labor Record
             </h2>
+            <p className="text-sm mb-4" style={{ color: 'rgba(248, 250, 255, 0.6)' }}>
+              For commission and payroll tracking only — this person cannot log into KiTS.
+              Use "Add PIN staff" or "Invite by email" instead if they need system access.
+            </p>
             <form onSubmit={handleAddEmployee} className="space-y-4">
               <div>
                 <label className="block text-sm sm:text-base mb-2" style={{ color: 'rgba(248, 250, 255, 0.8)' }}>

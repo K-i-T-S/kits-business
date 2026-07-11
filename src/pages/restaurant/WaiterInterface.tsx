@@ -1997,6 +1997,30 @@ export default function WaiterInterface() {
     void fetch();
   }, [activeTab, tenantId]);
 
+  // Realtime: customer "Call Waiter" requests from the QR menu (Tier 0.2 fix —
+  // this used to be a customer-facing-only toast with zero backend signal).
+  useEffect(() => {
+    if (!tenantId) return;
+    const channel = supabase
+      .channel('waiter-service-requests')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'restaurant_service_requests', filter: `tenant_id=eq.${tenantId}` },
+        (payload) => {
+          const req = payload.new as { table_id: string; request_type: string };
+          if (req.request_type !== 'call_waiter') return;
+          const table = tables.find((tbl) => tbl.id === req.table_id);
+          const label = table ? `Table ${table.number}` : 'A table';
+          toast(`🔔 ${label} is calling a waiter`, { duration: 8000 });
+          if (navigator.vibrate) navigator.vibrate(300);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [tenantId, tables]);
+
   const handleQueueRefresh = async () => {
     if (!tenantId) return;
     setQueueRefreshing(true);

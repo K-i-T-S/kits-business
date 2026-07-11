@@ -47,6 +47,7 @@ export default function QRMenuPage() {
   const [orderMode, setOrderMode] = useState<'direct' | 'pending'>('direct');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [fa7emSent, setFa7emSent] = useState(false);
+  const [fa7emError, setFa7emError] = useState('');
   const [showBanner, setShowBanner] = useState(false);
   const [calledWaiter, setCalledWaiter] = useState(false);
 
@@ -124,19 +125,41 @@ export default function QRMenuPage() {
   };
 
   const handleFa7em = () => {
-    if (fa7emSent) return;
+    if (fa7emSent || !effectiveTableId) return;
     setFa7emSent(true);
-    // Show "on its way" for 2s then show banner
-    setTimeout(() => {
-      setShowBanner(true);
-    }, 2000);
-    // Reset fa7em after 10s
-    setTimeout(() => setFa7emSent(false), 10000);
+    void (async () => {
+      const { data, error } = await supabase.rpc('qr_request_fa7em', { p_table_id: effectiveTableId }) as {
+        data: { success: boolean; error?: string } | null;
+        error: { message: string } | null;
+      };
+      if (error || !data?.success) {
+        setFa7emSent(false);
+        if (data?.error === 'no_active_session') {
+          setFa7emError('Order an argile first to request more coal');
+          setTimeout(() => setFa7emError(''), 4000);
+        }
+        return;
+      }
+      // Show "on its way" for 2s then show banner
+      setTimeout(() => {
+        setShowBanner(true);
+      }, 2000);
+      // Reset fa7em after 10s
+      setTimeout(() => setFa7emSent(false), 10000);
+    })();
   };
 
   const handleCallWaiter = () => {
+    if (calledWaiter || !effectiveTableId) return;
     setCalledWaiter(true);
-    setTimeout(() => setCalledWaiter(false), 5000);
+    void (async () => {
+      const { error } = await supabase.rpc('qr_call_waiter', { p_table_id: effectiveTableId });
+      if (error) {
+        setCalledWaiter(false);
+        return;
+      }
+      setTimeout(() => setCalledWaiter(false), 5000);
+    })();
   };
 
   const handleBannerTap = () => {
@@ -226,6 +249,21 @@ export default function QRMenuPage() {
             style={{ background: 'var(--qr-accent)', color: 'var(--qr-bg)' }}
           >
             Coal is on its way! 💨
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Fa7em failure feedback (e.g. no active argile session) */}
+      <AnimatePresence>
+        {fa7emError && (
+          <motion.div
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -40 }}
+            className="fixed left-1/2 top-16 z-50 -translate-x-1/2 rounded-full px-5 py-2.5 text-sm font-semibold shadow-xl"
+            style={{ background: 'var(--qr-surface)', border: '1px solid var(--qr-border)', color: 'var(--qr-text)' }}
+          >
+            {fa7emError}
           </motion.div>
         )}
       </AnimatePresence>

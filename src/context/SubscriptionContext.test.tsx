@@ -28,10 +28,15 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 // Helper to seed a tenant row from the RPC
-function seedTenant(plan: string, status: string, role: string) {
+function seedTenant(plan: string, status: string, role: string, customRolePermissions?: Record<string, boolean>) {
   mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } }, error: null });
   mockRpc.mockResolvedValue({
-    data: [{ subscription_plan: plan, subscription_status: status, user_role: role }],
+    data: [{
+      subscription_plan: plan,
+      subscription_status: status,
+      user_role: role,
+      custom_role_permissions: customRolePermissions ?? null,
+    }],
     error: null,
   });
 }
@@ -273,6 +278,40 @@ describe('SubscriptionContext', () => {
       expect(result.current.canPerform('edit_products')).toBe(true);
       expect(result.current.canPerform('make_sales')).toBe(false);
       expect(result.current.canPerform('view_customers')).toBe(false);
+    });
+  });
+
+  describe('custom role permission overrides (Track 1b-iv)', () => {
+    it('an explicit false override denies an action the base role would normally allow', async () => {
+      // Receptionist: base cashier (has make_sales), override removes it —
+      // exactly the founder-approved starter role from 1b-v.
+      seedTenant('starter', 'active', 'cashier', { make_sales: false });
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.canPerform('make_sales')).toBe(false);
+    });
+
+    it('an explicit true override grants an action the base role would normally lack', async () => {
+      seedTenant('starter', 'active', 'viewer', { make_sales: true });
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.canPerform('make_sales')).toBe(true);
+    });
+
+    it('an action with no override falls back to the base role permission', async () => {
+      seedTenant('starter', 'active', 'cashier', { make_sales: false });
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      // view_customers isn't overridden — cashier's normal grant still applies
+      expect(result.current.canPerform('view_customers')).toBe(true);
+    });
+
+    it('no custom role (the common case) behaves identically to before', async () => {
+      seedTenant('starter', 'active', 'cashier');
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+      await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+      expect(result.current.canPerform('make_sales')).toBe(true);
+      expect(result.current.canPerform('edit_products')).toBe(false);
     });
   });
 

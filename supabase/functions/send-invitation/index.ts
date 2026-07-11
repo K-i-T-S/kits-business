@@ -20,10 +20,11 @@ serve(async (req) => {
       });
     }
 
-    const { inviteeEmail, inviteeName, role, commission, tenantId, tenantName } = await req.json() as {
+    const { inviteeEmail, inviteeName, role, customRoleId, commission, tenantId, tenantName } = await req.json() as {
       inviteeEmail: string;
       inviteeName: string;
       role: string;
+      customRoleId?: string | null;
       commission: number;
       tenantId: string;
       tenantName: string;
@@ -71,6 +72,7 @@ serve(async (req) => {
         email: inviteeEmail.toLowerCase().trim(),
         name: inviteeName,
         role,
+        custom_role_id: customRoleId ?? null,
         commission,
         status: 'pending',
         created_at: new Date().toISOString(),

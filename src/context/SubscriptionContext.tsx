@@ -33,6 +33,7 @@ interface TenantRow {
   subscription_plan: string;
   subscription_status: string;
   user_role: string;
+  custom_role_permissions?: Partial<Record<RoleAction, boolean>> | null;
 }
 
 function coercePlan(raw: string | undefined | null): SubscriptionPlan {
@@ -71,6 +72,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [plan, setPlan] = useState<SubscriptionPlan>('starter');
   const [status, setStatus] = useState<SubscriptionStatus>('active');
   const [role, setRole] = useState<RoleType>('viewer');
+  // Track 1b-iv (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+  // per-action overrides from the user's custom role, if any. null when the
+  // user has no custom role (the common case) — canPerform() falls back to
+  // the base role's ROLE_PERMISSIONS whenever this is null or lacks an
+  // explicit entry for the action being checked.
+  const [customRolePermissions, setCustomRolePermissions] =
+    useState<Partial<Record<RoleAction, boolean>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -80,6 +88,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setPlan('starter');
         setStatus('active');
         setRole('viewer');
+        setCustomRolePermissions(null);
         setIsLoading(false);
         return;
       }
@@ -104,6 +113,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setPlan(coercePlan(row.subscription_plan));
       setStatus(coerceStatus(row.subscription_status));
       setRole(coerceRole(row.user_role));
+      setCustomRolePermissions(row.custom_role_permissions ?? null);
     } catch {
       // fail-safe: stay on starter/viewer so the app never breaks
     } finally {
@@ -122,6 +132,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setPlan('starter');
         setStatus('active');
         setRole('viewer');
+        setCustomRolePermissions(null);
         setIsLoading(false);
       }
     });
@@ -149,8 +160,16 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   );
 
   const canPerform = useCallback(
-    (action: RoleAction): boolean => roleCanPerform(role, action),
-    [role],
+    (action: RoleAction): boolean => {
+      // An explicit custom-role override (true or false) always wins —
+      // that's the whole point of a custom role. No entry for this
+      // specific action falls back to the base role's fixed permissions.
+      if (customRolePermissions && action in customRolePermissions) {
+        return customRolePermissions[action] === true;
+      }
+      return roleCanPerform(role, action);
+    },
+    [role, customRolePermissions],
   );
 
   return (

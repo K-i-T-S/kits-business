@@ -15,7 +15,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
-import { type RoleAction, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../types/subscription';
+import { type RoleAction, type RoleType, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../types/subscription';
 import { supabase } from '../utils/supabaseClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ interface CustomRole {
   id: string;
   name: string;
   display_name: string;
-  base_role: 'manager' | 'cashier' | 'viewer';
+  base_role: RoleType;
   permissions: Partial<Record<RoleAction, boolean>>;
 }
 
@@ -59,10 +59,17 @@ const STANDARD_ROLES: Array<{
   { value: 'viewer', icon: Eye, color: 'text-white/60' },
 ];
 
-// Custom roles are hidden in the invite flow until Track 1 wires
-// customRoleId through accept_pending_invitation() for real — see the
-// comment at the render site below.
-const SHOW_CUSTOM_ROLES_IN_INVITE = false;
+// Track 1b-iv (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+// re-enabled now that accept_pending_invitation() actually propagates
+// custom_role_id (migration 000071) and canPerform() actually reads the
+// resulting permission overrides (migration 000072 + SubscriptionContext) —
+// previously this was hidden because selecting a custom role silently
+// dropped to the base role with none of its permission tweaks.
+const SHOW_CUSTOM_ROLES_IN_INVITE = true;
+
+const VALID_BASE_ROLES: RoleType[] = [
+  'owner', 'admin', 'manager', 'supervisor', 'cashier', 'accountant', 'stockkeeper', 'viewer',
+];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -111,9 +118,13 @@ export default function InviteTeamMemberModal({
               id: row.id,
               name: row.name,
               display_name: row.display_name,
-              base_role: (['manager', 'cashier', 'viewer'].includes(row.base_role)
+              // Fail closed to 'viewer' for anything not a real, valid role —
+              // same principle as coerceRole (Tier 0.1). Recognizes all 8
+              // canonical roles now, not just the 3 the base_role CHECK
+              // constraint used to allow (Track 1b-iv widened it).
+              base_role: (VALID_BASE_ROLES.includes(row.base_role as RoleType)
                 ? row.base_role
-                : 'viewer') as 'manager' | 'cashier' | 'viewer',
+                : 'viewer') as RoleType,
               permissions: (typeof row.permissions === 'object' && row.permissions !== null
                 ? row.permissions
                 : {}) as Partial<Record<RoleAction, boolean>>,

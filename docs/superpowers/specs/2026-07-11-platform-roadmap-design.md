@@ -18,9 +18,9 @@ Most encouragingly: most of what the founder feared was missing already exists a
 
 ## Tier 0 — Fix Now (final order, per founder decision: security discipline leads)
 
-| # | Fix | Why | Note |
-|---|-----|-----|------|
-| 0.1 | `coerceRole()` owner-fallback → fail-closed | Privilege-escalation-class bug. Confirmed zero real users affected today, but ships first regardless — security discipline, not live-impact ranking. | **Must also rewrite** `src/context/SubscriptionContext.test.tsx`'s `"coerces unknown role to owner"` test, which currently asserts the bug as correct behavior and will otherwise fight the fix. Stage via a Supabase preview branch with a synthetic multi-role tenant before touching production (`mcp__claude_ai_Supabase__create_branch` is available) — this touches live auth for a real product. |
+| # | Fix | Why | Status |
+|---|-----|-----|--------|
+| 0.1 | `coerceRole()` owner-fallback → fail-closed | Privilege-escalation-class bug. Confirmed zero real users affected today, but ships first regardless — security discipline, not live-impact ranking. | **DONE** (2026-07-11) — `src/context/SubscriptionContext.tsx`/`.test.tsx`, commit `88d67246`. Frontend-only, no migration; local commit, not yet pushed to origin/main. |
 | 0.2 | Cosmetic Call-Waiter/Fa7em buttons | Real customers told help is coming; nobody is ever notified. Same severity class as the earlier dead delivery-webhook bug. | Wire to a real Supabase insert + a staff-facing signal (which HUB owns receiving it is a Track 2 decision — floor manager or waiter, TBD). |
 | 0.3 | Silent ingredient-deduction failures on KDS bump | Stock silently drifts from reality with zero signal anywhere. | Keep non-blocking to KDS workflow; make failures *observable* (log + visible alert/retry surface). |
 | 0.4 | Dropped `customRoleId` on invite — **downgraded** | Real bug, but narrower blast radius than 0.1–0.3 (compound, opt-in path: needs custom roles enabled + created + used at invite time). | Ship as a 10-minute stopgap now — hide the custom-role option in `InviteTeamMemberModal.tsx` until enforced. The real fix (propagate `custom_role_id` through `accept_pending_invitation`) is a Wave 1 fast-follow, not full Tier 0 weight. |
@@ -29,9 +29,9 @@ Most encouragingly: most of what the founder feared was missing already exists a
 
 **New, found by the adversarial pass — recommended as its own small Tier-0-adjacent item (founder-approved, "fix now"):**
 
-| # | Fix | Why |
-|---|-----|-----|
-| 0.7 | **Platform-admin identity separation** | A trigger (`add_kits_admin_to_tenant`, migration `000021`) auto-inserts `kits.tech.co@gmail.com` as `role='admin'` into *every* tenant's own `tenant_users` table on tenant creation, aliased to owner by `current_user_role()`. The string `'admin'` therefore means two different things — "this business's admin-tier employee" vs. "KiTS platform support staff" — distinguished only by which email holds the row. `AdminPanel.tsx` independently re-checks the same hardcoded email in 2 more places. Build a real `platform_admins` table (or `is_platform_admin` on `auth.users` metadata) + a dedicated `is_kits_staff()` function; retire the trigger hack; remove all 3 hardcoded-email occurrences. Small, contained, removes a real security/maintenance smell before more is built on top of it. |
+| # | Fix | Why | Status |
+|---|-----|-----|--------|
+| 0.7 | **Platform-admin identity separation** | A trigger (`add_kits_admin_to_tenant`, migration `000021`) auto-inserts `kits.tech.co@gmail.com` as `role='admin'` into *every* tenant's own `tenant_users` table on tenant creation, aliased to owner by `current_user_role()`. The string `'admin'` therefore means two different things — "this business's admin-tier employee" vs. "KiTS platform support staff" — distinguished only by which email holds the row. `AdminPanel.tsx` independently re-checks the same hardcoded email in 2 more places. | **DONE** (2026-07-11) — turned out bigger than estimated: the hardcoded email was independently duplicated across 5 live SQL functions plus 2 in `AdminPanel.tsx`, not ~3. Built `platform_admins` table + `is_kits_staff()` SECURITY DEFINER function, migration `20260711_000068`, applied directly to production (verified against exact live `pg_get_functiondef` output, not reconstructed from migration history) — commit `9fd22d5a`. Caught and fixed a real bug in the process: the local-dev-mode mock's generic `rpc()` stub returned a truthy `[]` for every call, which would have silently unlocked the admin gate for any local user once `is_kits_staff()` (boolean-returning) was wired to it — local mode now fails closed for this RPC specifically. Deliberately left alone: the existing `tenant_users` 'admin' rows and the admin→owner RLS aliasing — retiring that in-tenant support-access pattern is a separate decision, not a side effect of this cleanup. |
 
 ---
 

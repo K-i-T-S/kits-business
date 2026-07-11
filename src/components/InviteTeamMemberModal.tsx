@@ -59,6 +59,11 @@ const STANDARD_ROLES: Array<{
   { value: 'viewer', icon: Eye, color: 'text-white/60' },
 ];
 
+// Custom roles are hidden in the invite flow until Track 1 wires
+// customRoleId through accept_pending_invitation() for real — see the
+// comment at the render site below.
+const SHOW_CUSTOM_ROLES_IN_INVITE = false;
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function InviteTeamMemberModal({
@@ -84,7 +89,7 @@ export default function InviteTeamMemberModal({
   // ── Load custom roles ────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!isOpen || !currentTenant) return;
+    if (!isOpen || !currentTenant || !SHOW_CUSTOM_ROLES_IN_INVITE) return;
 
     setLoadingCustom(true);
     void (async () => {
@@ -298,8 +303,14 @@ export default function InviteTeamMemberModal({
               ))}
             </div>
 
-            {/* Custom roles divider + list */}
-            {(loadingCustom || customRoles.length > 0) && (
+            {/* Custom roles divider + list — hidden for now (Tier 0.4,
+                docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+                the send-invitation edge function never persists customRoleId,
+                so selecting one here silently drops to the base role with none
+                of its custom permissions. Re-enable once Track 1 wires
+                custom_role_id through accept_pending_invitation() for real —
+                showing this today promises granularity that doesn't survive. */}
+            {SHOW_CUSTOM_ROLES_IN_INVITE && (loadingCustom || customRoles.length > 0) && (
               <>
                 <div className="flex items-center gap-3 my-4">
                   <div className="flex-1 border-t border-white/10" />

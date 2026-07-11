@@ -22,11 +22,14 @@ export default function SupermarketHub() {
     {
       icon: AlertTriangle,
       label: t('supermarket.shelfLife', 'Shelf Life Tracker'),
-      desc: t('supermarket.shelfLifeDesc', 'Lot expiry, FIFO/FEFO enforcement, pull & destroy'),
-      href: '/supermarket/shelf-life',
-      gradient: 'from-amber-600/20 to-orange-600/20',
-      border: 'border-amber-500/30',
-      iconColor: 'text-amber-400',
+      desc: t('supermarket.shelfLifeComingSoon', 'Lot expiry, FIFO/FEFO enforcement, pull & destroy — coming soon'),
+      // No href: this screen hasn't been built yet, even though the backend
+      // schema (grocery_lots.expiry_date) already exists. Point nowhere
+      // rather than at a dead route.
+      href: null,
+      gradient: 'from-amber-600/10 to-orange-600/10',
+      border: 'border-amber-500/20',
+      iconColor: 'text-amber-400/50',
     },
     {
       icon: Scale,
@@ -68,9 +71,11 @@ export default function SupermarketHub() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickLinks.map(link => (
             <button
-              key={link.href + link.label}
-              onClick={() => { void navigate(link.href); }}
-              className={`text-left p-5 rounded-2xl bg-gradient-to-br ${link.gradient} border ${link.border} hover:scale-[1.02] transition-transform`}
+              key={link.href ?? link.label}
+              type="button"
+              disabled={!link.href}
+              onClick={link.href ? () => { void navigate(link.href as string); } : undefined}
+              className={`text-left p-5 rounded-2xl bg-gradient-to-br ${link.gradient} border ${link.border} transition-transform ${link.href ? 'hover:scale-[1.02]' : 'cursor-not-allowed opacity-70'}`}
             >
               <link.icon className={`w-6 h-6 ${link.iconColor} mb-3`} />
               <div className="text-white font-semibold">{link.label}</div>

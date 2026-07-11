@@ -90,6 +90,10 @@ const PharmacyDrugDatabase = lazy(() => import('./pages/pharmacy/DrugDatabase'))
 const PharmacyPrescriptions = lazy(() => import('./pages/pharmacy/Prescriptions'));
 const PharmacyNarcoticsRegister = lazy(() => import('./pages/pharmacy/NarcoticsRegister'));
 
+// Supermarket Vertical Components
+const SupermarketHub = lazy(() => import('./pages/supermarket/SupermarketHub'));
+const SupermarketDepartmentManager = lazy(() => import('./pages/supermarket/DepartmentManager'));
+
 // Mobile components wrapper that needs access to Router context
 function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
   const location = useLocation();
@@ -464,6 +468,16 @@ export default function App() {
                                 <Route
                                   path="/pharmacy/narcotics"
                                   element={isAuthenticated ? <PharmacyNarcoticsRegister /> : <Navigate to="/login" replace />}
+                                />
+
+                                {/* ── Supermarket Vertical routes ── */}
+                                <Route
+                                  path="/supermarket"
+                                  element={isAuthenticated ? <SupermarketHub /> : <Navigate to="/login" replace />}
+                                />
+                                <Route
+                                  path="/supermarket/departments"
+                                  element={isAuthenticated ? <SupermarketDepartmentManager /> : <Navigate to="/login" replace />}
                                 />
 
                                 {/* ── Fallbacks ── */}

@@ -25,6 +25,7 @@ interface RealStats {
   activeProductCount: number;
   lowStockCount: number;
   customerCount: number;
+  locationCount: number;
 }
 
 export default function EnterpriseDashboard() {
@@ -33,16 +34,18 @@ export default function EnterpriseDashboard() {
     activeProductCount: 0,
     lowStockCount: 0,
     customerCount: 0,
+    locationCount: 0,
   });
   const [loading, setLoading] = useState(true);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      const [employeesRes, productsRes, customersRes] = await Promise.all([
+      const [employeesRes, productsRes, customersRes, locationsRes] = await Promise.all([
         supabase.from('employees').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('products').select('id, stock_quantity, min_stock_level', { count: 'exact' }).eq('is_active', true),
         supabase.from('customers').select('id', { count: 'exact', head: true }),
+        supabase.from('locations').select('id', { count: 'exact', head: true }),
       ]);
 
       const products = productsRes.data ?? [];
@@ -56,6 +59,10 @@ export default function EnterpriseDashboard() {
         activeProductCount: productsRes.count ?? 0,
         lowStockCount: lowStock,
         customerCount: customersRes.count ?? 0,
+        // Multi-location is a Business-plan feature (MultiLocationSupport.tsx,
+        // /enterprise/locations) — count defaults to 0 for tenants without any
+        // locations table rows, which is accurate, not a placeholder.
+        locationCount: locationsRes.count ?? 0,
       });
     } catch {
       toast.error('Failed to load dashboard data');
@@ -139,8 +146,10 @@ export default function EnterpriseDashboard() {
               <Globe className="h-5 w-5 text-white" />
             </div>
             <p className="mt-4 text-xs uppercase tracking-[0.2em] text-white/70">Locations</p>
-            <p className="mt-2 text-2xl font-semibold text-white">1</p>
-            <p className="text-sm text-white/80">multi-location coming soon</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{stats.locationCount || 1}</p>
+            <p className="text-sm text-white/80">
+              {stats.locationCount > 1 ? 'across your business' : 'manage in Locations (Business plan)'}
+            </p>
           </div>
         </section>
 

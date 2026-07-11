@@ -146,7 +146,9 @@ export default function Layout({ children }: LayoutProps) {
       { name: t('nav.vertical.narcoticsRegister', 'Narcotics Register'), icon: ScanLine, href: '/pharmacy/narcotics' },
     ],
     supermarket: [
-      { name: t('nav.vertical.departments', 'Departments'), icon: ShoppingBasket },
+      { name: t('nav.vertical.departments', 'Departments'), icon: ShoppingBasket, href: '/supermarket/departments' },
+      // No href: ShelfLifeTracker.tsx doesn't exist yet (Sprint 2.4, deferred
+      // behind the F&B roadmap) — leaving this unlinked is honest, not a bug.
       { name: t('nav.vertical.shelfLife', 'Shelf Life'), icon: AlertTriangle },
     ],
     fashion: [

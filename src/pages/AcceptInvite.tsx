@@ -69,6 +69,12 @@ export default function AcceptInvite() {
         return;
       }
 
+      if (inv.status === 'expired') {
+        setErrorMessage('This invitation has expired. Ask whoever invited you to send a new one.');
+        setPageState('error');
+        return;
+      }
+
       // Try to fetch tenant name
       const { data: tenantData } = await supabase
         .from('tenants')

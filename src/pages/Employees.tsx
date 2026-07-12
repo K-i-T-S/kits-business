@@ -282,13 +282,8 @@ export default function Employees() {
                       )}
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="text-xs uppercase tracking-[0.3em] text-white/70">
-                        Performance snapshot
-                      </div>
-                      <button className="rounded-2xl border border-white/30 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">
-                        View performance report
-                      </button>
+                    <div className="mt-4 text-xs uppercase tracking-[0.3em] text-white/70">
+                      Performance snapshot
                     </div>
                   </article>
                 );

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 
 type AlgorithmId = 'waiter_full' | 'waiter_pool' | 'communal' | 'role_split';
 
@@ -139,14 +140,19 @@ export default function TipsManagement() {
     if (!tenantId) return;
     setLoadingTips(true);
     try {
-      const todayISO = new Date().toISOString().split('T')[0] ?? '';
+      const todayISO = toLocalDateString(new Date());
+      // Real tips, not a guess: table_orders.tip_amount_usd is the actual
+      // staff/customer-entered amount recorded at close-bill time
+      // (fn_close_restaurant_bill) — summing it directly instead of assuming
+      // a flat 10% of revenue, which was never a real tip figure.
       const { data } = await supabase
-        .from('restaurant_order_items')
-        .select('unit_price, quantity')
+        .from('table_orders')
+        .select('tip_amount_usd')
         .eq('tenant_id', tenantId)
-        .gte('sent_at', `${todayISO}T00:00:00`);
-      const revenue = (data ?? []).reduce((s, i) => s + i.unit_price * i.quantity, 0);
-      setTodayTips(revenue * 0.1);
+        .gte('closed_at', `${todayISO}T00:00:00`);
+      const rows = (data ?? []) as { tip_amount_usd: number | null }[];
+      const tips = rows.reduce((s, o) => s + (o.tip_amount_usd ?? 0), 0);
+      setTodayTips(tips);
     } catch {
       setTodayTips(0);
     } finally {

@@ -197,7 +197,7 @@ export default function HelpSupport() {
     setLoading(false);
     setTicketSubmitted(true);
     // Open mailto as fallback so message is never lost
-    const mailto = `mailto:kits.tech.co@gmail.com?subject=${encodeURIComponent(`[Support] ${supportTicket.subject}`)}&body=${encodeURIComponent(`Category: ${supportTicket.category}\nPriority: ${supportTicket.priority}\n\n${supportTicket.description}`)}`;
+    const mailto = `mailto:${BRAND.supportEmail}?subject=${encodeURIComponent(`[Support] ${supportTicket.subject}`)}&body=${encodeURIComponent(`Category: ${supportTicket.category}\nPriority: ${supportTicket.priority}\n\n${supportTicket.description}`)}`;
     window.open(mailto, '_blank');
     setTimeout(() => {
       setTicketSubmitted(false);

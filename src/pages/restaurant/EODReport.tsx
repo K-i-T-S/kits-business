@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -118,7 +119,11 @@ export default function EODReport() {
   const [saved, setSaved] = useState(false);
 
   const today = new Date().toLocaleDateString('en', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const todayISO = new Date().toISOString().split('T')[0] ?? '';
+  // toLocalDateString, not toISOString — Lebanon is UTC+2/+3, so for the first
+  // few hours after local midnight (squarely inside this app's real 15:00-02:00
+  // closing shifts) toISOString() still reports the PREVIOUS calendar day. Same
+  // bug class already fixed once elsewhere (commit 0c3da391).
+  const todayISO = toLocalDateString(new Date());
 
   const handlePrint = () => { window.print(); };
 

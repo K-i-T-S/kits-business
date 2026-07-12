@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,13 +47,13 @@ const MAX_RESERVATIONS_PER_SLOT = 10;
 // ---------------------------------------------------------------------------
 
 function getTodayString(): string {
-  return new Date().toISOString().split('T')[0] ?? '';
+  return toLocalDateString(new Date());
 }
 
 function getMaxDateString(): string {
   const d = new Date();
   d.setDate(d.getDate() + 30);
-  return d.toISOString().split('T')[0] ?? '';
+  return toLocalDateString(d);
 }
 
 function generateTimeSlots(): string[] {

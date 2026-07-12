@@ -17,6 +17,7 @@ export const PHARMACY_ROUTE_ROLES: Record<string, RoleType[]> = {
 export const SUPERMARKET_ROUTE_ROLES: Record<string, RoleType[]> = {
   '/supermarket': ['owner', 'admin', 'manager', 'cashier', 'stockkeeper'],
   '/supermarket/departments': ['owner', 'admin', 'manager', 'stockkeeper'],
+  '/supermarket/shelf-life': ['owner', 'admin', 'manager', 'stockkeeper'],
 };
 
 export function getPharmacyRouteRoles(path: string): RoleType[] {

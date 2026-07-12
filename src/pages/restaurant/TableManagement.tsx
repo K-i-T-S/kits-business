@@ -3,7 +3,7 @@ import {
   Settings2, Check, Sparkles, CalendarClock, Copy, Link, ArrowLeftRight, Split,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -152,7 +152,18 @@ export default function TableManagement() {
     }
   }, [tenantId]);
 
-  useEffect(() => { void loadData(); }, [loadData]);
+  // Manager/supervisor floor view previously only loaded once on mount, with
+  // no realtime subscription and no poll — a waiter bumping an item or a table
+  // freeing up on WaiterInterface.tsx (which already has both a 30s poll and a
+  // realtime subscription) went unreflected here until a manual page reload.
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    void loadData();
+    refreshIntervalRef.current = setInterval(() => { void loadData(); }, 30000);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, [loadData]);
 
   // ── Section helpers ────────────────────────────────────────────────────────
 

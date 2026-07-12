@@ -77,13 +77,20 @@ export default function OnboardingWizard({ tenantId, tenantName, onComplete }: O
   const skipBtn = 'block w-full cursor-pointer text-center text-sm text-white/40 underline transition-colors hover:text-white/70';
   const stepIconWrap = 'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/30 to-sky-500/20';
 
-  // Map country → nearest Supabase region (all MENA closest to eu-central-1)
+  // Map country → nearest Supabase region (all MENA closest to eu-central-1).
+  // UAE/Saudi Arabia/Kuwait previously pointed at us-east-1, contradicting
+  // this comment's own stated premise -- a real, lasting latency/data-
+  // residency mismatch for any tenant whose dedicated DB later gets
+  // provisioned against preferred_region (BUG-060, docs/qa-bug-tracker.md).
+  // If eu-central-1 turns out not to actually be nearest for the Gulf
+  // specifically, that's a provisioning-strategy call for whoever owns that
+  // system, not something to silently re-diverge here.
   const COUNTRY_REGION: Record<string, string> = {
     'Lebanon': 'eu-central-1',
-    'UAE': 'us-east-1',
-    'Saudi Arabia': 'us-east-1',
+    'UAE': 'eu-central-1',
+    'Saudi Arabia': 'eu-central-1',
     'Jordan': 'eu-central-1',
-    'Kuwait': 'us-east-1',
+    'Kuwait': 'eu-central-1',
     'Other': 'eu-central-1',
   };
 

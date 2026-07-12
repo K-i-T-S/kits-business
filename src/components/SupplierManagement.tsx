@@ -2,6 +2,7 @@ import { Search, Users, Plus, Pencil, X, Check, Phone, Mail, MapPin } from 'luci
 import { useState, useEffect, useCallback } from 'react';
 
 import Layout from '../components/Layout';
+import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -180,6 +181,7 @@ function SupplierModal({ supplier, onClose, onSave, saving }: ModalProps) {
 
 // ── Main Component ─────────────────────────────────────────────
 export default function SupplierManagement() {
+  const { currentTenant } = useApp();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -227,7 +229,7 @@ export default function SupplierManagement() {
       };
 
       if (modalSupplier === 'new') {
-        const { error: dbErr } = await supabase.from('suppliers').insert(payload);
+        const { error: dbErr } = await supabase.from('suppliers').insert({ ...payload, tenant_id: currentTenant?.id });
         if (dbErr) throw dbErr;
       } else if (modalSupplier) {
         const { error: dbErr } = await supabase

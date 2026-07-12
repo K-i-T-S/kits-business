@@ -28,7 +28,7 @@ export const RESTAURANT_ROUTE_ROLES: Record<string, RoleType[]> = {
   '/restaurant/branches': ['owner', 'admin'],
   '/restaurant/settings': ['owner', 'admin'],
   '/restaurant/ai': ['owner', 'admin', 'manager'],
-  '/restaurant/delivery': ['owner', 'admin', 'manager', 'cashier'],
+  '/restaurant/delivery': ['owner', 'admin', 'manager'],
   '/restaurant/delivery-orders': ['owner', 'admin', 'manager', 'cashier'],
   '/restaurant/waitlist': ['owner', 'admin', 'manager', 'supervisor', 'cashier'],
   '/restaurant/cash': ['owner', 'admin', 'manager', 'cashier'],

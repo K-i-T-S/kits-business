@@ -19,6 +19,7 @@ import Layout from '../Layout';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -169,6 +170,7 @@ interface LocationsTabProps {
 }
 
 function LocationsTab({ locations, loading, onRefresh }: LocationsTabProps) {
+  const { currentTenant } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Location | null>(null);
   const [saving, setSaving] = useState(false);
@@ -202,6 +204,7 @@ function LocationsTab({ locations, loading, onRefresh }: LocationsTabProps) {
           await supabase.from('locations').update({ is_main: false }).gte('id', '');
         }
         const { error } = await supabase.from('locations').insert({
+          tenant_id: currentTenant?.id,
           name: data.name,
           address: data.address || null,
           phone: data.phone || null,

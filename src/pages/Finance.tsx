@@ -743,7 +743,7 @@ function ExpenseFormModal({ expense, categories, currentTenant, onClose, onSaved
         if (error) throw error;
         toast.success('Expense updated');
       } else {
-        const { error } = await supabase.from('expenses').insert(payload);
+        const { error } = await supabase.from('expenses').insert({ ...payload, tenant_id: currentTenant?.id });
         if (error) throw error;
         toast.success('Expense added');
       }
@@ -1023,6 +1023,7 @@ function PayrollTab({ employees, currentTenant }: PayrollTabProps) {
     setAdding(true);
     try {
       const { error } = await supabase.from('payroll_entries').insert({
+        tenant_id: currentTenant?.id,
         employee_id: calcEmployeeId || null,
         employee_name: emp?.name ?? 'Unknown',
         period_start: periodStart,
@@ -1346,9 +1347,10 @@ function PayrollTab({ employees, currentTenant }: PayrollTabProps) {
 interface BudgetTabProps {
   expenses: Expense[];
   categories: ExpenseCategory[];
+  currentTenant: import('@/context/AppContext').Tenant | null;
 }
 
-function BudgetTab({ expenses, categories }: BudgetTabProps) {
+function BudgetTab({ expenses, categories, currentTenant }: BudgetTabProps) {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const monthOptions = useMemo(() => getMonthOptions(), []);
   const [budgets, setBudgets] = useState<ExpenseBudget[]>([]);
@@ -1411,6 +1413,7 @@ function BudgetTab({ expenses, categories }: BudgetTabProps) {
         if (error) throw error;
       } else {
         const { error } = await supabase.from('expense_budgets').insert({
+          tenant_id: currentTenant?.id,
           category_id: categoryId,
           year,
           month,
@@ -1445,6 +1448,7 @@ function BudgetTab({ expenses, categories }: BudgetTabProps) {
       for (const b of data as ExpenseBudget[]) {
         if (!b.category_id) continue;
         await supabase.from('expense_budgets').upsert({
+          tenant_id: currentTenant?.id,
           category_id: b.category_id,
           year,
           month,
@@ -1604,18 +1608,30 @@ function PLTab({ expenses, categories, sales, currentTenant }: PLTabProps) {
     [sales, dateFrom, dateTo],
   );
 
-  // Group expenses by type
+  // Group NON-COGS expenses by type (for the operating-expense breakdown below).
+  // COGS is determined by the is_cogs flag, not the type string — a category can
+  // be typed e.g. 'marketing' while still being flagged is_cogs=true, and the two
+  // are only accidentally in sync for today's 34 seeded system categories. Once
+  // custom categories exist, keying off `type === 'cogs'` here would both miss
+  // real COGS and double-count it into operating expenses.
   const expensesByType = useMemo(() => {
     const map = new Map<string, number>();
     for (const e of periodExpenses) {
       const cat = categories.find(c => c.id === e.category_id);
+      if (cat?.is_cogs) continue;
       const type = cat?.type ?? 'other';
       map.set(type, (map.get(type) ?? 0) + e.amount_usd);
     }
     return map;
   }, [periodExpenses, categories]);
 
-  const cogsTotal = expensesByType.get('cogs') ?? 0;
+  const cogsTotal = useMemo(
+    () => periodExpenses.reduce((sum, e) => {
+      const cat = categories.find(c => c.id === e.category_id);
+      return cat?.is_cogs ? sum + e.amount_usd : sum;
+    }, 0),
+    [periodExpenses, categories],
+  );
   const grossProfit = periodRevenue - cogsTotal;
   const grossPct = periodRevenue > 0 ? (grossProfit / periodRevenue) * 100 : 0;
 
@@ -1950,6 +1966,7 @@ export default function FinancePage() {
               <BudgetTab
                 expenses={expenses}
                 categories={categories}
+                currentTenant={currentTenant}
               />
             )}
             {activeTab === 'P&L Report' && (

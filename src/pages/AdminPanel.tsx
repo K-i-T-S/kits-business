@@ -184,11 +184,18 @@ export default function AdminPanel() {
     return true;
   }, [navigate]);
 
+  // Gated on gateUnlocked, not just is_kits_staff() -- otherwise the full
+  // cross-tenant list is fetched into React state (inspectable via DevTools)
+  // the instant any real staff session mounts this page, before the PIN gate
+  // below is actually passed. The PIN exists specifically for the
+  // shared/unlocked-device threat model, so the fetch itself -- not just the
+  // rendering -- needs to wait for it.
   useEffect(() => {
+    if (!gateUnlocked) return;
     void verifyAdmin().then((isAdmin) => {
       if (isAdmin) void fetchTenants();
     });
-  }, [verifyAdmin, fetchTenants]);
+  }, [gateUnlocked, verifyAdmin, fetchTenants]);
 
   // ── Subscription tab ──────────────────────────────────────────────────────
   const openEdit = (tenant: TenantRow) => {

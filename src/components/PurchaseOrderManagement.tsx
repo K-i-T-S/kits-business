@@ -11,6 +11,7 @@ import {
 import { useState, useEffect, useCallback } from 'react';
 
 import Layout from '../components/Layout';
+import { useApp } from '../context/AppContext';
 import { supabase } from '../utils/supabaseClient';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ interface NewPOModalProps {
 }
 
 function NewPOModal({ suppliers, products, onClose, onSaved }: NewPOModalProps) {
+  const { currentTenant } = useApp();
   const [supplierId, setSupplierId] = useState('');
   const [orderNumber, setOrderNumber] = useState(`PO-${Date.now().toString().slice(-6)}`);
   const [expectedDelivery, setExpectedDelivery] = useState('');
@@ -115,6 +117,7 @@ function NewPOModal({ suppliers, products, onClose, onSaved }: NewPOModalProps) 
       const { data: po, error: poErr } = await supabase
         .from('purchase_orders')
         .insert({
+          tenant_id: currentTenant?.id,
           supplier_id: supplierId || null,
           order_number: orderNumber.trim(),
           status: 'draft',
@@ -422,23 +425,15 @@ function ReceiveModal({ po, onClose, onDone }: ReceiveModalProps) {
         }),
       );
 
-      // Increment stock_quantity for each product
+      // Increment stock_quantity for each product atomically — apply_product_stock_delta
+      // (migration 20260712_000078, confirmed live) avoids the read-then-write race that
+      // a concurrent sale/transfer/other PO receipt could silently lose an update to.
       await Promise.all(
-        items.map(async it => {
-          if (!it.product_id) return;
+        items.map(it => {
+          if (!it.product_id) return Promise.resolve();
           const qty = it.id ? (quantities[it.id] ?? 0) : 0;
-          if (qty <= 0) return;
-          // Fetch current stock first (RPC not available, so read-then-update)
-          const { data: prod } = await supabase
-            .from('products')
-            .select('stock_quantity')
-            .eq('id', it.product_id)
-            .single();
-          const currentStock = (prod as { stock_quantity: number } | null)?.stock_quantity ?? 0;
-          return supabase
-            .from('products')
-            .update({ stock_quantity: currentStock + qty })
-            .eq('id', it.product_id);
+          if (qty <= 0) return Promise.resolve();
+          return supabase.rpc('apply_product_stock_delta', { p_product_id: it.product_id, p_delta: qty });
         }),
       );
 

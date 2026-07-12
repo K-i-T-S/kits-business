@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev           # Dev server on http://localhost:5173
+npm run dev           # Dev server on http://localhost:3000
 npm run typecheck     # Strict TS check (no emit) — run before every edit
 npm run lint          # ESLint, zero warnings enforced
 npm run lint:fix      # Auto-fix ESLint errors
@@ -146,7 +146,7 @@ Run in this order in Supabase Dashboard → SQL Editor:
 23. `20260618_000022_admin_pin_verification.sql` — Initial pgcrypto verify_admin_pin (uses ALTER DATABASE — superseded by 000023)
 24. `20260619_000023_admin_pin_config_table.sql` — Fix admin PIN: kits_admin_config table (ALTER DATABASE not available in Supabase SQL Editor); UPDATE the table to set your PIN hash
 25. `20260619_000024_brand_identity.sql` — brand_logo_url, brand_primary, brand_secondary, brand_tagline on tenants; extends get_current_user_tenant()
-26. `20260619_000025_loyalty.sql` — customer_points table; points_balance on customers; Bronze/Silver/Gold tier logic; earn/redeem triggers
+26. `20260619_000025_loyalty.sql` — customer_points table; points_balance on customers; Bronze/Silver/Gold tier logic; earn/redeem triggers *(description corrected — no earn/redeem trigger or RPC actually exists live; `src/pages/POS.tsx` calls a non-existent `upsert_customer_points` RPC, so loyalty points silently never accrue on any sale, for any tenant. Found during the 2026-07-12 QA sweep, logged as BUG-035 in `docs/qa-bug-tracker.md`.)*
 27. `20260619_000026_crm.sql` — customer segments, communication history, CRM analytics helper views
 28. `20260619_000027_campaigns.sql` — campaigns table (marketing campaigns CRUD); automated_workflows table (trigger-based automations)
 29. `20260619_000028_finance.sql` — expense_categories (34 Lebanese system defaults seeded); expenses (USD/LBP dual-currency, VAT, receipt upload); expense_budgets; payroll_entries (NSSF 22.5%, EOS 8.5% accrual, transport allowance)
@@ -154,14 +154,14 @@ Run in this order in Supabase Dashboard → SQL Editor:
 31. `20260620_000030_industry_column.sql` — backfills industry from business_type; extends get_current_user_tenant() to expose industry field
 32. `20260620_000031_restaurant_schema.sql` — restaurant_tables, table_orders, kitchen_display_items, restaurant_reservations tables with RLS
 33. `20260620_000032_pharmacy_schema.sql` — pharmacy vertical: medications, prescriptions, dispensing, narcotics register, insurance
-34. `20260620_000033_supermarket_schema.sql` — supermarket vertical: expiry tracking, bulk pricing, loyalty multipliers
+34. `20260620_000033_supermarket_schema.sql` — supermarket vertical: expiry tracking (`grocery_lots.expiry_date` — UI now live at `/supermarket/shelf-life`, see `docs/qa-bug-tracker.md` BUG-072), bulk pricing (`bulk_pricing_rules`, configured but not yet applied at POS checkout — BUG-081) *(description corrected — previously claimed "loyalty multipliers," no such column/table exists anywhere in this migration or the codebase. Found during the 2026-07-12 QA sweep.)*
 35. `20260621_000034_restaurant_menu_system.sql` — restaurant_menu_categories, restaurant_menu_items, modifier groups/modifiers, menu_item_modifier_groups
 36. `20260621_000035_restaurant_order_flow.sql` — order flow: restaurant_shifts, restaurant_shift_assignments, restaurant_kds_stations, restaurant_settings
 37. `20260621_000036_restaurant_argile.sql` — argile (shisha) sessions: restaurant_argile_sessions, argile_items
 38. `20260621_000037_restaurant_recipes.sql` — recipe costing: restaurant_ingredients, restaurant_recipes, restaurant_recipe_ingredients, restaurant_menu_item_recipes, ingredient_suppliers, waste_log, ingredient_movements, restaurant_purchase_orders/items
 39. `20260621_000038_restaurant_intelligence.sql` — analytics views: restaurant_item_velocity, table_feedback, slow_alerts; restaurant_eod_reports
 40. `20260621_000039_restaurant_multi_branch.sql` — multi-branch: restaurant_branches, restaurant_branch_metrics
-41. `20260621_000040_restaurant_bridge.sql` — bridge: links restaurant_tables → locations; delivery integrations stub
+41. `20260621_000040_restaurant_bridge.sql` — bridges the restaurant module to the main platform: optional FKs from `restaurant_menu_items`/`restaurant_order_items` to `products`/menu items, `sale_items.product_id` nullable + `product_name`, `sales.source`/`sales.table_order_id`, `fn_close_restaurant_bill()` RPC *(description corrected — previously wrongly stated "links restaurant_tables → locations"; `restaurant_tables` has no location/branch FK anywhere in the schema — table-to-location linking was never built. Found during the 2026-07-12 QA sweep.)*
 42. `20260621_000041_restaurant_views.sql` — consolidated views for analytics and reporting
 43. `20260622_000042_restaurant_ai.sql` — restaurant_ai_queries (chat history for AI assistant)
 44. `20260623_000043_cash_management.sql` — cash management foundation (superseded by 000047)

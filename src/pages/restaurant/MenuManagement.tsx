@@ -1439,6 +1439,7 @@ interface WaiterOrderPanelProps {
 }
 
 function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
+  const { currentTenant } = useApp();
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
@@ -1511,7 +1512,7 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
       if (!orderId) {
         const { data, error } = await supabase
           .from('table_orders')
-          .insert({ table_id: selectedTableId, status: 'open', current_course: 'mains' })
+          .insert({ tenant_id: currentTenant?.id, table_id: selectedTableId, status: 'open', current_course: 'mains' })
           .select('id')
           .single();
         if (error || !data) throw error ?? new Error('Failed to create order');
@@ -1519,6 +1520,7 @@ function WaiterOrderPanel({ categories, items }: WaiterOrderPanelProps) {
         setExistingOrderId(orderId);
       }
       const orderItems = orderLines.map(l => ({
+        tenant_id: currentTenant?.id,
         order_id: orderId,
         menu_item_id: l.item.id,
         product_name: l.item.name,

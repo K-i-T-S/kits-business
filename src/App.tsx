@@ -104,6 +104,7 @@ const PharmacyNarcoticsRegister = lazy(() => import('./pages/pharmacy/NarcoticsR
 // Supermarket Vertical Components
 const SupermarketHub = lazy(() => import('./pages/supermarket/SupermarketHub'));
 const SupermarketDepartmentManager = lazy(() => import('./pages/supermarket/DepartmentManager'));
+const SupermarketShelfLifeTracker = lazy(() => import('./pages/supermarket/ShelfLifeTracker'));
 
 // Mobile components wrapper that needs access to Router context
 function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
@@ -660,6 +661,18 @@ export default function App() {
                                       isAuthenticated ? (
                                         <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket/departments')}>
                                           <SupermarketDepartmentManager />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/supermarket/shelf-life"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket/shelf-life')}>
+                                          <SupermarketShelfLifeTracker />
                                         </RoleRoute>
                                       ) : (
                                         <Navigate to="/login" replace />

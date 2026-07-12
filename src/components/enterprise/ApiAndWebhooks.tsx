@@ -21,6 +21,7 @@ import FeatureGate from '../FeatureGate';
 import Layout from '../Layout';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,7 +47,6 @@ interface Webhook {
   id: string;
   name: string;
   url: string;
-  secret: string;
   events: string[];
   is_active: boolean;
   failure_count: number;
@@ -160,6 +160,7 @@ function Modal({ title, onClose, children }: ModalProps) {
 // ─── API Keys Tab ─────────────────────────────────────────────────────────────
 
 function ApiKeysTab() {
+  const { currentTenant } = useApp();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
@@ -219,6 +220,7 @@ function ApiKeysTab() {
       const userId = sessionData.session?.user?.id ?? null;
 
       const { error } = await supabase.from('api_keys').insert({
+        tenant_id: currentTenant?.id,
         name: newKeyName.trim(),
         key_hash: keyHash,
         key_prefix: keyPrefix,
@@ -520,6 +522,7 @@ function ApiKeysTab() {
 // ─── Webhooks Tab ─────────────────────────────────────────────────────────────
 
 function WebhooksTab() {
+  const { currentTenant } = useApp();
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -535,9 +538,13 @@ function WebhooksTab() {
   const loadWebhooks = useCallback(async () => {
     setLoading(true);
     try {
+      // Never re-select `secret` for the list view -- it's only ever shown
+      // once, at creation, via `newSecret`. Fetching it here would put the
+      // raw signing secret for every webhook into React state on every page
+      // load for no UI purpose (see docs/qa-bug-tracker.md BUG-083).
       const { data, error } = await supabase
         .from('webhooks')
-        .select('*, webhook_deliveries(id, success, delivered_at)')
+        .select('id, name, url, events, is_active, failure_count, last_fired_at, last_status, created_at, webhook_deliveries(id, success, delivered_at)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       setWebhooks((data as Webhook[]) ?? []);
@@ -582,6 +589,7 @@ function WebhooksTab() {
     setSaving(true);
     try {
       const { error } = await supabase.from('webhooks').insert({
+        tenant_id: currentTenant?.id,
         name: newName.trim(),
         url: newUrl.trim(),
         secret: newSecret,

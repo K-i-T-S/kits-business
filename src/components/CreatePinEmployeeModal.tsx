@@ -149,12 +149,19 @@ export default function CreatePinEmployeeModal({ isOpen, onClose, onSuccess }: C
               onChange={(e) => setRoleSelection(e.target.value)}
               className="w-full px-4 py-3 bg-slate-800 border border-white/20 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
             >
+              {currentTenant?.industry === 'restaurant' && customRoles.length > 0 && (
+                <optgroup label="Job roles (Waiter, Kitchen, Argile...)">
+                  {customRoles.map((cr) => (
+                    <option key={cr.id} value={cr.id}>{cr.display_name}</option>
+                  ))}
+                </optgroup>
+              )}
               <optgroup label="Standard roles">
                 {STANDARD_ROLES.map((r) => (
                   <option key={r} value={r} className="capitalize">{r}</option>
                 ))}
               </optgroup>
-              {customRoles.length > 0 && (
+              {!(currentTenant?.industry === 'restaurant') && customRoles.length > 0 && (
                 <optgroup label="Custom roles">
                   {customRoles.map((cr) => (
                     <option key={cr.id} value={cr.id}>{cr.display_name}</option>
@@ -162,6 +169,11 @@ export default function CreatePinEmployeeModal({ isOpen, onClose, onSuccess }: C
                 </optgroup>
               )}
             </select>
+            {currentTenant?.industry === 'restaurant' && (
+              <p className="mt-1.5 text-xs text-white/40">
+                Use a job role (Waiter, Kitchen, Argile...) unless this person is strictly a checkout cashier — "cashier" always opens straight to POS.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

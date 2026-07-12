@@ -364,6 +364,11 @@ function NewSessionModal({
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
             </div>
+            {occupiedTables.length === 0 && (
+              <p className="mt-1.5 text-xs text-amber-400/80">
+                {t('argile.noOccupiedTables', 'No occupied tables right now — seat a table first, then open its argile session here.')}
+              </p>
+            )}
           </div>
 
           {/* Flavor */}

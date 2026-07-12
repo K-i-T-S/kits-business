@@ -31,6 +31,7 @@ import type {
   MLInsight,
 } from '@/utils/restaurantML';
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 import { useDemandForecast } from '@/hooks/useDemandForecast';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -510,7 +511,7 @@ function DemandForecastPanel({ tenantId }: DemandForecastPanelProps) {
       try {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const sevenDaysAgoISO = sevenDaysAgo.toISOString().split('T')[0]!;
+        const sevenDaysAgoISO = toLocalDateString(sevenDaysAgo);
 
         const { data, error } = await supabase
           .from('restaurant_item_velocity')
@@ -1291,7 +1292,7 @@ export default function RestaurantAnalytics() {
       const since = new Date();
       since.setDate(since.getDate() - days);
       const sinceISO = since.toISOString();
-      const todayISO = new Date().toISOString().split('T')[0]!;
+      const todayISO = toLocalDateString(new Date());
 
       const [tablesRes, ordersRes, argileRes, itemsRes, feedbackRes, slowRes] = await Promise.all([
         supabase.from('restaurant_tables').select('id, status').eq('tenant_id', tenantId),

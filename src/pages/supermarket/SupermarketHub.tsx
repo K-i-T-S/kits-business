@@ -22,14 +22,14 @@ export default function SupermarketHub() {
     {
       icon: AlertTriangle,
       label: t('supermarket.shelfLife', 'Shelf Life Tracker'),
-      desc: t('supermarket.shelfLifeComingSoon', 'Lot expiry, FIFO/FEFO enforcement, pull & destroy — coming soon'),
-      // No href: this screen hasn't been built yet, even though the backend
-      // schema (grocery_lots.expiry_date) already exists. Point nowhere
-      // rather than at a dead route.
-      href: null,
-      gradient: 'from-amber-600/10 to-orange-600/10',
-      border: 'border-amber-500/20',
-      iconColor: 'text-amber-400/50',
+      desc: t('supermarket.shelfLifeDesc', 'Lot expiry, days-left, markdown suggestions'),
+      // ExpiryDashboard.tsx already exists and works (grocery_lots-backed) —
+      // it was just never mounted/routed. Found during the 2026-07-12 QA
+      // sweep; wired up here rather than left disabled.
+      href: '/supermarket/shelf-life',
+      gradient: 'from-amber-600/20 to-orange-600/20',
+      border: 'border-amber-500/30',
+      iconColor: 'text-amber-400',
     },
     {
       icon: Scale,

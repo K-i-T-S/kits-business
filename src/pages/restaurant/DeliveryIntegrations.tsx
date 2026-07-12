@@ -96,7 +96,13 @@ function PlatformCard({ platform, integration, tenantId, onSaved }: PlatformCard
   const [showSecret, setShowSecret] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const [webhookSecret, setWebhookSecret] = useState(integration?.webhook_secret ?? '');
+  const hasSavedSecret = Boolean(integration?.webhook_secret);
+  // BUG-056 fix: an already-saved secret is never re-displayed in full, even
+  // to owner/admin/manager — only its last 4 characters, "shown once" style
+  // (same principle as an API key). Editing starts blank; the previous value
+  // is left untouched in the DB unless the user explicitly types a new one.
+  const [editingSecret, setEditingSecret] = useState(!hasSavedSecret);
+  const [webhookSecret, setWebhookSecret] = useState('');
   const [externalRestaurantId, setExternalRestaurantId] = useState(
     integration?.external_restaurant_id ?? '',
   );
@@ -106,7 +112,8 @@ function PlatformCard({ platform, integration, tenantId, onSaved }: PlatformCard
 
   // Keep form in sync if parent reloads
   useEffect(() => {
-    setWebhookSecret(integration?.webhook_secret ?? '');
+    setWebhookSecret('');
+    setEditingSecret(!integration?.webhook_secret);
     setExternalRestaurantId(integration?.external_restaurant_id ?? '');
     setIsActive(integration?.is_active ?? false);
     setAutoAccept(integration?.auto_accept ?? false);
@@ -150,11 +157,15 @@ function PlatformCard({ platform, integration, tenantId, onSaved }: PlatformCard
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Only touch webhook_secret if the user actually opened the "Change"
+      // editor for it — otherwise leave the existing saved value untouched
+      // rather than overwriting it with the masked placeholder or blanking it.
+      const secretPayload = editingSecret ? { webhook_secret: webhookSecret || null } : {};
       if (integration?.id) {
         const { error } = await supabase
           .from('restaurant_delivery_integrations')
           .update({
-            webhook_secret: webhookSecret || null,
+            ...secretPayload,
             external_restaurant_id: externalRestaurantId || null,
             is_active: isActive,
             auto_accept: autoAccept,
@@ -264,24 +275,45 @@ function PlatformCard({ platform, integration, tenantId, onSaved }: PlatformCard
               Webhook Secret{' '}
               <span className="text-white/30">— provided by {platform.label} for signature verification</span>
             </label>
-            <div className="relative">
-              <input
-                id={`webhook-secret-${platform.id}`}
-                type={showSecret ? 'text' : 'password'}
-                value={webhookSecret}
-                onChange={(e) => setWebhookSecret(e.target.value)}
-                placeholder="Paste webhook signing secret"
-                className="w-full rounded-xl border border-white/20 bg-slate-800 px-3 py-2 pe-10 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
-              />
-              <button
-                type="button"
-                onClick={() => setShowSecret((v) => !v)}
-                aria-label={showSecret ? 'Hide secret' : 'Show secret'}
-                className="absolute inset-y-0 end-0 flex items-center pe-3 text-white/40 hover:text-white/70 transition-colors"
-              >
-                {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+            {editingSecret ? (
+              <div className="relative">
+                <input
+                  id={`webhook-secret-${platform.id}`}
+                  type={showSecret ? 'text' : 'password'}
+                  value={webhookSecret}
+                  onChange={(e) => setWebhookSecret(e.target.value)}
+                  placeholder={hasSavedSecret ? 'Enter new webhook signing secret' : 'Paste webhook signing secret'}
+                  autoFocus={hasSavedSecret}
+                  className="w-full rounded-xl border border-white/20 bg-slate-800 px-3 py-2 pe-10 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecret((v) => !v)}
+                  aria-label={showSecret ? 'Hide secret' : 'Show secret'}
+                  className="absolute inset-y-0 end-0 flex items-center pe-3 text-white/40 hover:text-white/70 transition-colors"
+                >
+                  {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  id={`webhook-secret-${platform.id}`}
+                  type="text"
+                  value={`••••••••••••${integration!.webhook_secret!.slice(-4)}`}
+                  readOnly
+                  disabled
+                  className="w-full rounded-xl border border-white/10 bg-slate-800/50 px-3 py-2 text-sm text-white/50 cursor-not-allowed"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setWebhookSecret(''); setEditingSecret(true); }}
+                  className="flex-shrink-0 rounded-xl border border-white/20 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/5 transition-colors"
+                >
+                  Change
+                </button>
+              </div>
+            )}
           </div>
 
           {/* External Restaurant ID */}

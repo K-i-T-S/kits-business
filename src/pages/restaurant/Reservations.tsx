@@ -1,7 +1,7 @@
 import {
   Plus, X, Phone, Users, Calendar, Clock, CheckCircle, XCircle, AlertCircle, ChevronDown, Armchair, ChevronLeft, ChevronRight,
 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -10,6 +10,7 @@ import { useApp } from '@/context/AppContext';
 import type { Reservation, ReservationStatus, RestaurantTable } from '@/types/restaurant';
 import { RESERVATION_STATUS_LABELS } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 
 type FilterType = 'today' | 'upcoming' | 'all';
 type ViewMode = 'list' | 'calendar';
@@ -70,7 +71,7 @@ const EMPTY_FORM: ReservationFormData = {
   guest_name: '',
   guest_phone: '',
   party_size: 2,
-  reserved_date: new Date().toISOString().split('T')[0]!,
+  reserved_date: toLocalDateString(new Date()),
   reserved_time: '19:00',
   table_id: '',
   notes: '',
@@ -146,7 +147,17 @@ export default function Reservations() {
     }
   }, [tenantId]);
 
-  useEffect(() => { void loadData(); }, [loadData]);
+  // No auto-refresh previously — two staff viewing this screen on different
+  // terminals wouldn't see each other's just-completed seating without a
+  // manual reload, widening the client-side seatReservation() race window.
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    void loadData();
+    refreshIntervalRef.current = setInterval(() => { void loadData(); }, 30000);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, [loadData]);
 
   const filteredReservations = reservations.filter((r) => {
     const d = new Date(r.reserved_at);

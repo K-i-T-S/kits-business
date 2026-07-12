@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 
 /**
  * Forecast data from restaurant_demand_forecasts table
@@ -41,7 +42,7 @@ export function useDemandForecast(tenantId?: string) {
       // Get tomorrow's date to start the forecast
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowISO = tomorrow.toISOString().split('T')[0]!;
+      const tomorrowISO = toLocalDateString(tomorrow);
 
       // Fetch next 7 days of forecasts
       const { data, error: err } = await supabase

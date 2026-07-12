@@ -42,7 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
 // ── Component ──────────────────────────────────────────────────
 
 export default function StockTransferManagement() {
-  const { setModalOpen, products } = useApp();
+  const { setModalOpen, products, currentTenant } = useApp();
   const [transfers, setTransfers] = useState<StockTransfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,13 +131,14 @@ export default function StockTransferManagement() {
   const handleCreateTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!toLocation.trim()) { toast.error('Destination location is required'); return; }
+    if (fromLocation.trim().toLowerCase() === toLocation.trim().toLowerCase()) { toast.error('Source and destination must be different'); return; }
     if (newItems.length === 0) { toast.error('Add at least one product'); return; }
 
     setSubmitting(true);
     try {
       const transferResult = await supabase
         .from('stock_transfers')
-        .insert({ from_location: fromLocation.trim(), to_location: toLocation.trim(), notes: notes.trim() || null })
+        .insert({ tenant_id: currentTenant?.id, from_location: fromLocation.trim(), to_location: toLocation.trim(), notes: notes.trim() || null })
         .select('id')
         .single();
       if (transferResult.error) throw transferResult.error;

@@ -177,7 +177,7 @@ function TableTile({ data, slowThreshold, onSelect, onMarkAvailable }: TableTile
       <button
         onClick={onSelect}
         disabled={isCleaning}
-        className="absolute inset-0 rounded-2xl touch-manipulation"
+        className={`absolute inset-0 rounded-2xl touch-manipulation ${isCleaning ? 'pointer-events-none' : ''}`}
         aria-label={`Table ${table.number} — ${table.status}`}
         tabIndex={isCleaning ? -1 : 0}
       />

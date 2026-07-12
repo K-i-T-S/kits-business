@@ -608,7 +608,14 @@ export default function RecipeInventory() {
           waste_factor: parseFloat(l.waste_factor) || 1.0,
         }));
       if (lines.length > 0) {
-        const { error: lineError } = await supabase.from('restaurant_recipe_ingredients').insert(lines);
+        // upsert (not insert): restaurant_recipe_ingredients has a
+        // UNIQUE(recipe_id, ingredient_id) constraint, and a plain batched
+        // insert fails ATOMICALLY if any one line violates it (e.g. the same
+        // ingredient added on two lines via "Add Line") — leaving zero
+        // persisted lines and a recipe that silently shows $0 food cost.
+        const { error: lineError } = await supabase
+          .from('restaurant_recipe_ingredients')
+          .upsert(lines, { onConflict: 'recipe_id,ingredient_id' });
         if (lineError) toast.error(`Recipe saved but ingredient lines failed: ${lineError.message}`);
       }
     }
@@ -1479,15 +1486,22 @@ export default function RecipeInventory() {
                     <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  placeholder="Quantity"
-                  value={inlineWasteQty}
-                  onChange={(e) => setInlineWasteQty(e.target.value)}
-                  min="0"
-                  step="0.001"
-                  className="bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500/50 placeholder-white/30"
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="Quantity"
+                    value={inlineWasteQty}
+                    onChange={(e) => setInlineWasteQty(e.target.value)}
+                    min="0"
+                    step="0.001"
+                    className="w-full bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2 pr-12 text-sm focus:outline-none focus:border-indigo-500/50 placeholder-white/30"
+                  />
+                  {inlineWasteIngredientId && (
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40">
+                      {ingredientMap.get(inlineWasteIngredientId)?.unit}
+                    </span>
+                  )}
+                </div>
                 <select
                   value={inlineWasteReason}
                   onChange={(e) => setInlineWasteReason(e.target.value)}
@@ -1980,11 +1994,17 @@ export default function RecipeInventory() {
                         />
                       </div>
                       <div className="col-span-2">
-                        {idx === 0 && <div className="text-[10px] text-white/40 mb-1">Unit</div>}
+                        {idx === 0 && (
+                          <div className="text-[10px] text-white/40 mb-1 flex items-center gap-1">
+                            Unit
+                            <span title="Locked to the ingredient's stocked unit — cost is priced per that unit, so entering quantity in a different unit here would silently give a wrong cost." className="text-white/20 hover:text-white/50 cursor-help">ⓘ</span>
+                          </div>
+                        )}
                         <input
-                          className={INPUT_CLASS}
-                          value={line.unit}
-                          onChange={(e) => setRecipeLines2((p) => p.map((l, i) => i === idx ? { ...l, unit: e.target.value } : l))}
+                          className={INPUT_CLASS + ' opacity-60 cursor-not-allowed'}
+                          value={ingredientMap.get(line.ingredient_id)?.unit ?? line.unit}
+                          readOnly
+                          disabled
                         />
                       </div>
                       <div className="col-span-2">
@@ -2132,7 +2152,7 @@ export default function RecipeInventory() {
                 {ingredients.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
               </select>
             </FormField>
-            <FormField label="Quantity Wasted *">
+            <FormField label={`Quantity Wasted *${wasteForm.unit ? ` (${wasteForm.unit})` : ''}`}>
               <input className={INPUT_CLASS} type="number" step="0.001" min="0" value={wasteForm.quantity} onChange={(e) => setWasteForm((p) => ({ ...p, quantity: e.target.value }))} placeholder="0" />
             </FormField>
             <FormField label="Reason">

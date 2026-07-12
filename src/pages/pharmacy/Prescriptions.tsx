@@ -10,6 +10,7 @@ import { useApp } from '@/context/AppContext';
 import type { Drug, Prescription, PrescriptionItem, PrescriptionStatus } from '@/types/pharmacy';
 import { PRESCRIPTION_STATUS_COLORS, PRESCRIPTION_STATUS_LABELS } from '@/types/pharmacy';
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 
 interface PrescriptionFormData {
   patient_name: string;
@@ -27,7 +28,7 @@ const EMPTY_FORM: PrescriptionFormData = {
   patient_id_number: '',
   doctor_name: '',
   doctor_license: '',
-  issue_date: new Date().toISOString().split('T')[0]!,
+  issue_date: toLocalDateString(new Date()),
   notes: '',
 };
 

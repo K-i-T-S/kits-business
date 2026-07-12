@@ -11,13 +11,14 @@ import {
   Pencil,
   CheckCheck,
 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -122,7 +123,7 @@ const EMPTY_FORM: EventFormData = {
   contact_name: '',
   contact_phone: '',
   contact_email: '',
-  event_date: new Date().toISOString().split('T')[0]!,
+  event_date: toLocalDateString(new Date()),
   start_time: '19:00',
   end_time: '',
   guest_count: 50,
@@ -182,17 +183,29 @@ export default function EventsManager() {
     }
   }, [tenantId]);
 
-  useEffect(() => { void loadEvents(); }, [loadEvents]);
+  // No auto-refresh previously — kept as a manual-reload-only page.
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    void loadEvents();
+    refreshIntervalRef.current = setInterval(() => { void loadEvents(); }, 30000);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, [loadEvents]);
 
   // ── Stats ─────────────────────────────────────────────────────────────────
 
-  const today = new Date().toISOString().split('T')[0]!;
+  // toLocalDateString, not toISOString — this drives "Upcoming Events" and
+  // "This Month's Confirmed Revenue" on the founder-facing dashboard; the raw
+  // UTC form silently excludes/miscounts events during the first few hours
+  // after local midnight (Lebanon UTC+2/3). Same bug class as BUG-042/037.
+  const today = toLocalDateString(new Date());
 
   const upcomingCount = events.filter(
     (e) => ['inquiry', 'confirmed', 'deposit_paid'].includes(e.status) && e.event_date >= today,
   ).length;
 
-  const thisMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const thisMonth = today.slice(0, 7); // YYYY-MM, derived from the already-local `today`
   const confirmedRevenue = events
     .filter((e) => ['confirmed', 'deposit_paid'].includes(e.status) && e.event_date.startsWith(thisMonth))
     .reduce((sum, e) => sum + (e.min_spend_usd ?? 0), 0);

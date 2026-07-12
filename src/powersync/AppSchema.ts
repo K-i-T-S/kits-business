@@ -41,9 +41,9 @@ const tenants = new Table(
     loyalty_points_per_dollar: column.text,
     loyalty_points_redeem_rate: column.text,
     qr_menu_palette: column.text,
-    qr_menu_promotional_banner: column.text
+    qr_menu_promotional_banner: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const tenant_users = new Table(
@@ -55,9 +55,9 @@ const tenant_users = new Table(
     is_active: column.integer,
     created_at: column.text,
     updated_at: column.text,
-    custom_role_id: column.text
+    custom_role_id: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const user_active_tenant = new Table(
@@ -65,9 +65,9 @@ const user_active_tenant = new Table(
     // id column (text) is automatically included
     user_id: column.text,
     tenant_id: column.text,
-    updated_at: column.text
+    updated_at: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const employees = new Table(
@@ -84,9 +84,9 @@ const employees = new Table(
     created_at: column.text,
     updated_at: column.text,
     commission_rate: column.text,
-    user_id: column.text
+    user_id: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const products = new Table(
@@ -108,15 +108,15 @@ const products = new Table(
     supplier: column.text,
     validity_date: column.text,
     unit: column.text,
-    supplier_id: column.text
+    supplier_id: column.text,
   },
-  // trackPreviousValues is a deliberate addition on top of the CLI-generated
+  // trackPrevious is a deliberate addition on top of the CLI-generated
   // schema (not auto-generated) -- needed so the backend connector's
   // uploadData() can compute a delta (new - previous) for stock_quantity
   // instead of blindly overwriting it, per the founder-locked conflict rule
   // that inventory changes apply as deltas. Re-running `powersync generate
   // schema` will drop this -- re-add it if regenerating.
-  { indexes: {}, trackPreviousValues: true }
+  { indexes: {}, trackPrevious: true },
 );
 
 const sales = new Table(
@@ -135,9 +135,9 @@ const sales = new Table(
     sale_date: column.text,
     created_at: column.text,
     source: column.text,
-    table_order_id: column.text
+    table_order_id: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const sale_items = new Table(
@@ -150,9 +150,9 @@ const sale_items = new Table(
     total_price: column.text,
     created_at: column.text,
     unit_cost: column.text,
-    product_name: column.text
+    product_name: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const table_orders = new Table(
@@ -180,9 +180,9 @@ const table_orders = new Table(
     tips: column.text,
     covers: column.integer,
     payment_currency: column.text,
-    merged_into_order_id: column.text
+    merged_into_order_id: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_order_items = new Table(
@@ -202,9 +202,9 @@ const restaurant_order_items = new Table(
     menu_item_id: column.text,
     product_id: column.text,
     created_at: column.text,
-    bundle_id: column.text
+    bundle_id: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_tables = new Table(
@@ -219,9 +219,9 @@ const restaurant_tables = new Table(
     y: column.text,
     status: column.text,
     created_at: column.text,
-    updated_at: column.text
+    updated_at: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_shifts = new Table(
@@ -235,9 +235,9 @@ const restaurant_shifts = new Table(
     notes: column.text,
     is_closed: column.integer,
     closed_at: column.text,
-    created_at: column.text
+    created_at: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_shift_assignments = new Table(
@@ -250,9 +250,9 @@ const restaurant_shift_assignments = new Table(
     section: column.text,
     station: column.text,
     clocked_in_at: column.text,
-    clocked_out_at: column.text
+    clocked_out_at: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_menu_categories = new Table(
@@ -268,9 +268,9 @@ const restaurant_menu_categories = new Table(
     active_lunch: column.integer,
     active_dinner: column.integer,
     active_allday: column.integer,
-    created_at: column.text
+    created_at: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_menu_items = new Table(
@@ -297,9 +297,9 @@ const restaurant_menu_items = new Table(
     sort_order: column.integer,
     is_active: column.integer,
     created_at: column.text,
-    product_id: column.text
+    product_id: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_modifier_groups = new Table(
@@ -310,9 +310,9 @@ const restaurant_modifier_groups = new Table(
     name_ar: column.text,
     min_selections: column.integer,
     max_selections: column.integer,
-    is_required: column.integer
+    is_required: column.integer,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_modifiers = new Table(
@@ -323,18 +323,18 @@ const restaurant_modifiers = new Table(
     name: column.text,
     name_ar: column.text,
     price_delta: column.text,
-    sort_order: column.integer
+    sort_order: column.integer,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 const restaurant_menu_item_modifiers = new Table(
   {
     // id column (text) is automatically included
     menu_item_id: column.text,
-    modifier_group_id: column.text
+    modifier_group_id: column.text,
   },
-  { indexes: {} }
+  { indexes: {} },
 );
 
 export const AppSchema = new Schema({
@@ -354,7 +354,7 @@ export const AppSchema = new Schema({
   restaurant_menu_items,
   restaurant_modifier_groups,
   restaurant_modifiers,
-  restaurant_menu_item_modifiers
+  restaurant_menu_item_modifiers,
 });
 
 export type Database = (typeof AppSchema)['types'];

@@ -14,6 +14,7 @@ import {
 } from '@/offlineAuth/credentialCache';
 import { isThisDeviceRegistered } from '@/offlineAuth/trustedTerminals';
 import { toLocalDateString } from '@/utils/formatting';
+import { checkPinLockout, formatLockoutRemaining, recordPinAttempt } from '@/utils/pinLockout';
 import { resolveRoleHomeRoute } from '@/utils/postLoginRoute';
 import { supabase } from '@/utils/supabaseClient';
 
@@ -254,6 +255,23 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
     setSubmitting(true);
     setError('');
     try {
+      // Server-tracked lockout gate (migration 000081) -- best-effort: if
+      // this check itself can't reach the network, fall through to the
+      // normal flow below, which will hit the same network problem via
+      // signInWithPassword() and correctly route to the offline fallback.
+      // A genuinely offline attempt is never blocked by a check that
+      // requires network to enforce.
+      try {
+        const lockStatus = await checkPinLockout(employee.id);
+        if (lockStatus.isLocked && lockStatus.lockedUntil) {
+          setError(`Too many failed attempts. Try again in ${formatLockoutRemaining(lockStatus.lockedUntil)}.`);
+          setPin('');
+          return;
+        }
+      } catch {
+        // Best-effort -- see comment above.
+      }
+
       // Log the outgoing PIN employee's logout (if any) before the session
       // swap replaces their auth context — after signInWithPassword succeeds
       // there's no way to write an activity_log row "as" them anymore.
@@ -305,14 +323,29 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
           setPin('');
           return;
         }
-        setError('Incorrect PIN');
+        // A real (non-retryable) auth rejection -- this is the online
+        // brute-force surface migration 000081 throttles. Best-effort: if
+        // the RPC itself fails, fall back to the plain message rather than
+        // blocking the user from seeing any error at all.
+        try {
+          const attemptResult = await recordPinAttempt(employee.id, false);
+          setError(
+            attemptResult.isLocked && attemptResult.lockedUntil
+              ? `Too many failed attempts. Locked for ${formatLockoutRemaining(attemptResult.lockedUntil)}.`
+              : 'Incorrect PIN',
+          );
+        } catch {
+          setError('Incorrect PIN');
+        }
         setPin('');
         return;
       }
 
-      // Real session succeeded -- cache the credential for future offline
-      // use if this device is registered. Best-effort, never awaited
-      // against the rest of the login flow.
+      // Real session succeeded -- reset the failed-attempt counter and
+      // cache the credential for future offline use if this device is
+      // registered. Both best-effort, never awaited against the rest of
+      // the login flow.
+      void recordPinAttempt(employee.id, true).catch(() => {});
       void maybeCacheCredentialForOfflineUse(employee, enteredPin, currentTenant?.id ?? '');
 
       // Track 2: resolve and navigate to the role-native screen (Waiter/

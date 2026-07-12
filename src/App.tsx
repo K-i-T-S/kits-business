@@ -62,7 +62,6 @@ const Finance = lazy(() => import('./pages/Finance'));
 
 // Restaurant Vertical Components
 const RestaurantHub = lazy(() => import('./pages/restaurant/RestaurantHub'));
-const AnalyticsCommandCenter = lazy(() => import('./pages/restaurant/AnalyticsCommandCenter'));
 const RestaurantTableManagement = lazy(() => import('./pages/restaurant/TableManagement'));
 const RestaurantKDS = lazy(() => import('./pages/restaurant/KitchenDisplay'));
 const RestaurantReservations = lazy(() => import('./pages/restaurant/Reservations'));
@@ -516,23 +515,6 @@ export default function App() {
                                     isAuthenticated ? (
                                       <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}>
                                         <RestaurantHub />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                {/* NOTE: /restaurant/analytics is registered twice (here and
-                                    again below at RestaurantAnalytics) — pre-existing bug found
-                                    while wiring role gates, left as-is (out of scope for this
-                                    change): React Router uses the first match, so the second
-                                    registration below is currently dead/unreachable. */}
-                                <Route
-                                  path="/restaurant/analytics"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier', 'accountant', 'viewer']}>
-                                        <AnalyticsCommandCenter />
                                       </RoleRoute>
                                     ) : (
                                       <Navigate to="/login" replace />

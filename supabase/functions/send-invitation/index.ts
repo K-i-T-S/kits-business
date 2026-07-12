@@ -50,7 +50,14 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Verify caller is owner/manager of this tenant
+    // Verify caller is owner/admin/manager of this tenant — matches
+    // App.tsx's /employees RoleRoute allowedRoles exactly (Track 2
+    // cleanup, docs/superpowers/specs/2026-07-11-platform-roadmap-design.md).
+    // Previously excluded 'admin', so a KiTS platform-admin (auto-added to
+    // every tenant with role='admin' by migration 000021's trigger) could
+    // reach the Invite Team Member UI but every submission 403'd — this
+    // check reads tenant_users.role directly, not through the DB-side
+    // current_user_role()'s admin→owner aliasing, so the two never lined up.
     const { data: membership, error: memberErr } = await adminClient
       .from('tenant_users')
       .select('role')
@@ -58,8 +65,8 @@ serve(async (req) => {
       .eq('user_id', caller.id)
       .single();
 
-    if (memberErr || !membership || !['owner', 'manager'].includes(membership.role as string)) {
-      return new Response(JSON.stringify({ error: 'Forbidden: not a tenant owner or manager' }), {
+    if (memberErr || !membership || !['owner', 'admin', 'manager'].includes(membership.role as string)) {
+      return new Response(JSON.stringify({ error: 'Forbidden: not a tenant owner, admin, or manager' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

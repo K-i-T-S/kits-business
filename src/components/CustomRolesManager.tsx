@@ -3,10 +3,27 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
-import { type RoleAction, ALL_PERMISSIONS } from '../types/subscription';
+import { type RoleAction, type RoleType, ALL_PERMISSIONS } from '../types/subscription';
 import { supabase } from '../utils/supabaseClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+// All 8 canonical roles except 'owner' — matches InviteTeamMemberModal.tsx's
+// and OnboardingWizard.tsx's existing invite-role set (Track 1d). A custom
+// role based on 'owner' would grant full owner-level access under a
+// friendly nickname; the real owner already has that access directly via
+// tenant_users.role and doesn't need a custom role to get it.
+type CustomRoleBaseRole = Exclude<RoleType, 'owner'>;
+
+// Track 2, Phase A (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+// the role-native landing screen this custom role lands on after login,
+// independent of base_role/permissions (which stay purely about RLS/action
+// access). Only 4 archetypes exist as real screens today — office-role
+// hubs (owner/manager/supervisor/accountant/stockkeeper/reception) are
+// Phase B. Options are restricted per base_role in the UI below to avoid
+// assigning a hub the role can't actually reach (RoleRoute would bounce
+// it straight back on every login).
+type HomeHub = 'waiter' | 'kitchen' | 'argile' | 'pos_cashier';
 
 interface CustomRole {
   id: string;
@@ -14,7 +31,8 @@ interface CustomRole {
   name: string;
   display_name: string;
   permissions: Partial<Record<RoleAction, boolean>>;
-  base_role: 'manager' | 'cashier' | 'viewer';
+  base_role: CustomRoleBaseRole;
+  home_hub: HomeHub | null;
   created_at: string;
   updated_at: string;
 }
@@ -22,24 +40,53 @@ interface CustomRole {
 interface FormState {
   display_name: string;
   name: string;
-  base_role: 'manager' | 'cashier' | 'viewer';
+  base_role: CustomRoleBaseRole;
+  home_hub: HomeHub | '';
   permissions: Partial<Record<RoleAction, boolean>>;
 }
 
 const BASE_ROLE_OPTIONS: Array<{
-  value: 'manager' | 'cashier' | 'viewer';
+  value: CustomRoleBaseRole;
   label: string;
   description: string;
 }> = [
   { value: 'viewer', label: 'Viewer — read-only data', description: 'Can read data but not modify it' },
   { value: 'cashier', label: 'Cashier — sales data', description: 'Access to POS and sales records' },
+  { value: 'stockkeeper', label: 'Stock Manager — inventory data', description: 'Manage stock, suppliers, purchase orders' },
+  { value: 'accountant', label: 'Accountant — financial data', description: 'Expenses, payroll, and financial reports' },
+  { value: 'supervisor', label: 'Supervisor — floor operations', description: 'Day-to-day operational data, no financial reports' },
   { value: 'manager', label: 'Manager — full operational data', description: 'Full data access, no admin settings' },
+  { value: 'admin', label: 'Admin — full access', description: 'Same access level as the business owner' },
 ];
 
-const BASE_ROLE_BADGE: Record<'manager' | 'cashier' | 'viewer', string> = {
+const BASE_ROLE_BADGE: Record<CustomRoleBaseRole, string> = {
+  admin: 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30',
   manager: 'bg-sky-500/20 text-sky-300 border border-sky-500/30',
+  supervisor: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30',
   cashier: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+  accountant: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+  stockkeeper: 'bg-orange-500/20 text-orange-300 border border-orange-500/30',
   viewer: 'bg-white/10 text-white/60 border border-white/20',
+};
+
+const HOME_HUB_OPTIONS: Array<{ value: HomeHub; label: string }> = [
+  { value: 'waiter', label: 'Waiter — table service & order entry' },
+  { value: 'kitchen', label: 'Kitchen — order queue (KDS)' },
+  { value: 'argile', label: 'Argile — shisha session tracking' },
+  { value: 'pos_cashier', label: 'Cashier — checkout / POS' },
+];
+
+// Which home hubs a given base_role can actually reach, per App.tsx's
+// RoleRoute allowedRoles on each hub's route. Restricting the picker to
+// these avoids assigning a hub the role gets bounced straight back out of.
+const VALID_HOME_HUBS_BY_BASE_ROLE: Record<CustomRoleBaseRole, HomeHub[]> = {
+  admin: ['waiter', 'kitchen', 'argile', 'pos_cashier'],
+  manager: ['waiter', 'kitchen', 'argile', 'pos_cashier'],
+  supervisor: ['waiter', 'kitchen', 'argile', 'pos_cashier'],
+  cashier: ['waiter', 'kitchen', 'argile', 'pos_cashier'],
+  stockkeeper: ['kitchen'],
+  accountant: [],
+  viewer: [],
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -55,8 +102,13 @@ const EMPTY_FORM: FormState = {
   display_name: '',
   name: '',
   base_role: 'viewer',
+  home_hub: '',
   permissions: {},
 };
+
+const CUSTOM_ROLE_BASE_ROLES: readonly CustomRoleBaseRole[] =
+  ['admin', 'manager', 'supervisor', 'cashier', 'accountant', 'stockkeeper', 'viewer'];
+const HOME_HUB_VALUES: readonly HomeHub[] = ['waiter', 'kitchen', 'argile', 'pos_cashier'];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -96,6 +148,7 @@ export default function CustomRolesManager() {
         display_name: string;
         permissions: unknown;
         base_role: string;
+        home_hub: string | null;
         created_at: string;
         updated_at: string;
       }) => ({
@@ -106,9 +159,12 @@ export default function CustomRolesManager() {
         permissions: (typeof row.permissions === 'object' && row.permissions !== null
           ? row.permissions
           : {}) as Partial<Record<RoleAction, boolean>>,
-        base_role: (['manager', 'cashier', 'viewer'].includes(row.base_role)
-          ? row.base_role
-          : 'viewer') as 'manager' | 'cashier' | 'viewer',
+        base_role: (CUSTOM_ROLE_BASE_ROLES as readonly string[]).includes(row.base_role)
+          ? (row.base_role as CustomRoleBaseRole)
+          : 'viewer',
+        home_hub: (row.home_hub && (HOME_HUB_VALUES as readonly string[]).includes(row.home_hub)
+          ? (row.home_hub as HomeHub)
+          : null),
         created_at: row.created_at,
         updated_at: row.updated_at,
       }));
@@ -141,9 +197,23 @@ export default function CustomRolesManager() {
       display_name: role.display_name,
       name: role.name,
       base_role: role.base_role,
+      home_hub: role.home_hub ?? '',
       permissions: { ...role.permissions },
     });
     setShowModal(true);
+  }
+
+  // Changing base_role can invalidate the currently-selected home_hub
+  // (e.g. switching from Cashier to Accountant, which has no Phase A hubs
+  // at all) — reset it rather than silently saving an unreachable combo.
+  function handleBaseRoleChange(nextBaseRole: CustomRoleBaseRole) {
+    setForm((prev) => ({
+      ...prev,
+      base_role: nextBaseRole,
+      home_hub: VALID_HOME_HUBS_BY_BASE_ROLE[nextBaseRole].includes(prev.home_hub as HomeHub)
+        ? prev.home_hub
+        : '',
+    }));
   }
 
   function closeModal() {
@@ -197,6 +267,7 @@ export default function CustomRolesManager() {
             display_name: form.display_name.trim(),
             name: form.name.trim(),
             base_role: form.base_role,
+            home_hub: form.home_hub || null,
             permissions: form.permissions,
             updated_at: new Date().toISOString(),
           })
@@ -212,6 +283,7 @@ export default function CustomRolesManager() {
             display_name: form.display_name.trim(),
             name: form.name.trim(),
             base_role: form.base_role,
+            home_hub: form.home_hub || null,
             permissions: form.permissions,
           });
 
@@ -335,6 +407,9 @@ export default function CustomRolesManager() {
                     <p className="mt-0.5 text-sm text-white/50">
                       {activePermissionCount(role.permissions)} permission
                       {activePermissionCount(role.permissions) !== 1 ? 's' : ''} enabled
+                      {role.home_hub && (
+                        <> · Lands on {HOME_HUB_OPTIONS.find((o) => o.value === role.home_hub)?.label.split(' — ')[0]}</>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -443,7 +518,7 @@ export default function CustomRolesManager() {
                         name="cr-base-role"
                         value={opt.value}
                         checked={form.base_role === opt.value}
-                        onChange={() => setForm((prev) => ({ ...prev, base_role: opt.value }))}
+                        onChange={() => handleBaseRoleChange(opt.value)}
                         className="mt-0.5 text-indigo-600 focus:ring-indigo-500"
                       />
                       <div>
@@ -453,6 +528,35 @@ export default function CustomRolesManager() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Home screen (Track 2, Phase A) */}
+              <div>
+                <label htmlFor="cr-home-hub" className="block text-sm font-medium text-white/80 mb-2">
+                  Home Screen <span className="text-white/40 font-normal">(optional)</span>
+                </label>
+                <p className="text-xs text-white/40 mb-3">
+                  Where this role lands right after signing in, instead of the default dashboard.
+                </p>
+                {VALID_HOME_HUBS_BY_BASE_ROLE[form.base_role].length === 0 ? (
+                  <p className="text-xs text-white/30 italic px-3 py-3 rounded-xl border border-white/10 bg-white/5">
+                    No dedicated home screen is available yet for this access level.
+                  </p>
+                ) : (
+                  <select
+                    id="cr-home-hub"
+                    value={form.home_hub}
+                    onChange={(e) => setForm((prev) => ({ ...prev, home_hub: e.target.value as HomeHub | '' }))}
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+                  >
+                    <option value="">Default dashboard</option>
+                    {HOME_HUB_OPTIONS.filter((opt) =>
+                      VALID_HOME_HUBS_BY_BASE_ROLE[form.base_role].includes(opt.value),
+                    ).map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Permission toggles */}

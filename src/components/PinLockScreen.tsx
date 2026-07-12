@@ -1,8 +1,10 @@
 import { Delete, Lock, LogOut } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 import { useApp } from '@/context/AppContext';
+import { resolveRoleHomeRoute } from '@/utils/postLoginRoute';
 import { supabase } from '@/utils/supabaseClient';
 
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -33,6 +35,7 @@ interface PinEmployee {
  * bypassed by navigating to a different route.
  */
 export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const navigate = useNavigate();
   const { employees, currentTenant } = useApp();
   const [locked, setLocked] = useState(false);
   const [selected, setSelected] = useState<PinEmployee | null>(null);
@@ -188,10 +191,15 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
         const { data: { user: incoming } } = await supabase.auth.getUser();
         if (incoming) void logActivity(currentTenant.id, incoming.id, 'employee_pin_login', employee.id, employee.name);
       }
+      // Track 2, Phase A: land the employee straight on their role-native
+      // screen (Waiter/Kitchen/Argile/POS) instead of wherever the app
+      // happened to be sitting when the terminal locked.
+      const homeRoute = await resolveRoleHomeRoute();
+      if (homeRoute) void navigate(homeRoute);
     } finally {
       setSubmitting(false);
     }
-  }, [resetInactivityTimer, clockInIfScheduled, currentTenant, employees, logActivity]);
+  }, [resetInactivityTimer, clockInIfScheduled, currentTenant, employees, logActivity, navigate]);
 
   useEffect(() => {
     if (selected && pin.length >= 4) {

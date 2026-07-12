@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import OnboardingWizard from '../components/OnboardingWizard';
 import { useSubscription } from '../context/SubscriptionContext';
+import { resolveRoleHomeRoute } from '../utils/postLoginRoute';
 import { supabase } from '../utils/supabaseClient';
 import { createTenant, selectActiveTenant } from '../utils/tenantManager';
 
@@ -161,7 +162,10 @@ export default function TenantSelection() {
     // caused an infinite loop for tenants where the flag was never set
     // (pre-migration-000019 bug).
     await reloadSubscription();
-    void navigate('/dashboard');
+    // Track 2, Phase A: land on the role-native screen (Waiter/Kitchen/
+    // Argile/POS) if this role has one, otherwise the existing dashboard.
+    const homeRoute = await resolveRoleHomeRoute();
+    void navigate(homeRoute ?? '/dashboard');
   };
 
   const generateSlug = (name: string) =>

@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://unpkg.com/@powersync/service-sync-rules@latest/schema/sync_rules.json
+# See https://docs.powersync.com/sync/advanced/compatibility
+config:
+  edition: 3
+
+# Track: offline-first architecture, Phase 1 (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md).
+# Core-POS v1 scope only (founder-locked): orders, sales, table state, basic
+# inventory, employee clock-in/PIN roster. CRM, loyalty, finance, analytics
+# stay online-only for now -- see the Phase 0 migration for the full list of
+# what's deliberately excluded from the underlying `powersync` publication.
+#
+# Tenant scoping mirrors the app's own current_tenant_id() RLS function --
+# resolves via user_active_tenant (the same table Track 1's active-tenant-
+# selection migration made the single source of truth), not a separate or
+# duplicated mechanism that could drift out of sync with real RLS.
+with:
+  my_tenant: SELECT tenant_id FROM user_active_tenant WHERE user_id = auth.user_id()
+
+streams:
+  tenants:
+    auto_subscribe: true
+    query: SELECT * FROM tenants WHERE id IN my_tenant
+
+  tenant_users:
+    auto_subscribe: true
+    query: SELECT * FROM tenant_users WHERE tenant_id IN my_tenant
+
+  # Not used for tenant resolution client-side (that's what the `my_tenant`
+  # CTE above is for) -- included because Phase 0's publication scoped it
+  # in as part of the original 17-table plan.
+  user_active_tenant:
+    auto_subscribe: true
+    query: |
+      SELECT *, user_id AS id FROM user_active_tenant
+      WHERE tenant_id IN my_tenant
+
+  employees:
+    auto_subscribe: true
+    query: SELECT * FROM employees WHERE tenant_id IN my_tenant
+
+  products:
+    auto_subscribe: true
+    query: SELECT * FROM products WHERE tenant_id IN my_tenant
+
+  sales:
+    auto_subscribe: true
+    query: SELECT * FROM sales WHERE tenant_id IN my_tenant
+
+  # sale_items has no tenant_id of its own -- resolved via its parent sale.
+  # No table alias -- PowerSync syncs rows under the alias name if one is
+  # used on the source table, which would silently rename this to "si"
+  # client-side and leave sale_items empty.
+  sale_items:
+    auto_subscribe: true
+    query: |
+      SELECT sale_items.* FROM sale_items
+      INNER JOIN sales ON sales.id = sale_items.sale_id
+      WHERE sales.tenant_id IN my_tenant
+
+  table_orders:
+    auto_subscribe: true
+    query: SELECT * FROM table_orders WHERE tenant_id IN my_tenant
+
+  restaurant_order_items:
+    auto_subscribe: true
+    query: SELECT * FROM restaurant_order_items WHERE tenant_id IN my_tenant
+
+  restaurant_tables:
+    auto_subscribe: true
+    query: SELECT * FROM restaurant_tables WHERE tenant_id IN my_tenant
+
+  restaurant_shifts:
+    auto_subscribe: true
+    query: SELECT * FROM restaurant_shifts WHERE tenant_id IN my_tenant
+
+  restaurant_shift_assignments:
+    auto_subscribe: true
+    query: SELECT * FROM restaurant_shift_assignments WHERE tenant_id IN my_tenant
+
+  restaurant_menu_categories:
+    auto_subscribe: true
+    query: SELECT * FROM restaurant_menu_categories WHERE tenant_id IN my_tenant
+
+  restaurant_menu_items:
+    auto_subscribe: true
+    query: SELECT * FROM restaurant_menu_items WHERE tenant_id IN my_tenant
+
+  restaurant_modifier_groups:
+    auto_subscribe: true
+    query: SELECT * FROM restaurant_modifier_groups WHERE tenant_id IN my_tenant
+
+  restaurant_modifiers:
+    auto_subscribe: true
+    query: SELECT * FROM restaurant_modifiers WHERE tenant_id IN my_tenant
+
+  # Composite PK (menu_item_id, modifier_group_id), no surrogate id column --
+  # aliased per PowerSync's documented ID-aliasing pattern. Scoped via its
+  # parent menu item since this junction table has no tenant_id itself.
+  # No table alias -- see the sale_items comment above for why.
+  restaurant_menu_item_modifiers:
+    auto_subscribe: true
+    query: |
+      SELECT restaurant_menu_item_modifiers.*,
+        restaurant_menu_item_modifiers.menu_item_id || '.' || restaurant_menu_item_modifiers.modifier_group_id AS id
+      FROM restaurant_menu_item_modifiers
+      INNER JOIN restaurant_menu_items ON restaurant_menu_items.id = restaurant_menu_item_modifiers.menu_item_id
+      WHERE restaurant_menu_items.tenant_id IN my_tenant

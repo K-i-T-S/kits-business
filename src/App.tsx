@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { PowerSyncContext } from '@powersync/react';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
@@ -25,6 +26,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { TranslationProvider } from './context/TranslationContext';
 import Login from './pages/Login';
 import TenantSelection from './pages/TenantSelection';
+import { powerSyncDb } from './powersync/db';
 import { AccessibilityProvider } from './providers/AccessibilityProvider';
 import { QueryProvider } from './providers/QueryProvider';
 import { sentryService } from './services/sentryService';
@@ -172,520 +174,522 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <Router>
-          <AppProvider>
-            <SubscriptionProvider>
-              <IndustryProvider>
-                <QueryProvider>
-                  <LanguageProvider>
-                    <TranslationProvider>
-                      <AccessibilityProvider>
-                        <NotificationProvider>
-                          <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
-                            <PinLockScreen isAuthenticated={isAuthenticated} />
-                            <Suspense fallback={<LoadingSpinner />}>
-                              <Routes>
-                                {/* ── Public routes ── */}
-                                <Route path="/login" element={<Login />} />
-                                <Route path="/tenant-selection" element={<TenantSelection />} />
-                                <Route path="/accept-invite" element={<AcceptInvite />} />
+      <PowerSyncContext.Provider value={powerSyncDb}>
+        <ThemeProvider>
+          <Router>
+            <AppProvider>
+              <SubscriptionProvider>
+                <IndustryProvider>
+                  <QueryProvider>
+                    <LanguageProvider>
+                      <TranslationProvider>
+                        <AccessibilityProvider>
+                          <NotificationProvider>
+                            <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
+                              <PinLockScreen isAuthenticated={isAuthenticated} />
+                              <Suspense fallback={<LoadingSpinner />}>
+                                <Routes>
+                                  {/* ── Public routes ── */}
+                                  <Route path="/login" element={<Login />} />
+                                  <Route path="/tenant-selection" element={<TenantSelection />} />
+                                  <Route path="/accept-invite" element={<AcceptInvite />} />
 
-                                {/* ── Starter+ routes (all authenticated users) ── */}
-                                <Route
-                                  path="/dashboard"
-                                  element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
-                                />
-                                <Route
-                                  path="/pos"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}>
-                                        <POS />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/reports"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier', 'accountant', 'viewer']}>
-                                        <Reports />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/finance"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'accountant']}>
-                                        <Finance />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/employees"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
-                                        <Employees />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/profile-settings"
-                                  element={isAuthenticated ? <ProfileSettings /> : <Navigate to="/login" replace />}
-                                />
-                                <Route
-                                  path="/system-settings"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin']}>
-                                        <SystemSettings />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/activity-log"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
-                                        <ActivityLog />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/help-support"
-                                  element={isAuthenticated ? <HelpSupport /> : <Navigate to="/login" replace />}
-                                />
-                                <Route
-                                  path="/translation-manager"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
-                                        <TranslationManager />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                {/* /admin is NOT role-gated here — it has its own separate
+                                  {/* ── Starter+ routes (all authenticated users) ── */}
+                                  <Route
+                                    path="/dashboard"
+                                    element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
+                                  />
+                                  <Route
+                                    path="/pos"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}>
+                                          <POS />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/reports"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier', 'accountant', 'viewer']}>
+                                          <Reports />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/finance"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'accountant']}>
+                                          <Finance />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/employees"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
+                                          <Employees />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/profile-settings"
+                                    element={isAuthenticated ? <ProfileSettings /> : <Navigate to="/login" replace />}
+                                  />
+                                  <Route
+                                    path="/system-settings"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin']}>
+                                          <SystemSettings />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/activity-log"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
+                                          <ActivityLog />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/help-support"
+                                    element={isAuthenticated ? <HelpSupport /> : <Navigate to="/login" replace />}
+                                  />
+                                  <Route
+                                    path="/translation-manager"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
+                                          <TranslationManager />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  {/* /admin is NOT role-gated here — it has its own separate
                                     is_kits_staff()/PIN gate (AdminPanel.tsx) unrelated to
                                     tenant role; a platform admin may hold any or no tenant
                                     role. Wrapping it in RoleRoute would be wrong. */}
-                                <Route
-                                  path="/admin"
-                                  element={isAuthenticated ? <AdminPanel /> : <Navigate to="/login" replace />}
-                                />
+                                  <Route
+                                    path="/admin"
+                                    element={isAuthenticated ? <AdminPanel /> : <Navigate to="/login" replace />}
+                                  />
 
-                                {/* ── Growth+ routes (forecasting) ── */}
-                                <Route
-                                  path="/forecasting"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
-                                        <FeatureRoute feature="forecasting">
-                                          <ForecastingPage />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Growth+ routes (forecasting) ── */}
+                                  <Route
+                                    path="/forecasting"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
+                                          <FeatureRoute feature="forecasting">
+                                            <ForecastingPage />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Growth+ routes (inventory_management) ── */}
-                                <Route
-                                  path="/inventory"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
-                                        <FeatureRoute feature="inventory_management">
-                                          <Inventory />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/inventory/batch-tracking"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
-                                        <FeatureRoute feature="inventory_management">
-                                          <BatchTracking />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/inventory/suppliers"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
-                                        <FeatureRoute feature="inventory_management">
-                                          <SupplierManagement />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/inventory/purchase-orders"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
-                                        <FeatureRoute feature="inventory_management">
-                                          <PurchaseOrderManagement />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/inventory/stock-transfers"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
-                                        <FeatureRoute feature="inventory_management">
-                                          <StockTransferManagement />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/inventory/reorder-points"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
-                                        <FeatureRoute feature="inventory_management">
-                                          <ReorderPointManagement />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Growth+ routes (inventory_management) ── */}
+                                  <Route
+                                    path="/inventory"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
+                                          <FeatureRoute feature="inventory_management">
+                                            <Inventory />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/inventory/batch-tracking"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
+                                          <FeatureRoute feature="inventory_management">
+                                            <BatchTracking />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/inventory/suppliers"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
+                                          <FeatureRoute feature="inventory_management">
+                                            <SupplierManagement />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/inventory/purchase-orders"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
+                                          <FeatureRoute feature="inventory_management">
+                                            <PurchaseOrderManagement />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/inventory/stock-transfers"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
+                                          <FeatureRoute feature="inventory_management">
+                                            <StockTransferManagement />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/inventory/reorder-points"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}>
+                                          <FeatureRoute feature="inventory_management">
+                                            <ReorderPointManagement />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Growth+ routes (crm) ── */}
-                                <Route
-                                  path="/customers"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier', 'accountant', 'viewer']}>
-                                        <FeatureRoute feature="crm">
-                                          <Customers />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Growth+ routes (crm) ── */}
+                                  <Route
+                                    path="/customers"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier', 'accountant', 'viewer']}>
+                                          <FeatureRoute feature="crm">
+                                            <Customers />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Business+ routes (enterprise_dashboard) ── */}
-                                <Route
-                                  path="/enterprise"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin']}>
-                                        <FeatureRoute feature="enterprise_dashboard">
-                                          <EnterpriseDashboard />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/enterprise/roles"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin']}>
-                                        <FeatureRoute feature="enterprise_dashboard">
-                                          <RolesAndPermissionsManager />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/enterprise/workflows"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin']}>
-                                        <FeatureRoute feature="enterprise_dashboard">
-                                          <WorkflowAutomation />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Business+ routes (enterprise_dashboard) ── */}
+                                  <Route
+                                    path="/enterprise"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin']}>
+                                          <FeatureRoute feature="enterprise_dashboard">
+                                            <EnterpriseDashboard />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/enterprise/roles"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin']}>
+                                          <FeatureRoute feature="enterprise_dashboard">
+                                            <RolesAndPermissionsManager />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/enterprise/workflows"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin']}>
+                                          <FeatureRoute feature="enterprise_dashboard">
+                                            <WorkflowAutomation />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Business+ routes (multi_location) ── */}
-                                <Route
-                                  path="/enterprise/locations"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin']}>
-                                        <FeatureRoute feature="multi_location">
-                                          <MultiLocationSupport />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Business+ routes (multi_location) ── */}
+                                  <Route
+                                    path="/enterprise/locations"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin']}>
+                                          <FeatureRoute feature="multi_location">
+                                            <MultiLocationSupport />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Business+ routes (api_webhooks) ── */}
-                                <Route
-                                  path="/enterprise/api"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin']}>
-                                        <FeatureRoute feature="api_webhooks">
-                                          <ApiAndWebhooks />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Business+ routes (api_webhooks) ── */}
+                                  <Route
+                                    path="/enterprise/api"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin']}>
+                                          <FeatureRoute feature="api_webhooks">
+                                            <ApiAndWebhooks />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Business+ routes (monitoring) ── */}
-                                <Route
-                                  path="/monitoring"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
-                                        <FeatureRoute feature="monitoring">
-                                          <MonitoringDashboard />
-                                        </FeatureRoute>
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Business+ routes (monitoring) ── */}
+                                  <Route
+                                    path="/monitoring"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={['owner', 'admin', 'manager']}>
+                                          <FeatureRoute feature="monitoring">
+                                            <MonitoringDashboard />
+                                          </FeatureRoute>
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Restaurant Vertical routes ── */}
-                                <Route path="/menu/:tenantSlug/:tableId" element={<QRMenuPage />} />
-                                <Route path="/book/:tenantSlug" element={<Suspense fallback={<div className="min-h-screen bg-slate-950" />}><BookReservation /></Suspense>} />
-                                <Route path="/feedback/:tenantSlug/:tableId?" element={<Suspense fallback={<div className="min-h-screen bg-slate-950" />}><TableFeedback /></Suspense>} />
-                                <Route
-                                  path="/restaurant"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant')}>
-                                        <RestaurantHub />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/restaurant/tables"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/tables')}>
-                                        <RestaurantTableManagement />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/restaurant/kds"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/kds')}>
-                                        <RestaurantKDS />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/restaurant/reservations"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/reservations')}>
-                                        <RestaurantReservations />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route path="/restaurant/waiter" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/waiter')}><RestaurantWaiter /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/argile" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/argile')}><RestaurantArgile /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/recipes" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/recipes')}><RestaurantRecipes /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/operations" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/operations')}><RestaurantOperationsHub /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/reception" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/reception')}><RestaurantReceptionHub /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/accountant" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/accountant')}><RestaurantAccountantHub /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/stockkeeper" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/stockkeeper')}><RestaurantStockkeeperHub /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/analytics" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/analytics')}><RestaurantAnalytics /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/shifts" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/shifts')}><RestaurantShifts /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/eod" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/eod')}><RestaurantEOD /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/tips" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/tips')}><RestaurantTips /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/menu" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/menu')}><RestaurantMenuManagement /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/branches" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/branches')}><RestaurantBranches /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/settings" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/settings')}><RestaurantSettings /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/ai" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/ai')}><RestaurantAIAssistant /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/delivery" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/delivery')}><RestaurantDelivery /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/delivery-orders" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/delivery-orders')}><RestaurantDeliveryOrders /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/waitlist" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/waitlist')}><RestaurantWaitlist /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/cash" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/cash')}><RestaurantCashDrawer /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/events" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/events')}><RestaurantEventsManager /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  {/* ── Restaurant Vertical routes ── */}
+                                  <Route path="/menu/:tenantSlug/:tableId" element={<QRMenuPage />} />
+                                  <Route path="/book/:tenantSlug" element={<Suspense fallback={<div className="min-h-screen bg-slate-950" />}><BookReservation /></Suspense>} />
+                                  <Route path="/feedback/:tenantSlug/:tableId?" element={<Suspense fallback={<div className="min-h-screen bg-slate-950" />}><TableFeedback /></Suspense>} />
+                                  <Route
+                                    path="/restaurant"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant')}>
+                                          <RestaurantHub />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/restaurant/tables"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/tables')}>
+                                          <RestaurantTableManagement />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/restaurant/kds"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/kds')}>
+                                          <RestaurantKDS />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/restaurant/reservations"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/reservations')}>
+                                          <RestaurantReservations />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route path="/restaurant/waiter" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/waiter')}><RestaurantWaiter /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/argile" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/argile')}><RestaurantArgile /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/recipes" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/recipes')}><RestaurantRecipes /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/operations" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/operations')}><RestaurantOperationsHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/reception" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/reception')}><RestaurantReceptionHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/accountant" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/accountant')}><RestaurantAccountantHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/stockkeeper" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/stockkeeper')}><RestaurantStockkeeperHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/analytics" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/analytics')}><RestaurantAnalytics /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/shifts" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/shifts')}><RestaurantShifts /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/eod" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/eod')}><RestaurantEOD /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/tips" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/tips')}><RestaurantTips /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/menu" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/menu')}><RestaurantMenuManagement /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/branches" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/branches')}><RestaurantBranches /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/settings" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/settings')}><RestaurantSettings /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/ai" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/ai')}><RestaurantAIAssistant /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/delivery" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/delivery')}><RestaurantDelivery /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/delivery-orders" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/delivery-orders')}><RestaurantDeliveryOrders /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/waitlist" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/waitlist')}><RestaurantWaitlist /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/cash" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/cash')}><RestaurantCashDrawer /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                  <Route path="/restaurant/events" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/events')}><RestaurantEventsManager /></RoleRoute>) : <Navigate to="/login" replace />} />
 
-                                {/* ── Pharmacy Vertical routes ── */}
-                                <Route
-                                  path="/pharmacy"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy')}>
-                                        <PharmacyHub />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/pharmacy/drugs"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/drugs')}>
-                                        <PharmacyDrugDatabase />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/pharmacy/prescriptions"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/prescriptions')}>
-                                        <PharmacyPrescriptions />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/pharmacy/narcotics"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/narcotics')}>
-                                        <PharmacyNarcoticsRegister />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Pharmacy Vertical routes ── */}
+                                  <Route
+                                    path="/pharmacy"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy')}>
+                                          <PharmacyHub />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/pharmacy/drugs"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/drugs')}>
+                                          <PharmacyDrugDatabase />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/pharmacy/prescriptions"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/prescriptions')}>
+                                          <PharmacyPrescriptions />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/pharmacy/narcotics"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/narcotics')}>
+                                          <PharmacyNarcoticsRegister />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Supermarket Vertical routes ── */}
-                                <Route
-                                  path="/supermarket"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket')}>
-                                        <SupermarketHub />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
-                                <Route
-                                  path="/supermarket/departments"
-                                  element={
-                                    isAuthenticated ? (
-                                      <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket/departments')}>
-                                        <SupermarketDepartmentManager />
-                                      </RoleRoute>
-                                    ) : (
-                                      <Navigate to="/login" replace />
-                                    )
-                                  }
-                                />
+                                  {/* ── Supermarket Vertical routes ── */}
+                                  <Route
+                                    path="/supermarket"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket')}>
+                                          <SupermarketHub />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/supermarket/departments"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket/departments')}>
+                                          <SupermarketDepartmentManager />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
-                                {/* ── Fallbacks ── */}
-                                <Route path="/" element={<Navigate to="/login" replace />} />
-                                <Route
-                                  path="*"
-                                  element={
-                                    isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
-                                  }
-                                />
-                              </Routes>
-                            </Suspense>
+                                  {/* ── Fallbacks ── */}
+                                  <Route path="/" element={<Navigate to="/login" replace />} />
+                                  <Route
+                                    path="*"
+                                    element={
+                                      isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+                                    }
+                                  />
+                                </Routes>
+                              </Suspense>
 
-                            {/* Mobile components wrapper inside Router context */}
-                            <MobileComponents isAuthenticated={isAuthenticated} loading={loading} />
+                              {/* Mobile components wrapper inside Router context */}
+                              <MobileComponents isAuthenticated={isAuthenticated} loading={loading} />
 
-                            <KeyboardNavigationHelper />
-                            <AccessibilityAudit />
-                            <Toaster />
-                            <SpeedInsights />
-                            <Analytics />
-                          </div>
-                        </NotificationProvider>
-                      </AccessibilityProvider>
-                    </TranslationProvider>
-                  </LanguageProvider>
-                </QueryProvider>
-              </IndustryProvider>
-            </SubscriptionProvider>
-          </AppProvider>
-        </Router>
-      </ThemeProvider>
+                              <KeyboardNavigationHelper />
+                              <AccessibilityAudit />
+                              <Toaster />
+                              <SpeedInsights />
+                              <Analytics />
+                            </div>
+                          </NotificationProvider>
+                        </AccessibilityProvider>
+                      </TranslationProvider>
+                    </LanguageProvider>
+                  </QueryProvider>
+                </IndustryProvider>
+              </SubscriptionProvider>
+            </AppProvider>
+          </Router>
+        </ThemeProvider>
+      </PowerSyncContext.Provider>
     </ErrorBoundary>
   );
 }

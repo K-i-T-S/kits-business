@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 
+import { powerSyncDb } from '../powersync/db';
 import { DataValidator } from '../utils/dataValidation';
 import { log } from '../utils/logger';
 import { queueMutation } from '../utils/offlineQueue';
@@ -510,6 +511,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setEmployees([]);
         setCurrentEmployee(null);
         setCurrentTenant(null);
+        // A genuine full sign-out (session === null), not a PIN swap to a
+        // different employee -- a PIN swap produces a new session for the
+        // new employee and never hits this branch, so the locally-cached
+        // PowerSync data (same tenant regardless of which employee is
+        // signed in) is correctly left intact across PIN swaps. Wipe it
+        // only here, where the device is genuinely leaving this tenant.
+        void powerSyncDb.disconnectAndClear();
       }
     });
 

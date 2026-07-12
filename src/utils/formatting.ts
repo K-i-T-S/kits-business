@@ -98,6 +98,21 @@ export const formatNumber = (number: number, language?: string): string => {
 };
 
 /**
+ * Local calendar date as YYYY-MM-DD, for comparing against a Postgres
+ * `date` column (shift_date, expense_date, etc.). Never round-trip a
+ * local Date through `.toISOString()` for this — that converts to UTC
+ * first, which silently shifts the date backward by one day for any
+ * positive-UTC-offset timezone (Lebanon is UTC+2/+3) whenever local time
+ * is within that offset window of local midnight.
+ */
+export const toLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Format dates using Intl.DateTimeFormat
  */
 export const formatDate = (

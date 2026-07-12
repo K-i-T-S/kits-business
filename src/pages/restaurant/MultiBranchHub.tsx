@@ -36,6 +36,7 @@ import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import type { BranchMetrics, RestaurantBranch } from '@/types/restaurant';
 import { supabase } from '@/utils/supabaseClient';
+import { toLocalDateString } from '@/utils/formatting';
 
 // ── Delivery Integration type (matches migration 000039) ─────────────────────
 
@@ -543,7 +544,7 @@ export default function MultiBranchHub() {
         setBranches(data as RestaurantBranch[]);
 
         // Load today's metrics for each branch
-        const today = new Date().toISOString().slice(0, 10);
+        const today = toLocalDateString(new Date());
         const { data: mData } = await supabase
           .from('restaurant_branch_metrics')
           .select('*')

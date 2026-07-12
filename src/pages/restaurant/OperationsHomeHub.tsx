@@ -9,7 +9,7 @@ import Layout from '@/components/Layout';
 import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import { useApp } from '@/context/AppContext';
 import { useSubscription } from '@/context/SubscriptionContext';
-import { formatCurrency } from '@/utils/formatting';
+import { formatCurrency, toLocalDateString } from '@/utils/formatting';
 import { supabase } from '@/utils/supabaseClient';
 
 type FloorAlertSource = 'call_waiter' | 'fa7em' | 'slow_alert';
@@ -71,7 +71,7 @@ export default function OperationsHomeHub() {
         .from('restaurant_shifts')
         .select('id')
         .eq('tenant_id', currentTenant.id)
-        .eq('shift_date', todayStart.toISOString().slice(0, 10));
+        .eq('shift_date', toLocalDateString(todayStart));
       const todaysShiftIds = ((todaysShiftsRes.data ?? []) as Array<{ id: string }>).map((s) => s.id);
 
       const [requestsRes, argileRes, slowRes, salesTodayRes, salesWeekRes, shiftsRes] = await Promise.all([

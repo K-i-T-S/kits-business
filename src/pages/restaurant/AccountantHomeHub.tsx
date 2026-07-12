@@ -9,7 +9,7 @@ import Layout from '@/components/Layout';
 import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
-import { formatCurrency } from '@/utils/formatting';
+import { formatCurrency, toLocalDateString } from '@/utils/formatting';
 
 interface PendingPayroll {
   id: string;
@@ -55,7 +55,7 @@ export default function AccountantHomeHub() {
     try {
       const monthStart = new Date();
       monthStart.setDate(1);
-      const monthStartStr = monthStart.toISOString().slice(0, 10);
+      const monthStartStr = toLocalDateString(monthStart);
 
       const [payrollRes, expensesRes, uncategorizedRes] = await Promise.all([
         supabase
@@ -97,7 +97,7 @@ export default function AccountantHomeHub() {
     try {
       const { error } = await supabase
         .from('payroll_entries')
-        .update({ payment_status: 'paid', payment_date: new Date().toISOString().slice(0, 10) })
+        .update({ payment_status: 'paid', payment_date: toLocalDateString(new Date()) })
         .eq('id', entryId);
       if (error) throw error;
       toast.success('Payroll entry marked paid');

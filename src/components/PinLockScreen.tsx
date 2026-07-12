@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 import { useApp } from '@/context/AppContext';
+import { toLocalDateString } from '@/utils/formatting';
 import { resolveRoleHomeRoute } from '@/utils/postLoginRoute';
 import { supabase } from '@/utils/supabaseClient';
 
@@ -99,7 +100,7 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
   // ShiftManager.tsx's own "clock in" button already performs.
   const clockInIfScheduled = useCallback(async (employeeId: string, tenantId: string) => {
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = toLocalDateString(new Date());
       const { data: todaysShifts } = await supabase
         .from('restaurant_shifts')
         .select('id')

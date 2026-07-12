@@ -1,5 +1,6 @@
-import { CalendarClock, ReceiptText, Users2, Wallet } from 'lucide-react';
+import { ArrowUpRight, CalendarClock, ReceiptText, Users2, Wallet } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
@@ -150,8 +151,9 @@ export default function AccountantHomeHub() {
         />
 
         {uncategorizedCount > 0 && (
-          <div
-            className="flex items-center gap-3 rounded-2xl border p-4"
+          <Link
+            to="/finance"
+            className="flex items-center gap-3 rounded-2xl border p-4 transition-colors hover:bg-white/5"
             style={{ background: RESTAURANT_COLORS.surface, borderColor: RESTAURANT_COLORS.border }}
           >
             <ReceiptText className="h-5 w-5 shrink-0" style={{ color: '#f59e0b' }} />
@@ -161,8 +163,20 @@ export default function AccountantHomeHub() {
               </p>
               <p className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>Review in Finance to keep reports accurate</p>
             </div>
-          </div>
+            <ArrowUpRight className="h-4 w-4 shrink-0" style={{ color: RESTAURANT_COLORS.textMuted }} />
+          </Link>
         )}
+
+        <Link
+          to="/finance"
+          className="flex items-center justify-between rounded-2xl border p-4 transition-colors hover:bg-white/5"
+          style={{ borderColor: RESTAURANT_COLORS.border }}
+        >
+          <span className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+            Open full Finance
+          </span>
+          <ArrowUpRight className="h-4 w-4" style={{ color: RESTAURANT_COLORS.textMuted }} />
+        </Link>
       </div>
     </Layout>
   );

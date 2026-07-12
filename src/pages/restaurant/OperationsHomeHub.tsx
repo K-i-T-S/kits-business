@@ -1,5 +1,6 @@
-import { AlertOctagon, Bell, DollarSign, TrendingUp, Users } from 'lucide-react';
+import { AlertOctagon, ArrowUpRight, Bell, DollarSign, TrendingUp, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
@@ -185,6 +186,15 @@ export default function OperationsHomeHub() {
     supervisor: 'Floor Operations',
   };
 
+  const forwardLinksByScope: Record<typeof scope, Array<{ to: string; label: string }>> = {
+    supervisor: [{ to: '/restaurant/tables', label: 'Open Table Management' }],
+    manager: [
+      { to: '/restaurant/shifts', label: 'Open Shifts' },
+      { to: '/restaurant/analytics', label: 'Open full Analytics' },
+    ],
+    owner: [{ to: '/restaurant/analytics', label: 'Open full Analytics' }],
+  };
+
   return (
     <Layout>
       <div className="p-4 sm:p-6 space-y-5">
@@ -269,6 +279,22 @@ export default function OperationsHomeHub() {
             </div>
           </div>
         )}
+
+        <div className={`grid grid-cols-1 gap-3 ${forwardLinksByScope[scope].length > 1 ? 'sm:grid-cols-2' : ''}`}>
+          {forwardLinksByScope[scope].map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="flex items-center justify-between rounded-2xl border p-4 transition-colors hover:bg-white/5"
+              style={{ borderColor: RESTAURANT_COLORS.border }}
+            >
+              <span className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+                {link.label}
+              </span>
+              <ArrowUpRight className="h-4 w-4" style={{ color: RESTAURANT_COLORS.textMuted }} />
+            </Link>
+          ))}
+        </div>
       </div>
     </Layout>
   );

@@ -1,5 +1,6 @@
-import { AlertTriangle, Boxes, PackageCheck, ShoppingCart } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Boxes, PackageCheck, ShoppingCart } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
@@ -190,6 +191,17 @@ export default function StockkeeperHomeHub() {
           emptyLabel="No purchase orders awaiting receipt"
           loading={loading}
         />
+
+        <Link
+          to="/restaurant/recipes"
+          className="flex items-center justify-between rounded-2xl border p-4 transition-colors hover:bg-white/5"
+          style={{ borderColor: RESTAURANT_COLORS.border }}
+        >
+          <span className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+            Open full inventory, recipes & purchase orders
+          </span>
+          <ArrowUpRight className="h-4 w-4" style={{ color: RESTAURANT_COLORS.textMuted }} />
+        </Link>
       </div>
     </Layout>
   );

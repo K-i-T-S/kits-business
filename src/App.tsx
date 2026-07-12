@@ -14,6 +14,7 @@ import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import RoleRoute from './components/RoleRoute';
 import { TranslationManager } from './components/TranslationManager';
 import { Toaster } from './components/ui/sonner';
+import { getRestaurantRouteRoles } from './constants/restaurantNavAccess';
 import { AppProvider } from './context/AppContext';
 import { IndustryProvider } from './context/IndustryContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -513,7 +514,7 @@ export default function App() {
                                   path="/restaurant"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}>
+                                      <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant')}>
                                         <RestaurantHub />
                                       </RoleRoute>
                                     ) : (
@@ -525,7 +526,7 @@ export default function App() {
                                   path="/restaurant/tables"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}>
+                                      <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/tables')}>
                                         <RestaurantTableManagement />
                                       </RoleRoute>
                                     ) : (
@@ -537,7 +538,7 @@ export default function App() {
                                   path="/restaurant/kds"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier', 'stockkeeper']}>
+                                      <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/kds')}>
                                         <RestaurantKDS />
                                       </RoleRoute>
                                     ) : (
@@ -549,7 +550,7 @@ export default function App() {
                                   path="/restaurant/reservations"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}>
+                                      <RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/reservations')}>
                                         <RestaurantReservations />
                                       </RoleRoute>
                                     ) : (
@@ -557,26 +558,26 @@ export default function App() {
                                     )
                                   }
                                 />
-                                <Route path="/restaurant/waiter" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}><RestaurantWaiter /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/argile" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}><RestaurantArgile /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/recipes" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}><RestaurantRecipes /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/operations" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor']}><RestaurantOperationsHub /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/reception" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}><RestaurantReceptionHub /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/accountant" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'accountant']}><RestaurantAccountantHub /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/stockkeeper" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'stockkeeper']}><RestaurantStockkeeperHub /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/analytics" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier', 'accountant', 'viewer']}><RestaurantAnalytics /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/shifts" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager']}><RestaurantShifts /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/eod" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier']}><RestaurantEOD /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/tips" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager']}><RestaurantTips /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/menu" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor']}><RestaurantMenuManagement /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/branches" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin']}><RestaurantBranches /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/settings" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin']}><RestaurantSettings /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/ai" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager']}><RestaurantAIAssistant /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/delivery" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier']}><RestaurantDelivery /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/delivery-orders" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier']}><RestaurantDeliveryOrders /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/waitlist" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}><RestaurantWaitlist /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/cash" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier']}><RestaurantCashDrawer /></RoleRoute>) : <Navigate to="/login" replace />} />
-                                <Route path="/restaurant/events" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager']}><RestaurantEventsManager /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/waiter" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/waiter')}><RestaurantWaiter /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/argile" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/argile')}><RestaurantArgile /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/recipes" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/recipes')}><RestaurantRecipes /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/operations" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/operations')}><RestaurantOperationsHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/reception" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/reception')}><RestaurantReceptionHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/accountant" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/accountant')}><RestaurantAccountantHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/stockkeeper" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/stockkeeper')}><RestaurantStockkeeperHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/analytics" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/analytics')}><RestaurantAnalytics /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/shifts" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/shifts')}><RestaurantShifts /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/eod" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/eod')}><RestaurantEOD /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/tips" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/tips')}><RestaurantTips /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/menu" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/menu')}><RestaurantMenuManagement /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/branches" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/branches')}><RestaurantBranches /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/settings" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/settings')}><RestaurantSettings /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/ai" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/ai')}><RestaurantAIAssistant /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/delivery" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/delivery')}><RestaurantDelivery /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/delivery-orders" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/delivery-orders')}><RestaurantDeliveryOrders /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/waitlist" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/waitlist')}><RestaurantWaitlist /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/cash" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/cash')}><RestaurantCashDrawer /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/events" element={isAuthenticated ? (<RoleRoute allowedRoles={getRestaurantRouteRoles('/restaurant/events')}><RestaurantEventsManager /></RoleRoute>) : <Navigate to="/login" replace />} />
 
                                 {/* ── Pharmacy Vertical routes ── */}
                                 <Route

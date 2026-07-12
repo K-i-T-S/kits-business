@@ -1,5 +1,6 @@
-import { CalendarClock, ListPlus } from 'lucide-react';
+import { ArrowUpRight, CalendarClock, ListPlus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
@@ -162,6 +163,29 @@ export default function ReceptionistHomeHub() {
           emptyLabel="No reservations awaiting confirmation"
           loading={loading}
         />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link
+            to="/restaurant/waitlist"
+            className="flex items-center justify-between rounded-2xl border p-4 transition-colors hover:bg-white/5"
+            style={{ borderColor: RESTAURANT_COLORS.border }}
+          >
+            <span className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+              Open full Waitlist (seat guests)
+            </span>
+            <ArrowUpRight className="h-4 w-4" style={{ color: RESTAURANT_COLORS.textMuted }} />
+          </Link>
+          <Link
+            to="/restaurant/reservations"
+            className="flex items-center justify-between rounded-2xl border p-4 transition-colors hover:bg-white/5"
+            style={{ borderColor: RESTAURANT_COLORS.border }}
+          >
+            <span className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+              Open full Reservations
+            </span>
+            <ArrowUpRight className="h-4 w-4" style={{ color: RESTAURANT_COLORS.textMuted }} />
+          </Link>
+        </div>
       </div>
     </Layout>
   );

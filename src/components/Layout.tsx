@@ -61,6 +61,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { BRAND } from '../constants/branding';
+import { getRestaurantRouteRoles } from '../constants/restaurantNavAccess';
 import { useApp } from '../context/AppContext';
 import { useIndustry } from '../context/IndustryContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -99,7 +100,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const { currentEmployee, isModalOpen, currentTenant, products, sales, customers } = useApp();
   const { unreadCount, addNotification } = useNotifications();
-  const { hasFeature } = useSubscription();
+  const { hasFeature, role } = useSubscription();
   const { theme, toggleTheme } = useTheme();
   const { industry } = useIndustry();
   const { announce } = useAccessibility();
@@ -271,6 +272,22 @@ export default function Layout({ children }: LayoutProps) {
       ],
     },
   ], [t]);
+
+  // Filter the restaurant nav to only what the signed-in role can actually
+  // reach — same RESTAURANT_ROUTE_ROLES map App.tsx's RoleRoute reads, so
+  // this can't drift out of sync with real access the way Dashboard.tsx's
+  // now-fixed ROLE_REDIRECT map did. A PIN-logged-in Waiter or Cashier
+  // previously saw the same ~20-item list as an owner, most of which
+  // bounced them if clicked.
+  const visibleRestaurantNavGroups = useMemo(
+    () => RESTAURANT_NAV_GROUPS
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => getRestaurantRouteRoles(item.href).includes(role)),
+      }))
+      .filter((group) => group.items.length > 0),
+    [RESTAURANT_NAV_GROUPS, role],
+  );
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -638,7 +655,7 @@ export default function Layout({ children }: LayoutProps) {
                         <span className="text-xs font-medium">Hub</span>
                       </Link>
                     </div>
-                    {RESTAURANT_NAV_GROUPS.map((group) => (
+                    {visibleRestaurantNavGroups.map((group) => (
                       <div key={group.label} className="mb-2.5">
                         <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-wider text-white/20">{group.label}</p>
                         <div className="space-y-0.5">

@@ -181,6 +181,15 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
         setPin('');
         return;
       }
+      // Track 2: resolve and navigate to the role-native screen (Waiter/
+      // Kitchen/Argile/POS/Operations/etc.) BEFORE dropping the lock
+      // overlay. The overlay is a fixed z-[100] full-screen cover, so
+      // navigating while it's still up means the new page is already
+      // mounted underneath by the time it's revealed — no flash of
+      // whatever page happened to be showing when the terminal locked.
+      const homeRoute = await resolveRoleHomeRoute();
+      if (homeRoute) void navigate(homeRoute);
+
       toast.success(`Welcome, ${employee.name}`);
       setLocked(false);
       setSelected(null);
@@ -191,11 +200,6 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
         const { data: { user: incoming } } = await supabase.auth.getUser();
         if (incoming) void logActivity(currentTenant.id, incoming.id, 'employee_pin_login', employee.id, employee.name);
       }
-      // Track 2, Phase A: land the employee straight on their role-native
-      // screen (Waiter/Kitchen/Argile/POS) instead of wherever the app
-      // happened to be sitting when the terminal locked.
-      const homeRoute = await resolveRoleHomeRoute();
-      if (homeRoute) void navigate(homeRoute);
     } finally {
       setSubmitting(false);
     }

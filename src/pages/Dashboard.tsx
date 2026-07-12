@@ -20,6 +20,7 @@ import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import { useIndustry } from '@/context/IndustryContext';
 import { INDUSTRY_CONFIGS } from '@/types/industry';
+import { resolveRoleHomeRoute } from '@/utils/postLoginRoute';
 
 const ROLE_REDIRECT: Partial<Record<string, string>> = {
   cashier: '/pos',
@@ -37,9 +38,32 @@ export default function Dashboard() {
   useEffect(() => {
     if (loading || !currentTenant) return;
     if (location.pathname !== '/dashboard') return;
+    // Only touch roles this map already redirected before Track 2 --
+    // owner/manager/supervisor were never auto-redirected from Dashboard
+    // and still aren't here; this only fixes the conflict for the three
+    // roles that were.
+    if (!(currentTenant.userRole in ROLE_REDIRECT)) return;
+
+    if (industry === 'restaurant') {
+      // Track 2 (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+      // resolveRoleHomeRoute() is the single source of truth for where a
+      // restaurant-tenant role belongs. This file's own ROLE_REDIRECT map
+      // predates Track 2 and sent stockkeeper/accountant to different
+      // destinations (/inventory, /reports) than Track 2's login-time
+      // redirect (/restaurant/stockkeeper, /restaurant/accountant) --
+      // since Dashboard stays reachable from every hub's sidebar, clicking
+      // it bounced those roles to a third, uncoordinated destination.
+      // Calling the same resolver here instead of hand-duplicating the
+      // mapping keeps the two from disagreeing again if either changes.
+      void resolveRoleHomeRoute().then((homeRoute) => {
+        if (homeRoute) void navigate(homeRoute, { replace: true });
+      });
+      return;
+    }
+
     const target = ROLE_REDIRECT[currentTenant.userRole];
     if (target) void navigate(target, { replace: true });
-  }, [currentTenant, loading, navigate, location.pathname]);
+  }, [currentTenant, loading, navigate, location.pathname, industry]);
 
   const now = useMemo(() => new Date(), []);
   const today = now.toDateString();

@@ -5,6 +5,36 @@ import { supabase } from '@/utils/supabaseClient';
 
 const POWERSYNC_URL = import.meta.env.VITE_POWERSYNC_URL;
 
+// PowerSync's local SQLite has no jsonb type -- these columns are stored
+// as JSON-encoded text locally (see AppSchema.ts's column.text). Synced
+// back to Supabase as-is, a JSON array/object would arrive as a JSON
+// *string value* for a jsonb column, which Postgres stores as a jsonb
+// string literal rather than the parsed array/object -- silently breaking
+// every downstream reader that expects e.g. restaurant_order_items.modifiers
+// to be an array. Re-parsed before every write in applyOp() below.
+const JSON_COLUMNS: Record<string, string[]> = {
+  restaurant_order_items: ['modifiers'],
+  tenants: ['settings'],
+};
+
+function reparseJsonColumns(table: string, data: Record<string, unknown>): Record<string, unknown> {
+  const columns = JSON_COLUMNS[table];
+  if (!columns) return data;
+  const result = { ...data };
+  for (const column of columns) {
+    const value = result[column];
+    if (typeof value === 'string') {
+      try {
+        result[column] = JSON.parse(value);
+      } catch {
+        // Not valid JSON -- leave as-is rather than throw; a permanent
+        // failure on write will surface this instead of masking it here.
+      }
+    }
+  }
+  return result;
+}
+
 /**
  * Track: offline-first architecture, Phase 1b
  * (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md).
@@ -85,10 +115,10 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     }
 
     if (opType === UpdateType.PUT) {
-      const { error } = await supabase.from(table).upsert({ ...opData, id });
+      const { error } = await supabase.from(table).upsert(reparseJsonColumns(table, { ...opData, id }));
       if (error) throw error;
     } else {
-      const { error } = await supabase.from(table).update(opData ?? {}).eq('id', id);
+      const { error } = await supabase.from(table).update(reparseJsonColumns(table, opData ?? {})).eq('id', id);
       if (error) throw error;
     }
   }

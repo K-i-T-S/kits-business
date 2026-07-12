@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { powerSyncDb } from '../powersync/db';
 import { DataValidator } from '../utils/dataValidation';
 import { log } from '../utils/logger';
-import { queueMutation } from '../utils/offlineQueue';
 import { StockUpdateLock, OperationQueue } from '../utils/raceConditionPrevention';
 import { supabase } from '../utils/supabaseClient';
 import { getCurrentUserTenant } from '../utils/tenantManager';
@@ -662,78 +661,78 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (!currentTenant) throw new Error('No active tenant');
 
-    // Offline path: queue for later replay
-    if (!navigator.onLine) {
-      await queueMutation({
-        tenantId: currentTenant.id,
-        table: 'sales',
-        operation: 'insert',
-        payload: {
-          tenant_id: currentTenant.id,
-          employee_id: sale.employeeId || currentEmployee?.id || null,
-          customer_id: sale.customerId || null,
-          subtotal: sale.subtotal,
-          total_amount: sale.total,
-          discount: 0,
-          tax_amount: 0,
-          payment_method: sale.paymentMethod,
-          payment_status: 'completed',
-        },
-      });
-      toast.info('Sale queued — will sync when online');
-      return;
-    }
-
     try {
-      const saleInsertResult = await supabase.from('sales').insert({
-        tenant_id: currentTenant.id,
-        employee_id: sale.employeeId || currentEmployee?.id || null,
-        customer_id: sale.customerId || null,
-        subtotal: sale.subtotal,
-        total_amount: sale.total,
-        discount: 0,
-        tax_amount: 0,
-        payment_method: sale.paymentMethod,
-        payment_status: 'completed',
-      }).select().single();
-
-      if (saleInsertResult.error) throw saleInsertResult.error;
-      const saleRow = saleInsertResult.data as DbSale;
-
-      if (sale.items.length > 0) {
-        const { error: itemsError } = await supabase.from('sale_items').insert(
-          sale.items.map(item => ({
-            sale_id: saleRow.id,
-            product_id: item.productId,
-            quantity: item.quantity,
-            unit_price: item.price,
-            total_price: item.price * item.quantity,
-          })),
+      // Always write through PowerSync's local database -- online and
+      // offline are the same code path, no navigator.onLine branch needed.
+      // sale.id is generated client-side by the caller (crypto.randomUUID())
+      // and is canonical everywhere: a genuinely offline write can't wait
+      // on a server round-trip for an id that might not arrive for days.
+      await powerSyncDb.writeTransaction(async (tx) => {
+        await tx.execute(
+          `INSERT INTO sales (id, tenant_id, employee_id, customer_id, subtotal, total_amount, discount, tax_amount, payment_method, payment_status, sale_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            sale.id,
+            currentTenant.id,
+            sale.employeeId || currentEmployee?.id || null,
+            sale.customerId ?? null,
+            sale.subtotal,
+            sale.total,
+            0,
+            0,
+            sale.paymentMethod,
+            'completed',
+            sale.date,
+          ],
         );
-        if (itemsError) throw itemsError;
-      }
 
-      // Decrement stock for each sold item
-      for (const item of sale.items) {
-        const product = products.find(p => p.id === item.productId);
-        if (product) {
-          const currentStock = product.variants?.[0]?.stock ?? 0;
-          await supabase.from('products').update({
-            stock_quantity: Math.max(0, currentStock - item.quantity),
-          }).eq('id', item.productId);
+        for (const item of sale.items) {
+          await tx.execute(
+            `INSERT INTO sale_items (id, sale_id, product_id, quantity, unit_price, total_price)
+             VALUES (uuid(), ?, ?, ?, ?, ?)`,
+            [sale.id, item.productId, item.quantity, item.price, item.price * item.quantity],
+          );
+
+          // Stock delta -- the connector's uploadData() computes the actual
+          // delta from PowerSync's trackPrevious tracking and applies it via
+          // apply_product_stock_delta() on sync, so the absolute-value race
+          // the old online path had (two concurrent sales both reading the
+          // same stale stock and overwriting each other's decrement) can't
+          // reoccur once this syncs.
+          const product = products.find(p => p.id === item.productId);
+          const currentStock = product?.variants?.[0]?.stock ?? 0;
+          await tx.execute(
+            'UPDATE products SET stock_quantity = ? WHERE id = ?',
+            [Math.max(0, currentStock - item.quantity), item.productId],
+          );
         }
-      }
+      });
 
-      const newSale = dbSaleToFrontend(saleRow);
-      newSale.items = sale.items; // keep full items with names/costs for local state
+      const newSale: Sale = { ...sale };
       setSales(prev => [newSale, ...prev]);
 
-      // Refresh products to get updated stock
-      const { data: refreshedProducts } = await supabase.from('products').select('*').eq('is_active', true).order('name');
-      if (refreshedProducts) setProducts((refreshedProducts as DbProduct[]).map(dbProductToFrontend));
+      // Optimistic local stock update mirroring the write above -- the UI
+      // reflects it immediately rather than waiting on a server refetch,
+      // which may not complete for a long time while offline.
+      setProducts(prev => prev.map((p) => {
+        if (p.id === undefined) return p;
+        const soldQty = sale.items
+          .filter(item => item.productId === p.id)
+          .reduce((sum, item) => sum + item.quantity, 0);
+        if (soldQty === 0) return p;
+        const variant = p.variants[0];
+        if (!variant) return p;
+        return {
+          ...p,
+          variants: [{ ...variant, stock: Math.max(0, variant.stock - soldQty) }, ...p.variants.slice(1)],
+        };
+      }));
 
-      // Update customer stats if applicable
-      if (sale.customerId) {
+      // customers/activity_log aren't in PowerSync's offline sync scope --
+      // only attempt these when genuinely connected, using PowerSync's own
+      // connection status rather than navigator.onLine (which reflects
+      // "has a network interface," not "an actual connection succeeded").
+      if (powerSyncDb.currentStatus.connected && sale.customerId) {
         const customer = customers.find(c => c.id === sale.customerId);
         if (customer) {
           await supabase.from('customers').update({
@@ -750,13 +749,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       toast.success('Sale recorded', { description: `Total $${sale.total.toFixed(2)}` });
-      logActivity({
-        tenantId: currentTenant.id,
-        action: 'sale_created',
-        entityType: 'sale',
-        entityId: newSale.id,
-        metadata: { total: sale.total, items: sale.items.length },
-      });
+      if (powerSyncDb.currentStatus.connected) {
+        logActivity({
+          tenantId: currentTenant.id,
+          action: 'sale_created',
+          entityType: 'sale',
+          entityId: newSale.id,
+          metadata: { total: sale.total, items: sale.items.length },
+        });
+      }
       return newSale;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));

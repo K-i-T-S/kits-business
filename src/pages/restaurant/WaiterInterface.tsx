@@ -9,6 +9,7 @@
  *
  * Layout: Thumb-zone optimised — bottom navigation + FAB above nav
  */
+import { useStatus } from '@powersync/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -54,7 +55,7 @@ import type { Employee } from '@/context/AppContext';
 import { useApp } from '@/context/AppContext';
 import { useRestaurantOrder } from '@/hooks/useRestaurantOrder';
 import { useUpsellRules } from '@/hooks/useUpsellRules';
-import { queueMutation, getPendingActions, removeQueuedAction } from '@/utils/offlineQueue';
+import { powerSyncDb } from '@/powersync/db';
 import { supabase } from '@/utils/supabaseClient';
 import type {
   RestaurantTable,
@@ -1766,25 +1767,27 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, bundles, 
           onClose={() => setSelectedMenuItem(null)}
           onConfirm={(qty, notes, unitPrice, modifiers, course) => {
             if (!isOnline) {
-              void queueMutation({
-                tenantId: tenantId ?? '',
-                table: 'restaurant_order_items',
-                operation: 'insert',
-                payload: {
-                  tenant_id: tenantId ?? '',
-                  order_id: order?.id ?? '',
-                  table_id: table.id,
-                  product_name: selectedMenuItem.name,
-                  quantity: qty,
-                  unit_price: unitPrice,
+              // restaurant_order_items has no table_id column (only
+              // order_id) -- the old offline-queue payload included one
+              // anyway, which meant every replayed insert errored on
+              // reconnect and the write was stuck in the local queue
+              // forever. Not repeated here.
+              void powerSyncDb.execute(
+                `INSERT INTO restaurant_order_items
+                   (id, tenant_id, order_id, product_name, quantity, unit_price, course, notes, menu_item_id, modifiers, status, sent_at)
+                 VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL)`,
+                [
+                  tenantId ?? '',
+                  order?.id ?? '',
+                  selectedMenuItem.name,
+                  qty,
+                  unitPrice,
                   course,
-                  notes: notes || null,
-                  menu_item_id: selectedMenuItem.id,
-                  modifiers,
-                  status: 'pending',
-                  sent_at: null,
-                },
-              });
+                  notes || null,
+                  selectedMenuItem.id,
+                  JSON.stringify(modifiers),
+                ],
+              );
               toast.info('Item queued — will sync when online');
               setSelectedMenuItem(null);
               return;
@@ -1801,24 +1804,21 @@ function TableDetail({ tableData, settings, menuCategories, menuItems, bundles, 
           }}
           onUpsellAdd={(upsellItem) => {
             if (!isOnline) {
-              void queueMutation({
-                tenantId: tenantId ?? '',
-                table: 'restaurant_order_items',
-                operation: 'insert',
-                payload: {
-                  tenant_id: tenantId ?? '',
-                  order_id: order?.id ?? '',
-                  table_id: table.id,
-                  product_name: upsellItem.name,
-                  quantity: 1,
-                  unit_price: upsellItem.base_price_usd,
-                  course: currentCourse,
-                  menu_item_id: upsellItem.id,
-                  modifiers: [],
-                  status: 'pending',
-                  sent_at: null,
-                },
-              });
+              void powerSyncDb.execute(
+                `INSERT INTO restaurant_order_items
+                   (id, tenant_id, order_id, product_name, quantity, unit_price, course, menu_item_id, modifiers, status, sent_at)
+                 VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL)`,
+                [
+                  tenantId ?? '',
+                  order?.id ?? '',
+                  upsellItem.name,
+                  1,
+                  upsellItem.base_price_usd,
+                  currentCourse,
+                  upsellItem.id,
+                  JSON.stringify([]),
+                ],
+              );
               toast.info('Item queued — will sync when online');
               return;
             }
@@ -1857,7 +1857,9 @@ export default function WaiterInterface() {
   const [bundleCourses, setBundleCourses] = useState<RestaurantBundleCourse[]>([]);
   const [bundleCourseItems, setBundleCourseItems] = useState<RestaurantBundleCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  // PowerSync's own connection status -- a real attempted connection,
+  // not navigator.onLine's "has a network interface" signal.
+  const { connected: isOnline } = useStatus();
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [filterSection, setFilterSection] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -1927,37 +1929,12 @@ export default function WaiterInterface() {
     };
   }, [loadData]);
 
-  // Online/offline detection — sync queued restaurant_order_items on reconnect
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      void (async () => {
-        try {
-          const pending = await getPendingActions();
-          const restaurantWrites = pending.filter((a) => a.table === 'restaurant_order_items');
-          for (const action of restaurantWrites) {
-            if (action.operation === 'insert' && tenantId) {
-              const { error } = await supabase.from('restaurant_order_items').insert(action.payload);
-              if (!error) await removeQueuedAction(action.id);
-            }
-          }
-          if (restaurantWrites.length > 0) {
-            void loadData();
-            toast.success(`${restaurantWrites.length} queued item(s) synced`);
-          }
-        } catch (err) {
-          console.error('[WaiterInterface] sync error:', err);
-        }
-      })();
-    };
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [tenantId, loadData]);
+  // Reconnect sync used to be manual here (replay queued writes on the
+  // browser's 'online' event) -- now handled automatically by PowerSync's
+  // own upload queue, which is triggered by a real connection attempt
+  // rather than navigator.onLine's "has a network interface" signal. Once
+  // reconnected, a loadData() poll (the existing 30s interval above) picks
+  // up anything that synced in the background; no manual replay needed.
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -2050,10 +2027,13 @@ export default function WaiterInterface() {
         return;
       }
       const now = new Date().toISOString();
+      // No table_id column on restaurant_order_items (only order_id) -- a
+      // prior version of this row shape included one anyway, which meant
+      // every insert here (both this online path and the old offline
+      // queue) errored with an unknown-column response from PostgREST.
       const itemRows = editedItems.map((item) => ({
         tenant_id: tenantId,
         order_id: tableOrder.id,
-        table_id: order.table_id,
         product_name: item.name,
         menu_item_id: item.menu_item_id,
         quantity: item.quantity,
@@ -2065,16 +2045,33 @@ export default function WaiterInterface() {
         sent_at: null,
         bundle_id: item.bundle_id ?? null,
       }));
-      // Offline — queue each item for later sync
       if (!isOnline) {
-        for (const row of itemRows) {
-          void queueMutation({
-            tenantId: tenantId ?? '',
-            table: 'restaurant_order_items',
-            operation: 'insert',
-            payload: row as unknown as Record<string, unknown>,
-          });
-        }
+        // restaurant_pending_orders isn't in PowerSync's offline sync
+        // scope, so marking this order "confirmed" still can't happen
+        // offline -- matches the prior behavior, which also returned
+        // early here without updating pending-order state.
+        await powerSyncDb.writeTransaction(async (tx) => {
+          for (const row of itemRows) {
+            await tx.execute(
+              `INSERT INTO restaurant_order_items
+                 (id, tenant_id, order_id, product_name, menu_item_id, quantity, unit_price, course, notes, modifiers, status, sent_at, bundle_id)
+               VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+              [
+                row.tenant_id,
+                row.order_id,
+                row.product_name,
+                row.menu_item_id,
+                row.quantity,
+                row.unit_price,
+                row.course,
+                row.notes,
+                JSON.stringify(row.modifiers),
+                row.status,
+                row.bundle_id,
+              ],
+            );
+          }
+        });
         toast.info('Item queued — will sync when online');
         return;
       }

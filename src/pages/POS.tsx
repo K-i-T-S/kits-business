@@ -1,5 +1,6 @@
+import { useStatus } from '@powersync/react';
 import { Barcode, Minus, Plus, Trash2, DollarSign, Receipt, User, Tag, Star, Settings, Split, Printer, MessageCircle, Loader2, WifiOff } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import DiscountModal from '../components/DiscountModal';
@@ -16,7 +17,6 @@ import type { SplitPayment, TipInfo, DiscountCoupon, ReceiptTemplate } from '../
 import { formatTaxBreakdown } from '../utils/formatting';
 import { POSCalculator } from '../utils/posCalculations';
 import { supabase } from '../utils/supabaseClient';
-import { queueMutation, getPendingActions, removeQueuedAction, incrementRetry } from '../utils/offlineQueue';
 import '../styles/print.css';
 
 // ─── Barcode scanner tuning ───────────────────────────────────────────────────
@@ -84,59 +84,13 @@ export default function POS() {
   const [whatsappSending, setWhatsappSending] = useState(false);
   const taxRate = currentTenant?.tax_rate ?? 0;
 
-  // ── Offline detection + auto-sync on reconnect ────────────────────────────
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    const syncPendingSales = async () => {
-      if (!currentTenant) return;
-      const pending = await getPendingActions();
-      const salesWrites = pending.filter(w => w.table === 'sales');
-      for (const write of salesWrites) {
-        try {
-          const { _items, ...salePayload } = write.payload;
-          const { data: saleRow, error } = await supabase
-            .from('sales')
-            .insert(salePayload)
-            .select()
-            .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
-          if (error) throw new Error(error.message);
-          if (
-            Array.isArray(_items) &&
-            _items.length > 0 &&
-            saleRow !== null &&
-            typeof saleRow === 'object' &&
-            'id' in saleRow
-          ) {
-            const saleId = String((saleRow as Record<string, unknown>)['id']);
-            await supabase.from('sale_items').insert(
-              (_items as Array<Record<string, unknown>>).map(item => ({
-                ...item,
-                sale_id: saleId,
-              })),
-            );
-          }
-          await removeQueuedAction(write.id);
-          toast.success('Offline sale synced');
-        } catch {
-          await incrementRetry(write);
-        }
-      }
-    };
-
-    const onOnline = () => {
-      setIsOnline(true);
-      void syncPendingSales();
-    };
-    const onOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  }, [currentTenant]);
+  // Offline detection now comes from PowerSync's own sync status (a real
+  // attempted connection, not just navigator.onLine's "has a network
+  // interface") -- addSale() writes to the local database unconditionally
+  // and PowerSync handles syncing to Supabase in the background whenever
+  // connectivity actually allows it, so there's no separate queue/replay
+  // logic needed here anymore.
+  const { connected: isOnline } = useStatus();
 
   const handleSendWhatsApp = async () => {
     if (!lastSale || !selectedCustomer) return;
@@ -441,51 +395,23 @@ export default function POS() {
       loyaltyPointsRedeemed,
     };
 
-    // ── Offline path — queue and show receipt locally ─────────────────────
-    if (!isOnline) {
-      if (!currentTenant) {
-        toast.error('No active tenant');
-        return;
-      }
-      await queueMutation({
-        tenantId: currentTenant.id,
-        table: 'sales',
-        operation: 'insert',
-        payload: {
-          tenant_id: currentTenant.id,
-          employee_id: sale.employeeId || currentEmployee?.id || null,
-          customer_id: sale.customerId ?? null,
-          subtotal: sale.subtotal,
-          total_amount: sale.total,
-          discount: 0,
-          tax_amount: 0,
-          payment_method: sale.paymentMethod,
-          payment_status: 'completed',
-          _items: sale.items.map(item => ({
-            product_id: item.productId,
-            quantity: item.quantity,
-            unit_price: item.price,
-            total_price: item.price * item.quantity,
-          })),
-        },
-      });
-      setLastSale(receiptData);
-      setShowReceipt(true);
-      setCart([]);
-      setBarcode('');
-      setSelectedCustomer('');
-      setSplitPayments([]);
-      setTipInfo(null);
-      setAppliedCoupon(null);
-      setLoyaltyPointsRedeemed(0);
-      toast.success('Sale saved offline — will sync when reconnected');
+    if (!currentTenant) {
+      toast.error('No active tenant');
       return;
     }
 
     try {
+      // addSale() writes to PowerSync's local database unconditionally --
+      // this succeeds whether the terminal is online or offline, so there's
+      // no separate offline branch here anymore.
       await addSale(sale);
 
-      if (selectedCustomer) {
+      // customer_points/point_transactions/updateCustomer's `customers`
+      // table are all outside PowerSync's offline sync scope -- only
+      // attempt these when genuinely connected (PowerSync's own status,
+      // not navigator.onLine), otherwise skip them silently rather than
+      // let a doomed network call throw during an offline sale.
+      if (isOnline && selectedCustomer) {
         const customer = customers.find(c => c.id === selectedCustomer);
         if (customer) {
           await updateCustomer(selectedCustomer, {
@@ -495,7 +421,7 @@ export default function POS() {
         }
 
         // Loyalty: earn points
-        if (currentTenant?.loyalty_enabled) {
+        if (currentTenant.loyalty_enabled) {
           const pointsEarned = Math.floor(total * (currentTenant.loyalty_points_per_dollar ?? 1));
           if (pointsEarned > 0) {
             void supabase.rpc('upsert_customer_points', {
@@ -513,7 +439,7 @@ export default function POS() {
               const newBalance = Math.max(0, (data as { points_balance: number }).points_balance - loyaltyPointsRedeemed);
               void supabase.from('customer_points').update({ points_balance: newBalance }).eq('customer_id', selectedCustomer);
               void supabase.from('point_transactions').insert({
-                tenant_id: currentTenant?.id,
+                tenant_id: currentTenant.id,
                 customer_id: selectedCustomer,
                 sale_id: sale.id,
                 type: 'redeemed',
@@ -534,9 +460,12 @@ export default function POS() {
       setAppliedCoupon(null);
       setLoyaltyPointsRedeemed(0);
 
-      toast.success('Sale completed', {
-        description: `Total ${sale.total.toFixed(2)} charged via ${payments.map(p => p.method).join(', ')}.`,
-      });
+      toast.success(
+        isOnline ? 'Sale completed' : 'Sale saved offline — will sync when reconnected',
+        isOnline
+          ? { description: `Total ${sale.total.toFixed(2)} charged via ${payments.map(p => p.method).join(', ')}.` }
+          : undefined,
+      );
     } catch (error) {
       toast.error('Failed to complete sale', {
         description: error instanceof Error ? error.message : 'Unknown error occurred.',

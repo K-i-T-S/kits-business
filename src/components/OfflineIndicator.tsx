@@ -1,43 +1,42 @@
-import { WifiOff, RefreshCw, CheckCircle, AlertTriangle, Database, Clock } from 'lucide-react';
+import { useStatus } from '@powersync/react';
+import { WifiOff, RefreshCw, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
-import { useApp } from '@/context/AppContext';
-import { useOfflineQueue } from '@/hooks/useOfflineQueue';
-
-// ---------------------------------------------------------------------------
-// Sync-complete transient state
-// ---------------------------------------------------------------------------
 const SYNC_DONE_DURATION_MS = 3000;
 
+/**
+ * Track: offline-first architecture, Phase 1b
+ * (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md).
+ *
+ * Rewritten to read PowerSync's own connection/upload status instead of
+ * the retired utils/offlineQueue.ts IndexedDB queue -- POS.tsx and
+ * WaiterInterface.tsx no longer write to that queue, so it would sit
+ * permanently empty and this indicator would silently show "0 pending,
+ * online" even while PowerSync genuinely has writes syncing in the
+ * background. No exact pending-operation count is shown here (PowerSync
+ * doesn't surface one directly via useStatus() the way the old raw queue
+ * did) -- that's an intentional simplification, not an oversight; showing
+ * an approximated count would be worse than not showing one.
+ */
 export function OfflineIndicator() {
-  const { currentTenant } = useApp();
-  const tenantId = currentTenant?.id ?? '';
-
-  const { isOnline, pendingCount, isSyncing, syncPending } = useOfflineQueue(tenantId);
+  const status = useStatus();
+  const isOnline = status.connected;
+  const isSyncing = status.dataFlowStatus?.uploading ?? false;
 
   // Track "all synced" flash state
   const [showSyncComplete, setShowSyncComplete] = useState(false);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Previous pending count — used to detect a sync-complete transition
-  const prevPendingRef = useRef(pendingCount);
   const prevSyncingRef = useRef(isSyncing);
 
   useEffect(() => {
-    const wassyncing = prevSyncingRef.current;
-    const hadPending = prevPendingRef.current;
-
+    const wasSyncing = prevSyncingRef.current;
     prevSyncingRef.current = isSyncing;
-    prevPendingRef.current = pendingCount;
 
-    // Transition: was syncing → no longer syncing → nothing left → show "All synced"
-    if (wassyncing && !isSyncing && hadPending > 0 && pendingCount === 0 && isOnline) {
+    // Transition: was uploading -> no longer uploading -> show "All synced"
+    if (wasSyncing && !isSyncing && isOnline) {
       setShowSyncComplete(true);
-
       if (dismissTimer.current) clearTimeout(dismissTimer.current);
       dismissTimer.current = setTimeout(() => {
         setShowSyncComplete(false);
@@ -47,68 +46,40 @@ export function OfflineIndicator() {
     return () => {
       if (dismissTimer.current) clearTimeout(dismissTimer.current);
     };
-  }, [isSyncing, pendingCount, isOnline]);
+  }, [isSyncing, isOnline]);
 
-  // ---------------------------------------------------------------------------
-  // Determine which state to show
-  // ---------------------------------------------------------------------------
-  const isOffline = !isOnline;
-  const hasPending = pendingCount > 0;
-
-  // Nothing to show — online, nothing pending, no transient message
-  if (isOnline && !hasPending && !isSyncing && !showSyncComplete) {
+  // Nothing to show — online, not syncing, no transient message
+  if (isOnline && !isSyncing && !showSyncComplete) {
     return null;
   }
 
-  // ---------------------------------------------------------------------------
-  // State-specific content
-  // ---------------------------------------------------------------------------
-  type IndicatorState = 'offline' | 'syncing' | 'syncComplete' | 'pendingOnline';
-
-  const state: IndicatorState = isOffline
-    ? 'offline'
-    : isSyncing
-      ? 'syncing'
-      : showSyncComplete
-        ? 'syncComplete'
-        : 'pendingOnline';
+  type IndicatorState = 'offline' | 'syncing' | 'syncComplete';
+  const state: IndicatorState = !isOnline ? 'offline' : isSyncing ? 'syncing' : 'syncComplete';
 
   const config = {
     offline: {
-      color: 'amber' as const,
       Icon: WifiOff,
       title: 'Working offline',
-      description: `${pendingCount} operation${pendingCount !== 1 ? 's' : ''} queued`,
+      description: 'Changes are saved locally and will sync automatically when reconnected.',
       headerGradient: 'from-amber-600 to-amber-700',
       iconBg: 'bg-amber-600/20 border-amber-600/30',
       iconColor: 'text-amber-400',
     },
     syncing: {
-      color: 'indigo' as const,
       Icon: RefreshCw,
       title: 'Syncing',
-      description: `Syncing ${pendingCount} operation${pendingCount !== 1 ? 's' : ''}...`,
+      description: 'Sending queued changes to the server...',
       headerGradient: 'from-indigo-600 to-indigo-700',
       iconBg: 'bg-indigo-600/20 border-indigo-600/30',
       iconColor: 'text-indigo-400',
     },
     syncComplete: {
-      color: 'green' as const,
       Icon: CheckCircle,
       title: 'All synced',
-      description: 'All operations have been synced successfully.',
+      description: 'All offline changes have been synced successfully.',
       headerGradient: 'from-emerald-600 to-emerald-700',
       iconBg: 'bg-emerald-600/20 border-emerald-600/30',
       iconColor: 'text-emerald-400',
-    },
-    pendingOnline: {
-      color: 'yellow' as const,
-      Icon: Database,
-      title: 'Sync pending',
-      description: `${pendingCount} operation${pendingCount !== 1 ? 's' : ''} waiting to sync`,
-      headerGradient: 'from-amber-600 to-amber-700',
-      iconBg: 'bg-amber-600/20 border-amber-600/30',
-      iconColor: 'text-amber-400',
     },
   }[state];
 
@@ -146,81 +117,34 @@ export function OfflineIndicator() {
         </CardHeader>
 
         <CardContent className="pt-0 space-y-4">
-          {/* Pending count + last-sync row */}
           {state !== 'syncComplete' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div
-                className="flex items-center gap-2 p-3 rounded-xl"
-                style={{
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid rgba(59, 130, 246, 0.2)',
-                }}
-              >
-                <Database className="h-4 w-4 text-blue-400" />
-                <div>
-                  <div className="text-xs text-white/60">Queued</div>
-                  <div className="text-sm font-medium text-white">{pendingCount}</div>
-                </div>
-              </div>
-              <div
-                className="flex items-center gap-2 p-3 rounded-xl"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                }}
-              >
-                <Clock className="h-4 w-4 text-white/60" />
-                <div>
-                  <div className="text-xs text-white/60">Status</div>
-                  <div className="text-sm font-medium text-white">
-                    {isOffline ? 'Offline' : 'Online'}
-                  </div>
+            <div
+              className="flex items-center gap-2 p-3 rounded-xl"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <Clock className="h-4 w-4 text-white/60" />
+              <div>
+                <div className="text-xs text-white/60">Status</div>
+                <div className="text-sm font-medium text-white">
+                  {isOnline ? 'Online' : 'Offline'}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Offline advisory */}
           {state === 'offline' && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 p-3 bg-amber-600/10 border border-amber-600/20 rounded-xl">
-                <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-                <span className="text-xs text-amber-400">
-                  Changes are saved locally and will sync automatically when the connection is
-                  restored.
-                </span>
-              </div>
+            <div className="flex items-center gap-2 p-3 bg-amber-600/10 border border-amber-600/20 rounded-xl">
+              <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+              <span className="text-xs text-amber-400">
+                Changes are saved locally and will sync automatically when the connection is
+                restored.
+              </span>
             </div>
           )}
 
-          {/* Manual sync button — only when online and pending */}
-          {state === 'pendingOnline' && (
-            <div className="flex items-center justify-between">
-              <Badge
-                variant="secondary"
-                className="text-xs"
-                style={{
-                  backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                  color: '#60a5fa',
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                }}
-              >
-                {pendingCount} item{pendingCount !== 1 ? 's' : ''}
-              </Badge>
-              <Button
-                onClick={() => void syncPending()}
-                disabled={isSyncing}
-                size="sm"
-                className="transition-all duration-200 active:scale-95"
-                style={{ backgroundColor: '#6366f1', color: 'white', border: 'none' }}
-              >
-                <RefreshCw className="h-4 w-4 me-2" />
-                Sync Now
-              </Button>
-            </div>
-          )}
-
-          {/* Syncing progress bar */}
           {state === 'syncing' && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-white/50">
@@ -236,12 +160,11 @@ export function OfflineIndicator() {
             </div>
           )}
 
-          {/* Sync-complete confirmation */}
           {state === 'syncComplete' && (
             <div className="flex items-center gap-2 p-3 bg-emerald-600/10 border border-emerald-600/20 rounded-xl">
               <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
               <span className="text-xs text-emerald-400">
-                All queued operations synced successfully.
+                All offline changes synced successfully.
               </span>
             </div>
           )}

@@ -27,10 +27,7 @@ interface BookingForm {
   notes: string;
 }
 
-interface ExistingReservation {
-  reserved_at: string;
-  party_size: number;
-}
+type SlotCounts = Record<string, number>;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -73,13 +70,8 @@ function formatDateDisplay(dateStr: string): string {
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function countReservationsInSlot(existing: ExistingReservation[], slot: string): number {
-  return existing.filter((r) => {
-    const d = new Date(r.reserved_at);
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = d.getMinutes() < 30 ? '00' : '30';
-    return `${hh}:${mm}` === slot;
-  }).length;
+function countReservationsInSlot(counts: SlotCounts, slot: string): number {
+  return counts[slot] ?? 0;
 }
 
 const ALL_SLOTS = generateTimeSlots();
@@ -104,7 +96,7 @@ export default function BookReservation() {
     notes: '',
   });
 
-  const [existingReservations, setExistingReservations] = useState<ExistingReservation[]>([]);
+  const [slotCounts, setSlotCounts] = useState<SlotCounts>({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -118,17 +110,15 @@ export default function BookReservation() {
       setLoadingTenant(true);
       setTenantError(null);
       try {
-        const { data, error } = await supabase
-          .from('tenants')
-          .select('id, name, brand_logo_url, brand_primary, country, phone')
-          .eq('tenant_slug', tenantSlug)
-          .single();
+        const { data, error } = (await supabase.rpc('get_public_tenant_by_slug', {
+          p_slug: tenantSlug,
+        })) as { data: ({ error?: string } & TenantPublic) | null; error: { message: string } | null };
 
-        if (error || !data) {
+        if (error || !data || data.error === 'not_found') {
           setTenantError('Restaurant not found. Please check your link.');
           return;
         }
-        setTenant(data as TenantPublic);
+        setTenant(data);
       } catch (err) {
         setTenantError(err instanceof Error ? err.message : 'Failed to load restaurant info.');
       } finally {
@@ -139,22 +129,19 @@ export default function BookReservation() {
     void fetchTenant();
   }, [tenantSlug]);
 
-  // ── Load existing reservations for the selected date ─────────────────────
-  const loadSlots = useCallback(async (tenantId: string, date: string) => {
+  // ── Load slot availability (counts only) for the selected date ───────────
+  const loadSlots = useCallback(async (slug: string, date: string) => {
     if (!date) return;
     setLoadingSlots(true);
     try {
-      const { data } = await supabase
-        .from('reservations')
-        .select('reserved_at, party_size')
-        .eq('tenant_id', tenantId)
-        .gte('reserved_at', `${date}T00:00:00`)
-        .lt('reserved_at', `${date}T23:59:59`)
-        .not('status', 'in', '("cancelled","no_show")');
+      const { data } = (await supabase.rpc('get_public_reservation_slot_counts', {
+        p_tenant_slug: slug,
+        p_date: date,
+      })) as { data: SlotCounts | null; error: { message: string } | null };
 
-      setExistingReservations((data ?? []) as ExistingReservation[]);
+      setSlotCounts(data ?? {});
     } catch {
-      setExistingReservations([]);
+      setSlotCounts({});
     } finally {
       setLoadingSlots(false);
     }
@@ -162,10 +149,10 @@ export default function BookReservation() {
 
   useEffect(() => {
     if (tenant?.id && form.date) {
-      void loadSlots(tenant.id, form.date);
+      void loadSlots(tenantSlug, form.date);
       setForm((prev) => ({ ...prev, time: '' }));
     }
-  }, [tenant?.id, form.date, loadSlots]);
+  }, [tenant?.id, form.date, loadSlots, tenantSlug]);
 
   // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,17 +166,14 @@ export default function BookReservation() {
     setSubmitting(true);
     try {
       const reserved_at = new Date(`${form.date}T${form.time}:00`).toISOString();
-      const { error } = await supabase
-        .from('reservations')
-        .insert({
-          tenant_id: tenant.id,
-          guest_name: form.name.trim(),
-          guest_phone: form.phone.trim(),
-          party_size: form.partySize,
-          reserved_at,
-          notes: form.notes.trim() || null,
-          status: 'pending',
-        });
+      const { error } = (await supabase.rpc('create_public_reservation', {
+        p_tenant_slug: tenantSlug,
+        p_guest_name: form.name.trim(),
+        p_guest_phone: form.phone.trim(),
+        p_party_size: form.partySize,
+        p_reserved_at: reserved_at,
+        p_notes: form.notes.trim() || null,
+      })) as { data: { id: string; status: string } | null; error: { message: string } | null };
 
       if (error) {
         setSubmitError(error.message);
@@ -363,7 +347,7 @@ export default function BookReservation() {
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {ALL_SLOTS.map((slot) => {
-                  const count = countReservationsInSlot(existingReservations, slot);
+                  const count = countReservationsInSlot(slotCounts, slot);
                   const isFull = count >= MAX_RESERVATIONS_PER_SLOT;
                   const isSelected = form.time === slot;
 

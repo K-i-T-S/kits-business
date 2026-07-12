@@ -11,6 +11,62 @@
 
 ---
 
+## Dispatch Plan — how to hand this off to build agents (added 2026-07-12, after the full 7-batch sweep)
+
+**Every dispatch prompt to a build agent must start with:** *"Read `docs/qa-bug-tracker.md` before touching anything — it has the root cause, severity, and a paste-ready Agent Brief for this specific bug."* The briefs below are useless if an agent re-derives everything from scratch instead of using them.
+
+### Wave 0 — Verify first (cheap, do before piling more work on)
+
+The 42 fixes already applied across this session's seven batches were never exercised in a live browser — no test credentials were available to this session. Before building more on top of them:
+
+> Walk through the "What to test next" checklist in `docs/qa-bug-tracker.md` (numbered items 1-29, spread across the Batch 1-7 sections) against the live app. Confirm each already-applied fix actually works — PIN login, payroll/budget/expense saves, the waiter Ready button, recipe costing, the delivery-secret masking, the API-keys/webhooks masking, etc. Report anything that doesn't match what the tracker says was fixed.
+
+### Wave 1 — Critical, ship first
+
+The two Critical findings, each DB-touching (will hit this project's standing "confirm the exact migration before applying to `kits-dev`" gate) — send as two separate agents:
+
+```
+Fix BUG-080 in docs/qa-bug-tracker.md — public reservation booking and table
+feedback are completely non-functional for real anonymous customers (verified
+live against RLS policies). Read that entry's full Agent Brief before starting.
+This needs new RPCs + RLS changes on kits-dev — confirm the exact migration
+with the founder by name before applying, per this project's standing discipline.
+```
+
+```
+Fix BUG-035 and BUG-034 together in docs/qa-bug-tracker.md — loyalty points
+have likely never been earned on a single real sale (POS calls a nonexistent
+RPC), and redemption has a separate read-then-write race. Read both entries'
+Agent Briefs. Build both RPCs in one migration since they share the same
+missing loyalty backend. Confirm the exact migration with the founder by name
+before applying.
+```
+
+### Waves 2-6 — everything else, by priority
+
+Each wave is sized for one agent; items within a wave share a file/table, so bundling them avoids duplicate migrations touching the same object.
+
+| Wave | Items | Why grouped |
+|---|---|---|
+| 2 — Pharmacy compliance | BUG-076+077 (narcotics `pharmacist_name` attribution + append-only RLS), then BUG-078+079 (dispensing-integration + stock-deduction RPC) | Regulatory risk; same file/table pair each |
+| 3 — Money-flow completeness | BUG-032+033 (POS split-payment/tax persistence — **needs PowerSync coordination, say so explicitly**), BUG-053+054+055 (delivery-sale same fixes, one DB function) | Same underlying gap, different order-sources |
+| 4 — Cash tracking | BUG-004 (sharpened scope — denomination capture, employee attribution, auto-reconciliation from real sales) | Big enough to be its own wave, touches 3 pages |
+| 5 — Dead UI wiring | BUG-065 (POS business-policy settings), BUG-081 (bulk pricing at checkout), BUG-061 (menu cost reconciled with recipe costing) | Same shape of fix each time — wire existing settings to where they should take effect |
+| 6 — Operational gaps | BUG-009/010 (shift-PIN reconciliation + auto section assignment), BUG-048 (reservation atomic-seating RPC), BUG-011/030 (stale-fetch cleanup, 5 components), BUG-012 (real CSV/Excel bulk import), BUG-038 (tip distributions → real table), BUG-047 (QR order-status tracking), BUG-088 (ingredient stock atomic RPC) | Lower urgency, independent of each other |
+
+### Don't send to a build agent yet — founder decision needed first
+
+Each of these has a scope question in its tracker entry that a build agent shouldn't be left to guess on:
+
+- **BUG-051** — should a booked Event block its tables from regular seating?
+- **BUG-066** — tenant-deletion safety model (soft-delete + grace period vs. re-auth vs. both vs. accept as-is)
+- **BUG-090** — `MultiLocationSupport.tsx` vs `MultiBranchHub.tsx`: two deliberate systems, or unintentional drift to consolidate?
+- **BUG-036 / BUG-025 / BUG-026** — build the missing backend (CRM segments/comms, product variants) vs. strip the UI that implies they exist
+- **BUG-062 / BUG-063** — need a quick confirmation trace (are branch menu overrides actually unwired downstream? do the two settings pages actually overlap on the same columns?) before either is treated as certain
+- **BUG-082** — delete `POSTestPage.tsx`? (orphaned, confirmed unreachable, but this project's established pattern requires naming the specific file for a deletion, not inferring it from a general cleanup instruction)
+
+---
+
 ## How an entry gets created
 
 1. Founder reports something observed while testing as a customer (a screen, a flow, a "this feels off").
@@ -783,7 +839,7 @@ Also checked `MultiBranchHub.tsx` (the only other reader of this table) before a
 | BUG-077 | `NarcoticsRegister.tsx`'s RLS policy permits UPDATE/DELETE for any tenant user — no database-level append-only enforcement on a compliance register | Medium-High | Security/RBAC (Compliance) | Briefed | — |
 | BUG-078 | Narcotics logging is entirely disconnected from the actual prescription-dispensing workflow — a pharmacist must remember to separately re-enter the same details a second time, unenforced | High | Data Integrity / Missing Feature | Briefed | — |
 | BUG-079 | Dispensing a prescription (any drug, not just controlled substances) never decrements `drug_lots` stock at all — pharmacy inventory and dispensing activity are completely disconnected | Medium-High | Missing Feature | Briefed | — |
-| BUG-080 | **`BookReservation.tsx` and `TableFeedback.tsx` are non-functional for every real anonymous customer** — the anon tenant lookup is blocked by `tenants`' only RLS policy (`id = current_tenant_id()`, always false for anon), and the `reservations` INSERT is independently blocked the same way; `restaurant_table_feedback`'s INSERT is the opposite problem, fully open (`WITH CHECK (true)`) with no relationship validation | **Critical** | Security/RBAC + Functional Bug | Briefed — **highest-priority open item in the whole session** | — |
+| BUG-080 | **`BookReservation.tsx` and `TableFeedback.tsx` are non-functional for every real anonymous customer** — the anon tenant lookup is blocked by `tenants`' only RLS policy (`id = current_tenant_id()`, always false for anon), and the `reservations` INSERT is independently blocked the same way; `restaurant_table_feedback`'s INSERT is the opposite problem, fully open (`WITH CHECK (true)`) with no relationship validation | **Critical** | Security/RBAC + Functional Bug | **Fixed** (2026-07-13, founder-approved before applying) | `supabase/migrations/20260713_000082_public_reservation_feedback_rpcs.sql`, `src/pages/BookReservation.tsx`, `src/pages/TableFeedback.tsx` |
 | BUG-081 | `bulk_pricing_rules` (supermarket) is fully built and configurable but never read by `POS.tsx` at checkout — same dead-config pattern found 4+ times this session | High | Missing Feature | Briefed | — |
 | BUG-082 | `POSTestPage.tsx` is orphaned dead code — no route registered anywhere, unreachable, likely a pre-`POS.tsx` legacy prototype | Low | Documentation Drift / Cleanup | Briefed — needs confirmation before deletion | — |
 
@@ -830,7 +886,9 @@ Four related findings in the pharmacy vertical's controlled-substance and dispen
 ---
 
 ### BUG-080 — Public booking and feedback pages are completely non-functional for real customers
-**Severity:** Critical · **Category:** Security/RBAC + Functional Bug · **Status:** Briefed — highest-priority open item this session
+**Severity:** Critical · **Category:** Security/RBAC + Functional Bug · **Status:** Fixed (2026-07-13)
+
+**Fix applied, following the Agent Brief exactly, one extra root cause found along the way:** independently re-verified live (`pg_get_functiondef`/`pg_policies`) before writing the migration — confirmed a fourth compounding bug beyond the three below: both pages queried `tenants.tenant_slug`, a column that migration `000061` actually dropped (`slug` is the real column) — the query errored for every visitor regardless of RLS. Built 4 new `SECURITY DEFINER` RPCs mirroring `get_public_menu()`/`qr_place_order()`'s established pattern: `get_public_tenant_by_slug`, `get_public_reservation_slot_counts` (aggregates to slot→count only — no other guest's name/phone/party size is ever exposed to a browsing customer, a stricter privacy bar than the original raw-row approach), `create_public_reservation` (validates name/phone/party-size/date-range server-side), `submit_public_table_feedback` (validates the table_id/tenant_id relationship, silently drops a forged/stale table_id rather than rejecting the whole submission — same style as `qr_place_order`). Dropped the fully-open `public_insert_feedback` policy entirely — all public writes now route through the validated RPC. `npm run typecheck`/lint/build all clean. Migration applied to `kits-dev` with explicit founder confirmation naming the specific change, then independently re-verified live (function `prosecdef`/`search_path` correct, policy actually dropped, `get_advisors` shows the new RPCs triggering only the same already-accepted `anon_security_definer_function_executable` class shared by all 36 legitimate public/staff RPCs in this codebase — no new category of finding introduced).
 
 **Independently re-verified against the live database before logging**, same discipline as every other Critical/security finding this session: queried `pg_policies` directly.
 

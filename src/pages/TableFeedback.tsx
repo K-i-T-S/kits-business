@@ -58,18 +58,16 @@ export default function TableFeedback() {
 
     const fetchTenant = async () => {
       try {
-        const { data, error } = await supabase
-          .from('tenants')
-          .select('id, name, brand_logo_url')
-          .eq('tenant_slug', tenantSlug)
-          .single();
+        const { data, error } = (await supabase.rpc('get_public_tenant_by_slug', {
+          p_slug: tenantSlug,
+        })) as { data: ({ error?: string } & TenantPublic) | null; error: { message: string } | null };
 
-        if (error || !data) {
+        if (error || !data || data.error === 'not_found') {
           setErrorMsg('Restaurant not found. Please check your link.');
           setPageState('error');
           return;
         }
-        setTenant(data as TenantPublic);
+        setTenant(data);
         setPageState('form');
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : 'Failed to load restaurant info.');
@@ -113,14 +111,14 @@ export default function TableFeedback() {
       const effectiveTableId =
         tableId && tableId !== 'general' ? tableId : null;
 
-      const { error } = await supabase.from('restaurant_table_feedback').insert({
-        tenant_id: tenant.id,
-        table_id: effectiveTableId,
-        overall_rating: overallRating,
-        food_rating: foodRating > 0 ? foodRating : null,
-        service_rating: serviceRating > 0 ? serviceRating : null,
-        comment: buildComment(),
-      });
+      const { error } = (await supabase.rpc('submit_public_table_feedback', {
+        p_tenant_slug: tenantSlug,
+        p_table_id: effectiveTableId,
+        p_overall_rating: overallRating,
+        p_food_rating: foodRating > 0 ? foodRating : null,
+        p_service_rating: serviceRating > 0 ? serviceRating : null,
+        p_comment: buildComment(),
+      })) as { data: { id: string } | null; error: { message: string } | null };
 
       if (error) {
         setSubmitError(error.message);

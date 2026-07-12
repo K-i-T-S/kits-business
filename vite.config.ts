@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 import path from 'path';
 import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
@@ -20,6 +22,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
     securityHeaders(),
+    wasm(),
+    topLevelAwait(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
@@ -125,6 +129,15 @@ export default defineConfig({
         setupFiles: ['.storybook/vitest.setup.ts']
       }
     }]
+  },
+  // PowerSync (offline-first sync) — WASM SQLite engine needs these to build
+  // correctly in a Vite worker. See .agents/skills/powersync/references/sdks/powersync-js-react.md.
+  optimizeDeps: {
+    exclude: ['@journeyapps/wa-sqlite', '@powersync/web'],
+  },
+  worker: {
+    format: 'es',
+    plugins: () => [wasm(), topLevelAwait()],
   },
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],

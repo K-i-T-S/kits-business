@@ -76,9 +76,15 @@ export default function TipsManagement() {
   // home_hub), not just base_role='cashier' — Receptionist/Kitchen Staff/
   // Argile Staff are ALSO base_role='cashier' since Track 1b's starter
   // seed, so that field alone can no longer identify an actual waiter.
-  // Falls back to the old base_role heuristic only when a tenant has no
-  // custom roles configured at all (pre-Track-1 tenants, plain "Cashier"
-  // invites with no custom role assigned).
+  // Falls back to the old base_role heuristic whenever zero employees
+  // actually resolve to the Waiter role — covers both a tenant with no
+  // custom roles at all, AND the more common case where Track 1b's starter
+  // seed already created a "Waiter" custom role but no tenant_users row was
+  // ever backfilled to point custom_role_id at it (pre-Track-1 tenants,
+  // plain "Cashier" invites with no custom role assigned). Checking only
+  // whether the role exists (not whether anyone is actually linked to it)
+  // previously left this as a non-null-but-empty Set, which is truthy in
+  // JS — silently producing zero waiters instead of falling back.
   const [waiterEmployeeIds, setWaiterEmployeeIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
@@ -106,7 +112,8 @@ export default function TipsManagement() {
         );
 
         const employeeRows = (employeesRes.data ?? []) as Array<{ id: string; user_id: string | null }>;
-        setWaiterEmployeeIds(new Set(employeeRows.filter((e) => e.user_id && waiterUserIds.has(e.user_id)).map((e) => e.id)));
+        const resolvedWaiterIds = new Set(employeeRows.filter((e) => e.user_id && waiterUserIds.has(e.user_id)).map((e) => e.id));
+        setWaiterEmployeeIds(resolvedWaiterIds.size > 0 ? resolvedWaiterIds : null);
       } catch {
         setWaiterEmployeeIds(null);
       }

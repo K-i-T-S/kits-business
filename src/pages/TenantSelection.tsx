@@ -79,7 +79,16 @@ export default function TenantSelection() {
           return;
         }
         await reloadSubscription();
-        void navigate('/dashboard');
+        // Track 2 (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+        // this auto-select path is the PRIMARY login path for most real
+        // users (a single-business owner is the common case) — it bypasses
+        // handleSelectTenant() below entirely, which is where this redirect
+        // was originally (and only) wired. Missing it here meant the whole
+        // Track 2 hub-routing feature silently never fired for the majority
+        // of users. Found via a real end-to-end production test after the
+        // founder reported seeing no visible change.
+        const homeRoute = await resolveRoleHomeRoute();
+        void navigate(homeRoute ?? '/dashboard');
         return;
       }
     } catch {
@@ -184,7 +193,10 @@ export default function TenantSelection() {
         tenantName={onboardingTenantName}
         onComplete={() => {
           void reloadSubscription();
-          void navigate('/dashboard');
+          // Same reasoning as the auto-select path above — a brand-new
+          // tenant finishing onboarding should also land on its role-native
+          // hub, not always the generic dashboard.
+          void resolveRoleHomeRoute().then((homeRoute) => navigate(homeRoute ?? '/dashboard'));
         }}
       />
     );

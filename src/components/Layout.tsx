@@ -49,6 +49,10 @@ import {
   TrendingUp,
   Shield,
   MapPin,
+  Radio,
+  Wallet,
+  Boxes,
+  ListPlus,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -232,6 +236,7 @@ export default function Layout({ children }: LayoutProps) {
         { name: t('nav.vertical.waiter', 'Waiter'), icon: User, href: '/restaurant/waiter' },
         { name: t('nav.vertical.reservations', 'Reservations'), icon: Clock, href: '/restaurant/reservations' },
         { name: t('nav.vertical.waitlist', 'Waitlist'), icon: Users, href: '/restaurant/waitlist' },
+        { name: t('nav.vertical.reception', 'Reception'), icon: ListPlus, href: '/restaurant/reception' },
         { name: t('nav.vertical.events', 'Events'), icon: CalendarHeart, href: '/restaurant/events' },
       ],
     },
@@ -241,11 +246,14 @@ export default function Layout({ children }: LayoutProps) {
         { name: t('nav.vertical.kds', 'Kitchen Display'), icon: Cpu, href: '/restaurant/kds' },
         { name: t('nav.vertical.deliveryOrders', 'Delivery Orders'), icon: Truck, href: '/restaurant/delivery-orders' },
         { name: t('nav.vertical.argile', 'Argile Station'), icon: Flame, href: '/restaurant/argile' },
+        { name: t('nav.vertical.stockkeeper', 'Stockkeeper'), icon: Boxes, href: '/restaurant/stockkeeper' },
       ],
     },
     {
       label: 'Management',
       items: [
+        { name: t('nav.vertical.operations', 'Operations'), icon: Radio, href: '/restaurant/operations' },
+        { name: t('nav.vertical.accountant', 'Accountant'), icon: Wallet, href: '/restaurant/accountant' },
         { name: t('nav.vertical.analytics', 'Analytics'), icon: BarChart2, href: '/restaurant/analytics' },
         { name: t('nav.vertical.shifts', 'Shifts'), icon: Calendar, href: '/restaurant/shifts' },
         { name: t('nav.vertical.cashDrawer', 'Cash Drawer'), icon: Landmark, href: '/restaurant/cash' },

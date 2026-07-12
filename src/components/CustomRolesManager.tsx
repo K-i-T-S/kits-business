@@ -15,15 +15,19 @@ import { supabase } from '../utils/supabaseClient';
 // tenant_users.role and doesn't need a custom role to get it.
 type CustomRoleBaseRole = Exclude<RoleType, 'owner'>;
 
-// Track 2, Phase A (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
+// Track 2 (docs/superpowers/specs/2026-07-11-platform-roadmap-design.md):
 // the role-native landing screen this custom role lands on after login,
 // independent of base_role/permissions (which stay purely about RLS/action
-// access). Only 4 archetypes exist as real screens today — office-role
-// hubs (owner/manager/supervisor/accountant/stockkeeper/reception) are
-// Phase B. Options are restricted per base_role in the UI below to avoid
-// assigning a hub the role can't actually reach (RoleRoute would bounce
-// it straight back on every login).
-type HomeHub = 'waiter' | 'kitchen' | 'argile' | 'pos_cashier';
+// access). Options are restricted per base_role in the UI below to avoid
+// assigning a hub the role can't actually reach (RoleRoute would bounce it
+// straight back on every login). Note: owner/manager/supervisor/accountant/
+// stockkeeper are usually direct base-role assignments (no custom role at
+// all), not custom roles — for them, the Phase B default-routing logic in
+// postLoginRoute.ts's RESTAURANT_BASE_ROLE_DEFAULTS handles landing without
+// needing a custom_roles row; this picker only matters when someone builds
+// a *named* custom role (e.g. "Head Cashier") that should land somewhere
+// specific.
+type HomeHub = 'waiter' | 'kitchen' | 'argile' | 'pos_cashier' | 'operations' | 'reception' | 'accountant' | 'stockkeeper';
 
 interface CustomRole {
   id: string;
@@ -74,18 +78,22 @@ const HOME_HUB_OPTIONS: Array<{ value: HomeHub; label: string }> = [
   { value: 'kitchen', label: 'Kitchen — order queue (KDS)' },
   { value: 'argile', label: 'Argile — shisha session tracking' },
   { value: 'pos_cashier', label: 'Cashier — checkout / POS' },
+  { value: 'operations', label: 'Operations — floor alerts & overview' },
+  { value: 'reception', label: 'Reception — waitlist & reservations' },
+  { value: 'accountant', label: 'Accountant — payroll & expenses' },
+  { value: 'stockkeeper', label: 'Stockkeeper — low stock & receiving' },
 ];
 
 // Which home hubs a given base_role can actually reach, per App.tsx's
 // RoleRoute allowedRoles on each hub's route. Restricting the picker to
 // these avoids assigning a hub the role gets bounced straight back out of.
 const VALID_HOME_HUBS_BY_BASE_ROLE: Record<CustomRoleBaseRole, HomeHub[]> = {
-  admin: ['waiter', 'kitchen', 'argile', 'pos_cashier'],
-  manager: ['waiter', 'kitchen', 'argile', 'pos_cashier'],
-  supervisor: ['waiter', 'kitchen', 'argile', 'pos_cashier'],
-  cashier: ['waiter', 'kitchen', 'argile', 'pos_cashier'],
-  stockkeeper: ['kitchen'],
-  accountant: [],
+  admin: ['waiter', 'kitchen', 'argile', 'pos_cashier', 'operations', 'reception', 'accountant', 'stockkeeper'],
+  manager: ['waiter', 'kitchen', 'argile', 'pos_cashier', 'operations', 'reception', 'accountant', 'stockkeeper'],
+  supervisor: ['waiter', 'kitchen', 'argile', 'pos_cashier', 'operations', 'reception'],
+  cashier: ['waiter', 'kitchen', 'argile', 'pos_cashier', 'reception'],
+  stockkeeper: ['kitchen', 'stockkeeper'],
+  accountant: ['accountant'],
   viewer: [],
 };
 
@@ -108,7 +116,8 @@ const EMPTY_FORM: FormState = {
 
 const CUSTOM_ROLE_BASE_ROLES: readonly CustomRoleBaseRole[] =
   ['admin', 'manager', 'supervisor', 'cashier', 'accountant', 'stockkeeper', 'viewer'];
-const HOME_HUB_VALUES: readonly HomeHub[] = ['waiter', 'kitchen', 'argile', 'pos_cashier'];
+const HOME_HUB_VALUES: readonly HomeHub[] =
+  ['waiter', 'kitchen', 'argile', 'pos_cashier', 'operations', 'reception', 'accountant', 'stockkeeper'];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 

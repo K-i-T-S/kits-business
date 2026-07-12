@@ -82,6 +82,10 @@ const RestaurantDeliveryOrders = lazy(() => import('./pages/restaurant/DeliveryO
 const RestaurantWaitlist = lazy(() => import('./pages/restaurant/Waitlist'));
 const RestaurantCashDrawer = lazy(() => import('./pages/restaurant/CashDrawer'));
 const RestaurantEventsManager = lazy(() => import('./pages/restaurant/EventsManager'));
+const RestaurantOperationsHub = lazy(() => import('./pages/restaurant/OperationsHomeHub'));
+const RestaurantReceptionHub = lazy(() => import('./pages/restaurant/ReceptionistHomeHub'));
+const RestaurantAccountantHub = lazy(() => import('./pages/restaurant/AccountantHomeHub'));
+const RestaurantStockkeeperHub = lazy(() => import('./pages/restaurant/StockkeeperHomeHub'));
 const QRMenuPage = lazy(() => import('./pages/qr-menu/QRMenuPage'));
 const BookReservation = lazy(() => import('./pages/BookReservation'));
 const TableFeedback = lazy(() => import('./pages/TableFeedback'));
@@ -574,6 +578,10 @@ export default function App() {
                                 <Route path="/restaurant/waiter" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}><RestaurantWaiter /></RoleRoute>) : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/argile" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}><RestaurantArgile /></RoleRoute>) : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/recipes" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'stockkeeper']}><RestaurantRecipes /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/operations" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor']}><RestaurantOperationsHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/reception" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier']}><RestaurantReceptionHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/accountant" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'accountant']}><RestaurantAccountantHub /></RoleRoute>) : <Navigate to="/login" replace />} />
+                                <Route path="/restaurant/stockkeeper" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'stockkeeper']}><RestaurantStockkeeperHub /></RoleRoute>) : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/analytics" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'supervisor', 'cashier', 'accountant', 'viewer']}><RestaurantAnalytics /></RoleRoute>) : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/shifts" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager']}><RestaurantShifts /></RoleRoute>) : <Navigate to="/login" replace />} />
                                 <Route path="/restaurant/eod" element={isAuthenticated ? (<RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier']}><RestaurantEOD /></RoleRoute>) : <Navigate to="/login" replace />} />

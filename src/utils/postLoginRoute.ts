@@ -11,6 +11,17 @@ const HOME_HUB_ROUTES: Record<string, string> = {
   stockkeeper: '/restaurant/stockkeeper',
 };
 
+// Every home_hub value except pos_cashier points at a restaurant-only page
+// (queries restaurant_-prefixed tables). pos_cashier -> /pos is genuinely
+// industry-agnostic. Found via a platform-wide audit: this function
+// previously honored ANY tenant's home_hub unconditionally, with no
+// industry check at all -- CustomRolesManager.tsx's picker also had no
+// industry gating, so a non-restaurant owner could genuinely assign
+// "Waiter"/"Kitchen"/etc. to a custom role, and that employee would land
+// on a broken page (querying tables that don't apply to their tenant)
+// every future login.
+const RESTAURANT_ONLY_HOME_HUBS = new Set(['waiter', 'kitchen', 'argile', 'operations', 'reception', 'accountant', 'stockkeeper']);
+
 // Base-role defaults applied only for restaurant-industry tenants when no
 // custom-role home_hub is set — owner/manager/supervisor/accountant/
 // stockkeeper are usually direct tenant_users.role assignments, not custom
@@ -60,7 +71,13 @@ export async function resolveRoleHomeRoute(): Promise<string | null> {
     if (!row) return null;
 
     if (row.home_hub && row.home_hub in HOME_HUB_ROUTES) {
-      return HOME_HUB_ROUTES[row.home_hub] ?? null;
+      const isRestaurantOnly = RESTAURANT_ONLY_HOME_HUBS.has(row.home_hub);
+      if (!isRestaurantOnly || row.industry === 'restaurant') {
+        return HOME_HUB_ROUTES[row.home_hub] ?? null;
+      }
+      // Restaurant-only home_hub on a non-restaurant tenant (a stale value
+      // from before this fix, or industry was changed after assignment) —
+      // fall through instead of landing them on a broken page.
     }
     if (row.user_role === 'cashier') {
       return '/pos';

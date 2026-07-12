@@ -303,12 +303,28 @@ function dbCustomerToFrontend(c: DbCustomer): Customer {
   };
 }
 
+const VALID_EMPLOYEE_ROLES: readonly Employee['role'][] =
+  ['owner', 'admin', 'manager', 'supervisor', 'cashier', 'accountant', 'stockkeeper', 'viewer'];
+
 function dbEmployeeToFrontend(e: DbEmployee): Employee {
+  // Previously aliased DB role 'owner' -> frontend 'admin' (and the write
+  // paths below aliased the reverse) -- a leftover from before
+  // employees.role's CHECK constraint was widened to all 8 roles (it now
+  // is, verified live). With no DB-level reason left, this silently
+  // mislabeled a real owner's own employee record as "admin" on every
+  // read, and silently stored "owner" instead of "admin" on every write
+  // through addEmployee/updateEmployee below -- a real data-accuracy bug,
+  // found via a platform-wide audit. Now stores/displays the actual
+  // value, fail-closed to 'viewer' for anything unrecognized (same
+  // pattern as coerceRole in SubscriptionContext.tsx).
+  const role = (VALID_EMPLOYEE_ROLES as readonly string[]).includes(e.role)
+    ? (e.role as Employee['role'])
+    : 'viewer';
   return {
     id: e.id,
     name: e.name,
     email: e.email ?? '',
-    role: e.role === 'owner' ? 'admin' : (e.role as 'manager' | 'cashier'),
+    role,
     commission: e.commission_rate,
     totalSales: 0,
     shifts: [],
@@ -842,13 +858,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!currentTenant) throw new Error('No active tenant');
 
     try {
-      const dbRole = employee.role === 'admin' ? 'owner' : employee.role;
-
       const insertResult = await supabase.from('employees').insert({
         tenant_id: currentTenant.id,
         name: employee.name,
         email: employee.email || null,
-        role: dbRole,
+        role: employee.role,
         commission_rate: employee.commission ?? 0,
         is_active: true,
       }).select().single();
@@ -881,7 +895,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const dbUpdate: Record<string, unknown> = {};
       if (updatedEmployee.name !== undefined) dbUpdate.name = updatedEmployee.name;
       if (updatedEmployee.email !== undefined) dbUpdate.email = updatedEmployee.email;
-      if (updatedEmployee.role !== undefined) dbUpdate.role = updatedEmployee.role === 'admin' ? 'owner' : updatedEmployee.role;
+      if (updatedEmployee.role !== undefined) dbUpdate.role = updatedEmployee.role;
       if (updatedEmployee.commission !== undefined) dbUpdate.commission_rate = updatedEmployee.commission;
 
       const updateResult = await supabase.from('employees').update(dbUpdate).eq('id', id).select().single();

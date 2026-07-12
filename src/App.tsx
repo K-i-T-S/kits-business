@@ -15,6 +15,7 @@ import RoleRoute from './components/RoleRoute';
 import { TranslationManager } from './components/TranslationManager';
 import { Toaster } from './components/ui/sonner';
 import { getRestaurantRouteRoles } from './constants/restaurantNavAccess';
+import { getPharmacyRouteRoles, getSupermarketRouteRoles } from './constants/verticalNavAccess';
 import { AppProvider } from './context/AppContext';
 import { IndustryProvider } from './context/IndustryContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -584,7 +585,7 @@ export default function App() {
                                   path="/pharmacy"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier']}>
+                                      <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy')}>
                                         <PharmacyHub />
                                       </RoleRoute>
                                     ) : (
@@ -596,7 +597,7 @@ export default function App() {
                                   path="/pharmacy/drugs"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier']}>
+                                      <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/drugs')}>
                                         <PharmacyDrugDatabase />
                                       </RoleRoute>
                                     ) : (
@@ -608,7 +609,7 @@ export default function App() {
                                   path="/pharmacy/prescriptions"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier']}>
+                                      <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/prescriptions')}>
                                         <PharmacyPrescriptions />
                                       </RoleRoute>
                                     ) : (
@@ -620,7 +621,7 @@ export default function App() {
                                   path="/pharmacy/narcotics"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin']}>
+                                      <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/narcotics')}>
                                         <PharmacyNarcoticsRegister />
                                       </RoleRoute>
                                     ) : (
@@ -634,7 +635,7 @@ export default function App() {
                                   path="/supermarket"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'cashier', 'stockkeeper']}>
+                                      <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket')}>
                                         <SupermarketHub />
                                       </RoleRoute>
                                     ) : (
@@ -646,7 +647,7 @@ export default function App() {
                                   path="/supermarket/departments"
                                   element={
                                     isAuthenticated ? (
-                                      <RoleRoute allowedRoles={['owner', 'admin', 'manager', 'stockkeeper']}>
+                                      <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket/departments')}>
                                         <SupermarketDepartmentManager />
                                       </RoleRoute>
                                     ) : (

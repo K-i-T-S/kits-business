@@ -72,6 +72,46 @@ export default function TipsManagement() {
 
   const [todayTips, setTodayTips] = useState(0);
   const [loadingTips, setLoadingTips] = useState(false);
+  // Employee IDs whose custom role is genuinely "Waiter" (by name or Track 2
+  // home_hub), not just base_role='cashier' — Receptionist/Kitchen Staff/
+  // Argile Staff are ALSO base_role='cashier' since Track 1b's starter
+  // seed, so that field alone can no longer identify an actual waiter.
+  // Falls back to the old base_role heuristic only when a tenant has no
+  // custom roles configured at all (pre-Track-1 tenants, plain "Cashier"
+  // invites with no custom role assigned).
+  const [waiterEmployeeIds, setWaiterEmployeeIds] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (!tenantId) return;
+    void (async () => {
+      try {
+        const [employeesRes, tenantUsersRes, customRolesRes] = await Promise.all([
+          supabase.from('employees').select('id, user_id').eq('tenant_id', tenantId),
+          supabase.from('tenant_users').select('user_id, custom_role_id').eq('tenant_id', tenantId),
+          supabase.from('custom_roles').select('id, name, home_hub').eq('tenant_id', tenantId),
+        ]);
+
+        const customRoles = (customRolesRes.data ?? []) as Array<{ id: string; name: string; home_hub: string | null }>;
+        const waiterRoleIds = new Set(
+          customRoles.filter((r) => r.home_hub === 'waiter' || r.name.toLowerCase() === 'waiter').map((r) => r.id),
+        );
+        if (waiterRoleIds.size === 0) {
+          setWaiterEmployeeIds(null);
+          return;
+        }
+
+        const tenantUsers = (tenantUsersRes.data ?? []) as Array<{ user_id: string; custom_role_id: string | null }>;
+        const waiterUserIds = new Set(
+          tenantUsers.filter((tu) => tu.custom_role_id && waiterRoleIds.has(tu.custom_role_id)).map((tu) => tu.user_id),
+        );
+
+        const employeeRows = (employeesRes.data ?? []) as Array<{ id: string; user_id: string | null }>;
+        setWaiterEmployeeIds(new Set(employeeRows.filter((e) => e.user_id && waiterUserIds.has(e.user_id)).map((e) => e.id)));
+      } catch {
+        setWaiterEmployeeIds(null);
+      }
+    })();
+  }, [tenantId]);
   const [records, setRecords] = useState<TipRecord[]>(() => {
     try {
       const saved = localStorage.getItem(recordsKey);
@@ -112,7 +152,9 @@ export default function TipsManagement() {
   const breakdown = (() => {
     if (todayTips === 0) return [];
     const { algorithm, waiterSharePct, roleSplit } = config;
-    const waiters = employees.filter(e => e.role === 'cashier');
+    const waiters = waiterEmployeeIds
+      ? employees.filter(e => waiterEmployeeIds.has(e.id))
+      : employees.filter(e => e.role === 'cashier');
     const allStaff = employees.slice(0, 8);
 
     if (algorithm === 'waiter_full') {

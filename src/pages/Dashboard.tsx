@@ -19,6 +19,7 @@ import SalesByHourChart from '@/components/dashboard/SalesByHourChart';
 import Layout from '@/components/Layout';
 import { useApp } from '@/context/AppContext';
 import { useIndustry } from '@/context/IndustryContext';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { INDUSTRY_CONFIGS } from '@/types/industry';
 import { resolveRoleHomeRoute } from '@/utils/postLoginRoute';
 
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const { products, sales, customers, currentEmployee, currentTenant, loading } = useApp();
   const { industry } = useIndustry();
+  const { hasFeature } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -62,8 +64,15 @@ export default function Dashboard() {
     }
 
     const target = ROLE_REDIRECT[currentTenant.userRole];
+    // /inventory is paywalled behind the inventory_management Growth+
+    // feature (App.tsx's FeatureRoute) — a Starter-plan stockkeeper
+    // redirected there would land straight on a feature-lock screen
+    // instead of ever seeing a working page. Pre-existing gap (not caused
+    // by this session), found via a platform-wide audit. Falling through
+    // to the generic Dashboard is a better outcome than a paywall wall.
+    if (target === '/inventory' && !hasFeature('inventory_management')) return;
     if (target) void navigate(target, { replace: true });
-  }, [currentTenant, loading, navigate, location.pathname, industry]);
+  }, [currentTenant, loading, navigate, location.pathname, industry, hasFeature]);
 
   const now = useMemo(() => new Date(), []);
   const today = now.toDateString();

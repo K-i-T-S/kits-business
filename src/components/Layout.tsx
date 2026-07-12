@@ -62,6 +62,7 @@ import { toast } from 'sonner';
 
 import { BRAND } from '../constants/branding';
 import { getRestaurantRouteRoles } from '../constants/restaurantNavAccess';
+import { getPharmacyRouteRoles, getSupermarketRouteRoles } from '../constants/verticalNavAccess';
 import { useApp } from '../context/AppContext';
 import { useIndustry } from '../context/IndustryContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -129,23 +130,11 @@ export default function Layout({ children }: LayoutProps) {
 
   const isActive = useCallback((href: string) => location.pathname === href, [location.pathname]);
 
+  // Restaurant's own nav lives in RESTAURANT_NAV_GROUPS below (with real
+  // role filtering) — this map's `restaurant` key used to duplicate it,
+  // but the render guard is `industry !== 'restaurant'`, so it was always
+  // unreachable dead code. Removed (found via a platform-wide audit).
   const VERTICAL_NAV_ITEMS: Record<string, Array<{ name: string; icon: typeof LayoutDashboard; href?: string }>> = useMemo(() => ({
-    restaurant: [
-      { name: t('nav.vertical.tables', 'Table Management'), icon: UtensilsCrossed, href: '/restaurant/tables' },
-      { name: t('nav.vertical.kds', 'Kitchen Display'), icon: Cpu, href: '/restaurant/kds' },
-      { name: t('nav.vertical.reservations', 'Reservations'), icon: Clock, href: '/restaurant/reservations' },
-      { name: t('nav.vertical.menuManagement', 'Menu Management'), icon: BookOpen, href: '/restaurant/menu' },
-      { name: t('nav.vertical.waiter', 'Waiter Interface'), icon: User, href: '/restaurant/waiter' },
-      { name: t('nav.vertical.argile', 'Argile Station'), icon: Flame, href: '/restaurant/argile' },
-      { name: t('nav.vertical.recipes', 'Recipes & Cost'), icon: ChefHat, href: '/restaurant/recipes' },
-      { name: t('nav.vertical.analytics', 'Analytics'), icon: BarChart2, href: '/restaurant/analytics' },
-      { name: t('nav.vertical.shifts', 'Shifts'), icon: Calendar, href: '/restaurant/shifts' },
-      { name: t('nav.vertical.cashDrawer', 'Cash Drawer'), icon: Landmark, href: '/restaurant/cash' },
-      { name: t('nav.vertical.eod', 'EOD Report'), icon: FileText, href: '/restaurant/eod' },
-      { name: t('nav.vertical.tips', 'Tips Management'), icon: DollarSign, href: '/restaurant/tips' },
-      { name: t('nav.vertical.branches', 'Branches'), icon: Building2, href: '/restaurant/branches' },
-      { name: t('nav.vertical.restaurantSettings', 'Settings'), icon: Settings, href: '/restaurant/settings' },
-    ],
     pharmacy: [
       { name: t('nav.vertical.drugDatabase', 'Drug Database'), icon: Pill, href: '/pharmacy/drugs' },
       { name: t('nav.vertical.prescriptions', 'Prescriptions'), icon: FlaskConical, href: '/pharmacy/prescriptions' },
@@ -288,6 +277,22 @@ export default function Layout({ children }: LayoutProps) {
       .filter((group) => group.items.length > 0),
     [RESTAURANT_NAV_GROUPS, role],
   );
+
+  // Same fix as visibleRestaurantNavGroups, for pharmacy/supermarket —
+  // this had the identical unfiltered-by-role problem (found via the same
+  // platform-wide audit). Items without an href (fashion/electronics/
+  // mobile placeholders — no route exists yet) have nothing to gate, so
+  // they stay visible to everyone.
+  const visibleVerticalNavItems = useMemo(() => {
+    const items = industry ? (VERTICAL_NAV_ITEMS[industry] ?? []) : [];
+    if (industry === 'pharmacy') {
+      return items.filter((item) => !item.href || getPharmacyRouteRoles(item.href).includes(role));
+    }
+    if (industry === 'supermarket') {
+      return items.filter((item) => !item.href || getSupermarketRouteRoles(item.href).includes(role));
+    }
+    return items;
+  }, [VERTICAL_NAV_ITEMS, industry, role]);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -688,13 +693,13 @@ export default function Layout({ children }: LayoutProps) {
                 )}
 
                 {/* ── Other vertical nav items (pharmacy, supermarket, etc.) ── */}
-                {industry !== 'restaurant' && VERTICAL_NAV_ITEMS[industry] && VERTICAL_NAV_ITEMS[industry].length > 0 && (
+                {industry !== 'restaurant' && visibleVerticalNavItems.length > 0 && (
                   <div className="mt-1 border-t border-white/8 pt-3">
                     <p className="mb-2 px-1 text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400/70">
                       {industry.charAt(0).toUpperCase() + industry.slice(1)} Pro
                     </p>
                     <div className="space-y-0.5">
-                      {VERTICAL_NAV_ITEMS[industry].map((item) => {
+                      {visibleVerticalNavItems.map((item) => {
                         const active = item.href ? isActive(item.href) : false;
                         if (item.href) {
                           return (

@@ -8,35 +8,54 @@ import Layout from '../Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { RoleType } from '@/types/subscription';
+import { ROLE_LABELS } from '@/types/subscription';
 
-type EmployeeRole = 'owner' | 'manager' | 'cashier' | 'viewer';
+// All 8 canonical roles except 'owner' — matches InviteTeamMemberModal.tsx's
+// and OnboardingWizard.tsx's established convention (ownership transfer is
+// a separate, bigger concern than a role dropdown).
+const ASSIGNABLE_ROLES: RoleType[] = ['admin', 'manager', 'supervisor', 'cashier', 'accountant', 'stockkeeper', 'viewer'];
 
 interface Employee {
   id: string;
   name: string;
   email: string | null;
-  role: EmployeeRole;
+  role: RoleType;
   is_active: boolean;
+  user_id: string | null;
 }
 
-const ROLE_DESCRIPTIONS: Record<EmployeeRole, string> = {
+const ROLE_DESCRIPTIONS: Record<RoleType, string> = {
   owner: 'Full access — manage settings, staff, financials',
+  admin: 'Same access level as the business owner',
   manager: 'Manage products, customers, sales, and reports',
+  supervisor: 'Day-to-day operational data, no financial reports',
   cashier: 'Process sales, view products and customers',
+  accountant: 'Expenses, payroll, and financial reports',
+  stockkeeper: 'Manage stock, suppliers, purchase orders',
   viewer: 'Read-only access to all data',
 };
 
-const ROLE_COLORS: Record<EmployeeRole, string> = {
+const ROLE_COLORS: Record<RoleType, string> = {
   owner: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  admin: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30',
   manager: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  supervisor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
   cashier: 'bg-green-500/20 text-green-300 border-green-500/30',
+  accountant: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  stockkeeper: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
   viewer: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
 };
 
 export default function RolesAndPermissionsManager() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isOwner, setIsOwner] = useState(false);
+  // Matches Layout.tsx's isOwnerOrAdmin convention and the route's own
+  // RoleRoute allowedRoles={['owner', 'admin']} gate (App.tsx) — this
+  // component's OWN isOwner check previously excluded admin even though
+  // the route already let them in, a real bug (found during a platform-wide
+  // audit, docs/superpowers/specs/2026-07-11-platform-roadmap-design.md).
+  const [isOwnerOrAdmin, setIsOwnerOrAdmin] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const loadEmployees = useCallback(async () => {
@@ -47,21 +66,21 @@ export default function RolesAndPermissionsManager() {
 
       const { data, error } = await supabase
         .from('employees')
-        .select('id, name, email, role, is_active')
+        .select('id, name, email, role, is_active, user_id')
         .order('name');
 
       if (error) throw error;
 
       setEmployees((data ?? []) as Employee[]);
 
-      // Check if the current user is an owner by matching auth.uid to employee.user_id
+      // Check if the current user is an owner/admin by matching auth.uid to employee.user_id
       const { data: me } = await supabase
         .from('employees')
         .select('role')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      setIsOwner(me?.role === 'owner');
+      setIsOwnerOrAdmin(me?.role === 'owner' || me?.role === 'admin');
     } catch (err) {
       toast.error('Failed to load employees');
       console.error(err);
@@ -74,21 +93,36 @@ export default function RolesAndPermissionsManager() {
     void loadEmployees();
   }, [loadEmployees]);
 
-  const handleRoleChange = async (employeeId: string, newRole: EmployeeRole) => {
-    if (!isOwner) {
-      toast.error('Only owners can change roles');
+  const handleRoleChange = async (employee: Employee, newRole: RoleType) => {
+    if (!isOwnerOrAdmin) {
+      toast.error('Only owners and admins can change roles');
       return;
     }
-    setUpdatingId(employeeId);
+    if (!employee.user_id) {
+      toast.error('This is a labor record with no login — nothing to change');
+      return;
+    }
+    setUpdatingId(employee.id);
     try {
-      const { error } = await supabase
+      // tenant_users.role is what actually drives access (current_user_role()
+      // / RLS read this, not employees.role) -- this page previously only
+      // ever wrote employees.role, a display-only copy, so "changing" a
+      // role here silently did nothing to the person's real permissions.
+      // Found during a platform-wide audit; fixed to update both, keeping
+      // the display copy in sync with the field that actually matters.
+      const { error: tenantUserErr } = await supabase
+        .from('tenant_users')
+        .update({ role: newRole })
+        .eq('user_id', employee.user_id);
+      if (tenantUserErr) throw tenantUserErr;
+
+      const { error: employeeErr } = await supabase
         .from('employees')
         .update({ role: newRole })
-        .eq('id', employeeId);
+        .eq('id', employee.id);
+      if (employeeErr) throw employeeErr;
 
-      if (error) throw error;
-
-      setEmployees(prev => prev.map(e => e.id === employeeId ? { ...e, role: newRole } : e));
+      setEmployees(prev => prev.map(e => e.id === employee.id ? { ...e, role: newRole } : e));
       toast.success('Role updated');
     } catch (err) {
       toast.error('Failed to update role');
@@ -117,14 +151,14 @@ export default function RolesAndPermissionsManager() {
             <p className="stat-chip bg-white/10 text-white/80">Security Management</p>
             <h1 className="mt-3 text-3xl font-semibold">Roles & Permissions</h1>
             <p className="mt-2 max-w-2xl text-sm text-white/80">
-              Manage your team's access levels. Only owners can change employee roles.
+              Manage your team's access levels. Only owners and admins can change employee roles.
             </p>
           </div>
         </section>
 
         {/* Role Reference */}
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {(Object.entries(ROLE_DESCRIPTIONS) as [EmployeeRole, string][]).map(([role, desc]) => (
+          {(Object.entries(ROLE_DESCRIPTIONS) as [RoleType, string][]).map(([role, desc]) => (
             <div key={role} className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="h-4 w-4 text-white/60" />
@@ -146,7 +180,7 @@ export default function RolesAndPermissionsManager() {
             </CardTitle>
             <CardDescription className="text-white/60">
               {employees.length} employee{employees.length !== 1 ? 's' : ''} •{' '}
-              {isOwner ? 'You can change roles' : 'Contact an owner to change roles'}
+              {isOwnerOrAdmin ? 'You can change roles' : 'Contact an owner or admin to change roles'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -164,7 +198,7 @@ export default function RolesAndPermissionsManager() {
                     <TableHead className="text-white/60">Email</TableHead>
                     <TableHead className="text-white/60">Status</TableHead>
                     <TableHead className="text-white/60">Role</TableHead>
-                    {isOwner && <TableHead className="text-white/60">Change Role</TableHead>}
+                    {isOwnerOrAdmin && <TableHead className="text-white/60">Change Role</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -183,23 +217,26 @@ export default function RolesAndPermissionsManager() {
                           {employee.role}
                         </span>
                       </TableCell>
-                      {isOwner && (
+                      {isOwnerOrAdmin && (
                         <TableCell>
-                          <Select
-                            value={employee.role}
-                            onValueChange={(val) => { void handleRoleChange(employee.id, val as EmployeeRole); }}
-                            disabled={updatingId === employee.id}
-                          >
-                            <SelectTrigger className="w-32 h-8 border-white/20 bg-white/5 text-white text-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="owner">Owner</SelectItem>
-                              <SelectItem value="manager">Manager</SelectItem>
-                              <SelectItem value="cashier">Cashier</SelectItem>
-                              <SelectItem value="viewer">Viewer</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {employee.user_id ? (
+                            <Select
+                              value={employee.role}
+                              onValueChange={(val) => { void handleRoleChange(employee, val as RoleType); }}
+                              disabled={updatingId === employee.id}
+                            >
+                              <SelectTrigger className="w-36 h-8 border-white/20 bg-white/5 text-white text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ASSIGNABLE_ROLES.map((r) => (
+                                  <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="text-xs text-white/30">Labor record (no login)</span>
+                          )}
                         </TableCell>
                       )}
                     </TableRow>
@@ -210,9 +247,9 @@ export default function RolesAndPermissionsManager() {
           </CardContent>
         </Card>
 
-        {!isOwner && (
+        {!isOwnerOrAdmin && (
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
-            You need the <strong>owner</strong> role to modify team permissions. Contact your account owner.
+            You need the <strong>owner</strong> or <strong>admin</strong> role to modify team permissions. Contact your account owner.
           </div>
         )}
       </div>

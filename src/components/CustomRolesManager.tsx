@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
+import { useIndustry } from '../context/IndustryContext';
 import { type RoleAction, type RoleType, ALL_PERMISSIONS } from '../types/subscription';
 import { supabase } from '../utils/supabaseClient';
 
@@ -123,6 +124,7 @@ const HOME_HUB_VALUES: readonly HomeHub[] =
 
 export default function CustomRolesManager() {
   const { currentTenant } = useApp();
+  const { industry } = useIndustry();
   const [roles, setRoles] = useState<CustomRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -539,34 +541,43 @@ export default function CustomRolesManager() {
                 </div>
               </div>
 
-              {/* Home screen (Track 2, Phase A) */}
-              <div>
-                <label htmlFor="cr-home-hub" className="block text-sm font-medium text-white/80 mb-2">
-                  Home Screen <span className="text-white/40 font-normal">(optional)</span>
-                </label>
-                <p className="text-xs text-white/40 mb-3">
-                  Where this role lands right after signing in, instead of the default dashboard.
-                </p>
-                {VALID_HOME_HUBS_BY_BASE_ROLE[form.base_role].length === 0 ? (
-                  <p className="text-xs text-white/30 italic px-3 py-3 rounded-xl border border-white/10 bg-white/5">
-                    No dedicated home screen is available yet for this access level.
+              {/* Home screen (Track 2) — restaurant-only: every value except
+                  pos_cashier (redundant here since a bare cashier already
+                  defaults to /pos regardless) points at a restaurant-only
+                  page. Previously shown to every tenant regardless of
+                  industry — a pharmacy/supermarket owner could assign
+                  "Waiter"/"Kitchen"/etc. and that employee would land on a
+                  broken page every login (found via a platform-wide audit,
+                  fixed alongside the same gap in postLoginRoute.ts). */}
+              {industry === 'restaurant' && (
+                <div>
+                  <label htmlFor="cr-home-hub" className="block text-sm font-medium text-white/80 mb-2">
+                    Home Screen <span className="text-white/40 font-normal">(optional)</span>
+                  </label>
+                  <p className="text-xs text-white/40 mb-3">
+                    Where this role lands right after signing in, instead of the default dashboard.
                   </p>
-                ) : (
-                  <select
-                    id="cr-home-hub"
-                    value={form.home_hub}
-                    onChange={(e) => setForm((prev) => ({ ...prev, home_hub: e.target.value as HomeHub | '' }))}
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
-                  >
-                    <option value="">Default dashboard</option>
-                    {HOME_HUB_OPTIONS.filter((opt) =>
-                      VALID_HOME_HUBS_BY_BASE_ROLE[form.base_role].includes(opt.value),
-                    ).map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
+                  {VALID_HOME_HUBS_BY_BASE_ROLE[form.base_role].length === 0 ? (
+                    <p className="text-xs text-white/30 italic px-3 py-3 rounded-xl border border-white/10 bg-white/5">
+                      No dedicated home screen is available yet for this access level.
+                    </p>
+                  ) : (
+                    <select
+                      id="cr-home-hub"
+                      value={form.home_hub}
+                      onChange={(e) => setForm((prev) => ({ ...prev, home_hub: e.target.value as HomeHub | '' }))}
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+                    >
+                      <option value="">Default dashboard</option>
+                      {HOME_HUB_OPTIONS.filter((opt) =>
+                        VALID_HOME_HUBS_BY_BASE_ROLE[form.base_role].includes(opt.value),
+                      ).map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
 
               {/* Permission toggles */}
               <div>

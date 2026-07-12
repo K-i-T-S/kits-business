@@ -118,23 +118,19 @@ function KpiCard({ label, value, prefix = '', suffix = '', decimals = 0, icon, c
 
   return (
     <motion.div
-      className="rounded-2xl border p-4 flex flex-col gap-2 cursor-default select-none"
-      style={{
-        background: RESTAURANT_COLORS.surface,
-        borderColor: RESTAURANT_COLORS.border,
-      }}
+      className="rounded-2xl border border-white/10 bg-slate-900 p-4 flex flex-col gap-2 cursor-default select-none"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02, borderColor: color + '66' }}
       transition={{ duration: 0.2 }}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium" style={{ color: RESTAURANT_COLORS.textMuted }}>
+        <span className="text-xs font-medium text-white/40">
           {label}
         </span>
         <span style={{ color }}>{icon}</span>
       </div>
-      <p className="text-2xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+      <p className="text-2xl font-bold text-white">
         {prefix}{display}{suffix}
       </p>
       {history && history.length > 0 && (
@@ -317,21 +313,16 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
 
   return (
     <div
-      className="flex h-full flex-col gap-0 overflow-y-auto rounded-2xl border"
-      style={{
-        background: RESTAURANT_COLORS.surface,
-        borderColor: RESTAURANT_COLORS.border,
-        minHeight: 400,
-      }}
+      className="flex h-full flex-col gap-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900"
+      style={{ minHeight: 400 }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between border-b px-5 py-4"
-        style={{ borderColor: RESTAURANT_COLORS.border }}
+        className="flex items-center justify-between border-b border-white/10 px-5 py-4"
       >
         <div className="flex items-center gap-2">
           <BarChart2 className="h-4 w-4" style={{ color: '#6366f1' }} />
-          <span className="text-sm font-semibold" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+          <span className="text-sm font-semibold text-white">
             Analytics Command Center
           </span>
         </div>
@@ -342,31 +333,29 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
 
       {/* 1. Today's Revenue */}
       <div
-        className="border-b px-5 py-4"
-        style={{ borderColor: RESTAURANT_COLORS.border }}
+        className="border-b border-white/10 px-5 py-4"
       >
         <div className="flex items-center gap-2 mb-2">
           <DollarSign className="h-3.5 w-3.5" style={{ color: '#10b981' }} />
-          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+          <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
             Today's Revenue
           </span>
         </div>
-        <p className="text-2xl font-black" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+        <p className="text-2xl font-black text-white">
           {data.todayRevenue === null ? '—' : `$${data.todayRevenue.toFixed(2)}`}
         </p>
-        <p className="text-[10px] mt-0.5" style={{ color: RESTAURANT_COLORS.textMuted }}>
+        <p className="text-[10px] mt-0.5 text-white/40">
           Paid orders since midnight Beirut
         </p>
       </div>
 
       {/* 2. Table Status Summary */}
       <div
-        className="border-b px-5 py-4"
-        style={{ borderColor: RESTAURANT_COLORS.border }}
+        className="border-b border-white/10 px-5 py-4"
       >
         <div className="flex items-center gap-2 mb-3">
           <LayoutGrid className="h-3.5 w-3.5" style={{ color: '#6366f1' }} />
-          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+          <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
             Tables Status
           </span>
         </div>
@@ -388,13 +377,12 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
 
       {/* 3. Slow Table Alerts */}
       <div
-        className="border-b px-5 py-4"
-        style={{ borderColor: RESTAURANT_COLORS.border }}
+        className="border-b border-white/10 px-5 py-4"
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
               Slow Alerts
             </span>
           </div>
@@ -405,7 +393,7 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
           )}
         </div>
         {data.slowAlerts.length === 0 ? (
-          <p className="text-xs" style={{ color: RESTAURANT_COLORS.textMuted }}>No active alerts</p>
+          <p className="text-xs text-white/40">No active alerts</p>
         ) : (
           <div className="space-y-2">
             {data.slowAlerts.map((alert, idx) => {
@@ -437,13 +425,12 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
 
       {/* 4. QR Pending Count */}
       <div
-        className="border-b px-5 py-4"
-        style={{ borderColor: RESTAURANT_COLORS.border }}
+        className="border-b border-white/10 px-5 py-4"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <QrCode className="h-3.5 w-3.5" style={{ color: '#0ea5e9' }} />
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
               QR Pending
             </span>
           </div>
@@ -453,7 +440,7 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
             </span>
           )}
         </div>
-        <p className="mt-2 text-sm" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+        <p className="mt-2 text-sm text-white/80">
           {data.qrPendingCount === 0
             ? 'No QR orders waiting'
             : `${data.qrPendingCount} guest${data.qrPendingCount > 1 ? 's' : ''} waiting for order confirmation`}
@@ -465,7 +452,7 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-3.5 w-3.5" style={{ color: '#f59e0b' }} />
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: RESTAURANT_COLORS.textMuted }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
               Recent Feedback
             </span>
           </div>
@@ -477,7 +464,7 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
           )}
         </div>
         {data.recentFeedback.length === 0 ? (
-          <p className="text-xs" style={{ color: RESTAURANT_COLORS.textMuted }}>No recent feedback</p>
+          <p className="text-xs text-white/40">No recent feedback</p>
         ) : (
           <div className="space-y-2">
             {data.recentFeedback.map((fb) => (
@@ -500,11 +487,11 @@ function AnalyticsCommandCenter({ tenantId, tables }: AnalyticsCommandCenterProp
                   </div>
                 )}
                 {fb.comment && (
-                  <p className="text-xs leading-relaxed" style={{ color: RESTAURANT_COLORS.textTertiary }}>
+                  <p className="text-xs leading-relaxed text-white/60">
                     &ldquo;{fb.comment}&rdquo;
                   </p>
                 )}
-                <p className="text-[10px] mt-1" style={{ color: RESTAURANT_COLORS.textMuted }}>
+                <p className="text-[10px] mt-1 text-white/40">
                   {new Date(fb.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
@@ -816,14 +803,10 @@ export default function RestaurantHub() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      className="flex min-h-screen flex-col"
-      style={{ background: RESTAURANT_COLORS.base }}
-    >
+    <div className="flex min-h-screen flex-col bg-slate-950">
       {/* ── Top bar ───────────────────────────────────────────────────────── */}
       <motion.header
-        className="flex items-center justify-between border-b px-4 py-3 md:px-6"
-        style={{ borderColor: RESTAURANT_COLORS.border, background: RESTAURANT_COLORS.surface }}
+        className="flex items-center justify-between border-b border-white/10 bg-slate-900 px-4 py-3 md:px-6"
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -839,10 +822,10 @@ export default function RestaurantHub() {
           </button>
           <UtensilsCrossed className="h-5 w-5" style={{ color: '#6366f1' }} />
           <div>
-            <h1 className="text-base font-semibold leading-tight" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+            <h1 className="text-base font-semibold leading-tight text-white">
               {restaurantName}
             </h1>
-            <p className="text-xs" style={{ color: RESTAURANT_COLORS.textMuted }}>
+            <p className="text-xs text-white/40">
               {openTables} of {totalTables} tables occupied
             </p>
           </div>
@@ -854,23 +837,18 @@ export default function RestaurantHub() {
           {isOffline ? (
             <WifiOff className="h-4 w-4 text-red-400" />
           ) : (
-            <Wifi className="h-4 w-4 opacity-30" style={{ color: RESTAURANT_COLORS.textMuted }} />
+            <Wifi className="h-4 w-4 opacity-30 text-white/40" />
           )}
 
           {/* Floor / Analytics toggle */}
-          <div
-            className="flex rounded-xl border p-0.5"
-            style={{ borderColor: RESTAURANT_COLORS.border, background: RESTAURANT_COLORS.glass }}
-          >
+          <div className="flex rounded-xl border border-white/10 bg-white/5 p-0.5">
             {(['floor', 'analytics'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-all duration-200"
-                style={{
-                  background: viewMode === mode ? '#6366f1' : 'transparent',
-                  color: viewMode === mode ? '#ffffff' : RESTAURANT_COLORS.textMuted,
-                }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-all duration-200 ${
+                  viewMode === mode ? 'bg-indigo-500 text-white' : 'bg-transparent text-white/40'
+                }`}
               >
                 {mode === 'floor' ? 'Floor' : 'Analytics'}
               </button>
@@ -880,12 +858,7 @@ export default function RestaurantHub() {
           {/* Kitchen Display shortcut */}
           <button
             onClick={handleViewKDS}
-            className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors"
-            style={{
-              borderColor: RESTAURANT_COLORS.border,
-              color: RESTAURANT_COLORS.textSecondary,
-              background: 'transparent',
-            }}
+            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-transparent px-3 py-1.5 text-xs font-medium text-white/80 transition-colors"
           >
             <ChefHat className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Kitchen</span>
@@ -908,8 +881,7 @@ export default function RestaurantHub() {
           {/* Manual refresh */}
           <button
             onClick={() => void loadData()}
-            className="rounded-xl border p-1.5 transition-colors"
-            style={{ borderColor: RESTAURANT_COLORS.border, color: RESTAURANT_COLORS.textMuted }}
+            className="rounded-xl border border-white/10 p-1.5 text-white/40 transition-colors"
             title="Refresh data"
           >
             <RefreshCw className="h-3.5 w-3.5" />
@@ -986,10 +958,7 @@ export default function RestaurantHub() {
                 </WebGLErrorBoundary>
 
                 {/* Compact status legend beneath the 3D canvas */}
-                <div
-                  className="flex items-center justify-center gap-5 py-2 px-4 border-t"
-                  style={{ borderColor: RESTAURANT_COLORS.border }}
-                >
+                <div className="flex items-center justify-center gap-5 py-2 px-4 border-t border-white/10">
                   {(
                     [
                       { key: 'available', label: 'Available' },
@@ -1005,7 +974,7 @@ export default function RestaurantHub() {
 
                         style={{ background: RESTAURANT_COLORS[key].fill }}
                       />
-                      <span className="text-[10px]" style={{ color: RESTAURANT_COLORS.textMuted }}>
+                      <span className="text-[10px] text-white/40">
                         {label}
                       </span>
                     </div>
@@ -1029,8 +998,7 @@ export default function RestaurantHub() {
 
         {/* ── Right: Metrics sidebar ──────────────────────────────────────── */}
         <motion.aside
-          className="flex flex-col gap-4 border-t p-4 md:w-80 md:shrink-0 md:border-t-0 md:border-l md:p-5 lg:w-96"
-          style={{ borderColor: RESTAURANT_COLORS.border, background: RESTAURANT_COLORS.surface }}
+          className="flex flex-col gap-4 border-t border-white/10 bg-slate-900 p-4 md:w-80 md:shrink-0 md:border-t-0 md:border-l md:p-5 lg:w-96"
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, delay: 0.15 }}
@@ -1080,14 +1048,11 @@ export default function RestaurantHub() {
           {/* KPI grid */}
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <h2
-                className="text-xs font-semibold uppercase tracking-widest"
-                style={{ color: RESTAURANT_COLORS.textMuted }}
-              >
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-white/40">
                 Live Metrics
               </h2>
               {lastRefreshedLabel && (
-                <span className="text-[10px]" style={{ color: RESTAURANT_COLORS.textMuted }}>
+                <span className="text-[10px] text-white/40">
                   {lastRefreshedLabel}
                 </span>
               )}
@@ -1130,10 +1095,7 @@ export default function RestaurantHub() {
 
           {/* Quick actions */}
           <section>
-            <h2
-              className="mb-3 text-xs font-semibold uppercase tracking-widest"
-              style={{ color: RESTAURANT_COLORS.textMuted }}
-            >
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">
               Quick Actions
             </h2>
             <div className="flex flex-col gap-2">
@@ -1166,10 +1128,7 @@ export default function RestaurantHub() {
 
           {/* Table status legend */}
           <section className="mt-auto">
-            <h2
-              className="mb-2 text-xs font-semibold uppercase tracking-widest"
-              style={{ color: RESTAURANT_COLORS.textMuted }}
-            >
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/40">
               Status Legend
             </h2>
             <div className="flex flex-col gap-1.5">
@@ -1188,7 +1147,7 @@ export default function RestaurantHub() {
 
                     style={{ background: RESTAURANT_COLORS[key].fill }}
                   />
-                  <span className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>
+                  <span className="text-xs text-white/60">
                     {label}
                   </span>
                 </div>

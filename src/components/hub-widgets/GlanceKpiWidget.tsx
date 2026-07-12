@@ -2,8 +2,6 @@ import { TrendingDown, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 
-import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
-
 interface GlanceKpiWidgetProps {
   label: string;
   value: string;
@@ -23,22 +21,22 @@ interface GlanceKpiWidgetProps {
 export function GlanceKpiWidget({ label, value, icon, accent, trend }: GlanceKpiWidgetProps) {
   return (
     <motion.div
-      className="rounded-2xl border p-4 flex flex-col gap-2"
-      style={{ background: RESTAURANT_COLORS.surface, borderColor: RESTAURANT_COLORS.border }}
+      className="rounded-2xl border border-white/10 bg-slate-900 p-4 flex flex-col gap-2"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02, borderColor: accent + '66' }}
       transition={{ duration: 0.2 }}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium" style={{ color: RESTAURANT_COLORS.textMuted }}>{label}</span>
+        <span className="text-xs font-medium text-white/40">{label}</span>
         <span style={{ color: accent }}>{icon}</span>
       </div>
-      <p className="text-2xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>{value}</p>
+      <p className="text-2xl font-bold text-white">{value}</p>
       {trend && (
         <div
-          className="flex items-center gap-1 text-xs"
-          style={{ color: trend.good === false ? '#ef4444' : trend.good ? '#10b981' : RESTAURANT_COLORS.textTertiary }}
+          className={`flex items-center gap-1 text-xs ${
+            trend.good === false ? 'text-red-500' : trend.good ? 'text-emerald-500' : 'text-white/60'
+          }`}
         >
           {trend.direction === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {trend.label}

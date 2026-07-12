@@ -1,12 +1,16 @@
 /**
- * Restaurant Color System — Dark Luxury Palette
- * Used throughout the F&B vertical: 3D floor plan, KDS, waiter interface, analytics
+ * Restaurant table-status colors — 3D floor plan (Table3D.tsx) and the 2D
+ * status legend (RestaurantHub.tsx). Raw hex/rgba values are load-bearing
+ * here: Three.js materials and the status-legend swatches need actual
+ * color values, not Tailwind classes.
  *
- * Status colors: available (green), occupied (amber), reserved (purple), cleaning (gray), alert (red)
- * Each status has fill, emissive, and glow properties for 3D rendering and UI effects
- *
- * Backgrounds: 5 dark navy shades from base to glass
- * Accents: gradient-based for premium features (AI, Enterprise)
+ * DOM styling (backgrounds, borders, text) previously lived here too
+ * (base/surface/glass/border/text* etc.) but was pure decoration with no
+ * technical need for raw values — migrated to standard Tailwind utility
+ * classes (bg-slate-900, border-white/10, text-white/40, ...) matching
+ * CLAUDE.md's Dark Theme Standard, the same convention every other page
+ * in the app already uses. This file now only holds what genuinely can't
+ * be a Tailwind class.
  */
 
 export type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning' | 'alert';
@@ -18,30 +22,11 @@ export interface StatusColor {
 }
 
 export const RESTAURANT_COLORS = {
-  // Table status (used in 3D and 2D floor plan)
   available: { fill: '#10b981', emissive: '#10b981', glow: 'rgba(16,185,129,0.3)' },
   occupied: { fill: '#f59e0b', emissive: '#f59e0b', glow: 'rgba(245,158,11,0.3)' },
   reserved: { fill: '#8b5cf6', emissive: '#8b5cf6', glow: 'rgba(139,92,246,0.3)' },
   cleaning: { fill: '#64748b', emissive: '#64748b', glow: 'transparent' },
   alert: { fill: '#ef4444', emissive: '#ef4444', glow: 'rgba(239,68,68,0.4)' },
-
-  // Backgrounds
-  base: '#0a0f1e', // Deepest dark navy — page background
-  surface: '#111827', // Cards, panels
-  elevated: '#1e2d40', // Modals, dropdowns
-  glass: 'rgba(255,255,255,0.04)', // Glassmorphism surface
-  border: 'rgba(255,255,255,0.08)',
-
-  // Accents
-  primary: 'linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%)', // Indigo→Sky
-  gold: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', // AI features
-  premium: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)', // Enterprise features
-
-  // Text colors
-  textPrimary: '#ffffff',
-  textSecondary: 'rgba(255,255,255,0.8)',
-  textTertiary: 'rgba(255,255,255,0.6)',
-  textMuted: 'rgba(255,255,255,0.4)',
 } as const;
 
 /**

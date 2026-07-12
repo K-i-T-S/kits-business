@@ -1,12 +1,11 @@
 import { AlertOctagon, ArrowUpRight, Bell, DollarSign, TrendingUp, Users } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
 import Layout from '@/components/Layout';
-import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import { useApp } from '@/context/AppContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { formatCurrency, toLocalDateString } from '@/utils/formatting';
@@ -146,7 +145,17 @@ export default function OperationsHomeHub() {
     }
   }, [currentTenant]);
 
-  useEffect(() => { void load(); }, [load]);
+  // First screen an employee lands on after login — previously no
+  // auto-refresh at all, same staleness pattern already fixed on several
+  // other pages this session (TableManagement, Reservations, EventsManager).
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    void load();
+    refreshIntervalRef.current = setInterval(() => { void load(); }, 30000);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, [load]);
 
   const handleResolve = useCallback(async (alert: FloorAlert) => {
     try {
@@ -199,8 +208,8 @@ export default function OperationsHomeHub() {
     <Layout>
       <div className="p-4 sm:p-6 space-y-5">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>{titleByScope[scope]}</h1>
-          <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
+          <h1 className="text-xl font-bold text-white">{titleByScope[scope]}</h1>
+          <p className="text-sm text-white/40">{currentTenant?.name}</p>
         </div>
 
         {scope === 'supervisor' && (
@@ -266,16 +275,13 @@ export default function OperationsHomeHub() {
         )}
 
         {scope === 'owner' && alerts.length > 0 && (
-          <div
-            className="flex items-center gap-3 rounded-2xl border p-4"
-            style={{ background: RESTAURANT_COLORS.surface, borderColor: RESTAURANT_COLORS.border }}
-          >
-            <Bell className="h-5 w-5 shrink-0" style={{ color: '#f59e0b' }} />
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900 p-4">
+            <Bell className="h-5 w-5 shrink-0 text-amber-500" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+              <p className="text-sm font-medium text-white">
                 {alerts.length} open floor alert{alerts.length === 1 ? '' : 's'} right now
               </p>
-              <p className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>Handled by your floor team — visibility only here</p>
+              <p className="text-xs text-white/60">Handled by your floor team — visibility only here</p>
             </div>
           </div>
         )}
@@ -285,13 +291,12 @@ export default function OperationsHomeHub() {
             <Link
               key={link.to}
               to={link.to}
-              className="flex items-center justify-between rounded-2xl border p-4 transition-colors hover:bg-white/5"
-              style={{ borderColor: RESTAURANT_COLORS.border }}
+              className="flex items-center justify-between rounded-2xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             >
-              <span className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+              <span className="text-sm font-medium text-white/80">
                 {link.label}
               </span>
-              <ArrowUpRight className="h-4 w-4" style={{ color: RESTAURANT_COLORS.textMuted }} />
+              <ArrowUpRight className="h-4 w-4 text-white/40" />
             </Link>
           ))}
         </div>

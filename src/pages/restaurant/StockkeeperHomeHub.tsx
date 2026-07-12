@@ -1,12 +1,11 @@
 import { AlertTriangle, ArrowUpRight, Boxes, PackageCheck, ShoppingCart } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
 import Layout from '@/components/Layout';
-import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
 import { formatCurrency } from '@/utils/formatting';
@@ -80,7 +79,17 @@ export default function StockkeeperHomeHub() {
     }
   }, [currentTenant]);
 
-  useEffect(() => { void load(); }, [load]);
+  // First screen an employee lands on after login — previously no
+  // auto-refresh at all, same staleness pattern already fixed on several
+  // other pages this session (TableManagement, Reservations, EventsManager).
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    void load();
+    refreshIntervalRef.current = setInterval(() => { void load(); }, 30000);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, [load]);
 
   const handleGeneratePOs = useCallback(async () => {
     if (!currentTenant) return;
@@ -155,8 +164,8 @@ export default function StockkeeperHomeHub() {
     <Layout>
       <div className="p-4 sm:p-6 space-y-5">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>Stockkeeper</h1>
-          <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
+          <h1 className="text-xl font-bold text-white">Stockkeeper</h1>
+          <p className="text-sm text-white/40">{currentTenant?.name}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -194,13 +203,12 @@ export default function StockkeeperHomeHub() {
 
         <Link
           to="/restaurant/recipes"
-          className="flex items-center justify-between rounded-2xl border p-4 transition-colors hover:bg-white/5"
-          style={{ borderColor: RESTAURANT_COLORS.border }}
+          className="flex items-center justify-between rounded-2xl border border-white/10 p-4 transition-colors hover:bg-white/5"
         >
-          <span className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+          <span className="text-sm font-medium text-white/80">
             Open full inventory, recipes & purchase orders
           </span>
-          <ArrowUpRight className="h-4 w-4" style={{ color: RESTAURANT_COLORS.textMuted }} />
+          <ArrowUpRight className="h-4 w-4 text-white/40" />
         </Link>
       </div>
     </Layout>

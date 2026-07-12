@@ -1,12 +1,11 @@
 import { ArrowUpRight, CalendarClock, ReceiptText, Users2, Wallet } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
 import Layout from '@/components/Layout';
-import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
 import { formatCurrency, toLocalDateString } from '@/utils/formatting';
@@ -91,7 +90,17 @@ export default function AccountantHomeHub() {
     }
   }, [currentTenant]);
 
-  useEffect(() => { void load(); }, [load]);
+  // First screen an employee lands on after login — previously no
+  // auto-refresh at all, same staleness pattern already fixed on several
+  // other pages this session (TableManagement, Reservations, EventsManager).
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    void load();
+    refreshIntervalRef.current = setInterval(() => { void load(); }, 30000);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, [load]);
 
   const handleMarkPaid = useCallback(async (entryId: string) => {
     try {
@@ -122,8 +131,8 @@ export default function AccountantHomeHub() {
     <Layout>
       <div className="p-4 sm:p-6 space-y-5">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>Accountant</h1>
-          <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
+          <h1 className="text-xl font-bold text-white">Accountant</h1>
+          <p className="text-sm text-white/40">{currentTenant?.name}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -153,29 +162,27 @@ export default function AccountantHomeHub() {
         {uncategorizedCount > 0 && (
           <Link
             to="/finance"
-            className="flex items-center gap-3 rounded-2xl border p-4 transition-colors hover:bg-white/5"
-            style={{ background: RESTAURANT_COLORS.surface, borderColor: RESTAURANT_COLORS.border }}
+            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900 p-4 transition-colors hover:bg-white/5"
           >
-            <ReceiptText className="h-5 w-5 shrink-0" style={{ color: '#f59e0b' }} />
+            <ReceiptText className="h-5 w-5 shrink-0 text-amber-500" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+              <p className="text-sm font-medium text-white">
                 {uncategorizedCount} expense{uncategorizedCount === 1 ? '' : 's'} need{uncategorizedCount === 1 ? 's' : ''} a category
               </p>
-              <p className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>Review in Finance to keep reports accurate</p>
+              <p className="text-xs text-white/60">Review in Finance to keep reports accurate</p>
             </div>
-            <ArrowUpRight className="h-4 w-4 shrink-0" style={{ color: RESTAURANT_COLORS.textMuted }} />
+            <ArrowUpRight className="h-4 w-4 shrink-0 text-white/40" />
           </Link>
         )}
 
         <Link
           to="/finance"
-          className="flex items-center justify-between rounded-2xl border p-4 transition-colors hover:bg-white/5"
-          style={{ borderColor: RESTAURANT_COLORS.border }}
+          className="flex items-center justify-between rounded-2xl border border-white/10 p-4 transition-colors hover:bg-white/5"
         >
-          <span className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textSecondary }}>
+          <span className="text-sm font-medium text-white/80">
             Open full Finance
           </span>
-          <ArrowUpRight className="h-4 w-4" style={{ color: RESTAURANT_COLORS.textMuted }} />
+          <ArrowUpRight className="h-4 w-4 text-white/40" />
         </Link>
       </div>
     </Layout>

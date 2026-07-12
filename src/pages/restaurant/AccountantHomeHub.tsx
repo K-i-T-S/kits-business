@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
+import Layout from '@/components/Layout';
 import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
@@ -117,50 +118,52 @@ export default function AccountantHomeHub() {
   }));
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 space-y-5" style={{ background: RESTAURANT_COLORS.base }}>
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>Accountant</h1>
-        <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <GlanceKpiWidget
-          label="This month's expenses"
-          value={formatCurrency(monthExpenses)}
-          icon={<Wallet className="h-4 w-4" />}
-          accent="#f59e0b"
-        />
-        <GlanceKpiWidget
-          label="Next VAT filing"
-          value={nextVatDeadline()}
-          icon={<CalendarClock className="h-4 w-4" />}
-          accent="#8b5cf6"
-        />
-      </div>
-
-      <ActionQueueWidget
-        title="Payroll Pending Payment"
-        icon={<Users2 className="h-4 w-4" />}
-        accent="#0ea5e9"
-        items={payrollItems}
-        emptyLabel="No payroll entries pending payment"
-        loading={loading}
-      />
-
-      {uncategorizedCount > 0 && (
-        <div
-          className="flex items-center gap-3 rounded-2xl border p-4"
-          style={{ background: RESTAURANT_COLORS.surface, borderColor: RESTAURANT_COLORS.border }}
-        >
-          <ReceiptText className="h-5 w-5 shrink-0" style={{ color: '#f59e0b' }} />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textPrimary }}>
-              {uncategorizedCount} expense{uncategorizedCount === 1 ? '' : 's'} need{uncategorizedCount === 1 ? 's' : ''} a category
-            </p>
-            <p className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>Review in Finance to keep reports accurate</p>
-          </div>
+    <Layout>
+      <div className="p-4 sm:p-6 space-y-5">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>Accountant</h1>
+          <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
         </div>
-      )}
-    </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <GlanceKpiWidget
+            label="This month's expenses"
+            value={formatCurrency(monthExpenses)}
+            icon={<Wallet className="h-4 w-4" />}
+            accent="#f59e0b"
+          />
+          <GlanceKpiWidget
+            label="Next VAT filing"
+            value={nextVatDeadline()}
+            icon={<CalendarClock className="h-4 w-4" />}
+            accent="#8b5cf6"
+          />
+        </div>
+
+        <ActionQueueWidget
+          title="Payroll Pending Payment"
+          icon={<Users2 className="h-4 w-4" />}
+          accent="#0ea5e9"
+          items={payrollItems}
+          emptyLabel="No payroll entries pending payment"
+          loading={loading}
+        />
+
+        {uncategorizedCount > 0 && (
+          <div
+            className="flex items-center gap-3 rounded-2xl border p-4"
+            style={{ background: RESTAURANT_COLORS.surface, borderColor: RESTAURANT_COLORS.border }}
+          >
+            <ReceiptText className="h-5 w-5 shrink-0" style={{ color: '#f59e0b' }} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+                {uncategorizedCount} expense{uncategorizedCount === 1 ? '' : 's'} need{uncategorizedCount === 1 ? 's' : ''} a category
+              </p>
+              <p className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>Review in Finance to keep reports accurate</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }

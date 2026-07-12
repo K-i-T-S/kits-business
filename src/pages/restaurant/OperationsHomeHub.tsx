@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
+import Layout from '@/components/Layout';
 import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import { useApp } from '@/context/AppContext';
 import { useSubscription } from '@/context/SubscriptionContext';
@@ -185,88 +186,90 @@ export default function OperationsHomeHub() {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 space-y-5" style={{ background: RESTAURANT_COLORS.base }}>
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>{titleByScope[scope]}</h1>
-        <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
-      </div>
-
-      {scope === 'supervisor' && (
-        <div className="grid grid-cols-2 gap-3">
-          <GlanceKpiWidget
-            label="Open floor alerts"
-            value={String(alerts.length)}
-            icon={<Bell className="h-4 w-4" />}
-            accent={alerts.length > 0 ? '#ef4444' : '#10b981'}
-          />
-          <GlanceKpiWidget
-            label="Staff clocked in"
-            value={`${staffClockedIn} / ${staffScheduled}`}
-            icon={<Users className="h-4 w-4" />}
-            accent="#0ea5e9"
-          />
+    <Layout>
+      <div className="p-4 sm:p-6 space-y-5">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>{titleByScope[scope]}</h1>
+          <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
         </div>
-      )}
 
-      {scope === 'manager' && (
-        <div className="grid grid-cols-2 gap-3">
-          <GlanceKpiWidget
-            label="Today's revenue"
-            value={formatCurrency(todayRevenue)}
-            icon={<DollarSign className="h-4 w-4" />}
-            accent="#10b981"
-          />
-          <GlanceKpiWidget
-            label="Staff clocked in"
-            value={`${staffClockedIn} / ${staffScheduled}`}
-            icon={<Users className="h-4 w-4" />}
-            accent="#0ea5e9"
-          />
-        </div>
-      )}
-
-      {scope === 'owner' && (
-        <div className="grid grid-cols-2 gap-3">
-          <GlanceKpiWidget
-            label="Today's revenue"
-            value={formatCurrency(todayRevenue)}
-            icon={<DollarSign className="h-4 w-4" />}
-            accent="#10b981"
-          />
-          <GlanceKpiWidget
-            label="Last 7 days"
-            value={formatCurrency(weekRevenue)}
-            icon={<TrendingUp className="h-4 w-4" />}
-            accent="#8b5cf6"
-          />
-        </div>
-      )}
-
-      {(scope === 'supervisor' || scope === 'manager') && (
-        <ActionQueueWidget
-          title="Floor Alerts"
-          icon={<AlertOctagon className="h-4 w-4" />}
-          accent="#ef4444"
-          items={alertItems}
-          emptyLabel="No open floor alerts"
-          loading={loading}
-        />
-      )}
-
-      {scope === 'owner' && alerts.length > 0 && (
-        <div
-          className="flex items-center gap-3 rounded-2xl border p-4"
-          style={{ background: RESTAURANT_COLORS.surface, borderColor: RESTAURANT_COLORS.border }}
-        >
-          <Bell className="h-5 w-5 shrink-0" style={{ color: '#f59e0b' }} />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textPrimary }}>
-              {alerts.length} open floor alert{alerts.length === 1 ? '' : 's'} right now
-            </p>
-            <p className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>Handled by your floor team — visibility only here</p>
+        {scope === 'supervisor' && (
+          <div className="grid grid-cols-2 gap-3">
+            <GlanceKpiWidget
+              label="Open floor alerts"
+              value={String(alerts.length)}
+              icon={<Bell className="h-4 w-4" />}
+              accent={alerts.length > 0 ? '#ef4444' : '#10b981'}
+            />
+            <GlanceKpiWidget
+              label="Staff clocked in"
+              value={`${staffClockedIn} / ${staffScheduled}`}
+              icon={<Users className="h-4 w-4" />}
+              accent="#0ea5e9"
+            />
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {scope === 'manager' && (
+          <div className="grid grid-cols-2 gap-3">
+            <GlanceKpiWidget
+              label="Today's revenue"
+              value={formatCurrency(todayRevenue)}
+              icon={<DollarSign className="h-4 w-4" />}
+              accent="#10b981"
+            />
+            <GlanceKpiWidget
+              label="Staff clocked in"
+              value={`${staffClockedIn} / ${staffScheduled}`}
+              icon={<Users className="h-4 w-4" />}
+              accent="#0ea5e9"
+            />
+          </div>
+        )}
+
+        {scope === 'owner' && (
+          <div className="grid grid-cols-2 gap-3">
+            <GlanceKpiWidget
+              label="Today's revenue"
+              value={formatCurrency(todayRevenue)}
+              icon={<DollarSign className="h-4 w-4" />}
+              accent="#10b981"
+            />
+            <GlanceKpiWidget
+              label="Last 7 days"
+              value={formatCurrency(weekRevenue)}
+              icon={<TrendingUp className="h-4 w-4" />}
+              accent="#8b5cf6"
+            />
+          </div>
+        )}
+
+        {(scope === 'supervisor' || scope === 'manager') && (
+          <ActionQueueWidget
+            title="Floor Alerts"
+            icon={<AlertOctagon className="h-4 w-4" />}
+            accent="#ef4444"
+            items={alertItems}
+            emptyLabel="No open floor alerts"
+            loading={loading}
+          />
+        )}
+
+        {scope === 'owner' && alerts.length > 0 && (
+          <div
+            className="flex items-center gap-3 rounded-2xl border p-4"
+            style={{ background: RESTAURANT_COLORS.surface, borderColor: RESTAURANT_COLORS.border }}
+          >
+            <Bell className="h-5 w-5 shrink-0" style={{ color: '#f59e0b' }} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium" style={{ color: RESTAURANT_COLORS.textPrimary }}>
+                {alerts.length} open floor alert{alerts.length === 1 ? '' : 's'} right now
+              </p>
+              <p className="text-xs" style={{ color: RESTAURANT_COLORS.textTertiary }}>Handled by your floor team — visibility only here</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }

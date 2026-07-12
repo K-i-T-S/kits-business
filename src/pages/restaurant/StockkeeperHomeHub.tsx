@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
+import Layout from '@/components/Layout';
 import { RESTAURANT_COLORS } from '@/constants/restaurantColors';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/utils/supabaseClient';
@@ -150,44 +151,46 @@ export default function StockkeeperHomeHub() {
   }));
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 space-y-5" style={{ background: RESTAURANT_COLORS.base }}>
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>Stockkeeper</h1>
-        <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
-      </div>
+    <Layout>
+      <div className="p-4 sm:p-6 space-y-5">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: RESTAURANT_COLORS.textPrimary }}>Stockkeeper</h1>
+          <p className="text-sm" style={{ color: RESTAURANT_COLORS.textMuted }}>{currentTenant?.name}</p>
+        </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <GlanceKpiWidget
-          label="Below par level"
-          value={String(belowParCount)}
-          icon={<AlertTriangle className="h-4 w-4" />}
-          accent={belowParCount > 0 ? '#ef4444' : '#10b981'}
+        <div className="grid grid-cols-2 gap-3">
+          <GlanceKpiWidget
+            label="Below par level"
+            value={String(belowParCount)}
+            icon={<AlertTriangle className="h-4 w-4" />}
+            accent={belowParCount > 0 ? '#ef4444' : '#10b981'}
+          />
+          <GlanceKpiWidget
+            label="Open PO value"
+            value={formatCurrency(openPoValue)}
+            icon={<ShoppingCart className="h-4 w-4" />}
+            accent="#f59e0b"
+          />
+        </div>
+
+        <ActionQueueWidget
+          title="Low Stock"
+          icon={<Boxes className="h-4 w-4" />}
+          accent="#ef4444"
+          items={lowStockItems}
+          emptyLabel="Everything's above par level"
+          loading={loading}
         />
-        <GlanceKpiWidget
-          label="Open PO value"
-          value={formatCurrency(openPoValue)}
-          icon={<ShoppingCart className="h-4 w-4" />}
-          accent="#f59e0b"
+
+        <ActionQueueWidget
+          title="Awaiting Receipt"
+          icon={<PackageCheck className="h-4 w-4" />}
+          accent="#0ea5e9"
+          items={receivingItems}
+          emptyLabel="No purchase orders awaiting receipt"
+          loading={loading}
         />
       </div>
-
-      <ActionQueueWidget
-        title="Low Stock"
-        icon={<Boxes className="h-4 w-4" />}
-        accent="#ef4444"
-        items={lowStockItems}
-        emptyLabel="Everything's above par level"
-        loading={loading}
-      />
-
-      <ActionQueueWidget
-        title="Awaiting Receipt"
-        icon={<PackageCheck className="h-4 w-4" />}
-        accent="#0ea5e9"
-        items={receivingItems}
-        emptyLabel="No purchase orders awaiting receipt"
-        loading={loading}
-      />
-    </div>
+    </Layout>
   );
 }

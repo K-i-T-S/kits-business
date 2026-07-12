@@ -1,9 +1,18 @@
-import { Delete, Lock, LogOut } from 'lucide-react';
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
+import { Check, Delete, Lock, LogOut } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 import { useApp } from '@/context/AppContext';
+import type { Employee, Tenant } from '@/context/AppContext';
+import { hashPin, verifyPin } from '@/offlineAuth/crypto';
+import {
+  cacheCredential,
+  getCachedBootstrapData,
+  getCachedCredential,
+} from '@/offlineAuth/credentialCache';
+import { isThisDeviceRegistered } from '@/offlineAuth/trustedTerminals';
 import { toLocalDateString } from '@/utils/formatting';
 import { resolveRoleHomeRoute } from '@/utils/postLoginRoute';
 import { supabase } from '@/utils/supabaseClient';
@@ -37,11 +46,17 @@ interface PinEmployee {
  */
 export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean }) {
   const navigate = useNavigate();
-  const { employees, currentTenant } = useApp();
+  const { employees, currentTenant, authMode, establishProvisionalSession } = useApp();
   const [locked, setLocked] = useState(false);
   const [selected, setSelected] = useState<PinEmployee | null>(null);
   const [pin, setPin] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Held in memory only, never persisted -- lets the background
+  // reconnect-retry below promote a provisional session to a real one
+  // without asking the employee to re-enter their PIN the moment
+  // connectivity returns. Cleared the instant it's no longer needed
+  // (real session lands, or the employee explicitly signs out/switches).
+  const pendingProvisionalRef = useRef<{ employee: PinEmployee; pin: string } | null>(null);
   const [error, setError] = useState('');
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -74,16 +89,50 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
     return () => window.removeEventListener('kits:lock-terminal', handler);
   }, []);
 
-  const handleDigit = (digit: string) => {
+  // Promotes a provisional (offline-verified) session to a real one the
+  // moment connectivity returns, replaying the same PIN that was already
+  // verified locally -- without asking the employee to re-enter it. The
+  // browser's 'online' event is only a trigger to attempt this, not proof
+  // it will succeed; signInWithPassword() either succeeds (the existing
+  // onAuthStateChange handler in AppContext then takes over normally and
+  // resets authMode to 'online') or fails, in which case the employee is
+  // forced back to a fresh PIN entry -- fail closed, never silently stay
+  // in provisional mode indefinitely once the network is actually back.
+  useEffect(() => {
+    if (authMode !== 'provisional') return;
+    const attemptPromotion = () => {
+      const pending = pendingProvisionalRef.current;
+      if (!pending) return;
+      void supabase.auth.signInWithPassword({
+        email: pending.employee.email,
+        password: pending.pin,
+      }).then(({ error }) => {
+        if (!error) {
+          pendingProvisionalRef.current = null;
+        }
+        // On error, leave pendingProvisionalRef set -- the next 'online'
+        // event (or the employee explicitly re-entering their PIN) tries
+        // again. A still-offline retry fails the same way it did before,
+        // which is expected, not an error state to surface.
+      });
+    };
+    window.addEventListener('online', attemptPromotion);
+    // Also try once immediately in case connectivity returned between the
+    // offline verification and this effect mounting.
+    attemptPromotion();
+    return () => window.removeEventListener('online', attemptPromotion);
+  }, [authMode]);
+
+  const handleDigit = useCallback((digit: string) => {
     if (submitting) return;
     setError('');
     setPin((prev) => (prev.length >= 6 ? prev : prev + digit));
-  };
+  }, [submitting]);
 
-  const handleBackspace = () => {
+  const handleBackspace = useCallback(() => {
     if (submitting) return;
     setPin((prev) => prev.slice(0, -1));
-  };
+  }, [submitting]);
 
   const handleCancel = () => {
     setSelected(null);
@@ -156,6 +205,51 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
     }
   }, []);
 
+  // Called right after a successful ONLINE login. Trust-on-first-use: an
+  // owner/manager never sees an employee's PIN, so a local credential
+  // cache can only ever be built this way, automatically, the moment an
+  // employee proves their PIN is correct on a device the owner has
+  // separately registered as trusted. Best-effort -- never blocks or
+  // errors out a successful login over a caching failure.
+  const maybeCacheCredentialForOfflineUse = useCallback(async (employee: PinEmployee, enteredPin: string, tenantId: string) => {
+    try {
+      const registered = await isThisDeviceRegistered(tenantId);
+      if (!registered) return;
+      const encodedHash = await hashPin(enteredPin);
+      await cacheCredential({ employeeId: employee.id, tenantId, encodedHash });
+    } catch {
+      // Never block a successful online login over a caching failure --
+      // worst case, offline login simply isn't available for this
+      // employee/device until the next successful online login.
+    }
+  }, []);
+
+  // Verifies a PIN locally against the cached Argon2id hash (no network
+  // involved) and, on success, establishes a provisional identity from the
+  // last cached tenant/employee snapshot -- see AppContext's
+  // establishProvisionalSession(). Returns false (not an error) whenever
+  // offline login genuinely isn't available for this employee/device, so
+  // the caller can show one honest, fail-closed message rather than a
+  // misleading "incorrect PIN."
+  const tryOfflineLogin = useCallback(async (employee: PinEmployee, enteredPin: string): Promise<'ok' | 'wrong-pin' | 'unavailable'> => {
+    const bootstrap = await getCachedBootstrapData();
+    if (!bootstrap) return 'unavailable';
+    const cached = await getCachedCredential(employee.id);
+    if (!cached || cached.tenantId !== (bootstrap.tenant as { id?: string }).id) return 'unavailable';
+
+    const valid = await verifyPin(enteredPin, cached.encodedHash);
+    if (!valid) return 'wrong-pin';
+
+    const tenant = bootstrap.tenant as unknown as Tenant;
+    const employeeRoster = bootstrap.employees as unknown as Employee[];
+    const signedInEmployee = employeeRoster.find((e) => e.id === employee.id);
+    if (!signedInEmployee) return 'unavailable';
+
+    establishProvisionalSession(tenant, employeeRoster, signedInEmployee);
+    pendingProvisionalRef.current = { employee, pin: enteredPin };
+    return 'ok';
+  }, [establishProvisionalSession]);
+
   const submitPin = useCallback(async (employee: PinEmployee, enteredPin: string) => {
     setSubmitting(true);
     setError('');
@@ -163,13 +257,20 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
       // Log the outgoing PIN employee's logout (if any) before the session
       // swap replaces their auth context — after signInWithPassword succeeds
       // there's no way to write an activity_log row "as" them anymore.
+      // Wrapped defensively: getUser() is itself a network call, and if it
+      // throws while offline it must not abort the whole function before
+      // the offline fallback below ever gets a chance to run.
       if (currentTenant) {
-        const { data: { user: outgoing } } = await supabase.auth.getUser();
-        if (outgoing?.email?.endsWith(PIN_SUFFIX)) {
-          const outgoingEmployee = employees.find((e) => e.email === outgoing.email);
-          if (outgoingEmployee) {
-            await logActivity(currentTenant.id, outgoing.id, 'employee_pin_logout', outgoingEmployee.id, outgoingEmployee.name);
+        try {
+          const { data: { user: outgoing } } = await supabase.auth.getUser();
+          if (outgoing?.email?.endsWith(PIN_SUFFIX)) {
+            const outgoingEmployee = employees.find((e) => e.email === outgoing.email);
+            if (outgoingEmployee) {
+              await logActivity(currentTenant.id, outgoing.id, 'employee_pin_logout', outgoingEmployee.id, outgoingEmployee.name);
+            }
           }
+        } catch {
+          // Best-effort, and specifically must not block offline login.
         }
       }
 
@@ -177,11 +278,43 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
         email: employee.email,
         password: enteredPin,
       });
+
       if (signInErr) {
+        if (isAuthRetryableFetchError(signInErr)) {
+          const result = await tryOfflineLogin(employee, enteredPin);
+          if (result === 'ok') {
+            // No network for resolveRoleHomeRoute() (or clock-in/audit-log,
+            // both outside PowerSync's offline scope) -- /pos is the one
+            // core-POS screen every PIN-enabled role can reach regardless
+            // of job function, so it's the safe universal offline landing
+            // page. Less tailored than the online per-role resolver, but
+            // never wrong or unreachable.
+            void navigate('/pos');
+            toast.success(`Welcome, ${employee.name} (offline)`);
+            setLocked(false);
+            setSelected(null);
+            setPin('');
+            resetInactivityTimer();
+            return;
+          }
+          setError(
+            result === 'wrong-pin'
+              ? 'Incorrect PIN'
+              : 'No connection, and this device or employee isn\'t set up for offline login',
+          );
+          setPin('');
+          return;
+        }
         setError('Incorrect PIN');
         setPin('');
         return;
       }
+
+      // Real session succeeded -- cache the credential for future offline
+      // use if this device is registered. Best-effort, never awaited
+      // against the rest of the login flow.
+      void maybeCacheCredentialForOfflineUse(employee, enteredPin, currentTenant?.id ?? '');
+
       // Track 2: resolve and navigate to the role-native screen (Waiter/
       // Kitchen/Argile/POS/Operations/etc.) BEFORE dropping the lock
       // overlay. The overlay is a fixed z-[100] full-screen cover, so
@@ -196,6 +329,7 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
       setSelected(null);
       setPin('');
       resetInactivityTimer();
+      pendingProvisionalRef.current = null;
       if (currentTenant) {
         void clockInIfScheduled(employee.id, currentTenant.id);
         const { data: { user: incoming } } = await supabase.auth.getUser();
@@ -204,16 +338,46 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
     } finally {
       setSubmitting(false);
     }
-  }, [resetInactivityTimer, clockInIfScheduled, currentTenant, employees, logActivity, navigate]);
+  }, [resetInactivityTimer, clockInIfScheduled, currentTenant, employees, logActivity, navigate, tryOfflineLogin, maybeCacheCredentialForOfflineUse]);
 
-  useEffect(() => {
-    if (selected && pin.length >= 4) {
-      void submitPin(selected, pin);
+  // Deliberately no auto-submit-at-N-digits: PINs are 4-6 digits
+  // (CreatePinEmployeeModal.tsx) and length is never persisted anywhere, so
+  // there's no reliable count to auto-submit at — auto-submitting at a fixed
+  // 4 silently mis-submitted the first 4 digits of every 6-digit PIN
+  // (BUG-001, docs/qa-bug-tracker.md). Submission is always an explicit
+  // action: tap/press Enter, or the on-screen Enter button below.
+  const handleSubmit = useCallback(() => {
+    if (!selected || submitting) return;
+    if (pin.length < 4) {
+      setError('Enter at least 4 digits');
+      return;
     }
-    // Only re-run when the pin/selected employee actually changes — submitPin
-    // itself is stable via useCallback, including it would just be noise.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pin, selected]);
+    void submitPin(selected, pin);
+  }, [selected, submitting, pin, submitPin]);
+
+  // Physical keyboard support alongside the on-screen keypad — previously
+  // PIN entry only worked via mouse/touch on the rendered buttons.
+  useEffect(() => {
+    if (!selected) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (submitting) return;
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        handleDigit(e.key);
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleBackspace();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selected, submitting, pin, handleSubmit, handleDigit, handleBackspace]);
 
   if (!isAuthenticated || !locked) return null;
 
@@ -307,6 +471,16 @@ export function PinLockScreen({ isAuthenticated }: { isAuthenticated: boolean })
               <Delete className="h-5 w-5" />
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || pin.length < 4}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <Check className="h-4 w-4" />
+            Enter
+          </button>
         </div>
       )}
 

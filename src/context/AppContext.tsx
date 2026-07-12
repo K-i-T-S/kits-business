@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 
+import { cacheBootstrapData, clearAllCachedCredentials, clearBootstrapData } from '../offlineAuth/credentialCache';
 import { powerSyncDb } from '../powersync/db';
 import { DataValidator } from '../utils/dataValidation';
 import { log } from '../utils/logger';
@@ -208,6 +209,8 @@ interface AppContextType {
   setCurrentTenant: (tenant: Tenant | null) => void;
   loading: boolean;
   hasSession: boolean;
+  authMode: 'online' | 'provisional';
+  establishProvisionalSession: (tenant: Tenant, employeeRoster: Employee[], signedInEmployee: Employee) => void;
 }
 
 // ── DB row shapes ─────────────────────────────────────────────────────────────
@@ -365,6 +368,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
+  // 'provisional' = identity verified locally (offline PIN check) with no
+  // real Supabase session yet -- see src/offlineAuth/*.ts and
+  // PinLockScreen's submitPin(). Reset to 'online' the moment a real
+  // session actually lands, in the onAuthStateChange handler below.
+  const [authMode, setAuthMode] = useState<'online' | 'provisional'>('online');
 
   const loadData = useCallback(async () => {
     // RLS handles tenant isolation server-side via current_tenant_id().
@@ -466,6 +474,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setHasSession(!!session);
       if (session) {
+        // A real session just landed (fresh login, or a provisional
+        // session's background retry finally succeeding) -- always online
+        // from here, regardless of what authMode was a moment ago.
+        setAuthMode('online');
         void (async () => {
           try {
             const tenantData = await getCurrentUserTenant() as TenantRpcRow | null;
@@ -513,10 +525,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // A genuine full sign-out (session === null), not a PIN swap to a
         // different employee -- a PIN swap produces a new session for the
         // new employee and never hits this branch, so the locally-cached
-        // PowerSync data (same tenant regardless of which employee is
-        // signed in) is correctly left intact across PIN swaps. Wipe it
-        // only here, where the device is genuinely leaving this tenant.
+        // PowerSync data and offline-auth caches (same tenant regardless
+        // of which employee is signed in) are correctly left intact across
+        // PIN swaps. Wipe them only here, where the device is genuinely
+        // leaving this tenant -- a signed-out device shouldn't retain
+        // another tenant's cached credentials or data indefinitely.
         void powerSyncDb.disconnectAndClear();
+        void clearAllCachedCredentials();
+        void clearBootstrapData();
+        setAuthMode('online');
       }
     });
 
@@ -525,6 +542,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, [loadData]);
+
+  // Refreshes the offline bootstrap cache (src/offlineAuth/credentialCache.ts)
+  // whenever a genuine online tenant+employee snapshot is available --
+  // deliberately excludes authMode==='provisional' data, which would just
+  // be re-caching the last cache back onto itself. This is what lets the
+  // app render something correct if it's opened cold while already
+  // offline, not just "went offline mid-session" (where in-memory state
+  // is already populated regardless of this cache).
+  useEffect(() => {
+    if (authMode !== 'online' || !currentTenant || employees.length === 0) return;
+    void cacheBootstrapData({
+      tenant: currentTenant as unknown as Record<string, unknown>,
+      employees: employees as unknown as Array<Record<string, unknown>>,
+    });
+  }, [authMode, currentTenant, employees]);
 
   // ── Products ─────────────────────────────────────────────────────────────
 
@@ -988,6 +1020,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void setTimeout(() => { void loadData(); }, 100);
   };
 
+  // Establishes identity from a LOCAL, offline-verified PIN check --
+  // src/offlineAuth/*.ts -- with no real Supabase session. Populates
+  // currentTenant/currentEmployee/employees from the last cached online
+  // snapshot so the app has something correct to render, and sets
+  // hasSession=true so existing "am I logged in" guards throughout the app
+  // keep working without needing to special-case provisional mode
+  // individually. authMode='provisional' is the actual signal that
+  // distinguishes this from a real session, for the few places that need
+  // to know (route-gating to the core-POS-only offline scope).
+  const establishProvisionalSession = useCallback((tenant: Tenant, employeeRoster: Employee[], signedInEmployee: Employee) => {
+    setCurrentTenant(tenant);
+    setEmployees(employeeRoster);
+    setCurrentEmployee(signedInEmployee);
+    setHasSession(true);
+    setAuthMode('provisional');
+  }, []);
+
   if (loading && hasSession) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1023,6 +1072,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateStock,
       loading,
       hasSession,
+      authMode,
+      establishProvisionalSession,
       setUser: () => {},
       setCurrentTenant,
     }}>

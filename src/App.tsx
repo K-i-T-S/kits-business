@@ -11,6 +11,7 @@ import KeyboardNavigationHelper from './components/KeyboardNavigationHelper';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PinLockScreen } from './components/PinLockScreen';
+import { ProvisionalModeGate } from './components/ProvisionalModeGate';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import RoleRoute from './components/RoleRoute';
 import { TranslationManager } from './components/TranslationManager';
@@ -18,6 +19,7 @@ import { Toaster } from './components/ui/sonner';
 import { getRestaurantRouteRoles } from './constants/restaurantNavAccess';
 import { getPharmacyRouteRoles, getSupermarketRouteRoles } from './constants/verticalNavAccess';
 import { AppProvider } from './context/AppContext';
+import { useServiceWorker } from './hooks/useServiceWorker';
 import { IndustryProvider } from './context/IndustryContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -124,6 +126,11 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Mounts the controllerchange listener that force-reloads the tab when a
+  // new deploy activates a new service worker — without this, an open tab
+  // keeps running stale JS chunks against a newer chunk manifest (white screen).
+  useServiceWorker();
+
   useEffect(() => {
     // Initialize Sentry in production
     if (process.env.NODE_ENV === 'production' && import.meta.env.VITE_SENTRY_DSN) {
@@ -187,6 +194,7 @@ export default function App() {
                           <NotificationProvider>
                             <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
                               <PinLockScreen isAuthenticated={isAuthenticated} />
+                              <ProvisionalModeGate />
                               <Suspense fallback={<LoadingSpinner />}>
                                 <Routes>
                                   {/* ── Public routes ── */}
@@ -674,7 +682,7 @@ export default function App() {
                               <MobileComponents isAuthenticated={isAuthenticated} loading={loading} />
 
                               <KeyboardNavigationHelper />
-                              <AccessibilityAudit />
+                              {import.meta.env.DEV && <AccessibilityAudit />}
                               <Toaster />
                               <SpeedInsights />
                               <Analytics />

@@ -8,7 +8,9 @@ import {
   MessageCircle,
   Save,
   Settings,
+  ShieldOff,
   ShoppingCart,
+  Smartphone,
   Star,
   Trash2,
   X,
@@ -22,13 +24,20 @@ import FeatureGate from '../components/FeatureGate';
 import IndustrySelector from '../components/industry/IndustrySelector';
 import { NotificationSettings } from '../components/NotificationSettings';
 import { useApp } from '../context/AppContext';
+import { getDeviceId } from '../offlineAuth/deviceId';
+import {
+  listTrustedTerminals,
+  registerThisDevice,
+  revokeTrustedTerminal,
+  type TrustedTerminal,
+} from '../offlineAuth/trustedTerminals';
 import { INDUSTRY_CONFIGS, INDUSTRY_VERTICAL_FEATURES } from '../types/industry';
 import type { Industry } from '../types/industry';
 import { supabase } from '../utils/supabaseClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'notifications' | 'industry' | 'dangerZone';
+type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'notifications' | 'industry' | 'offlineTerminals' | 'dangerZone';
 
 interface BusinessForm {
   name: string;
@@ -152,6 +161,14 @@ export default function SystemSettings() {
     return raw as Industry | '' ?? '';
   });
   const [savingIndustry, setSavingIndustry] = useState(false);
+
+  // Offline terminals (trust-on-first-use device registry)
+  const [terminals, setTerminals] = useState<TrustedTerminal[]>([]);
+  const [loadingTerminals, setLoadingTerminals] = useState(false);
+  const [deviceLabelInput, setDeviceLabelInput] = useState('');
+  const [registeringDevice, setRegisteringDevice] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const thisDeviceId = getDeviceId();
 
   // Danger zone
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
@@ -354,6 +371,55 @@ export default function SystemSettings() {
     }
   };
 
+  const loadTerminals = async () => {
+    if (!currentTenant) return;
+    setLoadingTerminals(true);
+    try {
+      const list = await listTrustedTerminals(currentTenant.id);
+      setTerminals(list);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setLoadingTerminals(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'offlineTerminals' && currentTenant) {
+      void loadTerminals();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, currentTenant?.id]);
+
+  const handleRegisterDevice = async () => {
+    if (!currentTenant) return;
+    setRegisteringDevice(true);
+    try {
+      const label = deviceLabelInput.trim() || 'Unnamed terminal';
+      await registerThisDevice(currentTenant.id, label);
+      setDeviceLabelInput('');
+      toast.success('This device can now cache credentials for offline PIN login.');
+      await loadTerminals();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setRegisteringDevice(false);
+    }
+  };
+
+  const handleRevokeTerminal = async (terminalId: string) => {
+    setRevokingId(terminalId);
+    try {
+      await revokeTrustedTerminal(terminalId);
+      toast.success('Terminal revoked. It can no longer log in offline until re-registered.');
+      await loadTerminals();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setRevokingId(null);
+    }
+  };
+
   const handleDeleteBusiness = async () => {
     if (!currentTenant) return;
     if (deleteConfirmName !== currentTenant.name) {
@@ -393,6 +459,7 @@ export default function SystemSettings() {
     { id: 'loyalty', label: t('settings.loyaltyProgram'), icon: Star },
     { id: 'notifications', label: t('settings.notifications'), icon: Bell },
     { id: 'industry', label: t('settings.industry', 'Industry'), icon: Layers },
+    { id: 'offlineTerminals', label: t('settings.offlineTerminals', 'Offline Terminals'), icon: Smartphone },
     { id: 'dangerZone', label: t('settings.dangerZone'), icon: AlertTriangle },
   ];
 
@@ -993,6 +1060,127 @@ export default function SystemSettings() {
                 </div>
               </div>
             )}
+
+            {/* ── Offline Terminals ─────────────────────────────────────── */}
+            {activeTab === 'offlineTerminals' && (() => {
+              const thisDeviceTerminal = terminals.find(
+                (term) => term.device_id === thisDeviceId && !term.revoked_at,
+              );
+              return (
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <Smartphone className="h-5 w-5 text-indigo-400 shrink-0" />
+                    <div>
+                      <h2 className="text-lg font-semibold text-white">
+                        {t('settings.offlineTerminals', 'Offline Terminals')}
+                      </h2>
+                      <p className="text-xs text-white/50 mt-0.5">
+                        Devices trusted to verify employee PIN logins without an internet
+                        connection. Registering a device does not share any employee&apos;s PIN
+                        — it only grants that device permission to build up its own local
+                        credential cache the next time each employee logs in online on it.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* This device's status */}
+                  <div className="p-4 bg-slate-900 border border-white/10 rounded-xl space-y-3">
+                    <p className="text-sm font-medium text-white/80">This device</p>
+                    {thisDeviceTerminal ? (
+                      <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                        <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 shrink-0" aria-hidden="true" />
+                        Registered as &ldquo;{thisDeviceTerminal.device_label}&rdquo; — offline PIN
+                        login is available here.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-xs text-white/50">
+                          This device is not yet registered. Employees signing in here will
+                          always need an internet connection.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            value={deviceLabelInput}
+                            onChange={(e) => setDeviceLabelInput(e.target.value)}
+                            placeholder="e.g. Front counter iPad"
+                            className="flex-1 px-4 py-2.5 bg-slate-800 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                          />
+                          <button
+                            onClick={() => void handleRegisterDevice()}
+                            disabled={registeringDevice}
+                            className="btn-brand flex items-center justify-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {registeringDevice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
+                            Register this device
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Registered terminals list */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
+                      All registered terminals
+                    </p>
+                    {loadingTerminals ? (
+                      <div className="flex items-center gap-2 text-white/50 text-sm py-4">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading…
+                      </div>
+                    ) : terminals.length === 0 ? (
+                      <p className="text-sm text-white/40 py-2">No terminals registered yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {terminals.map((term) => {
+                          const isThisDevice = term.device_id === thisDeviceId;
+                          const isRevoked = term.revoked_at !== null;
+                          return (
+                            <div
+                              key={term.id}
+                              className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border ${
+                                isRevoked
+                                  ? 'bg-white/[0.02] border-white/5 opacity-50'
+                                  : 'bg-slate-900 border-white/10'
+                              }`}
+                            >
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-white truncate">
+                                  {term.device_label}
+                                  {isThisDevice && (
+                                    <span className="ml-2 text-xs text-indigo-400 font-normal">(this device)</span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-white/40 mt-0.5">
+                                  {isRevoked
+                                    ? `Revoked ${new Date(term.revoked_at as string).toLocaleDateString()}`
+                                    : `Registered ${new Date(term.registered_at).toLocaleDateString()}`}
+                                </p>
+                              </div>
+                              {!isRevoked && (
+                                <button
+                                  onClick={() => void handleRevokeTerminal(term.id)}
+                                  disabled={revokingId === term.id}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-300 hover:text-red-200 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50 shrink-0"
+                                >
+                                  {revokingId === term.id ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <ShieldOff className="h-3.5 w-3.5" />
+                                  )}
+                                  Revoke
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ── Danger Zone ───────────────────────────────────────────── */}
             {activeTab === 'dangerZone' && (

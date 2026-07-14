@@ -13,6 +13,7 @@ import {
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { useApp } from '../../context/AppContext';
 import { supabase } from '../../utils/supabaseClient';
 import Layout from '../Layout';
 
@@ -29,6 +30,7 @@ interface RealStats {
 }
 
 export default function EnterpriseDashboard() {
+  const { employees } = useApp();
   const [stats, setStats] = useState<RealStats>({
     employeeCount: 0,
     activeProductCount: 0,
@@ -41,8 +43,10 @@ export default function EnterpriseDashboard() {
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      const [employeesRes, productsRes, customersRes, locationsRes] = await Promise.all([
-        supabase.from('employees').select('id', { count: 'exact', head: true }).eq('is_active', true),
+      // BUG-011: previously an independent stale employee-count fetch --
+      // AppContext's already-correct shared `employees` state (also
+      // filtered to active employees) covers this without a duplicate query.
+      const [productsRes, customersRes, locationsRes] = await Promise.all([
         supabase.from('products').select('id, stock_quantity, min_stock_level', { count: 'exact' }).eq('is_active', true),
         supabase.from('customers').select('id', { count: 'exact', head: true }),
         supabase.from('locations').select('id', { count: 'exact', head: true }),
@@ -55,7 +59,7 @@ export default function EnterpriseDashboard() {
       ).length;
 
       setStats({
-        employeeCount: employeesRes.count ?? 0,
+        employeeCount: employees.length,
         activeProductCount: productsRes.count ?? 0,
         lowStockCount: lowStock,
         customerCount: customersRes.count ?? 0,
@@ -69,7 +73,7 @@ export default function EnterpriseDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [employees]);
 
   useEffect(() => {
     void loadDashboardData();

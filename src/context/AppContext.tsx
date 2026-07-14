@@ -115,6 +115,12 @@ export interface Employee {
   commission: number;
   totalSales: number;
   shifts: Shift[];
+  /** Real Supabase Auth identity link, if this employee has one (PIN or
+   * email-invited staff) -- null for pure labor/commission-tracking
+   * records with no login capability. Added for BUG-011: TipsManagement.tsx
+   * needs this to resolve real waiters and previously had to run its own
+   * independent employees fetch just to get it. */
+  user_id: string | null;
 }
 
 export interface Shift {
@@ -259,6 +265,7 @@ interface DbEmployee {
   role: string;
   commission_rate: number;
   is_active: boolean;
+  user_id: string | null;
 }
 
 interface DbSaleItem {
@@ -342,6 +349,7 @@ function dbEmployeeToFrontend(e: DbEmployee): Employee {
     commission: e.commission_rate,
     totalSales: 0,
     shifts: [],
+    user_id: e.user_id,
   };
 }
 

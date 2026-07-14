@@ -69,7 +69,7 @@ const targetOccupiedOrder: TableOrder = {
 };
 
 const employees: Employee[] = [
-  { id: 'emp-1', name: 'Ahmad', email: 'a@x.com', role: 'cashier', commission: 0, totalSales: 0, shifts: [] },
+  { id: 'emp-1', name: 'Ahmad', email: 'a@x.com', role: 'cashier', commission: 0, totalSales: 0, shifts: [], user_id: null },
 ];
 
 const baseProps = {

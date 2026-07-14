@@ -86,6 +86,9 @@ export default function Employees() {
       ...newEmployee,
       totalSales: 0,
       shifts: [],
+      // This is the "Labor record (no login)" quick-add path -- no auth
+      // account is created, so there's genuinely nothing to link.
+      user_id: null,
     };
 
     void addEmployee(employee);

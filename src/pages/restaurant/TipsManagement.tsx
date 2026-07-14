@@ -91,8 +91,11 @@ export default function TipsManagement() {
     if (!tenantId) return;
     void (async () => {
       try {
-        const [employeesRes, tenantUsersRes, customRolesRes] = await Promise.all([
-          supabase.from('employees').select('id, user_id').eq('tenant_id', tenantId),
+        // BUG-011: previously ran its own independent `employees` fetch --
+        // AppContext's shared `employees` array now exposes `user_id` too
+        // (widened for exactly this), so this reads the already-correct
+        // shared state instead of a stale duplicate query.
+        const [tenantUsersRes, customRolesRes] = await Promise.all([
           supabase.from('tenant_users').select('user_id, custom_role_id').eq('tenant_id', tenantId),
           supabase.from('custom_roles').select('id, name, home_hub').eq('tenant_id', tenantId),
         ]);
@@ -111,14 +114,13 @@ export default function TipsManagement() {
           tenantUsers.filter((tu) => tu.custom_role_id && waiterRoleIds.has(tu.custom_role_id)).map((tu) => tu.user_id),
         );
 
-        const employeeRows = (employeesRes.data ?? []) as Array<{ id: string; user_id: string | null }>;
-        const resolvedWaiterIds = new Set(employeeRows.filter((e) => e.user_id && waiterUserIds.has(e.user_id)).map((e) => e.id));
+        const resolvedWaiterIds = new Set(employees.filter((e) => e.user_id && waiterUserIds.has(e.user_id)).map((e) => e.id));
         setWaiterEmployeeIds(resolvedWaiterIds.size > 0 ? resolvedWaiterIds : null);
       } catch {
         setWaiterEmployeeIds(null);
       }
     })();
-  }, [tenantId]);
+  }, [tenantId, employees]);
   // BUG-038: distribution records were localStorage-only -- lost on browser
   // data clear, invisible cross-device/terminal. Now persisted to
   // restaurant_tip_distributions (migration 20260714_000089).

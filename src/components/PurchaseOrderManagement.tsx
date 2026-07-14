@@ -8,7 +8,7 @@ import {
   CheckCircle,
   Trash2,
 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
@@ -26,7 +26,6 @@ interface Product {
   id: string;
   name: string;
   sku: string | null;
-  stock_quantity: number;
 }
 
 interface POItem {
@@ -519,9 +518,19 @@ function ReceiveModal({ po, onClose, onDone }: ReceiveModalProps) {
 
 // ── Main Component ─────────────────────────────────────────────
 export default function PurchaseOrderManagement() {
+  // BUG-030: previously an independent `products` fetch here -- AppContext's
+  // already-correct shared `products` state covers every field this file
+  // actually uses (id, name, sku; `stock_quantity` was fetched but never
+  // read anywhere, confirmed via grep). The `suppliers` fetch stays
+  // independent -- AppContext doesn't carry suppliers at all, no shared
+  // state to switch to for that half.
+  const { products: sharedProducts } = useApp();
+  const products = useMemo<Product[]>(
+    () => sharedProducts.filter((p): p is typeof p & { id: string } => !!p.id).map(p => ({ id: p.id, name: p.name, sku: p.sku })),
+    [sharedProducts],
+  );
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<POStatus | 'all'>('all');
@@ -533,18 +542,16 @@ export default function PurchaseOrderManagement() {
     setLoading(true);
     setError(null);
     try {
-      const [ordersRes, suppliersRes, productsRes] = await Promise.all([
+      const [ordersRes, suppliersRes] = await Promise.all([
         supabase
           .from('purchase_orders')
           .select('*, supplier:suppliers(name), purchase_order_items(id, product_id, quantity_ordered, quantity_received, unit_cost, product:products(name))')
           .order('created_at', { ascending: false }),
         supabase.from('suppliers').select('id, name').eq('is_active', true).order('name'),
-        supabase.from('products').select('id, name, sku, stock_quantity').eq('is_active', true).order('name'),
       ]);
 
       if (ordersRes.error) throw ordersRes.error;
       if (suppliersRes.error) throw suppliersRes.error;
-      if (productsRes.error) throw productsRes.error;
 
       // Flatten product names onto items
       const rawOrders = (ordersRes.data ?? []) as (Omit<PurchaseOrder, 'purchase_order_items'> & {
@@ -561,7 +568,6 @@ export default function PurchaseOrderManagement() {
 
       setOrders(normalised);
       setSuppliers((suppliersRes.data as Supplier[]) ?? []);
-      setProducts((productsRes.data as Product[]) ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load data');
     } finally {

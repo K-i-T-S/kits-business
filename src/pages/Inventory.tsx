@@ -4,7 +4,6 @@ import {
   Edit,
   Trash2,
   Package,
-  TrendingUp,
   AlertTriangle,
   Upload,
   Layers3,
@@ -17,7 +16,7 @@ import React, { Fragment, useMemo, useState } from 'react';
 import AddProductModal from '../components/AddProductModal';
 import ImportInventoryModal from '../components/ImportInventoryModal';
 import Layout from '../components/Layout';
-import { useApp, type Product, type ProductVariant, type CostEntry } from '../context/AppContext';
+import { useApp, type Product, type ProductVariant } from '../context/AppContext';
 
 interface EditForm {
   name: string;
@@ -34,7 +33,6 @@ export default function Inventory() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({ name: '', price: '', cost: '', stock: '', category: '', supplier: '' });
   const [editSubmitting, setEditSubmitting] = useState(false);
@@ -64,15 +62,6 @@ export default function Inventory() {
     const avgPrice = product.variants.reduce((sum: number, v: ProductVariant) => sum + (v.price || 0), 0) / product.variants.length;
     const isLowStock = product.variants.some((v: ProductVariant) => (v.stock || 0) <= (v.reorderLevel || 0));
     return { totalStock, avgCost, avgPrice, isLowStock };
-  };
-
-  const getCostTrend = (costHistory: CostEntry[]) => {
-    if (costHistory.length < 2) return 'stable';
-    const recent = costHistory[costHistory.length - 1]?.cost ?? 0;
-    const previous = costHistory[costHistory.length - 2]?.cost ?? 0;
-    if (recent > previous) return 'up';
-    if (recent < previous) return 'down';
-    return 'stable';
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -256,7 +245,6 @@ export default function Inventory() {
                 <tbody className="divide-y divide-white/20 bg-white/10">
                   {filteredProducts.map((product) => {
                     const stats = calculateStats(product);
-                    const isExpanded = selectedProduct === product.id;
 
                     return (
                       <Fragment key={product.id}>
@@ -270,13 +258,19 @@ export default function Inventory() {
                             <p className="text-xs text-white/60">{product.sku}</p>
                           </td>
                           <td className="px-6 py-4">
-                            <button
-                              onClick={() => setSelectedProduct(isExpanded ? null : product.id!)}
-                              className="text-xs font-semibold text-indigo-300 hover:text-indigo-200"
-                            >
-                              {product.variants?.length || 0} variant
-                              {(product.variants?.length || 0) > 1 ? 's' : ''}
-                            </button>
+                            {/* BUG-025: previously a clickable "N variants"
+                               expansion revealing a "Variant Intelligence"
+                               panel -- but products is a flat table (no
+                               product_variants ever built), so every product
+                               synthesizes exactly one permanently-empty
+                               variant. The attributes/cost-history/trend the
+                               panel showed were always blank or fabricated
+                               ("Trend: Stable" with zero real data behind
+                               it). Judgment call (founder-decision item):
+                               removed the misleading affordance rather than
+                               build real multi-variant tracking speculatively
+                               -- a plain, honest, non-interactive label. */}
+                            <span className="text-xs text-white/50">Single variant</span>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
@@ -314,98 +308,6 @@ export default function Inventory() {
                             </div>
                           </td>
                         </tr>
-                        {isExpanded && (
-                          <tr>
-                            <td colSpan={8} className="bg-white/10 px-6 py-6">
-                              <div className="space-y-4 rounded-3xl border border-white/30 bg-white/20 p-4">
-                                <p className="text-sm font-semibold text-white/80">
-                                  Variant intelligence
-                                </p>
-                                <div className="grid gap-4 md:grid-cols-2">
-                                  {product.variants?.map((variant) => {
-                                    const trend = getCostTrend(variant.costHistory);
-                                    return (
-                                      <div
-                                        key={variant.id}
-                                        className="rounded-2xl border border-white/30 bg-white/10 p-4 shadow-inner"
-                                      >
-                                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-                                          {Object.entries(variant.attributes)
-                                            .map(([key, value]) => `${key}: ${value}`)
-                                            .join(' • ')}
-                                        </p>
-                                        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                                          <div>
-                                            <p className="text-xs text-white/60">Cost</p>
-                                            <p className="font-semibold text-white">
-                                              ${(variant.cost || 0).toFixed(2)}
-                                            </p>
-                                          </div>
-                                          <div>
-                                            <p className="text-xs text-white/60">Price</p>
-                                            <p className="font-semibold text-white">
-                                              ${(variant.price || 0).toFixed(2)}
-                                            </p>
-                                          </div>
-                                          <div>
-                                            <p className="text-xs text-white/60">Stock</p>
-                                            <p
-                                              className={`font-semibold ${
-                                                variant.stock <= variant.reorderLevel
-                                                  ? 'text-amber-400'
-                                                  : 'text-white'
-                                              }`}
-                                            >
-                                              {variant.stock} units
-                                            </p>
-                                          </div>
-                                          <div>
-                                            <p className="text-xs text-white/60">Trend</p>
-                                            <div className="flex items-center gap-1 text-xs font-semibold">
-                                              {trend === 'up' && (
-                                                <>
-                                                  <TrendingUp className="h-4 w-4 text-rose-300" />
-                                                  Cost rising
-                                                </>
-                                              )}
-                                              {trend === 'down' && (
-                                                <>
-                                                  <TrendingUp className="h-4 w-4 rotate-180 text-emerald-300" />
-                                                  Cost easing
-                                                </>
-                                              )}
-                                              {trend === 'stable' && <span>Stable</span>}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                {product.variants[0]?.costHistory?.length ? (
-                                  <div className="rounded-2xl border border-slate-100 bg-white/90 p-4 text-xs text-slate-500">
-                                    <p className="text-sm font-semibold text-slate-700">
-                                      Cost history
-                                    </p>
-                                    <div className="mt-2 space-y-1 font-mono">
-                                      {product.variants?.[0]?.costHistory?.map((entry, idx) => (
-                                        <div
-                                          key={idx}
-                                          className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2"
-                                        >
-                                          <span>{new Date(entry.date).toLocaleDateString()}</span>
-                                          <span className="text-slate-900">
-                                            ${(entry.cost || 0).toFixed(2)} ({entry.quantity || 0} units)
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ) : null}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
                       </Fragment>
                     );
                   })}

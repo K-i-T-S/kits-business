@@ -653,6 +653,17 @@ function ItemFormModal({ item, categories, branches, overrides, onClose, onSave 
           {item && branches.length > 1 && (
             <div>
               <label className="mb-2 block text-xs font-medium text-white/60">Branch Availability</label>
+              {/* BUG-062: confirmed live -- get_public_menu(), qr_place_order(),
+                 POS.tsx, and WaiterInterface.tsx's menu queries have zero
+                 reference to this table. Real wiring is blocked on a larger,
+                 separate piece of work (restaurant_tables has no branch_id
+                 column at all yet, so there's no way to resolve which
+                 branch a given QR/table order is even placed from) -- an
+                 honest disclaimer here beats silently implying this is
+                 already live. */}
+              <div className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                Not yet applied to the QR menu, POS, or waiter ordering — these toggles currently affect this screen only.
+              </div>
               <div className="space-y-1.5">
                 {branches.map(branch => {
                   const available = isBranchAvailable(branch.id);

@@ -347,11 +347,19 @@ export default function RestaurantSettings() {
       }
       if (error) { toast.error(error.message); return; }
 
-      // Save QR / digital menu fields to tenants table
+      // Save QR / digital menu fields to tenants table.
+      // Found while investigating BUG-063: the real column is `slug`
+      // (migration 000061 dropped `tenant_slug` entirely) -- this update
+      // was targeting a non-existent column, so it has been erroring out
+      // (and failing the two real fields bundled in the same call) every
+      // time an owner tried to save these settings. `currentTenant.tenant_slug`
+      // elsewhere in this file is unaffected -- that's the RPC output field
+      // name from get_current_user_tenant(), which aliases the real `slug`
+      // column; only this raw table .update() call needed the real name.
       const { error: tenantError } = await supabase
         .from('tenants')
         .update({
-          tenant_slug: qrSlug || null,
+          slug: qrSlug || null,
           qr_menu_palette: qrPalette,
           qr_menu_promotional_banner: qrBanner || null,
         })

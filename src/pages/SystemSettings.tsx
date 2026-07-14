@@ -185,6 +185,7 @@ export default function SystemSettings() {
 
   // Danger zone
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
   const [deletingBusiness, setDeletingBusiness] = useState(false);
 
   // Initialise forms from currentTenant
@@ -492,8 +493,30 @@ export default function SystemSettings() {
       toast.error(t('settings.deleteConfirm'));
       return;
     }
+    // BUG-066 (founder decision: re-authentication, option (b) -- the
+    // cheaper-to-build mitigation vs. a soft-delete/grace-period, which
+    // would need a deleted_at column, a scheduled purge job, and a restore
+    // UI, genuinely separate scope). Typing a name you can already read on
+    // the same screen isn't a real second factor; re-entering the account
+    // password immediately before an irreversible, fully-cascading delete
+    // raises the bar against an already-authenticated-session mistake or a
+    // compromised/shared session. Does not add any recovery capability --
+    // the delete itself is still immediate and permanent.
+    if (!deletePassword) {
+      toast.error('Enter your password to confirm this permanent action.');
+      return;
+    }
     setDeletingBusiness(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('Could not verify your session. Please sign in again.');
+
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: deletePassword,
+      });
+      if (reauthError) throw new Error('Incorrect password.');
+
       const { error } = await supabase
         .from('tenants')
         .delete()
@@ -503,6 +526,7 @@ export default function SystemSettings() {
       void navigate('/login');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+      setDeletePassword('');
       setDeletingBusiness(false);
     }
   };
@@ -1346,12 +1370,28 @@ export default function SystemSettings() {
                         placeholder={currentTenant?.name ?? ''}
                         className="w-full px-4 py-2.5 bg-slate-900 border border-red-500/30 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-red-500/50"
                       />
+
+                      {/* BUG-066: re-authentication immediately before an
+                         irreversible, fully-cascading delete -- typing a
+                         name visible on the same screen isn't a real
+                         second factor. */}
+                      <label className="block text-sm font-medium text-white/80 mb-2 mt-4">
+                        Confirm your password
+                      </label>
+                      <input
+                        type="password"
+                        value={deletePassword}
+                        onChange={e => setDeletePassword(e.target.value)}
+                        placeholder="Your account password"
+                        autoComplete="current-password"
+                        className="w-full px-4 py-2.5 bg-slate-900 border border-red-500/30 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                      />
                     </div>
 
                     <div className="flex justify-end">
                       <button
                         onClick={() => void handleDeleteBusiness()}
-                        disabled={deletingBusiness || deleteConfirmName !== currentTenant?.name}
+                        disabled={deletingBusiness || deleteConfirmName !== currentTenant?.name || !deletePassword}
                         className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {deletingBusiness

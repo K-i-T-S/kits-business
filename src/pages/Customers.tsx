@@ -8,7 +8,6 @@ import {
   TrendingUp,
   MessageSquare,
   Users,
-  Target,
   Mail,
   Star,
   Trophy,
@@ -167,12 +166,19 @@ export default function Customers() {
               <h2 className="text-lg sm:text-xl font-bold text-white mt-1">Customer Management Tools</h2>
             </div>
             <div className="flex flex-wrap gap-2">
+              {/* BUG-036: Segments/Communications/Analytics hidden -- their
+                 backing tables (customer_segments, communication_history)
+                 only ever existed in an archived migration, never applied
+                 to the live schema. These tabs rendered as if functional
+                 while unconditionally passing empty arrays, misleading an
+                 owner into thinking segmentation/comms history was live.
+                 Judgment call (founder decision item, no schema revival
+                 attempted without a dedicated review of an ~80-migration-
+                 stale archived file): hide until genuinely prioritized,
+                 same reasoning as the other dead-UI fixes this session. */}
               {[
                 { id: 'overview', label: 'Overview', icon: Users },
-                { id: 'segments', label: 'Segments', icon: Target },
-                { id: 'communications', label: 'Communications', icon: MessageSquare },
                 { id: 'marketing', label: 'Marketing', icon: Mail },
-                { id: 'analytics', label: 'Analytics', icon: TrendingUp },
                 { id: 'loyalty', label: 'Loyalty', icon: Star },
               ].map((tab) => (
                 <button

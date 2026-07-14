@@ -1,12 +1,15 @@
 import { ArrowUpRight, CalendarClock, ListPlus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
 import Layout from '@/components/Layout';
+import { HUB_WIDGET_CATALOG } from '@/constants/hubWidgets';
 import { useApp } from '@/context/AppContext';
+import { loadVisibleWidgetIds } from '@/utils/hubWidgetConfig';
 import { supabase } from '@/utils/supabaseClient';
 
 interface WaitlistEntry {
@@ -37,6 +40,19 @@ export default function ReceptionistHomeHub() {
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [visibleWidgetIds, setVisibleWidgetIds] = useState<string[]>(
+    () => HUB_WIDGET_CATALOG.receptionist.map((w) => w.id),
+  );
+  useEffect(() => {
+    const tenantId = currentTenant?.id;
+    if (!tenantId) return;
+    void loadVisibleWidgetIds(tenantId, 'receptionist')
+      .then(setVisibleWidgetIds)
+      .catch(() => {
+        // Best-effort -- keep the catalog-default order already showing.
+      });
+  }, [currentTenant?.id]);
 
   const load = useCallback(async () => {
     if (!currentTenant) return;
@@ -132,6 +148,45 @@ export default function ReceptionistHomeHub() {
     onAction: () => handleConfirm(r.id),
   }));
 
+  const widgetRenderers: Record<string, ReactNode> = {
+    'receptionist.waitlist_count_kpi': (
+      <GlanceKpiWidget
+        label="On the waitlist"
+        value={String(waitlist.length)}
+        icon={<ListPlus className="h-4 w-4" />}
+        accent="#8b5cf6"
+      />
+    ),
+    'receptionist.reservations_count_kpi': (
+      <GlanceKpiWidget
+        label="Today's reservations"
+        value={String(reservations.length)}
+        icon={<CalendarClock className="h-4 w-4" />}
+        accent="#0ea5e9"
+      />
+    ),
+    'receptionist.waitlist_queue': (
+      <ActionQueueWidget
+        title="Waitlist"
+        icon={<ListPlus className="h-4 w-4" />}
+        accent="#8b5cf6"
+        items={waitlistItems}
+        emptyLabel="No one on the waitlist"
+        loading={loading}
+      />
+    ),
+    'receptionist.reservations_queue': (
+      <ActionQueueWidget
+        title="Reservations Needing Confirmation"
+        icon={<CalendarClock className="h-4 w-4" />}
+        accent="#0ea5e9"
+        items={reservationItems}
+        emptyLabel="No reservations awaiting confirmation"
+        loading={loading}
+      />
+    ),
+  };
+
   return (
     <Layout>
       <div className="p-4 sm:p-6 space-y-5">
@@ -141,37 +196,12 @@ export default function ReceptionistHomeHub() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <GlanceKpiWidget
-            label="On the waitlist"
-            value={String(waitlist.length)}
-            icon={<ListPlus className="h-4 w-4" />}
-            accent="#8b5cf6"
-          />
-          <GlanceKpiWidget
-            label="Today's reservations"
-            value={String(reservations.length)}
-            icon={<CalendarClock className="h-4 w-4" />}
-            accent="#0ea5e9"
-          />
+          {visibleWidgetIds.map((id) => (
+            <div key={id} className={id.endsWith('_queue') ? 'col-span-2' : ''}>
+              {widgetRenderers[id]}
+            </div>
+          ))}
         </div>
-
-        <ActionQueueWidget
-          title="Waitlist"
-          icon={<ListPlus className="h-4 w-4" />}
-          accent="#8b5cf6"
-          items={waitlistItems}
-          emptyLabel="No one on the waitlist"
-          loading={loading}
-        />
-
-        <ActionQueueWidget
-          title="Reservations Needing Confirmation"
-          icon={<CalendarClock className="h-4 w-4" />}
-          accent="#0ea5e9"
-          items={reservationItems}
-          emptyLabel="No reservations awaiting confirmation"
-          loading={loading}
-        />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Link

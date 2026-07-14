@@ -1,12 +1,15 @@
 import { ArrowUpRight, CalendarClock, ReceiptText, Users2, Wallet } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
 import Layout from '@/components/Layout';
+import { HUB_WIDGET_CATALOG } from '@/constants/hubWidgets';
 import { useApp } from '@/context/AppContext';
+import { loadVisibleWidgetIds } from '@/utils/hubWidgetConfig';
 import { supabase } from '@/utils/supabaseClient';
 import { formatCurrency, toLocalDateString } from '@/utils/formatting';
 
@@ -47,6 +50,19 @@ export default function AccountantHomeHub() {
   const [monthExpenses, setMonthExpenses] = useState(0);
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const [visibleWidgetIds, setVisibleWidgetIds] = useState<string[]>(
+    () => HUB_WIDGET_CATALOG.accountant.map((w) => w.id),
+  );
+  useEffect(() => {
+    const tenantId = currentTenant?.id;
+    if (!tenantId) return;
+    void loadVisibleWidgetIds(tenantId, 'accountant')
+      .then(setVisibleWidgetIds)
+      .catch(() => {
+        // Best-effort -- keep the catalog-default order already showing.
+      });
+  }, [currentTenant?.id]);
 
   const load = useCallback(async () => {
     if (!currentTenant) return;
@@ -127,6 +143,35 @@ export default function AccountantHomeHub() {
     onAction: () => handleMarkPaid(p.id),
   }));
 
+  const widgetRenderers: Record<string, ReactNode> = {
+    'accountant.month_expenses_kpi': (
+      <GlanceKpiWidget
+        label="This month's expenses"
+        value={formatCurrency(monthExpenses)}
+        icon={<Wallet className="h-4 w-4" />}
+        accent="#f59e0b"
+      />
+    ),
+    'accountant.next_vat_kpi': (
+      <GlanceKpiWidget
+        label="Next VAT filing"
+        value={nextVatDeadline()}
+        icon={<CalendarClock className="h-4 w-4" />}
+        accent="#8b5cf6"
+      />
+    ),
+    'accountant.payroll_queue': (
+      <ActionQueueWidget
+        title="Payroll Pending Payment"
+        icon={<Users2 className="h-4 w-4" />}
+        accent="#0ea5e9"
+        items={payrollItems}
+        emptyLabel="No payroll entries pending payment"
+        loading={loading}
+      />
+    ),
+  };
+
   return (
     <Layout>
       <div className="p-4 sm:p-6 space-y-5">
@@ -136,28 +181,12 @@ export default function AccountantHomeHub() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <GlanceKpiWidget
-            label="This month's expenses"
-            value={formatCurrency(monthExpenses)}
-            icon={<Wallet className="h-4 w-4" />}
-            accent="#f59e0b"
-          />
-          <GlanceKpiWidget
-            label="Next VAT filing"
-            value={nextVatDeadline()}
-            icon={<CalendarClock className="h-4 w-4" />}
-            accent="#8b5cf6"
-          />
+          {visibleWidgetIds.map((id) => (
+            <div key={id} className={id.endsWith('_queue') ? 'col-span-2' : ''}>
+              {widgetRenderers[id]}
+            </div>
+          ))}
         </div>
-
-        <ActionQueueWidget
-          title="Payroll Pending Payment"
-          icon={<Users2 className="h-4 w-4" />}
-          accent="#0ea5e9"
-          items={payrollItems}
-          emptyLabel="No payroll entries pending payment"
-          loading={loading}
-        />
 
         {uncategorizedCount > 0 && (
           <Link

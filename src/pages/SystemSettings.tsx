@@ -3,6 +3,7 @@ import {
   Bell,
   Building2,
   CreditCard,
+  LayoutGrid,
   Layers,
   Loader2,
   MessageCircle,
@@ -21,8 +22,10 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import FeatureGate from '../components/FeatureGate';
+import { HubLayoutEditor } from '../components/HubLayoutEditor';
 import IndustrySelector from '../components/industry/IndustrySelector';
 import { NotificationSettings } from '../components/NotificationSettings';
+import { HUB_KEY_LABELS, HUB_WIDGET_CATALOG, type HubKey } from '../constants/hubWidgets';
 import { useApp } from '../context/AppContext';
 import { getDeviceId } from '../offlineAuth/deviceId';
 import {
@@ -33,11 +36,14 @@ import {
 } from '../offlineAuth/trustedTerminals';
 import { INDUSTRY_CONFIGS, INDUSTRY_VERTICAL_FEATURES } from '../types/industry';
 import type { Industry } from '../types/industry';
+import { loadHubWidgetConfig, saveHubWidgetConfig, type ResolvedHubWidget } from '../utils/hubWidgetConfig';
 import { supabase } from '../utils/supabaseClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'notifications' | 'industry' | 'offlineTerminals' | 'dangerZone';
+type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'notifications' | 'industry' | 'offlineTerminals' | 'hubLayout' | 'dangerZone';
+
+const HUB_KEYS = Object.keys(HUB_WIDGET_CATALOG) as HubKey[];
 
 interface BusinessForm {
   name: string;
@@ -161,6 +167,12 @@ export default function SystemSettings() {
     return raw as Industry | '' ?? '';
   });
   const [savingIndustry, setSavingIndustry] = useState(false);
+
+  // Hub Layout (owner-configurable widget visibility/order per role hub)
+  const [selectedHubKey, setSelectedHubKey] = useState<HubKey>('stockkeeper');
+  const [hubWidgets, setHubWidgets] = useState<ResolvedHubWidget[]>([]);
+  const [loadingHubWidgets, setLoadingHubWidgets] = useState(false);
+  const [savingHubWidgets, setSavingHubWidgets] = useState(false);
 
   // Offline terminals (trust-on-first-use device registry)
   const [terminals, setTerminals] = useState<TrustedTerminal[]>([]);
@@ -371,6 +383,39 @@ export default function SystemSettings() {
     }
   };
 
+  const loadHubWidgets = async (hubKey: HubKey) => {
+    if (!currentTenant) return;
+    setLoadingHubWidgets(true);
+    try {
+      const resolved = await loadHubWidgetConfig(currentTenant.id, hubKey);
+      setHubWidgets(resolved);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setLoadingHubWidgets(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'hubLayout' && currentTenant) {
+      void loadHubWidgets(selectedHubKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, selectedHubKey, currentTenant?.id]);
+
+  const handleSaveHubWidgets = async () => {
+    if (!currentTenant) return;
+    setSavingHubWidgets(true);
+    try {
+      await saveHubWidgetConfig(currentTenant.id, selectedHubKey, hubWidgets);
+      toast.success(t('settings.saved'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.serverError'));
+    } finally {
+      setSavingHubWidgets(false);
+    }
+  };
+
   const loadTerminals = async () => {
     if (!currentTenant) return;
     setLoadingTerminals(true);
@@ -445,6 +490,11 @@ export default function SystemSettings() {
 
   const isOwner = currentTenant?.userRole === 'owner';
 
+  // Hub Layout only applies to restaurant tenants -- hub_key values
+  // (Stockkeeper/Accountant/Receptionist/Operations) don't exist for
+  // pharmacy/supermarket/generic tenants.
+  const isRestaurant = (currentTenant as { industry?: string | null } | null)?.industry === 'restaurant';
+
   // Exchange rate only shown when secondary currency differs from the primary
   const showExchangeRate = financialForm.secondaryCurrency !== financialForm.defaultCurrency;
 
@@ -460,6 +510,9 @@ export default function SystemSettings() {
     { id: 'notifications', label: t('settings.notifications'), icon: Bell },
     { id: 'industry', label: t('settings.industry', 'Industry'), icon: Layers },
     { id: 'offlineTerminals', label: t('settings.offlineTerminals', 'Offline Terminals'), icon: Smartphone },
+    ...(isRestaurant
+      ? [{ id: 'hubLayout' as const, label: t('settings.hubLayout', 'Hub Layout'), icon: LayoutGrid }]
+      : []),
     { id: 'dangerZone', label: t('settings.dangerZone'), icon: AlertTriangle },
   ];
 
@@ -1181,6 +1234,59 @@ export default function SystemSettings() {
                 </div>
               );
             })()}
+
+            {/* ── Hub Layout ────────────────────────────────────────────── */}
+            {activeTab === 'hubLayout' && isRestaurant && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6">
+                <div className="flex items-center gap-3">
+                  <LayoutGrid className="h-5 w-5 text-indigo-400 shrink-0" />
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">
+                      {t('settings.hubLayout', 'Hub Layout')}
+                    </h2>
+                    <p className="text-xs text-white/50 mt-0.5">
+                      Choose which widgets appear on each role&apos;s home screen, and in what
+                      order. Changes apply the next time that role signs in, on any device.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Hub</label>
+                  <select
+                    value={selectedHubKey}
+                    onChange={(e) => setSelectedHubKey(e.target.value as HubKey)}
+                    className="w-full sm:w-80 bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  >
+                    {HUB_KEYS.map((key) => (
+                      <option key={key} value={key} className="bg-slate-800">
+                        {HUB_KEY_LABELS[key]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {loadingHubWidgets ? (
+                  <div className="flex items-center gap-2 text-white/50 text-sm py-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading…
+                  </div>
+                ) : (
+                  <HubLayoutEditor widgets={hubWidgets} onChange={setHubWidgets} />
+                )}
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => void handleSaveHubWidgets()}
+                    disabled={savingHubWidgets || loadingHubWidgets}
+                    className="btn-brand flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium disabled:opacity-50"
+                  >
+                    {savingHubWidgets ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {savingHubWidgets ? t('settings.saving') : t('settings.saveChanges')}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* ── Danger Zone ───────────────────────────────────────────── */}
             {activeTab === 'dangerZone' && (

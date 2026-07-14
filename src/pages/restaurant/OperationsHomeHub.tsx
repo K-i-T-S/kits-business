@@ -1,13 +1,16 @@
 import { AlertOctagon, ArrowUpRight, Bell, DollarSign, TrendingUp, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
 import Layout from '@/components/Layout';
+import { HUB_WIDGET_CATALOG, type HubKey } from '@/constants/hubWidgets';
 import { useApp } from '@/context/AppContext';
 import { useSubscription } from '@/context/SubscriptionContext';
+import { loadVisibleWidgetIds } from '@/utils/hubWidgetConfig';
 import { formatCurrency, toLocalDateString } from '@/utils/formatting';
 import { supabase } from '@/utils/supabaseClient';
 
@@ -52,6 +55,23 @@ export default function OperationsHomeHub() {
   const [staffClockedIn, setStaffClockedIn] = useState(0);
   const [staffScheduled, setStaffScheduled] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Owner/manager/supervisor scopes are independently configurable --
+  // each maps to its own hub_key rather than sharing one Operations config,
+  // matching how the three already show genuinely different widgets today.
+  const hubKey: HubKey = `operations_${scope}`;
+  const [visibleWidgetIds, setVisibleWidgetIds] = useState<string[]>(
+    () => HUB_WIDGET_CATALOG[hubKey].map((w) => w.id),
+  );
+  useEffect(() => {
+    const tenantId = currentTenant?.id;
+    if (!tenantId) return;
+    void loadVisibleWidgetIds(tenantId, hubKey)
+      .then(setVisibleWidgetIds)
+      .catch(() => {
+        // Best-effort -- keep the catalog-default order already showing.
+      });
+  }, [currentTenant?.id, hubKey]);
 
   const load = useCallback(async () => {
     if (!currentTenant) return;
@@ -204,6 +224,51 @@ export default function OperationsHomeHub() {
     owner: [{ to: '/restaurant/analytics', label: 'Open full Analytics' }],
   };
 
+  const widgetRenderers: Record<string, ReactNode> = {
+    'operations.open_floor_alerts_kpi': (
+      <GlanceKpiWidget
+        label="Open floor alerts"
+        value={String(alerts.length)}
+        icon={<Bell className="h-4 w-4" />}
+        accent={alerts.length > 0 ? '#ef4444' : '#10b981'}
+      />
+    ),
+    'operations.staff_clocked_in_kpi': (
+      <GlanceKpiWidget
+        label="Staff clocked in"
+        value={`${staffClockedIn} / ${staffScheduled}`}
+        icon={<Users className="h-4 w-4" />}
+        accent="#0ea5e9"
+      />
+    ),
+    'operations.today_revenue_kpi': (
+      <GlanceKpiWidget
+        label="Today's revenue"
+        value={formatCurrency(todayRevenue)}
+        icon={<DollarSign className="h-4 w-4" />}
+        accent="#10b981"
+      />
+    ),
+    'operations.week_revenue_kpi': (
+      <GlanceKpiWidget
+        label="Last 7 days"
+        value={formatCurrency(weekRevenue)}
+        icon={<TrendingUp className="h-4 w-4" />}
+        accent="#8b5cf6"
+      />
+    ),
+    'operations.floor_alerts_queue': (
+      <ActionQueueWidget
+        title="Floor Alerts"
+        icon={<AlertOctagon className="h-4 w-4" />}
+        accent="#ef4444"
+        items={alertItems}
+        emptyLabel="No open floor alerts"
+        loading={loading}
+      />
+    ),
+  };
+
   return (
     <Layout>
       <div className="p-4 sm:p-6 space-y-5">
@@ -212,67 +277,13 @@ export default function OperationsHomeHub() {
           <p className="text-sm text-white/40">{currentTenant?.name}</p>
         </div>
 
-        {scope === 'supervisor' && (
-          <div className="grid grid-cols-2 gap-3">
-            <GlanceKpiWidget
-              label="Open floor alerts"
-              value={String(alerts.length)}
-              icon={<Bell className="h-4 w-4" />}
-              accent={alerts.length > 0 ? '#ef4444' : '#10b981'}
-            />
-            <GlanceKpiWidget
-              label="Staff clocked in"
-              value={`${staffClockedIn} / ${staffScheduled}`}
-              icon={<Users className="h-4 w-4" />}
-              accent="#0ea5e9"
-            />
-          </div>
-        )}
-
-        {scope === 'manager' && (
-          <div className="grid grid-cols-2 gap-3">
-            <GlanceKpiWidget
-              label="Today's revenue"
-              value={formatCurrency(todayRevenue)}
-              icon={<DollarSign className="h-4 w-4" />}
-              accent="#10b981"
-            />
-            <GlanceKpiWidget
-              label="Staff clocked in"
-              value={`${staffClockedIn} / ${staffScheduled}`}
-              icon={<Users className="h-4 w-4" />}
-              accent="#0ea5e9"
-            />
-          </div>
-        )}
-
-        {scope === 'owner' && (
-          <div className="grid grid-cols-2 gap-3">
-            <GlanceKpiWidget
-              label="Today's revenue"
-              value={formatCurrency(todayRevenue)}
-              icon={<DollarSign className="h-4 w-4" />}
-              accent="#10b981"
-            />
-            <GlanceKpiWidget
-              label="Last 7 days"
-              value={formatCurrency(weekRevenue)}
-              icon={<TrendingUp className="h-4 w-4" />}
-              accent="#8b5cf6"
-            />
-          </div>
-        )}
-
-        {(scope === 'supervisor' || scope === 'manager') && (
-          <ActionQueueWidget
-            title="Floor Alerts"
-            icon={<AlertOctagon className="h-4 w-4" />}
-            accent="#ef4444"
-            items={alertItems}
-            emptyLabel="No open floor alerts"
-            loading={loading}
-          />
-        )}
+        <div className="grid grid-cols-2 gap-3">
+          {visibleWidgetIds.map((id) => (
+            <div key={id} className={id.endsWith('_queue') ? 'col-span-2' : ''}>
+              {widgetRenderers[id]}
+            </div>
+          ))}
+        </div>
 
         {scope === 'owner' && alerts.length > 0 && (
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900 p-4">

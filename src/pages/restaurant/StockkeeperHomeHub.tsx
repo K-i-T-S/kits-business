@@ -1,12 +1,15 @@
 import { AlertTriangle, ArrowUpRight, Boxes, PackageCheck, ShoppingCart } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ActionQueueWidget, type ActionQueueItem } from '@/components/hub-widgets/ActionQueueWidget';
 import { GlanceKpiWidget } from '@/components/hub-widgets/GlanceKpiWidget';
 import Layout from '@/components/Layout';
+import { HUB_WIDGET_CATALOG } from '@/constants/hubWidgets';
 import { useApp } from '@/context/AppContext';
+import { loadVisibleWidgetIds } from '@/utils/hubWidgetConfig';
 import { supabase } from '@/utils/supabaseClient';
 import { formatCurrency } from '@/utils/formatting';
 
@@ -42,6 +45,24 @@ export default function StockkeeperHomeHub() {
   const [belowParCount, setBelowParCount] = useState(0);
   const [openPoValue, setOpenPoValue] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Owner-configurable widget visibility/order (SystemSettings.tsx's Hub
+  // Layout tab) -- defaults to the full catalog in its default order
+  // (identical to this hub's pre-customization hardcoded layout) until
+  // the real stored preference loads, so there's no flash of a different
+  // layout for the common un-customized case.
+  const [visibleWidgetIds, setVisibleWidgetIds] = useState<string[]>(
+    () => HUB_WIDGET_CATALOG.stockkeeper.map((w) => w.id),
+  );
+  useEffect(() => {
+    const tenantId = currentTenant?.id;
+    if (!tenantId) return;
+    void loadVisibleWidgetIds(tenantId, 'stockkeeper')
+      .then(setVisibleWidgetIds)
+      .catch(() => {
+        // Best-effort -- keep the catalog-default order already showing.
+      });
+  }, [currentTenant?.id]);
 
   const load = useCallback(async () => {
     if (!currentTenant) return;
@@ -160,6 +181,45 @@ export default function StockkeeperHomeHub() {
     onAction: () => handleMarkReceived(po.id),
   }));
 
+  const widgetRenderers: Record<string, ReactNode> = {
+    'stockkeeper.below_par_kpi': (
+      <GlanceKpiWidget
+        label="Below par level"
+        value={String(belowParCount)}
+        icon={<AlertTriangle className="h-4 w-4" />}
+        accent={belowParCount > 0 ? '#ef4444' : '#10b981'}
+      />
+    ),
+    'stockkeeper.open_po_value_kpi': (
+      <GlanceKpiWidget
+        label="Open PO value"
+        value={formatCurrency(openPoValue)}
+        icon={<ShoppingCart className="h-4 w-4" />}
+        accent="#f59e0b"
+      />
+    ),
+    'stockkeeper.low_stock_queue': (
+      <ActionQueueWidget
+        title="Low Stock"
+        icon={<Boxes className="h-4 w-4" />}
+        accent="#ef4444"
+        items={lowStockItems}
+        emptyLabel="Everything's above par level"
+        loading={loading}
+      />
+    ),
+    'stockkeeper.awaiting_receipt_queue': (
+      <ActionQueueWidget
+        title="Awaiting Receipt"
+        icon={<PackageCheck className="h-4 w-4" />}
+        accent="#0ea5e9"
+        items={receivingItems}
+        emptyLabel="No purchase orders awaiting receipt"
+        loading={loading}
+      />
+    ),
+  };
+
   return (
     <Layout>
       <div className="p-4 sm:p-6 space-y-5">
@@ -169,37 +229,12 @@ export default function StockkeeperHomeHub() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <GlanceKpiWidget
-            label="Below par level"
-            value={String(belowParCount)}
-            icon={<AlertTriangle className="h-4 w-4" />}
-            accent={belowParCount > 0 ? '#ef4444' : '#10b981'}
-          />
-          <GlanceKpiWidget
-            label="Open PO value"
-            value={formatCurrency(openPoValue)}
-            icon={<ShoppingCart className="h-4 w-4" />}
-            accent="#f59e0b"
-          />
+          {visibleWidgetIds.map((id) => (
+            <div key={id} className={id.endsWith('_queue') ? 'col-span-2' : ''}>
+              {widgetRenderers[id]}
+            </div>
+          ))}
         </div>
-
-        <ActionQueueWidget
-          title="Low Stock"
-          icon={<Boxes className="h-4 w-4" />}
-          accent="#ef4444"
-          items={lowStockItems}
-          emptyLabel="Everything's above par level"
-          loading={loading}
-        />
-
-        <ActionQueueWidget
-          title="Awaiting Receipt"
-          icon={<PackageCheck className="h-4 w-4" />}
-          accent="#0ea5e9"
-          items={receivingItems}
-          emptyLabel="No purchase orders awaiting receipt"
-          loading={loading}
-        />
 
         <Link
           to="/restaurant/recipes"

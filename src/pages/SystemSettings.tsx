@@ -25,7 +25,7 @@ import FeatureGate from '../components/FeatureGate';
 import { HubLayoutEditor } from '../components/HubLayoutEditor';
 import IndustrySelector from '../components/industry/IndustrySelector';
 import { NotificationSettings } from '../components/NotificationSettings';
-import { HUB_KEY_LABELS, HUB_WIDGET_CATALOG, type HubKey } from '../constants/hubWidgets';
+import { HUB_KEY_INDUSTRY, HUB_KEY_LABELS, HUB_WIDGET_CATALOG, type HubKey } from '../constants/hubWidgets';
 import { useApp } from '../context/AppContext';
 import { getDeviceId } from '../offlineAuth/deviceId';
 import {
@@ -42,8 +42,6 @@ import { supabase } from '../utils/supabaseClient';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ActiveTab = 'businessInfo' | 'financial' | 'posBehaviour' | 'loyalty' | 'notifications' | 'industry' | 'offlineTerminals' | 'hubLayout' | 'dangerZone';
-
-const HUB_KEYS = Object.keys(HUB_WIDGET_CATALOG) as HubKey[];
 
 interface BusinessForm {
   name: string;
@@ -125,6 +123,11 @@ export default function SystemSettings() {
   const navigate = useNavigate();
   const { currentTenant, setCurrentTenant } = useApp();
 
+  const tenantIndustry = (currentTenant as { industry?: string | null } | null)?.industry ?? null;
+  const availableHubKeys = (Object.keys(HUB_WIDGET_CATALOG) as HubKey[]).filter(
+    (key) => HUB_KEY_INDUSTRY[key] === tenantIndustry || HUB_KEY_INDUSTRY[key] === 'shared',
+  );
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('businessInfo');
 
   // Business info
@@ -169,7 +172,9 @@ export default function SystemSettings() {
   const [savingIndustry, setSavingIndustry] = useState(false);
 
   // Hub Layout (owner-configurable widget visibility/order per role hub)
-  const [selectedHubKey, setSelectedHubKey] = useState<HubKey>('stockkeeper');
+  const [selectedHubKey, setSelectedHubKey] = useState<HubKey>(
+    () => availableHubKeys[0] ?? 'stockkeeper',
+  );
   const [hubWidgets, setHubWidgets] = useState<ResolvedHubWidget[]>([]);
   const [loadingHubWidgets, setLoadingHubWidgets] = useState(false);
   const [savingHubWidgets, setSavingHubWidgets] = useState(false);
@@ -490,10 +495,10 @@ export default function SystemSettings() {
 
   const isOwner = currentTenant?.userRole === 'owner';
 
-  // Hub Layout only applies to restaurant tenants -- hub_key values
-  // (Stockkeeper/Accountant/Receptionist/Operations) don't exist for
-  // pharmacy/supermarket/generic tenants.
-  const isRestaurant = (currentTenant as { industry?: string | null } | null)?.industry === 'restaurant';
+  // Hub Layout only applies to tenants whose industry has role-native hubs
+  // built (restaurant/pharmacy/supermarket) -- availableHubKeys is always
+  // empty for a generic/fashion/electronics tenant with no hubs at all.
+  const hasHubLayout = availableHubKeys.length > 0;
 
   // Exchange rate only shown when secondary currency differs from the primary
   const showExchangeRate = financialForm.secondaryCurrency !== financialForm.defaultCurrency;
@@ -510,7 +515,7 @@ export default function SystemSettings() {
     { id: 'notifications', label: t('settings.notifications'), icon: Bell },
     { id: 'industry', label: t('settings.industry', 'Industry'), icon: Layers },
     { id: 'offlineTerminals', label: t('settings.offlineTerminals', 'Offline Terminals'), icon: Smartphone },
-    ...(isRestaurant
+    ...(hasHubLayout
       ? [{ id: 'hubLayout' as const, label: t('settings.hubLayout', 'Hub Layout'), icon: LayoutGrid }]
       : []),
     { id: 'dangerZone', label: t('settings.dangerZone'), icon: AlertTriangle },
@@ -1236,7 +1241,7 @@ export default function SystemSettings() {
             })()}
 
             {/* ── Hub Layout ────────────────────────────────────────────── */}
-            {activeTab === 'hubLayout' && isRestaurant && (
+            {activeTab === 'hubLayout' && hasHubLayout && (
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6">
                 <div className="flex items-center gap-3">
                   <LayoutGrid className="h-5 w-5 text-indigo-400 shrink-0" />
@@ -1258,7 +1263,7 @@ export default function SystemSettings() {
                     onChange={(e) => setSelectedHubKey(e.target.value as HubKey)}
                     className="w-full sm:w-80 bg-slate-800 border border-white/20 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   >
-                    {HUB_KEYS.map((key) => (
+                    {availableHubKeys.map((key) => (
                       <option key={key} value={key} className="bg-slate-800">
                         {HUB_KEY_LABELS[key]}
                       </option>

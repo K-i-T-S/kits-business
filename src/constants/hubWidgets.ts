@@ -23,7 +23,16 @@ export type HubKey =
   | 'receptionist'
   | 'operations_owner'
   | 'operations_manager'
-  | 'operations_supervisor';
+  | 'operations_supervisor'
+  | 'pharmacy_counter'
+  | 'pharmacy_stockkeeper'
+  | 'pharmacy_operations_owner'
+  | 'pharmacy_operations_manager'
+  | 'pharmacy_operations_supervisor'
+  | 'supermarket_stockkeeper'
+  | 'supermarket_operations_owner'
+  | 'supermarket_operations_manager'
+  | 'supermarket_operations_supervisor';
 
 export interface HubWidgetDef {
   id: string;
@@ -37,6 +46,39 @@ export const HUB_KEY_LABELS: Record<HubKey, string> = {
   operations_owner: 'Operations — Owner view',
   operations_manager: 'Operations — Manager view',
   operations_supervisor: 'Operations — Supervisor view',
+  pharmacy_counter: 'Pharmacy Counter',
+  pharmacy_stockkeeper: 'Pharmacy Stockkeeper',
+  pharmacy_operations_owner: 'Pharmacy Operations — Owner view',
+  pharmacy_operations_manager: 'Pharmacy Operations — Manager view',
+  pharmacy_operations_supervisor: 'Pharmacy Operations — Supervisor view',
+  supermarket_stockkeeper: 'Supermarket Stockkeeper',
+  supermarket_operations_owner: 'Supermarket Operations — Owner view',
+  supermarket_operations_manager: 'Supermarket Operations — Manager view',
+  supermarket_operations_supervisor: 'Supermarket Operations — Supervisor view',
+};
+
+/**
+ * Which industry each hub_key belongs to, for filtering the Hub Layout
+ * settings tab to only the tenant's own vertical -- 'shared' hubs (just
+ * accountant, which reuses one generic component across verticals) show
+ * for every industry.
+ */
+export const HUB_KEY_INDUSTRY: Record<HubKey, 'restaurant' | 'pharmacy' | 'supermarket' | 'shared'> = {
+  stockkeeper: 'restaurant',
+  accountant: 'shared',
+  receptionist: 'restaurant',
+  operations_owner: 'restaurant',
+  operations_manager: 'restaurant',
+  operations_supervisor: 'restaurant',
+  pharmacy_counter: 'pharmacy',
+  pharmacy_stockkeeper: 'pharmacy',
+  pharmacy_operations_owner: 'pharmacy',
+  pharmacy_operations_manager: 'pharmacy',
+  pharmacy_operations_supervisor: 'pharmacy',
+  supermarket_stockkeeper: 'supermarket',
+  supermarket_operations_owner: 'supermarket',
+  supermarket_operations_manager: 'supermarket',
+  supermarket_operations_supervisor: 'supermarket',
 };
 
 /**
@@ -76,5 +118,45 @@ export const HUB_WIDGET_CATALOG: Record<HubKey, HubWidgetDef[]> = {
     { id: 'operations.open_floor_alerts_kpi', label: 'Open floor alerts (KPI)' },
     { id: 'operations.staff_clocked_in_kpi', label: 'Staff clocked in (KPI)' },
     { id: 'operations.floor_alerts_queue', label: 'Floor Alerts queue' },
+  ],
+  pharmacy_counter: [
+    { id: 'pharmacy_counter.pending_prescriptions_kpi', label: 'Pending prescriptions (KPI)' },
+    { id: 'pharmacy_counter.insurance_claims_kpi', label: 'Insurance claims pending (KPI)' },
+    { id: 'pharmacy_counter.insurance_claims_queue', label: 'Insurance Claims Pending queue' },
+  ],
+  pharmacy_stockkeeper: [
+    { id: 'pharmacy_stockkeeper.expiring_lots_kpi', label: 'Lots expiring ≤30 days (KPI)' },
+    { id: 'pharmacy_stockkeeper.expiring_value_kpi', label: 'Expiring value, 30d (KPI)' },
+  ],
+  pharmacy_operations_owner: [
+    { id: 'pharmacy_operations.today_revenue_kpi', label: "Today's revenue (KPI)" },
+    { id: 'pharmacy_operations.week_revenue_kpi', label: 'Last 7 days revenue (KPI)' },
+  ],
+  pharmacy_operations_manager: [
+    { id: 'pharmacy_operations.today_revenue_kpi', label: "Today's revenue (KPI)" },
+    { id: 'pharmacy_operations.insurance_claims_kpi', label: 'Insurance claims pending (KPI)' },
+    { id: 'pharmacy_operations.insurance_claims_queue', label: 'Insurance Claims Pending queue' },
+  ],
+  pharmacy_operations_supervisor: [
+    { id: 'pharmacy_operations.pending_prescriptions_kpi', label: 'Pending prescriptions (KPI)' },
+    { id: 'pharmacy_operations.insurance_claims_kpi', label: 'Insurance claims pending (KPI)' },
+  ],
+  supermarket_stockkeeper: [
+    { id: 'supermarket_stockkeeper.below_par_kpi', label: 'Below par level (KPI)' },
+    { id: 'supermarket_stockkeeper.expiring_lots_kpi', label: 'Lots expiring ≤30 days (KPI)' },
+    { id: 'supermarket_stockkeeper.awaiting_receipt_queue', label: 'Awaiting Receipt queue' },
+  ],
+  supermarket_operations_owner: [
+    { id: 'supermarket_operations.today_revenue_kpi', label: "Today's revenue (KPI)" },
+    { id: 'supermarket_operations.week_revenue_kpi', label: 'Last 7 days revenue (KPI)' },
+  ],
+  supermarket_operations_manager: [
+    { id: 'supermarket_operations.today_revenue_kpi', label: "Today's revenue (KPI)" },
+    { id: 'supermarket_operations.below_par_kpi', label: 'Below par level (KPI)' },
+    { id: 'supermarket_operations.awaiting_receipt_queue', label: 'Awaiting Receipt queue' },
+  ],
+  supermarket_operations_supervisor: [
+    { id: 'supermarket_operations.below_par_kpi', label: 'Below par level (KPI)' },
+    { id: 'supermarket_operations.expiring_lots_kpi', label: 'Lots expiring ≤30 days (KPI)' },
   ],
 };

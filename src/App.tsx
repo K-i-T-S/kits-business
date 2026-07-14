@@ -100,11 +100,16 @@ const PharmacyHub = lazy(() => import('./pages/pharmacy/PharmacyHub'));
 const PharmacyDrugDatabase = lazy(() => import('./pages/pharmacy/DrugDatabase'));
 const PharmacyPrescriptions = lazy(() => import('./pages/pharmacy/Prescriptions'));
 const PharmacyNarcoticsRegister = lazy(() => import('./pages/pharmacy/NarcoticsRegister'));
+const PharmacyCounterHub = lazy(() => import('./pages/pharmacy/PharmacyCounterHub'));
+const PharmacyStockkeeperHub = lazy(() => import('./pages/pharmacy/PharmacyStockkeeperHub'));
+const PharmacyOperationsHub = lazy(() => import('./pages/pharmacy/PharmacyOperationsHub'));
 
 // Supermarket Vertical Components
 const SupermarketHub = lazy(() => import('./pages/supermarket/SupermarketHub'));
 const SupermarketDepartmentManager = lazy(() => import('./pages/supermarket/DepartmentManager'));
 const SupermarketShelfLifeTracker = lazy(() => import('./pages/supermarket/ShelfLifeTracker'));
+const SupermarketStockkeeperHub = lazy(() => import('./pages/supermarket/SupermarketStockkeeperHub'));
+const SupermarketOperationsHub = lazy(() => import('./pages/supermarket/SupermarketOperationsHub'));
 
 // Mobile components wrapper that needs access to Router context
 function MobileComponents({ isAuthenticated, loading }: { isAuthenticated: boolean; loading: boolean }) {
@@ -641,6 +646,42 @@ export default function App() {
                                       )
                                     }
                                   />
+                                  <Route
+                                    path="/pharmacy/counter"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/counter')}>
+                                          <PharmacyCounterHub />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/pharmacy/stockkeeper"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/stockkeeper')}>
+                                          <PharmacyStockkeeperHub />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/pharmacy/operations"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getPharmacyRouteRoles('/pharmacy/operations')}>
+                                          <PharmacyOperationsHub />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
 
                                   {/* ── Supermarket Vertical routes ── */}
                                   <Route
@@ -673,6 +714,30 @@ export default function App() {
                                       isAuthenticated ? (
                                         <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket/shelf-life')}>
                                           <SupermarketShelfLifeTracker />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/supermarket/stockkeeper"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket/stockkeeper')}>
+                                          <SupermarketStockkeeperHub />
+                                        </RoleRoute>
+                                      ) : (
+                                        <Navigate to="/login" replace />
+                                      )
+                                    }
+                                  />
+                                  <Route
+                                    path="/supermarket/operations"
+                                    element={
+                                      isAuthenticated ? (
+                                        <RoleRoute allowedRoles={getSupermarketRouteRoles('/supermarket/operations')}>
+                                          <SupermarketOperationsHub />
                                         </RoleRoute>
                                       ) : (
                                         <Navigate to="/login" replace />

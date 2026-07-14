@@ -136,15 +136,20 @@ export default function Layout({ children }: LayoutProps) {
   // unreachable dead code. Removed (found via a platform-wide audit).
   const VERTICAL_NAV_ITEMS: Record<string, Array<{ name: string; icon: typeof LayoutDashboard; href?: string }>> = useMemo(() => ({
     pharmacy: [
+      { name: t('nav.vertical.pharmacyCounter', 'Counter'), icon: ShoppingCart, href: '/pharmacy/counter' },
+      { name: t('nav.vertical.pharmacyStockkeeper', 'Stockkeeper'), icon: Boxes, href: '/pharmacy/stockkeeper' },
+      { name: t('nav.vertical.pharmacyOperations', 'Operations'), icon: Radio, href: '/pharmacy/operations' },
+      { name: t('nav.vertical.accountant', 'Accountant'), icon: Wallet, href: '/restaurant/accountant' },
       { name: t('nav.vertical.drugDatabase', 'Drug Database'), icon: Pill, href: '/pharmacy/drugs' },
       { name: t('nav.vertical.prescriptions', 'Prescriptions'), icon: FlaskConical, href: '/pharmacy/prescriptions' },
       { name: t('nav.vertical.narcoticsRegister', 'Narcotics Register'), icon: ScanLine, href: '/pharmacy/narcotics' },
     ],
     supermarket: [
+      { name: t('nav.vertical.supermarketStockkeeper', 'Stockkeeper'), icon: Boxes, href: '/supermarket/stockkeeper' },
+      { name: t('nav.vertical.supermarketOperations', 'Operations'), icon: Radio, href: '/supermarket/operations' },
+      { name: t('nav.vertical.accountant', 'Accountant'), icon: Wallet, href: '/restaurant/accountant' },
       { name: t('nav.vertical.departments', 'Departments'), icon: ShoppingBasket, href: '/supermarket/departments' },
-      // No href: ShelfLifeTracker.tsx doesn't exist yet (Sprint 2.4, deferred
-      // behind the F&B roadmap) — leaving this unlinked is honest, not a bug.
-      { name: t('nav.vertical.shelfLife', 'Shelf Life'), icon: AlertTriangle },
+      { name: t('nav.vertical.shelfLife', 'Shelf Life'), icon: AlertTriangle, href: '/supermarket/shelf-life' },
     ],
     fashion: [
       { name: t('nav.vertical.collections', 'Collections'), icon: Shirt },

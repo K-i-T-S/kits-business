@@ -303,60 +303,17 @@ function AdjustPointsModal({ customerId, customerName, currentBalance, tenantId,
     setError(null);
 
     try {
-      // Upsert customer_points row
-      const { data: existing, error: fetchErr } = await supabase
-        .from('customer_points')
-        .select('id, points_balance, lifetime_points')
-        .eq('customer_id', customerId)
-        .maybeSingle();
-
-      if (fetchErr) throw fetchErr;
-
-      interface CustomerPointsRow { id: string; points_balance: number; lifetime_points: number }
-      const typedExisting = existing as CustomerPointsRow | null;
-      const prevBalance = typedExisting?.points_balance ?? 0;
-      const prevLifetime = typedExisting?.lifetime_points ?? 0;
-      const balanceAfter = Math.max(0, prevBalance + parsedDelta);
-      const newLifetime = parsedDelta > 0 ? prevLifetime + parsedDelta : prevLifetime;
-
-      const tier = balanceAfter >= 2000 ? 'gold' : balanceAfter >= 500 ? 'silver' : 'bronze';
-
-      if (typedExisting) {
-        const { error: updateErr } = await supabase
-          .from('customer_points')
-          .update({
-            points_balance: balanceAfter,
-            lifetime_points: newLifetime,
-            tier,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', typedExisting.id);
-        if (updateErr) throw updateErr;
-      } else {
-        const { error: insertErr } = await supabase
-          .from('customer_points')
-          .insert({
-            tenant_id: tenantId,
-            customer_id: customerId,
-            points_balance: balanceAfter,
-            lifetime_points: Math.max(0, parsedDelta),
-            tier,
-          });
-        if (insertErr) throw insertErr;
-      }
-
-      // Log the transaction
-      const { error: txErr } = await supabase
-        .from('point_transactions')
-        .insert({
-          tenant_id: tenantId,
-          customer_id: customerId,
-          type: 'adjusted',
-          points: parsedDelta,
-          balance_after: balanceAfter,
-          description: reason.trim() || 'Manual adjustment',
-        });
-      if (txErr) throw txErr;
+      // Atomic RPC (migration 20260714_000083) -- previously a client-side
+      // read-then-write race (same bug class as BUG-031/BUG-034): two
+      // near-simultaneous adjustments for the same customer could both read
+      // the same stale balance.
+      const { error } = await supabase.rpc('apply_customer_points_delta', {
+        p_customer_id: customerId,
+        p_delta: parsedDelta,
+        p_type: 'adjusted',
+        p_description: reason.trim() || 'Manual adjustment',
+      });
+      if (error) throw error;
 
       onSuccess();
     } catch (err) {

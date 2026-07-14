@@ -420,33 +420,39 @@ export default function POS() {
           });
         }
 
-        // Loyalty: earn points
+        // Loyalty: earn points (atomic RPC -- see migration 20260714_000083;
+        // previously called a non-existent function and silently no-op'd on
+        // every sale, for every tenant, ever -- BUG-035)
         if (currentTenant.loyalty_enabled) {
           const pointsEarned = Math.floor(total * (currentTenant.loyalty_points_per_dollar ?? 1));
           if (pointsEarned > 0) {
-            void supabase.rpc('upsert_customer_points', {
+            void supabase.rpc('apply_customer_points_delta', {
               p_customer_id: selectedCustomer,
-              p_points_earned: pointsEarned,
+              p_delta: pointsEarned,
+              p_type: 'earned',
               p_sale_id: sale.id,
+            }).then(({ error: pointsError }) => {
+              if (pointsError) {
+                console.error('Failed to record loyalty points earned:', pointsError);
+                toast.error('Sale completed, but loyalty points may not have been recorded');
+              }
             });
           }
         }
-        // Loyalty: deduct redeemed points
+        // Loyalty: deduct redeemed points (same atomic RPC -- previously a
+        // client-side read-then-write race, BUG-034)
         if (loyaltyPointsRedeemed > 0) {
-          void supabase.from('customer_points').select('points_balance').eq('customer_id', selectedCustomer).single()
-            .then(({ data }) => {
-              if (!data) return;
-              const newBalance = Math.max(0, (data as { points_balance: number }).points_balance - loyaltyPointsRedeemed);
-              void supabase.from('customer_points').update({ points_balance: newBalance }).eq('customer_id', selectedCustomer);
-              void supabase.from('point_transactions').insert({
-                tenant_id: currentTenant.id,
-                customer_id: selectedCustomer,
-                sale_id: sale.id,
-                type: 'redeemed',
-                points: -loyaltyPointsRedeemed,
-                balance_after: newBalance,
-              });
-            });
+          void supabase.rpc('apply_customer_points_delta', {
+            p_customer_id: selectedCustomer,
+            p_delta: -loyaltyPointsRedeemed,
+            p_type: 'redeemed',
+            p_sale_id: sale.id,
+          }).then(({ error: pointsError }) => {
+            if (pointsError) {
+              console.error('Failed to record loyalty points redeemed:', pointsError);
+              toast.error('Sale completed, but loyalty points redemption may not have been recorded');
+            }
+          });
         }
       }
 

@@ -196,13 +196,19 @@ export default function HelpSupport() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     setLoading(false);
     setTicketSubmitted(true);
-    // Open mailto as fallback so message is never lost
+    // Opens the user's mail client via mailto: -- there is no way for JS to
+    // detect whether this actually succeeded (no default mail client
+    // configured = silent no-op, indistinguishable from success at this
+    // API), so the confirmation copy stays honest about that and offers a
+    // copy-to-clipboard fallback (BUG-075) rather than auto-clearing after
+    // a fixed delay, which would invalidate that fallback's data.
     const mailto = `mailto:${BRAND.supportEmail}?subject=${encodeURIComponent(`[Support] ${supportTicket.subject}`)}&body=${encodeURIComponent(`Category: ${supportTicket.category}\nPriority: ${supportTicket.priority}\n\n${supportTicket.description}`)}`;
     window.open(mailto, '_blank');
-    setTimeout(() => {
-      setTicketSubmitted(false);
-      setSupportTicket({ subject: '', category: 'general', priority: 'medium', description: '' });
-    }, 4000);
+  };
+
+  const handleNewTicket = () => {
+    setTicketSubmitted(false);
+    setSupportTicket({ subject: '', category: 'general', priority: 'medium', description: '' });
   };
 
   const handleFaqHelpful = (faqId: number, helpful: boolean) => {
@@ -438,8 +444,39 @@ export default function HelpSupport() {
                 {ticketSubmitted ? (
                   <div className="text-center py-12">
                     <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-white mb-2">Ticket Submitted Successfully!</h3>
-                    <p className="text-white/60">We'll get back to you within 24-48 hours.</p>
+                    {/* BUG-075: there is no backend ticket system and no way
+                       for JS to detect whether a mailto: link actually opened
+                       a mail client (the browser gives no success/failure
+                       signal either way) -- the copy is now honest about
+                       that, with a copy-to-clipboard fallback in case
+                       nothing opened, instead of an unconditional fake
+                       "Submitted!" confirmation. */}
+                    <h3 className="text-lg font-semibold text-white mb-2">Email app opened</h3>
+                    <p className="text-white/60 mb-4">
+                      We opened your email app with your ticket details pre-filled — just hit send to reach us.
+                      If nothing opened, copy the details below and email {BRAND.supportEmail} directly.
+                    </p>
+                    <div className="flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(
+                            `To: ${BRAND.supportEmail}\nSubject: [Support] ${supportTicket.subject}\nCategory: ${supportTicket.category}\nPriority: ${supportTicket.priority}\n\n${supportTicket.description}`,
+                          );
+                          toast.success('Ticket details copied to clipboard');
+                        }}
+                        className="px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/15 rounded-lg text-white text-sm transition-colors"
+                      >
+                        Copy ticket details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleNewTicket}
+                        className="px-4 py-2 text-white/60 hover:text-white text-sm transition-colors"
+                      >
+                        Submit another ticket
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={(e) => void handleTicketSubmit(e)} className="space-y-6">

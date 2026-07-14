@@ -135,17 +135,14 @@ export default function StockkeeperHomeHub() {
         .eq('purchase_order_id', poId);
       if (itemsErr) throw itemsErr;
 
+      // Atomic RPC (migration 20260714_000088) -- previously a read-then-write
+      // race per item (BUG-088), same class already fixed twice this session.
       for (const item of (items ?? []) as Array<{ ingredient_id: string; quantity_ordered: number }>) {
-        const { data: ingredient } = await supabase
-          .from('restaurant_ingredients')
-          .select('current_stock')
-          .eq('id', item.ingredient_id)
-          .single();
-        const current = (ingredient as { current_stock: number } | null)?.current_stock ?? 0;
-        await supabase
-          .from('restaurant_ingredients')
-          .update({ current_stock: current + item.quantity_ordered, last_restocked_at: new Date().toISOString() })
-          .eq('id', item.ingredient_id);
+        const { error: deltaError } = await supabase.rpc('apply_ingredient_stock_delta', {
+          p_ingredient_id: item.ingredient_id,
+          p_delta: item.quantity_ordered,
+        });
+        if (deltaError) throw deltaError;
       }
 
       await supabase

@@ -70,6 +70,7 @@ export interface NarcoticsLogEntry {
   doctor_name: string;
   doctor_license: string;
   pharmacist_name: string;
+  pharmacist_user_id: string | null;
   prescription_id: string | null;
   dispensed_at: string;
   notes: string | null;

@@ -19,7 +19,6 @@ interface LogFormData {
   patient_id_number: string;
   doctor_name: string;
   doctor_license: string;
-  pharmacist_name: string;
   prescription_id: string;
   notes: string;
 }
@@ -33,7 +32,6 @@ const EMPTY_FORM: LogFormData = {
   patient_id_number: '',
   doctor_name: '',
   doctor_license: '',
-  pharmacist_name: '',
   prescription_id: '',
   notes: '',
 };
@@ -42,7 +40,7 @@ type DateFilter = 'today' | 'week' | 'month' | 'all';
 
 export default function NarcoticsRegister() {
   const { t } = useTranslation();
-  const { currentTenant } = useApp();
+  const { currentTenant, currentEmployee } = useApp();
   const tenantId = currentTenant?.id;
 
   const [entries, setEntries] = useState<NarcoticsLogEntry[]>([]);
@@ -88,7 +86,7 @@ export default function NarcoticsRegister() {
 
   const saveEntry = async () => {
     if (!tenantId) return;
-    const required = ['drug_name', 'lot_number', 'patient_name', 'patient_id_number', 'doctor_name', 'doctor_license', 'pharmacist_name'] as const;
+    const required = ['drug_name', 'lot_number', 'patient_name', 'patient_id_number', 'doctor_name', 'doctor_license'] as const;
     for (const field of required) {
       if (!form[field]) {
         toast.error(t('pharmacy.narcoticsAllRequired', 'All fields are required for narcotics register compliance'));
@@ -101,6 +99,7 @@ export default function NarcoticsRegister() {
     }
     setSaving(true);
     try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
       const { error } = await supabase.from('narcotics_log').insert({
         tenant_id: tenantId,
         drug_id: form.drug_id || null,
@@ -111,7 +110,9 @@ export default function NarcoticsRegister() {
         patient_id_number: form.patient_id_number,
         doctor_name: form.doctor_name,
         doctor_license: form.doctor_license,
-        pharmacist_name: form.pharmacist_name,
+        // BUG-076: bound to the real authenticated identity, not free text.
+        pharmacist_name: currentEmployee?.name ?? 'Unknown',
+        pharmacist_user_id: authSession?.user?.id ?? null,
         prescription_id: form.prescription_id || null,
         notes: form.notes || null,
       });
@@ -475,13 +476,15 @@ export default function NarcoticsRegister() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-white/60 mb-1">{t('pharmacy.pharmacistName', 'Dispensing Pharmacist')} *</label>
-                  <input
-                    type="text"
-                    value={form.pharmacist_name}
-                    onChange={e => setForm(f => ({ ...f, pharmacist_name: e.target.value }))}
-                    className="w-full bg-slate-800 border border-white/10 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
-                  />
+                  <label className="block text-sm text-white/60 mb-1">{t('pharmacy.pharmacistName', 'Dispensing Pharmacist')}</label>
+                  {/* BUG-076: previously free text anyone could type any name
+                     into for a legally-mandated compliance register. Now a
+                     read-only display of the authenticated employee --
+                     pharmacist_user_id (stamped at submit) is the real,
+                     verifiable identity binding. */}
+                  <div className="w-full bg-slate-800/60 border border-white/10 text-white/80 rounded-xl px-3 py-2.5 text-sm">
+                    {currentEmployee?.name ?? t('pharmacy.pharmacistUnresolved', 'Current logged-in user')}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm text-white/60 mb-1">{t('pharmacy.notes', 'Notes')}</label>

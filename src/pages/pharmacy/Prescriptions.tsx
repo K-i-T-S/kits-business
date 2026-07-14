@@ -52,7 +52,7 @@ type FilterStatus = PrescriptionStatus | 'all';
 
 export default function Prescriptions() {
   const { t } = useTranslation();
-  const { currentTenant } = useApp();
+  const { currentTenant, currentEmployee } = useApp();
   const tenantId = currentTenant?.id;
 
   const [prescriptions, setPrescriptions] = useState<PrescriptionWithItems[]>([]);
@@ -69,7 +69,6 @@ export default function Prescriptions() {
 
   const [dispenseOpen, setDispenseOpen] = useState(false);
   const [dispensePrescription, setDispensePrescription] = useState<PrescriptionWithItems | null>(null);
-  const [pharmacistName, setPharmacistName] = useState('');
   const [dispenseQtys, setDispenseQtys] = useState<Record<string, number>>({});
   const [dispensing, setDispensing] = useState(false);
 
@@ -165,27 +164,27 @@ export default function Prescriptions() {
       qtys[item.id] = item.quantity_prescribed - item.quantity_dispensed;
     });
     setDispenseQtys(qtys);
-    setPharmacistName('');
     setDispenseOpen(true);
   };
 
   const confirmDispense = async () => {
-    if (!dispensePrescription || !pharmacistName.trim()) {
-      toast.error(t('pharmacy.pharmacistRequired', 'Pharmacist name is required'));
-      return;
-    }
+    if (!dispensePrescription) return;
     setDispensing(true);
     try {
-      const now = new Date().toISOString();
+      // BUG-078/079/076: dispense_prescription_item() (migration
+      // 20260714_000090) atomically decrements real drug_lots stock (FEFO),
+      // auto-creates a narcotics_log entry for controlled substances using
+      // already-known prescription data instead of requiring separate
+      // re-entry, and resolves the pharmacist from the authenticated
+      // session server-side rather than trusting client-supplied text.
       for (const item of dispensePrescription.items) {
         const qty = dispenseQtys[item.id] ?? 0;
         if (qty <= 0) continue;
-        const newQty = item.quantity_dispensed + qty;
-        await supabase.from('prescription_items').update({
-          quantity_dispensed: newQty,
-          dispensed_at: now,
-          dispensing_pharmacist: pharmacistName,
-        }).eq('id', item.id);
+        const { error: dispenseError } = await supabase.rpc('dispense_prescription_item', {
+          p_prescription_item_id: item.id,
+          p_quantity: qty,
+        });
+        if (dispenseError) throw dispenseError;
       }
 
       // Update prescription status
@@ -561,14 +560,14 @@ export default function Prescriptions() {
               </div>
 
               <div>
-                <label className="block text-sm text-white/60 mb-1">{t('pharmacy.pharmacistName', 'Dispensing Pharmacist')} *</label>
-                <input
-                  type="text"
-                  value={pharmacistName}
-                  onChange={e => setPharmacistName(e.target.value)}
-                  placeholder={t('pharmacy.pharmacistPlaceholder', 'Full name of pharmacist on duty')}
-                  className="w-full bg-slate-800 border border-white/10 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
-                />
+                <label className="block text-sm text-white/60 mb-1">{t('pharmacy.pharmacistName', 'Dispensing Pharmacist')}</label>
+                {/* BUG-076: previously free text a pharmacist could type any
+                   name into for a legally-mandated log. The dispensing RPC
+                   resolves the real authenticated identity server-side --
+                   this is now a read-only display, not an editable field. */}
+                <div className="w-full bg-slate-800/60 border border-white/10 text-white/80 rounded-xl px-3 py-2.5 text-sm">
+                  {currentEmployee?.name ?? t('pharmacy.pharmacistUnresolved', 'Current logged-in user')}
+                </div>
               </div>
 
               <div className="flex gap-3 mt-6">

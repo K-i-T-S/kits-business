@@ -127,6 +127,20 @@ function ForecastTab({ tenantId }: ForecastTabProps) {
     );
   }
 
+  // BUG-074: the nightly restaurant-demand-forecast cron job fires via
+  // pg_net's fire-and-forget net.http_post, so a silently-failing run shows
+  // up nowhere -- CLAUDE.md itself already flags this as a known risk with
+  // no automatic alerting. Surfacing staleness here (most recent row's
+  // created_at across the 7-day set, since the nightly job re-inserts
+  // fresh rows every run) at least tells a manager "this might be old"
+  // instead of quietly rendering a stale forecast as if it were current.
+  const mostRecentGeneratedAt = forecasts.reduce(
+    (latest, f) => (new Date(f.created_at) > latest ? new Date(f.created_at) : latest),
+    new Date(0),
+  );
+  const hoursSinceGenerated = (Date.now() - mostRecentGeneratedAt.getTime()) / (1000 * 60 * 60);
+  const isStale = hoursSinceGenerated > 36;
+
   // Tomorrow's prediction card (first item)
   const tomorrow = forecasts[0]!;
   const confidenceColor = tomorrow.confidence >= 0.8
@@ -145,6 +159,11 @@ function ForecastTab({ tenantId }: ForecastTabProps) {
 
   return (
     <div className="space-y-6">
+      {isStale && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+          This forecast was last generated {Math.round(hoursSinceGenerated)} hours ago — the nightly forecast job may have failed to run. Numbers below could be out of date.
+        </div>
+      )}
       {/* Tomorrow's prediction card */}
       <section>
         <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70 mb-3">

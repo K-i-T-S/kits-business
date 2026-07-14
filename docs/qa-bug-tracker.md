@@ -504,7 +504,9 @@ Same pattern class as the 4 components found in Batch 1 (RolesAndPermissionsMana
 ---
 
 ### BUG-032 — POS split-payment breakdown never persisted
-**Severity:** High · **Category:** Data Integrity · **Status:** Briefed
+**Severity:** High · **Category:** Data Integrity · **Status:** Fixed (2026-07-14, bundled with BUG-033)
+
+**Fix applied, coordinated with the in-flight PowerSync work as the brief required** — confirmed via `git status` that the offline-first migration referenced in the original brief has since landed on `main` (commit `90de3b24` and neighbors) and `AppContext.tsx`/`POS.tsx` are not currently under concurrent modification, so it was safe to proceed. Added a nullable `sales.payment_breakdown jsonb` column (migration `20260714_000084`) rather than a new child table, reusing the exact `JSON_COLUMNS` re-parse pattern `src/powersync/connector.ts` already established for `restaurant_order_items.modifiers`/`tenants.settings` — the local PowerSync schema stores it as `column.text` (JSON-encoded), synced back to Supabase as real `jsonb`. `POS.tsx`'s `completeSale()` now threads the real `SplitPayment[]` into the `Sale` object; `AppContext.addSale` only populates the column when a sale actually used 1+ payment methods (effectively always, but null-safe). `payment_method` still holds the collapsed single-value summary for simple sales — this column is the detailed truth for reconciliation.
 
 `POS.tsx`'s `primaryMethod` only reflects the real payment method when a sale used exactly one method — any split payment (2+ methods) hard-defaults the persisted record to `'cash'` regardless of the actual mix (e.g. a $30-cash + $20-card sale is recorded as 100% cash). The real per-method breakdown (`payments: SplitPayment[]`) only exists in the ephemeral on-screen/printed receipt object — never written to the database. Directly overstates expected cash and understates card settlement in any downstream reconciliation.
 
@@ -514,7 +516,9 @@ Same pattern class as the 4 components found in Batch 1 (RolesAndPermissionsMana
 ---
 
 ### BUG-033 — Sale tax/discount breakdown hardcoded to zero
-**Severity:** High · **Category:** Data Integrity · **Status:** Briefed
+**Severity:** High · **Category:** Data Integrity · **Status:** Fixed (2026-07-14, bundled with BUG-032)
+
+**Fix applied:** widened the canonical `Sale` type (`src/context/AppContext.tsx`) with `tax?`/`discount?`/`payments?` fields; `POS.tsx`'s already-correctly-computed `tax`/`discounts` values now thread into `addSale` instead of the previous hardcoded `0, 0` in the local PowerSync `INSERT`. No migration needed for this half — `sales.discount`/`sales.tax_amount` already existed as real numeric columns, only ever written as literal zeros.
 
 `AppContext.tsx`'s `addSale` (~lines 672-687) writes literal `0, 0` for `discount`/`tax_amount` on every local sale insert — not a wiring bug but a type-level gap: the canonical `Sale` TypeScript type never carried these fields. `POS.tsx` computes the real values correctly (~lines 356-358) but only folds them into the receipt object, never into what's passed to `addSale`. `sale.total`/`sale.subtotal` do correctly reflect the final taxed/discounted amount — customers aren't being charged wrong — but the breakdown itself is permanently zeroed, forever, per sale. Nothing currently reads these columns back out (checked Reports/Dashboard/P&L), so there's no visibly-wrong number today, but any future VAT-compliance or discount-reporting feature built against `sales.tax_amount`/`sales.discount` would be built on permanently-zeroed historical data.
 

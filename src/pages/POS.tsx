@@ -382,6 +382,9 @@ export default function POS() {
       total,
       paymentMethod: primaryMethod,
       employeeId: currentEmployee?.id || '',
+      tax,
+      discount: discounts,
+      payments,
       ...(selectedCustomer ? { customerId: selectedCustomer } : {}),
     };
 

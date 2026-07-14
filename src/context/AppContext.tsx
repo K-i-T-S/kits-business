@@ -10,6 +10,8 @@ import { StockUpdateLock, OperationQueue } from '../utils/raceConditionPreventio
 import { supabase } from '../utils/supabaseClient';
 import { getCurrentUserTenant } from '../utils/tenantManager';
 
+import type { SplitPayment } from '../types/pos';
+
 // ── Activity log helper ───────────────────────────────────────────────────────
 // Fire-and-forget: never awaited, never throws, never blocks a mutation.
 function logActivity(params: {
@@ -73,6 +75,15 @@ export interface Sale {
   paymentMethod: 'cash' | 'card';
   employeeId: string;
   customerId?: string;
+  /** Real tax/discount breakdown -- previously computed correctly in POS.tsx
+   * but never threaded through to persistence (BUG-033); sale.total already
+   * reflects the taxed/discounted amount either way. */
+  tax?: number;
+  discount?: number;
+  /** Per-method breakdown for a split-payment sale (2+ methods); omit for a
+   * single-method sale, which paymentMethod already fully describes
+   * (BUG-032). */
+  payments?: SplitPayment[];
 }
 
 export interface SaleItem {
@@ -701,8 +712,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // on a server round-trip for an id that might not arrive for days.
       await powerSyncDb.writeTransaction(async (tx) => {
         await tx.execute(
-          `INSERT INTO sales (id, tenant_id, employee_id, customer_id, subtotal, total_amount, discount, tax_amount, payment_method, payment_status, sale_date)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO sales (id, tenant_id, employee_id, customer_id, subtotal, total_amount, discount, tax_amount, payment_method, payment_status, sale_date, payment_breakdown)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             sale.id,
             currentTenant.id,
@@ -710,11 +721,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             sale.customerId ?? null,
             sale.subtotal,
             sale.total,
-            0,
-            0,
+            sale.discount ?? 0,
+            sale.tax ?? 0,
             sale.paymentMethod,
             'completed',
             sale.date,
+            sale.payments && sale.payments.length > 0 ? JSON.stringify(sale.payments) : null,
           ],
         );
 

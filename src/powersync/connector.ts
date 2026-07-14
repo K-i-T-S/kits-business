@@ -15,6 +15,7 @@ const POWERSYNC_URL = import.meta.env.VITE_POWERSYNC_URL;
 const JSON_COLUMNS: Record<string, string[]> = {
   restaurant_order_items: ['modifiers'],
   tenants: ['settings'],
+  sales: ['payment_breakdown'],
 };
 
 function reparseJsonColumns(table: string, data: Record<string, unknown>): Record<string, unknown> {

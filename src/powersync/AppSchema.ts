@@ -136,6 +136,11 @@ const sales = new Table(
     created_at: column.text,
     source: column.text,
     table_order_id: column.text,
+    // JSON-encoded SplitPayment[] -- only populated for genuinely split
+    // (2+ method) sales; null for single-method sales, which payment_method
+    // already fully describes. Re-parsed to a real JSON value before sync,
+    // see connector.ts's JSON_COLUMNS.
+    payment_breakdown: column.text,
   },
   { indexes: {} },
 );

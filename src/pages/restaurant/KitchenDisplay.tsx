@@ -597,11 +597,21 @@ export default function KitchenDisplay() {
             .eq('tenant_id', tenantId)
             .eq('status', 'open')
             .order('opened_at', { ascending: true }),
+          // BUG-045, confirmed (not just suspected): a preset bundle's
+          // $0-priced charge row (menu_item_id NULL, migration 000062) gets
+          // inserted with status='pending' just like every real item when a
+          // pending order is confirmed (useRestaurantOrder.ts's
+          // confirmPendingOrder, no special-casing) -- direct order_flow
+          // inserts it as already-served so it never reaches here, but
+          // waiter_confirm flow (the default) does. It carries no real
+          // kitchen work regardless of flow, so excluded here rather than
+          // trying to special-case every insert path that can create one.
           supabase
             .from('restaurant_order_items')
             .select('*')
             .eq('tenant_id', tenantId)
             .in('status', ['pending', 'in_progress', 'ready'])
+            .not('menu_item_id', 'is', null)
             .order('sent_at', { ascending: true }),
           supabase.from('restaurant_tables').select('*').eq('tenant_id', tenantId),
         ]);

@@ -9,13 +9,16 @@ interface SplitPaymentModalProps {
   totalAmount: number;
   onComplete: (payments: SplitPayment[]) => void;
   onCancel: () => void;
+  /** Tenant's configured default payment method (BUG-065) -- 'both' has no
+   * single-method equivalent here, so it falls back to 'cash'. */
+  defaultMethod?: 'cash' | 'card' | 'digital';
 }
 
-export default function SplitPaymentModal({ isOpen, totalAmount, onComplete, onCancel }: SplitPaymentModalProps) {
+export default function SplitPaymentModal({ isOpen, totalAmount, onComplete, onCancel, defaultMethod = 'cash' }: SplitPaymentModalProps) {
   const [payments, setPayments] = useState<SplitPayment[]>([
-    { id: '1', method: 'cash', amount: totalAmount, status: 'pending' },
+    { id: '1', method: defaultMethod, amount: totalAmount, status: 'pending' },
   ]);
-  const [newPaymentMethod, setNewPaymentMethod] = useState<'cash' | 'card' | 'digital'>('cash');
+  const [newPaymentMethod, setNewPaymentMethod] = useState<'cash' | 'card' | 'digital'>(defaultMethod);
 
   const addPayment = () => {
     const remainingAmount = totalAmount - payments.reduce((sum, p) => sum + p.amount, 0);

@@ -73,19 +73,15 @@ interface LoyaltyForm {
   loyaltyPointsRedeemRate: string;
 }
 
-const POS_PAYMENT_KEY = 'pos_default_payment';
-const POS_REQUIRE_CUSTOMER_KEY = 'pos_require_customer';
-const POS_AUTO_PRINT_KEY = 'pos_auto_print_receipt';
-
-function loadPosPrefs(): PosForm {
-  const raw = localStorage.getItem(POS_PAYMENT_KEY);
-  const method = raw === 'card' || raw === 'both' ? (raw as 'card' | 'both') : 'cash';
-  return {
-    defaultPaymentMethod: method,
-    requireCustomerOnSale: localStorage.getItem(POS_REQUIRE_CUSTOMER_KEY) === 'true',
-    printReceiptAutomatically: localStorage.getItem(POS_AUTO_PRINT_KEY) === 'true',
-  };
-}
+// BUG-065: previously localStorage-only (per-device), so an owner's toggle
+// enforced nothing at checkout for any cashier, on any terminal. Now stored
+// on tenants.settings (jsonb), same pattern as businessForm/financialForm,
+// and actually read/enforced by POS.tsx.
+const DEFAULT_POS_FORM: PosForm = {
+  defaultPaymentMethod: 'cash',
+  requireCustomerOnSale: false,
+  printReceiptAutomatically: false,
+};
 
 // ── Toggle sub-component ──────────────────────────────────────────────────────
 
@@ -152,8 +148,8 @@ export default function SystemSettings() {
   });
   const [savingFinancial, setSavingFinancial] = useState(false);
 
-  // POS behaviour (localStorage)
-  const [posForm, setPosForm] = useState<PosForm>(loadPosPrefs);
+  // POS behaviour (tenants.settings jsonb)
+  const [posForm, setPosForm] = useState<PosForm>(DEFAULT_POS_FORM);
   const [savingPos, setSavingPos] = useState(false);
 
   // Loyalty
@@ -219,6 +215,15 @@ export default function SystemSettings() {
           : prev.exchangeRate,
       showDualCurrency: currentTenant.show_dual_currency ?? prev.showDualCurrency,
     }));
+    setPosForm(prev => {
+      const raw = settings['pos_default_payment'];
+      const method = raw === 'card' || raw === 'both' ? (raw as 'card' | 'both') : prev.defaultPaymentMethod;
+      return {
+        defaultPaymentMethod: method,
+        requireCustomerOnSale: (settings['pos_require_customer'] as boolean | undefined) ?? prev.requireCustomerOnSale,
+        printReceiptAutomatically: (settings['pos_auto_print_receipt'] as boolean | undefined) ?? prev.printReceiptAutomatically,
+      };
+    });
     const tenantWithIndustry = currentTenant as { industry?: string | null } & typeof currentTenant;
     setIndustryValue((tenantWithIndustry.industry as Industry | null | undefined) ?? '');
     setLoyaltyForm(prev => ({
@@ -324,12 +329,23 @@ export default function SystemSettings() {
     }
   };
 
-  const handleSavePos = () => {
+  const handleSavePos = async () => {
+    if (!currentTenant) return;
     setSavingPos(true);
     try {
-      localStorage.setItem(POS_PAYMENT_KEY, posForm.defaultPaymentMethod);
-      localStorage.setItem(POS_REQUIRE_CUSTOMER_KEY, String(posForm.requireCustomerOnSale));
-      localStorage.setItem(POS_AUTO_PRINT_KEY, String(posForm.printReceiptAutomatically));
+      const newSettings = {
+        ...(currentTenant.settings as Record<string, unknown>),
+        pos_default_payment: posForm.defaultPaymentMethod,
+        pos_require_customer: posForm.requireCustomerOnSale,
+        pos_auto_print_receipt: posForm.printReceiptAutomatically,
+      };
+      const { error } = await supabase
+        .from('tenants')
+        .update({ settings: newSettings })
+        .eq('id', currentTenant.id);
+      if (error) throw error;
+
+      setCurrentTenant({ ...currentTenant, settings: newSettings });
       toast.success(t('settings.saved'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.serverError'));
@@ -926,7 +942,7 @@ export default function SystemSettings() {
 
                 <div className="flex justify-end pt-2">
                   <button
-                    onClick={handleSavePos}
+                    onClick={() => { void handleSavePos(); }}
                     disabled={savingPos}
                     className="btn-brand flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium disabled:opacity-50"
                   >

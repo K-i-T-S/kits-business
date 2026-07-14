@@ -1,6 +1,6 @@
 import { useStatus } from '@powersync/react';
 import { Barcode, Minus, Plus, Trash2, DollarSign, Receipt, User, Tag, Star, Settings, Split, Printer, MessageCircle, Loader2, WifiOff } from 'lucide-react';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import DiscountModal from '../components/DiscountModal';
@@ -62,6 +62,14 @@ export default function POS() {
   const { hasFeature } = useSubscription();
   const [barcode, setBarcode] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
+  // BUG-081: fetched once per tenant, applied at checkout (see
+  // calculateDiscounts below) -- previously configured in
+  // DepartmentManager.tsx but never read here.
+  const [bulkPricingRules, setBulkPricingRules] = useState<Array<{
+    product_id: string; rule_type: 'qty_break' | 'bogo' | 'case_price';
+    min_quantity: number; discount_percent: number | null;
+    fixed_price_usd: number | null; free_qty: number | null; active: boolean;
+  }>>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSale, setLastSale] = useState<ReceiptData | null>(null);
@@ -83,6 +91,16 @@ export default function POS() {
   const [selectedReceiptTemplate, setSelectedReceiptTemplate] = useState<ReceiptTemplate | null>(null);
   const [whatsappSending, setWhatsappSending] = useState(false);
   const taxRate = currentTenant?.tax_rate ?? 0;
+
+  useEffect(() => {
+    if (!currentTenant?.id) return;
+    void supabase
+      .from('bulk_pricing_rules')
+      .select('product_id, rule_type, min_quantity, discount_percent, fixed_price_usd, free_qty, active')
+      .eq('tenant_id', currentTenant.id)
+      .eq('active', true)
+      .then(({ data }) => setBulkPricingRules(data ?? []));
+  }, [currentTenant?.id]);
 
   // Offline detection now comes from PowerSync's own sync status (a real
   // attempted connection, not just navigator.onLine's "has a network
@@ -323,6 +341,15 @@ export default function POS() {
       totalDiscount += loyaltyPointsRedeemed * 0.01;
     }
 
+    if (bulkPricingRules.length > 0 && cart?.length) {
+      const cartItemsForBulk = cart.map(item => ({
+        productId: item.productId,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+      totalDiscount += POSCalculator.calculateBulkPricingDiscount(cartItemsForBulk, bulkPricingRules);
+    }
+
     return totalDiscount;
   };
 
@@ -339,10 +366,38 @@ export default function POS() {
     return POSCalculator.calculateFinalTotal(subtotal, tax, discounts, tips);
   };
 
+  // BUG-065: previously configured on SystemSettings.tsx but never read here
+  // -- these tenant-wide business rules enforced nothing at checkout.
+  const posSettings = (currentTenant?.settings as Record<string, unknown> | undefined) ?? {};
+  const posDefaultPaymentMethod = ((): 'cash' | 'card' | 'both' => {
+    const raw = posSettings['pos_default_payment'];
+    return raw === 'card' || raw === 'both' ? raw : 'cash';
+  })();
+  const posRequireCustomer = posSettings['pos_require_customer'] === true;
+  const posAutoPrintReceipt = posSettings['pos_auto_print_receipt'] === true;
+
+  // BUG-065: auto-print, if the tenant enabled it, once the receipt modal
+  // (and its #receipt-print print-layout anchor, see print.css) has
+  // actually rendered -- a raf ensures the DOM has painted before the
+  // browser's print dialog captures it.
+  useEffect(() => {
+    if (showReceipt && posAutoPrintReceipt) {
+      const raf = requestAnimationFrame(() => window.print());
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [showReceipt, posAutoPrintReceipt]);
+
   const handleCheckout = () => {
     if (!cart?.length) {
       toast.error('Cart is empty', {
         description: 'Scan or add at least one product before completing a sale.',
+      });
+      return;
+    }
+
+    if (posRequireCustomer && !selectedCustomer) {
+      toast.error('Customer required', {
+        description: 'This tenant requires a customer to be selected before completing a sale.',
       });
       return;
     }
@@ -845,6 +900,7 @@ export default function POS() {
         totalAmount={calculateTotal()}
         onComplete={(payments) => { void completeSale(payments); }}
         onCancel={() => setShowSplitPayment(false)}
+        defaultMethod={posDefaultPaymentMethod === 'both' ? 'cash' : posDefaultPaymentMethod}
       />
 
       <TipsModal

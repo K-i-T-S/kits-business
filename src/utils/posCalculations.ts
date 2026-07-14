@@ -58,6 +58,43 @@ export class POSCalculator {
     return discount;
   }
 
+  // BUG-081: bulk_pricing_rules (DepartmentManager.tsx, supermarket vertical)
+  // was fully built and configurable but never read at checkout -- an owner
+  // configuring a bulk discount got a "Saved" confirmation and it did
+  // nothing at the register. One rule per product assumed (matches how the
+  // CRUD screen presents them), first active match wins.
+  static calculateBulkPricingDiscount(
+    cartItems: Array<{ productId: string; price: number; quantity: number }>,
+    rules: Array<{
+      product_id: string;
+      rule_type: 'qty_break' | 'bogo' | 'case_price';
+      min_quantity: number;
+      discount_percent: number | null;
+      fixed_price_usd: number | null;
+      free_qty: number | null;
+      active: boolean;
+    }>,
+  ): number {
+    let totalDiscount = 0;
+
+    for (const item of cartItems) {
+      const rule = rules.find(r => r.active && r.product_id === item.productId && item.quantity >= r.min_quantity);
+      if (!rule) continue;
+
+      if (rule.rule_type === 'qty_break' && rule.discount_percent) {
+        totalDiscount += item.price * item.quantity * (rule.discount_percent / 100);
+      } else if (rule.rule_type === 'case_price' && rule.fixed_price_usd !== null) {
+        totalDiscount += Math.max(0, (item.price - rule.fixed_price_usd) * item.quantity);
+      } else if (rule.rule_type === 'bogo' && rule.free_qty) {
+        const groups = Math.floor(item.quantity / rule.min_quantity);
+        const freeUnits = Math.min(groups * rule.free_qty, item.quantity);
+        totalDiscount += item.price * freeUnits;
+      }
+    }
+
+    return totalDiscount;
+  }
+
   static calculatePromotionDiscount(
     subtotal: number,
     promotion: Promotion,

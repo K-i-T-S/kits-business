@@ -559,6 +559,11 @@ export default function CashDrawer() {
   // ── Open drawer ────────────────────────────────────────────────────────────
 
   async function handleOpenDrawer(floatUSD: number, floatLBP: number): Promise<void> {
+    // BUG-004/040: cash sessions/movements had zero employee attribution --
+    // opened_by/created_by/closed_by exist as real columns (FK to
+    // auth.users) but were never set on insert.
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+
     const { error: err } = await supabase
       .from('restaurant_cash_sessions')
       .insert({
@@ -566,6 +571,7 @@ export default function CashDrawer() {
         opening_float_usd: floatUSD,
         opening_float_lbp: floatLBP,
         status: 'open',
+        opened_by: authSession?.user?.id ?? null,
       });
 
     if (err) throw err;
@@ -583,6 +589,8 @@ export default function CashDrawer() {
   ): Promise<void> {
     if (!session) return;
 
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+
     const { error: err } = await supabase
       .from('restaurant_cash_movements')
       .insert({
@@ -592,6 +600,7 @@ export default function CashDrawer() {
         amount_usd: amountUSD,
         amount_lbp: amountLBP,
         description: description || null,
+        created_by: authSession?.user?.id ?? null,
       });
 
     if (err) throw err;
@@ -611,6 +620,8 @@ export default function CashDrawer() {
   ): Promise<void> {
     if (!session) return;
 
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+
     const { error: err } = await supabase
       .from('restaurant_cash_sessions')
       .update({
@@ -622,6 +633,7 @@ export default function CashDrawer() {
         expected_lbp: expectedLBP,
         variance_usd: varianceUSD,
         notes: notes || null,
+        closed_by: authSession?.user?.id ?? null,
       })
       .eq('id', session.id)
       .eq('tenant_id', tenantId);

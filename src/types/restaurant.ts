@@ -754,6 +754,7 @@ export interface CashSession {
   variance_usd: number | null;
   notes: string | null;
   status: 'open' | 'closed';
+  closed_by: string | null;
 }
 
 export interface CashMovement {

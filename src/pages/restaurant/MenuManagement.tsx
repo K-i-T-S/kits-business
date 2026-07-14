@@ -279,6 +279,31 @@ function ItemFormModal({ item, categories, branches, overrides, onClose, onSave 
     item ? overrides.filter(o => o.menu_item_id === item.id) : [],
   );
 
+  // BUG-061: cost_price_usd is a plain, manually-typed number, entirely
+  // disconnected from the real recipe-costing system (get_recipe_cost(),
+  // already fixed and accurate this session). Rather than making recipe
+  // cost authoritative outright -- some items (e.g. a simple bottled
+  // drink) genuinely have no recipe and need a manual cost, so overriding
+  // would be wrong for those -- shows both side by side with a divergence
+  // warning when a linked recipe exists.
+  const [linkedRecipeCost, setLinkedRecipeCost] = useState<number | null>(null);
+  useEffect(() => {
+    if (!item) return;
+    void (async () => {
+      const { data: link } = await supabase
+        .from('restaurant_menu_item_recipes')
+        .select('recipe_id')
+        .eq('menu_item_id', item.id)
+        .maybeSingle();
+      const recipeId = (link as { recipe_id: string } | null)?.recipe_id;
+      if (!recipeId) { setLinkedRecipeCost(null); return; }
+      const { data: cost } = (await supabase.rpc('get_recipe_cost', { p_recipe_id: recipeId })) as {
+        data: number | null; error: { message: string } | null;
+      };
+      setLinkedRecipeCost(typeof cost === 'number' ? cost : null);
+    })();
+  }, [item]);
+
   const isBranchAvailable = (branchId: string): boolean => {
     const ov = localOverrides.find(o => o.branch_id === branchId);
     return ov === undefined ? true : ov.is_available;
@@ -543,6 +568,16 @@ function ItemFormModal({ item, categories, branches, overrides, onClose, onSave 
               className="w-full rounded-xl border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-indigo-500/50 focus:outline-none"
               placeholder="0.00 (optional)"
             />
+            {linkedRecipeCost !== null && (() => {
+              const manual = parseFloat(form.cost_price_usd) || 0;
+              const diverges = Math.abs(manual - linkedRecipeCost) > 0.01;
+              return (
+                <p className={`mt-1.5 text-xs ${diverges ? 'text-amber-300' : 'text-white/40'}`}>
+                  Linked recipe cost: ${linkedRecipeCost.toFixed(2)}
+                  {diverges ? ' — differs from the manual cost above' : ' — matches'}
+                </p>
+              );
+            })()}
           </div>
 
           {/* Description */}

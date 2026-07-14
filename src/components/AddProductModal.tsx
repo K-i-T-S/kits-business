@@ -1,14 +1,25 @@
 import { X, Loader2 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 import { useApp } from '../context/AppContext';
+import { useSubscription } from '../context/SubscriptionContext';
 
 interface AddProductModalProps {
   onClose: () => void;
 }
 
 export default function AddProductModal({ onClose }: AddProductModalProps) {
-  const { addProduct, setModalOpen } = useApp();
+  const { addProduct, setModalOpen, products } = useApp();
+  // BUG-026: PLAN_LIMITS/isWithinLimit already existed but were never called
+  // from the add-product flow -- a starter tenant could add unlimited
+  // products with zero warning or block, undermining the tier-pricing
+  // model. Hard-blocks at the cap (consistent with FeatureGate.tsx's
+  // existing lock-and-upgrade-CTA pattern for tier-gated features
+  // elsewhere in the app), rather than a silent soft warning that
+  // wouldn't actually make the limit meaningful.
+  const { isWithinLimit, plan } = useSubscription();
+  const atProductLimit = !isWithinLimit('products', products.length);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -32,6 +43,14 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (atProductLimit) {
+      toast.error('Product limit reached', {
+        description: plan === 'starter'
+          ? 'Your Starter plan is limited to 50 products. Upgrade to Growth for unlimited products.'
+          : 'Your current plan’s product limit has been reached.',
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       const costVal = parseFloat(formData.cost) || 0;
@@ -87,6 +106,11 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
         </div>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          {atProductLimit && (
+            <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 rounded-lg px-4 py-3 text-sm">
+              You've reached your plan's 50-product limit. Upgrade to Growth for unlimited products.
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-white/80 mb-2">Product Name *</label>
@@ -242,7 +266,7 @@ export default function AddProductModal({ onClose }: AddProductModalProps) {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || atProductLimit}
               className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}

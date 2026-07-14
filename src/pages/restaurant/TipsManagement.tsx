@@ -60,7 +60,6 @@ export default function TipsManagement() {
   const tenantId = currentTenant?.id;
 
   const storageKey = `tips_config_${tenantId}`;
-  const recordsKey = `tips_records_${tenantId}`;
 
   const [config, setConfig] = useState<TipsConfig>(() => {
     try {
@@ -120,14 +119,33 @@ export default function TipsManagement() {
       }
     })();
   }, [tenantId]);
-  const [records, setRecords] = useState<TipRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem(recordsKey);
-      return saved ? (JSON.parse(saved) as TipRecord[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  // BUG-038: distribution records were localStorage-only -- lost on browser
+  // data clear, invisible cross-device/terminal. Now persisted to
+  // restaurant_tip_distributions (migration 20260714_000089).
+  const [records, setRecords] = useState<TipRecord[]>([]);
+
+  const loadRecords = useCallback(async () => {
+    if (!tenantId) return;
+    const { data } = await supabase
+      .from('restaurant_tip_distributions')
+      .select('id, distribution_date, total_tips_usd, algorithm, breakdown')
+      .eq('tenant_id', tenantId)
+      .order('distribution_date', { ascending: false })
+      .limit(30);
+    const rows = (data ?? []) as Array<{
+      id: string; distribution_date: string; total_tips_usd: number;
+      algorithm: AlgorithmId; breakdown: Array<{ name: string; amount: number }>;
+    }>;
+    setRecords(rows.map((r) => ({
+      id: r.id,
+      date: new Date(`${r.distribution_date}T12:00:00`).toLocaleDateString('en-GB'),
+      totalTips: r.total_tips_usd,
+      algorithm: r.algorithm,
+      breakdown: r.breakdown,
+    })));
+  }, [tenantId]);
+
+  useEffect(() => { void loadRecords(); }, [loadRecords]);
 
   const saveConfig = () => {
     localStorage.setItem(storageKey, JSON.stringify(config));
@@ -206,22 +224,31 @@ export default function TipsManagement() {
     return [];
   })();
 
-  const recordTips = () => {
+  const recordTips = async () => {
     if (todayTips === 0) {
       toast.error('No tips to record today');
       return;
     }
-    const rec: TipRecord = {
-      id: Date.now().toString(),
-      date: new Date().toLocaleDateString('en-GB'),
-      totalTips: todayTips,
+    if (!tenantId) return;
+
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+
+    const { error } = await supabase.from('restaurant_tip_distributions').insert({
+      tenant_id: tenantId,
+      distribution_date: toLocalDateString(new Date()),
+      total_tips_usd: todayTips,
       algorithm: config.algorithm,
       breakdown,
-    };
-    const updated = [rec, ...records].slice(0, 30);
-    setRecords(updated);
-    localStorage.setItem(recordsKey, JSON.stringify(updated));
+      created_by: authSession?.user?.id ?? null,
+    });
+
+    if (error) {
+      toast.error('Failed to record tips', { description: error.message });
+      return;
+    }
+
     toast.success('Tips recorded for today');
+    await loadRecords();
   };
 
   const algorithms: Array<{ id: AlgorithmId; title: string; desc: string; icon: React.FC<{ className?: string }> }> = [
@@ -391,7 +418,7 @@ export default function TipsManagement() {
                 )}
               </div>
               <button
-                onClick={recordTips}
+                onClick={() => { void recordTips(); }}
                 disabled={todayTips === 0}
                 className="rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/20 disabled:opacity-40 hover:shadow-amber-500/30 transition-all"
               >

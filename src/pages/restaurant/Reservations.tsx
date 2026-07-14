@@ -207,44 +207,19 @@ export default function Reservations() {
       return false;
     }
 
-    const { data: existingOrders, error: checkError } = await supabase
-      .from('table_orders')
-      .select('id')
-      .eq('tenant_id', tenantId)
-      .eq('table_id', reservation.table_id)
-      .eq('status', 'open')
-      .limit(1);
+    // Atomic RPC (migration 20260714_000086) -- previously 4 sequential,
+    // un-transactioned writes with a check-then-act race between the
+    // open-order check and the insert (BUG-048). Mirrors
+    // fn_seat_waitlist_party()'s SELECT ... FOR UPDATE pattern.
+    const { error } = (await supabase.rpc('fn_seat_reservation', {
+      p_reservation_id: reservation.id,
+      p_target_table_id: reservation.table_id,
+    })) as { data: string | null; error: { message: string } | null };
 
-    if (checkError) { toast.error(checkError.message); return false; }
-    if (existingOrders && existingOrders.length > 0) {
-      toast.warning(t('restaurant.reservation.tableHasOpenOrder', 'Table already has an open order'));
+    if (error) {
+      toast.error(error.message);
       return false;
     }
-
-    const { error: orderError } = await supabase
-      .from('table_orders')
-      .insert({
-        tenant_id: tenantId,
-        table_id: reservation.table_id,
-        status: 'open',
-        covers: reservation.party_size,
-        opened_at: new Date().toISOString(),
-      });
-    if (orderError) { toast.error(orderError.message); return false; }
-
-    const { error: tableError } = await supabase
-      .from('restaurant_tables')
-      .update({ status: 'occupied' })
-      .eq('id', reservation.table_id)
-      .eq('tenant_id', tenantId);
-    if (tableError) { toast.error(tableError.message); return false; }
-
-    const { error: resError } = await supabase
-      .from('reservations')
-      .update({ status: 'seated' })
-      .eq('id', reservation.id)
-      .eq('tenant_id', tenantId);
-    if (resError) { toast.error(resError.message); return false; }
 
     setReservations((prev) => prev.map((r) => r.id === reservation.id ? { ...r, status: 'seated' as ReservationStatus } : r));
     setTables((prev) => prev.map((tb) => tb.id === reservation.table_id ? { ...tb, status: 'occupied' as const } : tb));

@@ -627,7 +627,7 @@ EOD Report derives today's revenue from `restaurant_order_items` + `restaurant_a
 | ID | Title | Severity | Category | Status | Files |
 |---|---|---|---|---|---|
 | BUG-047 | No live order-status tracking after QR checkout — a static one-time success screen, no way for a customer to know if/when their order is confirmed or ready | Medium-High | Missing Feature | Briefed | — |
-| BUG-048 | `Reservations.tsx`'s seating flow is 4 sequential, un-transactioned client-side writes (race-prone, inconsistent state on partial failure) — `Waitlist.tsx` already does this correctly via an atomic RPC | High | Data Integrity | Briefed | — |
+| BUG-048 | `Reservations.tsx`'s seating flow is 4 sequential, un-transactioned client-side writes (race-prone, inconsistent state on partial failure) — `Waitlist.tsx` already does this correctly via an atomic RPC | High | Data Integrity | **Fixed** (2026-07-14) | `supabase/migrations/20260714_000086_atomic_reservation_seating.sql`, `src/pages/restaurant/Reservations.tsx` |
 | BUG-049 | `Reservations.tsx`'s new-reservation date default used raw UTC `toISOString()` — defaults to yesterday for ~2-3 hrs after Lebanon local midnight | Medium | Data Integrity | **Fixed** | `src/pages/restaurant/Reservations.tsx` |
 | BUG-050 | `EventsManager.tsx`'s "Upcoming Events" count and "This Month's Confirmed Revenue" — the two numbers a founder actually looks at — used the same raw-UTC date bug, live on the founder-facing dashboard | High | Data Integrity | **Fixed** | `src/pages/restaurant/EventsManager.tsx` |
 | BUG-051 | Events have zero link to `restaurant_tables`/sections — booking a room for a private event does nothing to block those tables from regular walk-in/reservation/waitlist seating | Medium | Missing Feature / Cross-Vertical Conflict | Briefed | — |
@@ -654,12 +654,9 @@ EOD Report derives today's revenue from `restaurant_order_items` + `restaurant_a
 ---
 
 ### BUG-048 — Reservations seating flow is non-atomic and race-prone
-**Severity:** High · **Category:** Data Integrity · **Status:** Briefed
+**Severity:** High · **Category:** Data Integrity · **Status:** Fixed (2026-07-14)
 
-`Reservations.tsx`'s `seatReservation()` does four sequential, un-transactioned steps client-side: check for an existing open `table_orders` row → insert a new one → update `restaurant_tables.status` → update `reservations.status`. `Waitlist.tsx` already solves the identical problem correctly via `fn_seat_waitlist_party()`, an atomic RPC (migration `20260706_000056`). Between Reservations' check and insert, a concurrent seating of the same table (a walk-in, or a second reservation) can double-book it — the same TOCTOU race class already found and fixed twice this session (BUG-031, BUG-034). A failure partway through the four writes also leaves an inconsistent state with no rollback.
-
-**Agent Brief (paste-ready):**
-> Replace `Reservations.tsx`'s `seatReservation()` (currently 4 sequential un-transactioned writes) with a call to an atomic RPC, mirroring `fn_seat_waitlist_party()`'s pattern (migration `20260706_000056_waitlist_management.sql`) — either adapt that RPC's signature to also accept a reservation-sourced party, or build a parallel `fn_seat_reservation()` with the same seat+occupy+close-entry-atomically guarantee. Needs a migration — confirm the exact function signature/behavior with the founder before applying, per this project's standing discipline.
+**Fix applied, following the Agent Brief exactly:** built `fn_seat_reservation(p_reservation_id, p_target_table_id)`, mirroring `fn_seat_waitlist_party()`'s pattern line-for-line — `SELECT ... FOR UPDATE` on both the reservation and the target table (serializes any concurrent seating attempt against the same table rather than allowing a check-then-act gap), validates `confirmed` is the only seatable status (matching `Reservations.tsx`'s own `nextStatuses` state machine — `pending` must go through `confirmed` first, it never seats directly), then performs the insert/update/update atomically. `Reservations.tsx`'s `seatReservation()` now calls this RPC instead of 4 sequential writes. `npm run typecheck`/lint clean. Migration applied to `kits-dev`, independently re-verified live.
 
 ---
 

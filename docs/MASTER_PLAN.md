@@ -2,7 +2,7 @@
 
 > **Vision:** The all-in-one, multi-vertical, AI-powered business platform that dominates the Lebanese and MENA market. Beautiful enough to stop a conversation. Intelligent enough to replace a consultant. Simple enough for a 19-year-old cashier on day one. Built for Lebanon — designed to scale globally.
 
-> **Last Updated:** 2026-06-21
+> **Last Updated:** 2026-07-14
 > **Status Legend:** `[PENDING]` → `[IN_PROGRESS]` → `[COMPLETED]` | `[BLOCKED]`
 
 ---
@@ -1264,6 +1264,36 @@ Multi-branch comparison, cross-branch leaderboards, delivery platform integratio
 
 ---
 
+### Sprint R.7 — Delivery Driver App [PENDING]
+
+**Track:** R · Restaurant Pro
+**Priority:** Medium
+**Depends on:** Sprint R.6 (delivery order intake)
+**Estimated effort:** High — needs a scoping/discovery pass before implementation, not a drop-in build
+
+#### Goal
+Sprint R.6 built the **inbound** side of delivery — receiving and managing orders placed *through* third-party platforms (Toters, Talabat, Zomato, Careem Food) via `delivery-webhook` and the `inject_delivery_order()` / `accept_delivery_order()` / `reject_delivery_order()` / `complete_delivery_order()` RPCs (`restaurant_delivery_orders` table, migrations 000055 and 000085). That system has no concept of KiTS's own delivery staff at all — there is no `drivers` table, no driver auth, no driver-facing app anywhere in the schema or codebase.
+
+This sprint is the **outbound** half: businesses that run their own delivery (common for restaurants without a Toters/Talabat presence, and for pharmacies/supermarkets delivering directly) need a way to assign an order to one of their own delivery employees, and that employee needs a simple mobile-first app to see their delivery queue, accept/decline, navigate, and mark delivered — closing the loop back into `sales`/order status.
+
+**Explicitly not yet scoped — resolve these before writing code, not while writing code:**
+- **Vertical scope:** restaurant-only (extends `restaurant_delivery_orders`) vs. a new generic `delivery_orders`/`drivers` schema usable by any vertical (pharmacy delivery is a real MENA use case too). Affects the data model from the ground up — decide first.
+- **Driver identity:** a new `driver` value on the existing 8-role `RoleType` enum (reuses PIN-login infrastructure built earlier this session) vs. a lighter-weight, un-authenticated per-delivery magic-link/token model (drivers may be informal/day-labor in the Lebanese market, not always a registered `tenant_users` row).
+- **Assignment mechanism:** dispatcher manually assigns each order to a driver vs. drivers self-claim from an open queue (Uber-style) vs. both, configurable per tenant.
+- **Navigation:** deep-link to Waze/Google Maps (simplest, zero-cost, works day one) vs. in-app map/routing (real effort, likely not worth it for v1).
+- **Driver earnings:** does this sprint also need per-delivery fee tracking / driver payout reconciliation, or is that entirely out of scope for v1 (drivers paid outside the system, e.g. informally or via existing payroll)?
+- **Offline:** delivery drivers are the single most likely role to lose connectivity mid-shift (moving around the city, not sitting at a terminal) — decide early whether this hooks into the PowerSync offline-first infrastructure built earlier this session (`src/powersync/`) or is online-only for v1.
+
+#### Acceptance Criteria (draft — firm up during scoping)
+- [ ] Driver can see their assigned/available delivery queue on a mobile-first screen
+- [ ] Driver can accept/decline an assignment (if self-claim is in scope)
+- [ ] Driver can mark an order picked-up, then delivered — status changes reflected back to the business's `DeliveryOrders.tsx` view in real time
+- [ ] One-tap navigation to the delivery address (Waze/Google Maps deep link at minimum)
+- [ ] Whichever driver-identity model is chosen, a low-privilege driver account cannot read unrelated tenant data (orders, financials, other drivers' deliveries)
+- [ ] `npm run typecheck` passes
+
+---
+
 ### Track R — Cumulative DB Migrations
 
 | File | Content |
@@ -1383,6 +1413,13 @@ Build an in-app view of the automation log so the owner can see what the agents 
 | 4.4 — Predictive Restocking | Intelligence | PENDING | — |
 | 5.1 — Investor Dashboard | Enterprise | PENDING | — |
 | 5.2 — Finance+Reports Integration | Enterprise | PENDING | — |
+| R.1 — QR Menu System | Restaurant Pro | COMPLETED | 2026-06-21 |
+| R.2 — Order Flow & Waiter Interface | Restaurant Pro | COMPLETED | 2026-06-21 |
+| R.3 — Argile Station | Restaurant Pro | COMPLETED | 2026-06-21 |
+| R.4 — Recipe & Cost Management | Restaurant Pro | COMPLETED | 2026-06-21 |
+| R.5 — Intelligence & Analytics | Restaurant Pro | COMPLETED | 2026-06-21 |
+| R.6 — Multi-Branch & Delivery Hub | Restaurant Pro | COMPLETED | 2026-06-21 |
+| R.7 — Delivery Driver App | Restaurant Pro | PENDING (2026-07-14) | — |
 | 5.3 — Multi-Entity Enterprise | Enterprise | PENDING | — |
 | A.1 — Groq Edge Function | Infra | PENDING | — |
 | A.2 — Sprint Monitor | Infra | PENDING | — |
